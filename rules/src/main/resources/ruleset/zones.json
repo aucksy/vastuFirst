@@ -1,0 +1,11 @@
+[
+  { "zone": "N",  "sanskrit": "Uttara",    "deity": "Kubera",          "element": null,      "domain": "Wealth, career",                 "sourceId": "D-01" },
+  { "zone": "NE", "sanskrit": "Ishanya",   "deity": "Ishana / Shiva",  "element": "Water",   "domain": "Clarity, health. The Purusha's head — most sensitive and most auspicious.", "sourceId": "D-02" },
+  { "zone": "E",  "sanskrit": "Purva",     "deity": "Indra",           "element": null,      "domain": "Vitality, social standing",       "sourceId": "D-03" },
+  { "zone": "SE", "sanskrit": "Agneya",    "deity": "Agni",            "element": "Fire",    "domain": "Energy, transformation, finances", "sourceId": "D-04" },
+  { "zone": "S",  "sanskrit": "Dakshina",  "deity": "Yama",            "element": null,      "domain": "Rest, fame, discipline",          "sourceId": "D-05" },
+  { "zone": "SW", "sanskrit": "Nairritya", "deity": "Nirriti",         "element": "Earth",   "domain": "Stability, bonds. The Purusha's feet — the heaviest zone.", "sourceId": "D-06" },
+  { "zone": "W",  "sanskrit": "Paschima",  "deity": "Varuna",          "element": null,      "domain": "Gains, savings, learning",        "sourceId": "D-07" },
+  { "zone": "NW", "sanskrit": "Vayavya",   "deity": "Vayu",            "element": "Air",     "domain": "Movement, communication, transience", "sourceId": "D-08" },
+  { "zone": "BRAHMASTHAN", "sanskrit": "Brahmasthan", "deity": "Brahma", "element": "Space", "domain": "Must stay open. Reserved for the family deity.", "sourceId": "D-09" }
+]

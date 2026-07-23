@@ -1,0 +1,8 @@
+[
+  { "id": "structural-correction", "kind": "MOVE_IT", "text": "Move or resize the element on the drawing so it leaves the wrong zone — free while the plan is still on paper.", "provenance": "TEXT", "rank": 0 },
+  { "id": "vastu-shanti",          "kind": "RITUAL",  "text": "Vastu Shanti / Vastu Puja — the genuine traditional pacification, prescribed in the Mayamatam.", "provenance": "TEXT", "rank": 1 },
+  { "id": "tulsi",                 "kind": "REMEDY_IT", "text": "A Tulsi plant near the North-East. Genuinely traditional (unlike money plant or lucky bamboo).", "provenance": "DERIV", "rank": 5 },
+  { "id": "copper-strip",          "kind": "REMEDY_IT", "text": "A copper strip along the zone boundary. Modern practice; efficacy not established.", "provenance": "MOD", "rank": 8, "productSku": "COPPER-STRIP-1M" },
+  { "id": "salt-bowl",             "kind": "REMEDY_IT", "text": "A rock-salt bowl in the affected corner. 20th-century practice; no textual basis.", "provenance": "MOD", "rank": 9, "productSku": "ROCK-SALT-BOWL" },
+  { "id": "vastu-pyramid",         "kind": "REMEDY_IT", "text": "A Vastu pyramid on the wall. 20th-century 'pyramid power'; claims of antiquity are marketing.", "provenance": "MOD", "rank": 10, "productSku": "VASTU-PYRAMID-9" }
+]

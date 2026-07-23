@@ -13,4 +13,5 @@ dependencies {
     api(project(":rules"))
     implementation(libs.kotlinx.datetime)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.reflect)   // FacingNeutralityTest: static field-absence guard (§0.4)
 }

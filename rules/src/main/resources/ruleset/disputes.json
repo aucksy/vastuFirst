@@ -1,0 +1,52 @@
+[
+  {
+    "id": "W-01", "title": "Toilet in the East", "appliesTo": "TOILET", "appliesToZone": "E",
+    "readingA": { "label": "A defect", "text": "East is the sun's quarter; a toilet there pollutes it.", "school": "Traditional" },
+    "readingB": { "label": "Acceptable", "text": "Acceptable in specific east-of-SE / ESE sub-zones.", "school": "16-zone" }
+  },
+  {
+    "id": "W-02", "title": "Kitchen in the North", "appliesTo": "KITCHEN", "appliesToZone": "N",
+    "readingA": { "label": "Not ideal", "text": "Kubera and water against fire.", "school": "Traditional" },
+    "readingB": { "label": "Suboptimal, not a defect", "text": "Merely suboptimal, not a hard defect.", "school": "Modern" }
+  },
+  {
+    "id": "W-03", "title": "Master bedroom in the West", "appliesTo": "MASTER_BEDROOM", "appliesToZone": "W",
+    "readingA": { "label": "Acceptable", "text": "Acceptable heavy-zone alternative to SW.", "school": "Traditional" },
+    "readingB": { "label": "Advised against", "text": "16-zone reads WSW as the education zone.", "school": "16-zone" }
+  },
+  {
+    "id": "W-04", "title": "Main entrance in the South-East",
+    "readingA": { "label": "Acceptable", "text": "Acceptable on the right pada.", "school": "Modern" },
+    "readingB": { "label": "A defect", "text": "Manasara says never face SE.", "school": "Classical" }
+  },
+  {
+    "id": "W-05", "title": "Sleeping head direction",
+    "readingA": { "label": "Head-to-South best", "text": "Head-to-South best, East good, West neutral.", "school": "Traditional" },
+    "readingB": { "label": "Avoid head-to-North", "text": "Head-to-North is avoided — the one near-universal cross-school agreement. Stated as tradition; no health claim.", "school": "All" }
+  },
+  {
+    "id": "W-06", "title": "Idol facing", "appliesTo": "POOJA",
+    "readingA": { "label": "Idols on W/SW wall", "text": "Idols on the W/SW wall, worshipper faces East.", "school": "Traditional" },
+    "readingB": { "label": "Idols on E wall", "text": "Idols on the East wall facing West.", "school": "Modern" }
+  },
+  {
+    "id": "W-09", "title": "Septic tank direction",
+    "readingA": { "label": "N vs NW vs SE", "text": "Sources contradict outright — N, NW or SE.", "school": "Contested" },
+    "readingB": { "label": "One of the sharpest conflicts", "text": "One of the sharpest conflicts found. Do not hard-code.", "school": "All" }
+  },
+  {
+    "id": "W-10", "title": "Veedhi Shoola (road thrust)",
+    "readingA": { "label": "Directional", "text": "NE/N/E benign, S/SW/SE/NW harmful.", "school": "Traditional" },
+    "readingB": { "label": "Universal", "text": "Any road-arrow wounds the plot.", "school": "Strict" }
+  },
+  {
+    "id": "W-11", "title": "Extensions",
+    "readingA": { "label": "NE extension auspicious", "text": "A North-East extension is auspicious.", "school": "Traditional" },
+    "readingB": { "label": "All extensions negative", "text": "All extensions are negative, including NE.", "school": "Strict" }
+  },
+  {
+    "id": "W-12", "title": "Pooja location", "appliesTo": "POOJA",
+    "readingA": { "label": "Classical — Brahmasthan (centre)", "text": "The classical position: the family deity holds the centre, per Manasara.", "school": "Classical" },
+    "readingB": { "label": "Modern — North-East", "text": "Modern near-universal practice places the pooja in the North-East.", "school": "Modern" }
+  }
+]

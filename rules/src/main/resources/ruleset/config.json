@@ -1,0 +1,27 @@
+{
+  "gridSize": 9,
+  "brahmasthanExtent": "CENTRAL_3X3",
+  "doorLocationMethod": "BEARING_FROM_CENTRE",
+  "doorWeight": 3.0,
+  "padaBoundaryToleranceDeg": 1.0,
+  "swCornerArcStartDeg": 213.75,
+  "swCornerArcEndDeg": 236.25,
+  "encroachment": {
+    "roomAreaFraction": 0.02,
+    "analysisRectAreaFraction": 0.005
+  },
+  "tieBreak": {
+    "withinFraction": 0.01,
+    "zonePrecedence": ["BRAHMASTHAN", "NE", "SW", "SE", "N", "E", "S", "W", "NW"]
+  },
+  "anomaly": {
+    "modalEdgeFraction": 0.60,
+    "majorAreaFraction": 0.10,
+    "minorAreaFraction": 0.05
+  },
+  "penalties": { "MAJOR": 8, "MODERATE": 4, "MINOR": 1 },
+  "penaltyCap": 30,
+  "scorePoints": { "IDEAL": 100, "ACCEPTABLE": 70, "SUBOPTIMAL": 45, "DEFECT": 10 },
+  "padaPoints": { "AUSPICIOUS": 100, "MODERATE": 60, "MIXED": 50, "INAUSPICIOUS": 15 },
+  "unruledRoomTypes": ["BATHROOM", "COURTYARD", "UTILITY", "CORRIDOR"]
+}

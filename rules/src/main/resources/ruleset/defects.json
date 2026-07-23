@@ -1,0 +1,95 @@
+[
+  {
+    "id": "X-01", "title": "Toilet in the North-East", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
+    "explanation": "A toilet in the North-East — the water quarter and the mandala's most sensitive zone — is held the most serious placement across every school examined.",
+    "layoutFix": "Move the toilet to the North-West or West.",
+    "remedyIds": ["structural-correction", "vastu-shanti", "salt-bowl"],
+    "appliesTo": [ { "roomType": "TOILET", "zone": "NE" } ]
+  },
+  {
+    "id": "X-02", "title": "Kitchen in the North-East", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
+    "explanation": "Fire in the water quarter — a kitchen in the North-East opposes the element of that zone.",
+    "layoutFix": "Move the kitchen to the South-East (ideal) or North-West.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "appliesTo": [ { "roomType": "KITCHEN", "zone": "NE" } ]
+  },
+  {
+    "id": "X-03", "title": "Staircase or heavy weight in the Brahmasthan", "severity": "MAJOR", "provenance": "TEXT", "tier": "A",
+    "explanation": "The Brahmasthan (centre) must stay open and unweighted (Manasara, B-12). A staircase or heavy fixture there is a textual violation.",
+    "layoutFix": "Relocate the staircase to the South, South-West or West.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "appliesTo": [ { "roomType": "STAIRCASE", "zone": "BRAHMASTHAN" } ]
+  },
+  {
+    "id": "X-04", "title": "Cut or missing North-East corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
+    "explanation": "A cut in the North-East corner is a major defect — it removes the most auspicious part of the plot.",
+    "layoutFix": "Extend the footprint to square off the North-East corner.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  },
+  {
+    "id": "X-05", "title": "South-West extension", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
+    "explanation": "An extension in the South-West is a serious defect — the heaviest zone should not project.",
+    "layoutFix": "Trim the South-West projection back to the reference rectangle.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  },
+  {
+    "id": "X-06", "title": "Main entrance on the South-West corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
+    "explanation": "The South-West corner entrance (Pitra / Nairrti arc) is condemned across every school examined — the one near-universal door prohibition.",
+    "layoutFix": "Relocate the main entrance to an auspicious pada on the North or East wall.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  },
+  {
+    "id": "X-07", "title": "Master bedroom in the North-East or South-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
+    "explanation": "The master bedroom belongs in the heavy South-West. The North-East (too light) and South-East (fire) are both warned against.",
+    "layoutFix": "Move the master bedroom to the South-West.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "appliesTo": [ { "roomType": "MASTER_BEDROOM", "zone": "NE" }, { "roomType": "MASTER_BEDROOM", "zone": "SE" } ]
+  },
+  {
+    "id": "X-08", "title": "Toilet in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
+    "explanation": "A toilet in the South-West undermines the stability zone.",
+    "layoutFix": "Move the toilet to the North-West or West.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "appliesTo": [ { "roomType": "TOILET", "zone": "SW" } ]
+  },
+  {
+    "id": "X-09", "title": "Overhead tank in NE / underground water in SW", "severity": "MODERATE", "provenance": "DERIV", "tier": "C",
+    "explanation": "Water storage should follow the mandala: overhead tank in SW/W, underground water in NE/N/E. The reverse is a defect.",
+    "layoutFix": "Reposition the tank per the zone rule.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "requiresFixtureTypes": ["OVERHEAD_TANK", "UNDERGROUND_WATER", "BOREWELL"]
+  },
+  {
+    "id": "X-10", "title": "Pooja sharing a wall with a toilet; store/toilet beneath a staircase", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
+    "explanation": "A prayer room adjoining a toilet, or a toilet/store tucked beneath a staircase, are held impure adjacencies.",
+    "layoutFix": "Separate the pooja from the toilet wall; clear the space beneath the stairs.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  },
+  {
+    "id": "X-11", "title": "Veedhi Shoola (road thrust)", "severity": "MODERATE", "provenance": "DISP", "tier": "D",
+    "explanation": "A road pointing directly at the plot from the S, SW, SE or NW. Schools disagree on whether direction matters (W-10).",
+    "layoutFix": "Buffer the affected side with a boundary wall or planting.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "requiresSite": true
+  },
+  {
+    "id": "X-12", "title": "Heavy trees in the NE or centre", "severity": "MINOR", "provenance": "DERIV", "tier": "C",
+    "explanation": "Heavy trees in the North-East or the centre weigh down zones that should stay light and open.",
+    "layoutFix": "Keep the North-East and centre free of heavy planting.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "requiresFixtureTypes": ["HEAVY_TREE"]
+  },
+  {
+    "id": "X-13", "title": "Mirror facing the bed / beam over a bed or desk", "severity": "MINOR", "provenance": "MOD", "tier": "C",
+    "explanation": "Modern practice; no classical basis found for either. Included because users expect it, labelled honestly.",
+    "layoutFix": "Reposition the mirror or route the beam away from directly over the bed or desk.",
+    "remedyIds": ["structural-correction", "vastu-shanti"],
+    "requiresFixtureTypes": ["MIRROR", "CEILING_BEAM"]
+  },
+  {
+    "id": "X-GEN", "title": "Room in a prohibited zone", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
+    "explanation": "This room sits in a zone its placement rule prohibits.",
+    "layoutFix": "Move the room out of the prohibited zone.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  }
+]

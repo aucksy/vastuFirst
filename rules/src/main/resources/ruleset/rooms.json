@@ -1,0 +1,80 @@
+[
+  {
+    "roomType": "ENTRANCE", "weight": 3.0,
+    "ideal": [], "acceptable": [], "prohibited": [],
+    "provenance": "DERIV", "sourceId": "R-01", "excludeFromScore": true,
+    "note": "Facing direction carries no score. Scored via the 32-pada door analysis (§4.3)."
+  },
+  {
+    "roomType": "KITCHEN", "weight": 3.0,
+    "ideal": ["SE"], "acceptable": ["NW"], "prohibited": ["NE", "SW", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-02", "note": "North contested — see W-02."
+  },
+  {
+    "roomType": "MASTER_BEDROOM", "weight": 3.0,
+    "ideal": ["SW"], "acceptable": ["S", "W"], "prohibited": ["NE", "SE", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-03", "note": "SE bedroom is the one all sources warn against."
+  },
+  {
+    "roomType": "BEDROOM", "weight": 1.5,
+    "ideal": ["W", "NW"], "acceptable": ["N", "E", "S"], "prohibited": ["SE", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-04"
+  },
+  {
+    "roomType": "POOJA", "weight": 2.0,
+    "ideal": [], "acceptable": [], "prohibited": [],
+    "provenance": "DISP", "sourceId": "R-05", "disputeId": "W-12",
+    "note": "Classical = Brahmasthan (centre). Modern = NE. Never scored (§4.4.1)."
+  },
+  {
+    "roomType": "TOILET", "weight": 2.5,
+    "ideal": ["NW", "W"], "acceptable": ["S"], "prohibited": ["NE", "SW", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-06", "note": "East contested — W-01. No classical verse exists."
+  },
+  {
+    "roomType": "LIVING", "weight": 1.5,
+    "ideal": ["N", "E", "NE"], "acceptable": ["W", "NW"], "prohibited": ["SW", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-07"
+  },
+  {
+    "roomType": "STAIRCASE", "weight": 2.0,
+    "ideal": ["S", "SW", "W"], "acceptable": ["NW"], "prohibited": ["NE", "BRAHMASTHAN"],
+    "provenance": "DERIV", "sourceId": "R-08"
+  },
+  {
+    "roomType": "STUDY", "weight": 1.0,
+    "ideal": ["W", "NW"], "acceptable": ["N", "E", "NE"], "prohibited": ["S", "SW"],
+    "provenance": "DERIV", "sourceId": "R-09", "note": "User faces E or N when working."
+  },
+  {
+    "roomType": "DINING", "weight": 1.0,
+    "ideal": ["W"], "acceptable": ["N", "E"], "prohibited": [],
+    "provenance": "DERIV", "sourceId": "R-10"
+  },
+  {
+    "roomType": "STORE", "weight": 0.8,
+    "ideal": ["SW", "W", "S"], "acceptable": [], "prohibited": ["NE"],
+    "provenance": "DERIV", "sourceId": "R-11"
+  },
+  {
+    "roomType": "GUEST_BEDROOM", "weight": 0.8,
+    "ideal": ["NW"], "acceptable": ["W"], "prohibited": [],
+    "provenance": "DERIV", "sourceId": "R-12"
+  },
+  {
+    "roomType": "GARAGE", "weight": 0.8,
+    "ideal": ["NW", "SE"], "acceptable": [], "prohibited": ["NE", "SW"],
+    "provenance": "DERIV", "sourceId": "R-13"
+  },
+  {
+    "roomType": "BALCONY", "weight": 0.8,
+    "ideal": ["N", "E", "NE"], "acceptable": [], "prohibited": ["SW"],
+    "provenance": "DERIV", "sourceId": "R-14"
+  },
+  {
+    "roomType": "BASEMENT", "weight": 0.8,
+    "ideal": [], "acceptable": [], "prohibited": [],
+    "provenance": "MOD", "sourceId": "R-15", "excludeFromScore": true,
+    "note": "Traditionally discouraged entirely; MahaVastu permits S and W plots. NOT_SCORED pending a ruling (§4.4.1)."
+  }
+]
