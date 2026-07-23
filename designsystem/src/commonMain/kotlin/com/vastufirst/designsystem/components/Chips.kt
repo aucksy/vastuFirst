@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ fun VastuChip(
     val colors = VastuTheme.colors
     Box(
         modifier = modifier
+            .heightIn(min = VastuTheme.sizes.minTouch)   // a11y: 48dp touch target (review gate)
             .clip(VastuTheme.shapes.full)
             .background(if (selected) colors.textPrimary else colors.paper)
             .then(
@@ -36,7 +38,7 @@ fun VastuChip(
                 else Modifier.border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.full)
             )
             .clickableTap(role = Role.Button, onClick = onClick)
-            .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s3),
+            .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s2),
         contentAlignment = Alignment.Center,
     ) {
         VText(

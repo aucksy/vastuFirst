@@ -1,0 +1,61 @@
+name: Release
+
+# Tag-driven build: push a v* tag → build the app → publish a GitHub Release with the APK
+# attached, so there is a direct .apk download link per phase. Phase 2 ships a DEBUG-signed
+# APK (installable for client testing); a release-signed AAB/APK arrives with the store setup.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # Guardrails + tests must pass before we publish anything.
+      - name: Module-boundary check
+        run: bash scripts/check-boundaries.sh
+      - name: Token check
+        run: bash scripts/check-tokens.sh
+      - name: Unit tests (pure logic modules)
+        run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
+
+      - name: Build Android app
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Name the APK for the release
+        run: |
+          mkdir -p release
+          cp app/build/outputs/apk/debug/*.apk "release/vastufirst-${GITHUB_REF_NAME}.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.apk
+          generate_release_notes: true
+          name: "VastuFirst ${{ github.ref_name }}"
+          body: |
+            VastuFirst Android — ${{ github.ref_name }}.
+            Debug-signed APK for testing (installs on any Android 8.0+ device). Fully offline.

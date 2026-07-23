@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
@@ -98,11 +99,11 @@ fun DegreeStepper(
     val colors = VastuTheme.colors
     Row(
         modifier = modifier
-            .height(VastuTheme.sizes.control)
+            .heightIn(min = VastuTheme.sizes.control)
             .clip(VastuTheme.shapes.sm)
             .background(colors.surfaceRaised)
             .border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.sm)
-            .padding(start = VastuTheme.spacing.s4, end = VastuTheme.spacing.s2),
+            .padding(start = VastuTheme.spacing.s4, end = VastuTheme.spacing.s2, top = VastuTheme.spacing.s1, bottom = VastuTheme.spacing.s1),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
     ) {
