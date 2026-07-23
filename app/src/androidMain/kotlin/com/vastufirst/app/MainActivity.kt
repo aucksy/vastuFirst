@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 /**
  * Phase 0 proof screen: an empty app wrapped in `VastuTheme { }`, reading colours and the
  * type ramp only from the theme (no raw hex, no ad-hoc text style). Real screens arrive in
- * Phase 2 from the Saffron & Ivory design system.
+ * Phase 2 from the Sage & Gold design system.
  */
 @Composable
 private fun Phase0Screen() {

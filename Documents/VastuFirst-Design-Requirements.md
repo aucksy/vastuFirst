@@ -2,6 +2,8 @@
 **For Claude Design · v1.1 · 19 July 2026**
 **Target: Android first. iOS follows. Design for both from the start.**
 
+> **STATUS — RESOLVED (23 Jul 2026): the chosen theme is Sage & Gold** — sage-green primary `#7A9E7E` + gold `#C9A227`, on a warm paper ground. Stage 1 is complete. This document is the original brief, kept for the *why*. Where it discusses the four exploration directions or the earlier "paper-and-warm-accent" incumbent, that is **historical — none of those is the active theme.** The authoritative colour / spacing / type values live in the handoff (`VastuTheme.kt` / `tokens.json`), which supersedes this file where they overlap.
+
 ---
 
 ## 0. The ask, in one paragraph
@@ -108,7 +110,7 @@ For each of the four, provide:
 
 Four genuinely different directions, not four tints of the same idea. Suggested starting points, but you may substitute better ones:
 
-- **A · Paper and saffron.** The incumbent (see §9). Warm ivory ground, saffron and marigold accents, teal support, serif display. Feels like a well-made book. Safe, proven, already tested with the client.
+- **A · Paper and warm accent.** The incumbent direction (see §9): warm paper ground, a warm accent pair, teal support, serif display. Feels like a well-made book. Safe, proven, already tested with the client. *(Historical — the chosen theme is Sage & Gold; see the status note at the top.)*
 - **B · Temple stone.** Cooler and more architectural — sandstone, weathered copper, deep indigo. Leans on the *architecture* half of Vastu rather than the ritual half. Would appeal to the architect the report gets forwarded to.
 - **C · Daylight and ink.** Near-white, high-clarity, one strong accent, very restrained colour elsewhere. Lets the nine zone colours carry all the chroma without competition. The most modern and the most legible.
 - **D · Earth and marigold.** Warmer and more distinctly Indian — terracotta, turmeric, leaf green, with the zone colours drawn from natural pigment. Highest cultural resonance, highest risk of kitsch.
@@ -483,7 +485,7 @@ These are **constraints, not suggestions**. The §4.3 review gate checks against
 
 **8.1 Colour is never the only signal.** Roughly 1 in 12 men has some form of colour vision deficiency, and this is a mass-market Indian consumer app carrying nine zone colours, five verdict states and three score bands — often on one screen. Every zone and every verdict must also be distinguishable by **label, icon, pattern or position**. Deliver a **colourblind simulation** of the zone map and the report screen under deuteranopia and protanopia. If zones become ambiguous, the palette changes — the palette loses that argument, not the accessibility rule.
 
-**8.2 Contrast — deliver the audit, do not assert it.** Provide the full pair-by-pair table (§3.2.5). The warm, low-contrast ivory palettes this brief encourages are exactly where contrast quietly fails. Any pair below its minimum is a defect in the theme, not a note for later.
+**8.2 Contrast — deliver the audit, do not assert it.** Provide the full pair-by-pair table (§3.2.5). The warm, low-contrast paper palettes this brief encourages are exactly where contrast quietly fails. Any pair below its minimum is a defect in the theme, not a note for later.
 
 **8.3 Touch targets.** 48 × 48 dp minimum, including when the visible element is smaller. The North dial must be comfortably draggable with a thumb, including for users with limited fine motor control.
 
@@ -493,14 +495,14 @@ These are **constraints, not suggestions**. The §4.3 review gate checks against
 
 ## 9. The existing visual language
 
-A working HTML prototype exists and the client has seen and approved its look. **Theme A in §3.3 should be a refined version of it.** These are its actual tokens — use them as the starting point for A, and as evidence of the client's taste when designing B, C and D.
+A working HTML prototype exists and the client approved its earlier look. The chosen theme — **Sage & Gold** — kept that paper-and-ink calm and the serif/sans/mono split, and replaced the brand accents (sage-green primary + gold). The resolved brand / foundation tokens are below; the handoff (`VastuTheme.kt` / `tokens.json`) is authoritative for the full set, including the nine zone colours.
 
 ```
-Surface     ivory #FFFBF2   paper #FFFFFF
-Ink         ink #2A2118     ink-soft #6B5D4D     ink-faint #A2937F
-Border      line #E8DFCD
-Brand       saffron #E8862B  marigold #F0A93B
-Support     teal #17877D  leaf #4E9A51  kumkum #C9403A  amber #D98C0F
+Surface     paper #F8F6F0   surface #F2EEE4   raised #FFFFFF
+Ink         text #232A22    text-soft #4B5347    text-faint #6B7064
+Border      default #DDDED3   strong #B6BBA8   focus #4C7355
+Brand       primary/sage #7A9E7E   primary-dark #5F8465   secondary/gold #C9A227
+Support     ideal #3E9256   acceptable #8FBE95   suboptimal #D68C18   defect #C43F35
 
 Zones       N  #3E8E7E    NE #2E9CA6    E  #F0A93B    SE #E2582F
             S  #B9453E    SW #8A6A45    W  #4A6FA5    NW #7BA88F
@@ -512,7 +514,7 @@ Buttons     pill, min-height 46px
 Eyebrow     10px mono, uppercase, 0.14em tracking
 ```
 
-**What works and should probably survive:** the warm ivory ground, the paper-and-ink calm, the serif/sans/mono three-voice split, pill buttons, the restrained use of the saffron accent.
+**What works and should probably survive:** the warm paper ground, the paper-and-ink calm, the serif/sans/mono three-voice split, pill buttons, the restrained use of the primary accent.
 
 **What needs to change regardless of theme:** the type sizes are too small for the audience (§6.3); the typefaces do not support five of six languages (§6.1); provenance tags do not exist yet and must be designed (§5.3); the "not assessed" state does not exist yet (§5.4).
 

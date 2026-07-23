@@ -12,7 +12,7 @@ You are not starting from a blank page. Three companion artifacts already exist 
 | # | Input | Location | What it is the source of truth for |
 |---|---|---|---|
 | 1 | **Product PRD** | `D:\Apps\VastuFirst\Documents\VastuFirst-PRD.md` | **What** the app does: the Vastu engine algorithm, rule data, data model, screens, phases, the non-negotiables. The engine spec lives here — do not reinvent it. |
-| 2 | **Design handoff bundle** | `D:\Apps\VastuFirst\Design System\Final Designs\VastuFirst Mobile Apps Implementation-handoff.zip` | **How** it looks: the chosen **Saffron & Ivory** theme, all screens, every component state, the review gate, iOS adaptation rules. |
+| 2 | **Design handoff bundle** | `D:\Apps\VastuFirst\Design System\Final Designs\VastuFirst Mobile Apps Implementation-handoff.zip` | **How** it looks: the chosen **Sage & Gold** theme, all screens, every component state, the review gate, iOS adaptation rules. |
 | 3 | **Design Requirements** | `D:\Apps\VastuFirst\Documents\VastuFirst-Design-Requirements.md` | **Why** the design is the way it is — the constraints the handoff satisfies. Reference only; the handoff supersedes it where they overlap. |
 
 **This document (the Implementation PRD) is the fourth. It sequences the work and defines done.**
@@ -25,7 +25,7 @@ The handoff is a zip. Extract it into the repo (git-ignored) and note these path
 <bundle>/vastufirst-mobile-apps-implementation/
   README.md                                          ← how the bundle is meant to be consumed
   project/
-    VastuFirst - Saffron & Ivory Design System.dc.html   ← THE primary visual reference. Read in full.
+    VastuFirst - Sage & Gold Design System.dc.html       ← THE primary visual reference. Read in full.
     handoff/VastuTheme.kt                            ← the populated Compose theme (see 0.2 — NOT drop-in)
     handoff/tokens.json                              ← the same tokens as data, for tooling
     VastuCompass.dc.html                             ← the North-dial interaction reference
@@ -192,7 +192,7 @@ Covered in §3. Done = §3.5 checklist.
 ### Phase 2 — Android app, guided-grid path → **the 4 August milestone**
 **Goal:** a real person scores their real home on their own phone, fully offline.
 
-**Build these screens** (visual source: the Saffron & Ivory design system; interaction source: `VastuCompass.dc.html` for the dial):
+**Build these screens** (visual source: the Sage & Gold design system; interaction source: `VastuCompass.dc.html` for the dial):
 
 | Screen | Source of truth | Notes |
 |---|---|---|

@@ -14,7 +14,7 @@ engine/        Pure Kotlin/JVM — zone maths, 81-pada grid, 32-pada door, scori
 rules/         Pure Kotlin/JVM — versioned rule JSON dataset + loader + validation.
 shared/        Pure Kotlin/JVM — enums, DTOs, result types.
 data/          Pure Kotlin/JVM — repositories, persistence (SQLDelight), Supabase (later).
-designsystem/  Compose Multiplatform — VastuTheme (Saffron & Ivory), tokens, components.
+designsystem/  Compose Multiplatform — VastuTheme (Sage & Gold), tokens, components.
 app/           Android application — screens, navigation, platform integrations.
 ```
 
@@ -36,5 +36,5 @@ languages → iOS + payments → launch. Full plan in
 
 ## Status
 
-**Phase 0 — Foundations.** Six-module scaffold, the Saffron & Ivory theme, locale-aware
+**Phase 0 — Foundations.** Six-module scaffold, the Sage & Gold theme, locale-aware
 typography ramp, and CI guardrails. Screens and the scoring engine come next.

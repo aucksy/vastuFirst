@@ -1,4 +1,4 @@
-// VastuTheme.kt — commonMain · Saffron & Ivory · the single source of truth.
+// VastuTheme.kt — commonMain · Sage & Gold · the single source of truth.
 // No colour, size, or radius appears anywhere downstream as a raw value.
 // Material3 ColorScheme cannot hold ~38 semantic colours, so this is an OWNED theme
 // exposed through CompositionLocals — not a MaterialTheme override.
@@ -37,19 +37,19 @@ data class VastuColors(
     val success: Color, val warning: Color, val error: Color, val info: Color,
 )
 
-val SaffronIvory = VastuColors(
-    paper = Color(0xFFFFFDF7), surface = Color(0xFFFFFBF0), surfaceRaised = Color(0xFFFFFFFF),
-    primary = Color(0xFFE8862B), primaryDark = Color(0xFFCF6F16), onPrimary = Color(0xFF2A2118),
-    secondary = Color(0xFF17877D), secondaryText = Color(0xFF0F776D),
-    textPrimary = Color(0xFF2A2118), textSecondary = Color(0xFF645444), textTertiary = Color(0xFF6F6152),
-    borderDefault = Color(0xFFDCD9D5), borderStrong = Color(0xFFB6ADA4), borderFocus = Color(0xFF17877D),
+val SageGold = VastuColors(
+    paper = Color(0xFFF8F6F0), surface = Color(0xFFF2EEE4), surfaceRaised = Color(0xFFFFFFFF),
+    primary = Color(0xFF7A9E7E), primaryDark = Color(0xFF5F8465), onPrimary = Color(0xFF232A22),
+    secondary = Color(0xFFC9A227), secondaryText = Color(0xFF6F5410),
+    textPrimary = Color(0xFF232A22), textSecondary = Color(0xFF4B5347), textTertiary = Color(0xFF6B7064),
+    borderDefault = Color(0xFFDDDED3), borderStrong = Color(0xFFB6BBA8), borderFocus = Color(0xFF4C7355),
     zoneN = Color(0xFF2E8B8B), zoneNE = Color(0xFF2F6FBF), zoneE = Color(0xFFE0A21E), zoneSE = Color(0xFFE0662F),
     zoneS = Color(0xFFC83B32), zoneSW = Color(0xFF8A6A45), zoneW = Color(0xFF6A5FB0), zoneNW = Color(0xFF4E9A55), zoneCentre = Color(0xFF9A57B0),
     verdictIdeal = Color(0xFF3E9256), verdictAcceptable = Color(0xFF8FBE95), verdictSuboptimal = Color(0xFFD68C18),
-    verdictDefect = Color(0xFFC8453A), verdictNotAssessed = Color(0xFF948C84),
-    scoreStrong = Color(0xFF3E9256), scoreWorkable = Color(0xFFD68C18), scoreAttention = Color(0xFFC8453A),
-    provenanceText = Color(0xFF17877D), provenanceDeriv = Color(0xFF9A6B33), provenanceMod = Color(0xFF5B7089), provenanceDisp = Color(0xFF7A5AA6),
-    success = Color(0xFF3E9256), warning = Color(0xFFD68C18), error = Color(0xFFC8453A), info = Color(0xFF2F6FBF),
+    verdictDefect = Color(0xFFC43F35), verdictNotAssessed = Color(0xFF948C84),
+    scoreStrong = Color(0xFF3E9256), scoreWorkable = Color(0xFFD68C18), scoreAttention = Color(0xFFC43F35),
+    provenanceText = Color(0xFF3F7D5E), provenanceDeriv = Color(0xFF9A6B33), provenanceMod = Color(0xFF5B7089), provenanceDisp = Color(0xFF7A5AA6),
+    success = Color(0xFF3E9256), warning = Color(0xFFD68C18), error = Color(0xFFC43F35), info = Color(0xFF2F6FBF),
 )
 
 @Immutable
@@ -89,7 +89,7 @@ fun VastuTheme(
     typography: VastuTypography = vastuTypography(),   // locale-aware — see VastuTypography.kt
     content: @Composable () -> Unit,
 ) = CompositionLocalProvider(
-    LocalVastuColors provides SaffronIvory,
+    LocalVastuColors provides SageGold,
     LocalVastuSpacing provides VastuSpacing(),
     LocalVastuShapes provides VastuShapes(),
     LocalVastuElevation provides VastuElevation(),

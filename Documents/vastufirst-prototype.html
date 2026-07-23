@@ -4,27 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>VastuFirst — Prototype</title>
+<!--
+  SUPERSEDED NOTE (23 Jul 2026): the active theme is Sage & Gold (sage-green #7A9E7E + gold #C9A227).
+  This early prototype has been recoloured to Sage & Gold and is kept ONLY as a reference for FLOW,
+  COPY TONE and INTERACTION DESIGN (per the Product PRD). Its rules engine and exact colours are NOT
+  authoritative — the handoff "VastuFirst - Sage & Gold Design System.dc.html", VastuTheme.kt and
+  tokens.json own the real colour/spacing/type values.
+-->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ivory:#FFFBF2; --paper:#FFFFFF;
-  --ink:#2A2118; --ink-soft:#6B5D4D; --ink-faint:#A2937F;
-  --line:#E8DFCD;
-  --saffron:#E8862B; --marigold:#F0A93B;
-  --teal:#17877D; --leaf:#4E9A51; --kumkum:#C9403A; --amber:#D98C0F;
-  --z-NE:#2E9CA6; --z-E:#F0A93B; --z-SE:#E2582F; --z-S:#B9453E;
-  --z-SW:#8A6A45; --z-W:#4A6FA5; --z-NW:#7BA88F; --z-N:#3E8E7E; --z-C:#B99BC9;
+  --ground:#F8F6F0; --paper:#FFFFFF;
+  --ink:#232A22; --ink-soft:#4B5347; --ink-faint:#6B7064;
+  --line:#DDDED3;
+  --primary:#7A9E7E; --marigold:#5F8465;
+  --teal:#4C7355; --leaf:#3E9256; --kumkum:#C43F35; --amber:#D68C18;
+  --z-NE:#2F6FBF; --z-E:#E0A21E; --z-SE:#E0662F; --z-S:#C83B32;
+  --z-SW:#8A6A45; --z-W:#6A5FB0; --z-NW:#4E9A55; --z-N:#2E8B8B; --z-C:#9A57B0;
   --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
   background:
-    radial-gradient(1200px 600px at 15% -10%, #FFF4DE 0%, transparent 60%),
-    radial-gradient(900px 500px at 100% 100%, #EAF6F3 0%, transparent 55%),
-    var(--ivory);
+    radial-gradient(1200px 600px at 15% -10%, #E9EFE8 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, #EAF0E8 0%, transparent 55%),
+    var(--ground);
   color:var(--ink); font-family:"DM Sans",system-ui,-apple-system,sans-serif;
   -webkit-font-smoothing:antialiased; min-height:100vh;
 }
@@ -34,7 +42,7 @@ body{
 .brand{display:flex;align-items:center;gap:11px}
 .mark{width:34px;height:34px;flex:0 0 34px}
 .brand h1{font-family:"Marcellus",serif;font-size:26px;line-height:1}
-.brand h1 span{color:var(--saffron)}
+.brand h1 span{color:var(--primary)}
 .brand .tag{font-size:11.5px;color:var(--ink-faint);letter-spacing:.09em;text-transform:uppercase;margin-top:4px}
 .badge{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);border:1px solid var(--line);background:var(--paper);padding:6px 11px;border-radius:100px}
@@ -59,25 +67,25 @@ body{
 .small{font-size:11.5px;line-height:1.5;color:var(--ink-faint)}
 
 .btn{display:block;width:100%;border:0;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;
-  padding:14px 16px;border-radius:100px;background:var(--ink);color:#FFF8EA;min-height:46px;
+  padding:14px 16px;border-radius:100px;background:var(--ink);color:#EEF2E7;min-height:46px;
   transition:transform .12s ease, filter .12s ease}
 .btn:hover{filter:brightness(1.12)}
 .btn:active{transform:scale(.985)}
-.btn.primary{background:linear-gradient(135deg,var(--saffron),var(--marigold));color:#fff;
-  box-shadow:0 8px 20px -8px rgba(232,134,43,.75)}
+.btn.primary{background:linear-gradient(135deg,var(--primary),var(--marigold));color:#fff;
+  box-shadow:0 8px 20px -8px rgba(122,158,126,.75)}
 .btn.ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
-.btn.soft{background:#FFF7EC;color:var(--ink);border:1px solid var(--line);font-size:13px;padding:11px;min-height:0}
+.btn.soft{background:#EDF1E6;color:var(--ink);border:1px solid var(--line);font-size:13px;padding:11px;min-height:0}
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .chip{font-size:12px;padding:9px 13px;border-radius:100px;border:1px solid var(--line);background:var(--paper);
   color:var(--ink-soft);cursor:pointer;font-family:inherit;min-height:36px;transition:all .14s ease}
-.chip[aria-pressed="true"]{background:var(--ink);color:#FFF8EA;border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#EEF2E7;border-color:var(--ink)}
 
 .opt{width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
   padding:14px;cursor:pointer;font-family:inherit;display:flex;gap:12px;transition:all .14s ease}
-.opt:hover{border-color:var(--saffron);background:#FFFCF6}
-.opt[aria-pressed="true"]{border-color:var(--saffron);background:#FFF7EC;box-shadow:0 0 0 1px var(--saffron)}
+.opt:hover{border-color:var(--primary);background:#F5F7F1}
+.opt[aria-pressed="true"]{border-color:var(--primary);background:#EDF1E6;box-shadow:0 0 0 1px var(--primary)}
 .opt.mute{opacity:.72}
 .opt .t{font-size:13.5px;font-weight:500}
 .opt .s{font-size:11.5px;color:var(--ink-faint);margin-top:2px}
@@ -89,7 +97,7 @@ body{
 .pill{display:inline-flex;font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.08em;
   text-transform:uppercase;padding:3px 8px;border-radius:100px}
 .pill.bad{background:#FBEAE9;color:var(--kumkum)}
-.pill.mid{background:#FDF3E0;color:#9A6407}
+.pill.mid{background:#EDF1E6;color:#6F5410}
 .pill.ok{background:#EAF5EB;color:#357038}
 
 /* ---------- plan ---------- */
@@ -104,10 +112,10 @@ body{
 .knob{position:absolute;width:50px;height:50px;margin:0;padding:0;border:0;background:transparent;
   cursor:grab;touch-action:none;display:grid;place-items:center;border-radius:50%;z-index:3}
 .knob:active{cursor:grabbing}
-.knob .face{width:37px;height:37px;border-radius:50%;background:var(--paper);border:2px solid var(--saffron);
-  display:grid;place-items:center;box-shadow:0 3px 11px -3px rgba(232,134,43,.65);transition:transform .1s}
+.knob .face{width:37px;height:37px;border-radius:50%;background:var(--paper);border:2px solid var(--primary);
+  display:grid;place-items:center;box-shadow:0 3px 11px -3px rgba(122,158,126,.65);transition:transform .1s}
 .knob:active .face,.knob.hot .face{transform:scale(1.1)}
-.knob .nlab{font-family:"DM Mono",monospace;font-size:14px;font-weight:500;color:var(--saffron);line-height:1}
+.knob .nlab{font-family:"DM Mono",monospace;font-size:14px;font-weight:500;color:var(--primary);line-height:1}
 /* pointer sits outside the face and rotates — it is the compass needle */
 .knob .ptr{position:absolute;inset:0;width:50px;height:50px;pointer-events:none}
 
@@ -120,10 +128,10 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px
 input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:100px;background:var(--line)}
 input[type=range]::-moz-range-track{height:5px;border-radius:100px;background:var(--line)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
-  background:var(--paper);border:2px solid var(--saffron);margin-top:-10.5px;
-  box-shadow:0 2px 7px -2px rgba(232,134,43,.8)}
+  background:var(--paper);border:2px solid var(--primary);margin-top:-10.5px;
+  box-shadow:0 2px 7px -2px rgba(122,158,126,.8)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--paper);
-  border:2px solid var(--saffron)}
+  border:2px solid var(--primary)}
 
 .scorebig{font-family:"Marcellus",serif;font-size:60px;line-height:1}
 .scoreunit{font-family:"DM Mono",monospace;font-size:12px;color:var(--ink-faint)}
@@ -140,7 +148,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sheet-card h3{font-family:"Marcellus",serif;font-size:19px;margin:8px 0 6px}
 .sheet-card p{font-size:13px;line-height:1.55;color:var(--ink-soft);margin-bottom:16px}
 .sheet-tag{display:inline-block;font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--saffron);background:#FFF3E2;padding:4px 9px;border-radius:100px}
+  text-transform:uppercase;color:var(--primary);background:#E9EFE8;padding:4px 9px;border-radius:100px}
 
 /* ---------- notes ---------- */
 .notes{position:sticky;top:24px}
@@ -153,10 +161,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .step .n{font-family:"DM Mono",monospace;font-size:10px;width:19px;height:19px;border-radius:50%;
   display:grid;place-items:center;border:1px solid var(--line);flex:0 0 19px}
 .step.on{color:var(--ink);font-weight:500}
-.step.on .n{background:var(--saffron);border-color:var(--saffron);color:#fff}
+.step.on .n{background:var(--primary);border-color:var(--primary);color:#fff}
 .step.done .n{background:#EAF5EB;border-color:#CBE5CC;color:#357038}
 .disclaim{font-size:11px;line-height:1.55;color:var(--ink-faint);border:1px dashed var(--line);
-  border-radius:10px;padding:11px;background:#FFFDF8}
+  border-radius:10px;padding:11px;background:#F8F6F0}
 
 .split{display:flex;gap:8px}
 .split>*{flex:1}
@@ -198,14 +206,14 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
   <div class="mast">
     <div class="brand">
       <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
-        <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#E8DFCD" stroke-width="1.4"/>
-        <line x1="14" y1="2" x2="14" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
-        <line x1="26" y1="2" x2="26" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
-        <line x1="2" y1="14" x2="38" y2="14" stroke="#E8DFCD" stroke-width=".8"/>
-        <line x1="2" y1="26" x2="38" y2="26" stroke="#E8DFCD" stroke-width=".8"/>
-        <rect x="14" y="14" width="12" height="12" fill="#FFF3DC"/>
-        <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#E8862B"/>
-        <circle cx="20" cy="20" r="2.6" fill="#C9962B"/>
+        <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#DDDED3" stroke-width="1.4"/>
+        <line x1="14" y1="2" x2="14" y2="38" stroke="#DDDED3" stroke-width=".8"/>
+        <line x1="26" y1="2" x2="26" y2="38" stroke="#DDDED3" stroke-width=".8"/>
+        <line x1="2" y1="14" x2="38" y2="14" stroke="#DDDED3" stroke-width=".8"/>
+        <line x1="2" y1="26" x2="38" y2="26" stroke="#DDDED3" stroke-width=".8"/>
+        <rect x="14" y="14" width="12" height="12" fill="#EAF0E4"/>
+        <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#7A9E7E"/>
+        <circle cx="20" cy="20" r="2.6" fill="#5F8465"/>
       </svg>
       <div><h1>Vastu<span>First</span></h1><div class="tag">Working prototype</div></div>
     </div>
@@ -382,7 +390,7 @@ function planSVG(live){
       fill="var(--z-${z})" opacity=".10"/>${lbl}`;
   }).join('');
   const rooms=A.rows.map(r=>{
-    const fill=r.v==='bad'?'#FBEAE9':r.v==='ideal'?'#EDF7EE':r.v==='ok'?'#F6FAF6':'#FDF6E9';
+    const fill=r.v==='bad'?'#FBEAE9':r.v==='ideal'?'#EDF7EE':r.v==='ok'?'#F6FAF6':'#EDF1E6';
     const strk=r.v==='bad'?'var(--kumkum)':r.v==='ideal'?'var(--leaf)':r.v==='ok'?'#9CC79E':'var(--amber)';
     const zc=r.v==='bad'?'var(--kumkum)':r.v==='ideal'?'#357038':'var(--ink-faint)';
     const cx=r.x+r.w/2;
@@ -392,8 +400,8 @@ function planSVG(live){
   }).join('');
   const na=S.north*Math.PI/180;
   const staticN = live?'':`<g transform="translate(${(50+RING*Math.sin(na)).toFixed(2)} ${(50-RING*Math.cos(na)).toFixed(2)}) rotate(${S.north})">
-      <circle r="7.4" fill="var(--paper)" stroke="var(--saffron)" stroke-width="1"/>
-      <path d="M0 -4.8 L3 3.3 L0 1.5 L-3 3.3 Z" fill="var(--saffron)"/></g>`;
+      <circle r="7.4" fill="var(--paper)" stroke="var(--primary)" stroke-width="1"/>
+      <path d="M0 -4.8 L3 3.3 L0 1.5 L-3 3.3 Z" fill="var(--primary)"/></g>`;
   return `<svg viewBox="${VB0} ${VB0} ${VBS} ${VBS}" role="img"
     aria-label="Floor plan with Vastu zones. North at ${S.north} degrees. Score ${A.score} of 100.">
     <circle cx="50" cy="50" r="${RING}" fill="none" stroke="var(--line)" stroke-width=".6"/>
@@ -403,7 +411,7 @@ function planSVG(live){
     <rect x="4" y="4" width="92" height="92" rx="2" fill="none" stroke="var(--ink-faint)" stroke-width=".6"/>
     ${rooms}
     <line x1="50" y1="50" x2="${(50+56*Math.sin(na)).toFixed(2)}" y2="${(50-56*Math.cos(na)).toFixed(2)}"
-      stroke="var(--saffron)" stroke-width=".7" stroke-dasharray="2 2"/>
+      stroke="var(--primary)" stroke-width=".7" stroke-dasharray="2 2"/>
     ${staticN}
   </svg>`;
 }
@@ -473,14 +481,14 @@ function bindKnob(){
 function scWelcome(){return `
   <div style="padding-top:24px">
     <svg viewBox="0 0 40 40" style="width:50px;height:50px;margin-bottom:18px" aria-hidden="true">
-      <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#E8DFCD" stroke-width="1.4"/>
-      <line x1="14" y1="2" x2="14" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
-      <line x1="26" y1="2" x2="26" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
-      <line x1="2" y1="14" x2="38" y2="14" stroke="#E8DFCD" stroke-width=".8"/>
-      <line x1="2" y1="26" x2="38" y2="26" stroke="#E8DFCD" stroke-width=".8"/>
-      <rect x="14" y="14" width="12" height="12" fill="#FFF3DC"/>
-      <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#E8862B"/>
-      <circle cx="20" cy="20" r="2.6" fill="#C9962B"/>
+      <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#DDDED3" stroke-width="1.4"/>
+      <line x1="14" y1="2" x2="14" y2="38" stroke="#DDDED3" stroke-width=".8"/>
+      <line x1="26" y1="2" x2="26" y2="38" stroke="#DDDED3" stroke-width=".8"/>
+      <line x1="2" y1="14" x2="38" y2="14" stroke="#DDDED3" stroke-width=".8"/>
+      <line x1="2" y1="26" x2="38" y2="26" stroke="#DDDED3" stroke-width=".8"/>
+      <rect x="14" y="14" width="12" height="12" fill="#EAF0E4"/>
+      <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#7A9E7E"/>
+      <circle cx="20" cy="20" r="2.6" fill="#5F8465"/>
     </svg>
     <div class="eyebrow" style="margin-bottom:9px">No sign-up · No phone number</div>
     <div class="h2">Fix your home's Vastu<br>on paper — before<br>you build.</div>
@@ -534,14 +542,14 @@ function scNorth(){
   <div style="padding-top:16px">
     <div class="eyebrow">Step 2 of 3</div>
     <div class="h2" style="margin:7px 0 8px">Which way is North?</div>
-    <p class="body">Drag the <b style="color:var(--saffron)">N</b> dial, or use the slider. Everything else follows from this.</p>
+    <p class="body">Drag the <b style="color:var(--primary)">N</b> dial, or use the slider. Everything else follows from this.</p>
     <div class="planwrap" id="planwrap">
       <div class="planlayer" id="plansvg">${planSVG(true)}</div>
       <button class="knob" id="knob" role="slider" tabindex="0"
         aria-label="North direction in degrees" aria-valuemin="0" aria-valuemax="359" aria-valuenow="${S.north}"
         style="left:${p.left}%;top:${p.top}%;transform:translate(-50%,-50%)">
         <svg class="ptr" viewBox="0 0 50 50" style="transform:rotate(${S.north}deg)" aria-hidden="true">
-          <path d="M25 0.5 L29.5 8.5 L20.5 8.5 Z" fill="var(--saffron)"/>
+          <path d="M25 0.5 L29.5 8.5 L20.5 8.5 Z" fill="var(--primary)"/>
         </svg>
         <span class="face"><span class="nlab">N</span></span>
       </button>
@@ -549,7 +557,7 @@ function scNorth(){
     <div class="legend">
       <span class="lg"><i style="background:#EDF7EE;border:1.5px solid var(--leaf)"></i>Ideal</span>
       <span class="lg"><i style="background:#F6FAF6;border:1.5px solid #9CC79E"></i>Fine</span>
-      <span class="lg"><i style="background:#FDF6E9;border:1.5px solid var(--amber)"></i>Not ideal</span>
+      <span class="lg"><i style="background:#EDF1E6;border:1.5px solid var(--amber)"></i>Not ideal</span>
       <span class="lg"><i style="background:#FBEAE9;border:1.5px solid var(--kumkum)"></i>Defect</span>
     </div>
     <p class="small" style="margin-top:5px">The letters under each room are its zone — not its colour. Amber means the room works, but sits in a better-elsewhere zone.</p>
@@ -574,8 +582,8 @@ function scNorth(){
       onclick="sheet('Use your phone as a compass','If you are physically at the plot, the real app reads your phone\\'s magnetometer to set North for you — corrected for magnetic declination at your location, with calibration and a live accuracy meter. It is a helper, not the main path: most people plan a home from an architect\\'s PDF at home, where a compass cannot help. Not wired up in the prototype.')">
       <span style="flex:0 0 26px;display:grid;place-items:center">
         <svg viewBox="0 0 24 24" style="width:20px;height:20px" aria-hidden="true">
-          <circle cx="12" cy="12" r="9.4" fill="none" stroke="var(--saffron)" stroke-width="1.5"/>
-          <path d="M15.4 8.6 L10.6 10.6 L8.6 15.4 L13.4 13.4 Z" fill="var(--saffron)"/>
+          <circle cx="12" cy="12" r="9.4" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+          <path d="M15.4 8.6 L10.6 10.6 L8.6 15.4 L13.4 13.4 Z" fill="var(--primary)"/>
         </svg></span>
       <span style="flex:1">
         <span style="display:block;font-weight:500">Use my phone's compass</span>
@@ -588,10 +596,10 @@ function scNorth(){
     <hr class="sep" style="margin:13px 0">
     <button class="opt mute" style="border-style:dashed;align-items:center"
       onclick="sheet('Compass — coming in the final app','Standing at the plot? The final app reads North straight from your phone\u2019s compass — corrected for magnetic declination, with a calibration prompt and a live accuracy meter, so you are not trusting a stray reading. Phones without a magnetometer get a sun-and-shadow fallback. Not wired up in the prototype: drag the dial or use the slider instead.')">
-      <span style="width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#FFF3E2;display:grid;place-items:center">
+      <span style="width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#E9EFE8;display:grid;place-items:center">
         <svg viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="var(--saffron)" stroke-width="1.6"/>
-          <path d="M15.5 8.5 L10.5 10.5 L8.5 15.5 L13.5 13.5 Z" fill="var(--saffron)"/>
+          <circle cx="12" cy="12" r="9" fill="none" stroke="var(--primary)" stroke-width="1.6"/>
+          <path d="M15.5 8.5 L10.5 10.5 L8.5 15.5 L13.5 13.5 Z" fill="var(--primary)"/>
         </svg>
       </span>
       <div><div class="t">Use my phone's compass</div>
@@ -624,7 +632,7 @@ function scScore(){
     <div class="legend">
       <span class="lg"><i style="background:#EDF7EE;border:1.5px solid var(--leaf)"></i>Ideal</span>
       <span class="lg"><i style="background:#F6FAF6;border:1.5px solid #9CC79E"></i>Fine</span>
-      <span class="lg"><i style="background:#FDF6E9;border:1.5px solid var(--amber)"></i>Not ideal</span>
+      <span class="lg"><i style="background:#EDF1E6;border:1.5px solid var(--amber)"></i>Not ideal</span>
       <span class="lg"><i style="background:#FBEAE9;border:1.5px solid var(--kumkum)"></i>Defect</span>
     </div>
     <hr class="sep">
@@ -636,7 +644,7 @@ function scScore(){
       :`<div class="card good"><span class="pill ok">Clear</span>
          <p class="small" style="margin-top:7px">No hard defects at this orientation.</p></div>`}
     </div>
-    ${rest>0?`<div class="card" style="margin-top:8px;background:#FFF9EF;border-style:dashed;text-align:center">
+    ${rest>0?`<div class="card" style="margin-top:8px;background:#F4F7F0;border-style:dashed;text-align:center">
       <div style="font-size:13px;font-weight:500">${rest} more issue${rest>1?'s':''} found</div>
       <p class="small" style="margin-top:3px">See every fix, ranked — what to change, and what to remedy.</p></div>`:''}
     <div style="margin-top:16px" class="split">
@@ -666,10 +674,10 @@ function scReport(){
           <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-faint)">#${i+1}</span></div>
         <div class="h3" style="margin:8px 0 3px">${esc(ROOM_RULES[d.type].label)} — ${d.zone==='C'?'centre (Brahmasthan)':d.zone}</div>
         <p class="small" style="margin-bottom:9px">${esc(ZONE_META[d.zone].deity)}${ZONE_META[d.zone].element!=='—'?' · '+esc(ZONE_META[d.zone].element):''} · ${esc(ZONE_META[d.zone].domain)}</p>
-        <div style="background:#FFF7EC;border-radius:9px;padding:10px;margin-bottom:8px">
-          <div class="eyebrow" style="color:var(--saffron);margin-bottom:4px">Change the layout</div>
+        <div style="background:#EDF1E6;border-radius:9px;padding:10px;margin-bottom:8px">
+          <div class="eyebrow" style="color:var(--primary);margin-bottom:4px">Change the layout</div>
           <p style="font-size:12.5px;line-height:1.5">${esc(FIXES[d.type].move)}</p></div>
-        <div style="background:#F3F8F7;border-radius:9px;padding:10px">
+        <div style="background:#F2F5EE;border-radius:9px;padding:10px">
           <div class="eyebrow" style="color:var(--teal);margin-bottom:5px">If it cannot move — remedies</div>
           ${FIXES[d.type].remedy.map(r=>`<div style="font-size:12px;line-height:1.5;color:var(--ink-soft);display:flex;gap:6px">
             <span style="color:var(--teal)">·</span><span>${esc(r)}</span></div>`).join('')}</div>
@@ -690,7 +698,7 @@ function scReport(){
       <button class="btn ghost" onclick="sheet('Remedy store','The real app sells the exact remedies named in your report — rock salt, pyramids, yantras, plants. Not wired up in the prototype.')">Shop the remedies</button>
     </div>
     <hr class="sep">
-    <div class="card" style="background:#FFFDF8;border-style:dashed">
+    <div class="card" style="background:#F8F6F0;border-style:dashed">
       <p class="small">Architect sent a revised plan? Upload it and watch the score move.</p>
       <button class="btn soft" style="margin-top:9px" onclick="S.plan=PLANS[1];S.north=0;go(2)">Try the revised plan</button>
     </div>
