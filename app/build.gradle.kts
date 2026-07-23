@@ -1,5 +1,6 @@
 // app — Android entry point. Depends on all modules. Android-only dependencies
-// (Razorpay, compass sensor, share intent) live HERE and nowhere else (Impl PRD §2).
+// (SQLDelight Android driver, compass sensor, share intent, later Razorpay) live HERE and
+// nowhere else (Impl PRD §2). The pure modules below stay Android-free.
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -14,12 +15,29 @@ kotlin {
         androidMain.dependencies {
             implementation(project(":designsystem"))
             implementation(project(":shared"))
+            implementation(project(":rules"))
+            implementation(project(":engine"))
+            implementation(project(":data"))
 
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)
+            implementation(compose.material3)          // un-themed primitives only (ripple, text-field internals)
+
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
+
+            implementation(libs.sqldelight.android.driver)
         }
     }
 }

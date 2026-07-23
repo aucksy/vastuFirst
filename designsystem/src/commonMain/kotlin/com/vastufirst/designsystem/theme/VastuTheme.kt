@@ -71,6 +71,41 @@ data class VastuElevation(
     val flat: Dp = 0.dp, val raised: Dp = 2.dp, val overlay: Dp = 8.dp, val modal: Dp = 20.dp,
 )
 
+/** Border widths (design system §04). Every stroke in the app reads one of these. */
+@Immutable
+data class VastuBorders(
+    val hairline: Dp = 0.6.dp,   // fine dividers / svg-like rules
+    val regular: Dp = 1.dp,      // default card & control border
+    val strong: Dp = 1.5.dp,     // selected / emphasised outline
+    val focus: Dp = 2.dp,        // focused field / active selection
+)
+
+/**
+ * Fixed element sizes that are NOT on the 4dp spacing scale but are still tokens, so no screen
+ * or component ever hardcodes a raw `.dp` (review gate). Proportional dimensions (dial diameter,
+ * plan grid) use fillMaxWidth/aspectRatio instead and need no token here.
+ */
+@Immutable
+data class VastuSizes(
+    val minTouch: Dp = 48.dp,        // a11y floor — every interactive target (dial included)
+    val control: Dp = 48.dp,         // standard button / field / chip height
+    val cta: Dp = 52.dp,             // primary full-width call-to-action height
+    val iconXs: Dp = 16.dp,
+    val iconSm: Dp = 20.dp,
+    val icon: Dp = 24.dp,
+    val iconLg: Dp = 30.dp,
+    val tileSm: Dp = 38.dp,          // list-row leading icon tile
+    val tile: Dp = 46.dp,            // method-choice leading icon tile
+    val knobHit: Dp = 54.dp,         // North-dial knob touch area
+    val knob: Dp = 40.dp,            // North-dial knob visual circle
+    val sliderThumb: Dp = 26.dp,
+    val sliderTrack: Dp = 6.dp,
+    val progressTrack: Dp = 8.dp,    // score bar
+    val planThumb: Dp = 60.dp,       // saved-plan thumbnail
+    val dot: Dp = 6.dp,              // provenance / status dot
+    val logo: Dp = 54.dp,            // welcome brand mark
+)
+
 @Immutable
 data class VastuTypography(
     val display: TextStyle, val h1: TextStyle, val h2: TextStyle, val h3: TextStyle,
@@ -82,6 +117,8 @@ val LocalVastuColors     = staticCompositionLocalOf<VastuColors> { error("VastuT
 val LocalVastuSpacing    = staticCompositionLocalOf { VastuSpacing() }
 val LocalVastuShapes     = staticCompositionLocalOf { VastuShapes() }
 val LocalVastuElevation  = staticCompositionLocalOf { VastuElevation() }
+val LocalVastuBorders    = staticCompositionLocalOf { VastuBorders() }
+val LocalVastuSizes      = staticCompositionLocalOf { VastuSizes() }
 val LocalVastuTypography = staticCompositionLocalOf<VastuTypography> { error("VastuTheme missing") }
 
 @Composable
@@ -93,6 +130,8 @@ fun VastuTheme(
     LocalVastuSpacing provides VastuSpacing(),
     LocalVastuShapes provides VastuShapes(),
     LocalVastuElevation provides VastuElevation(),
+    LocalVastuBorders provides VastuBorders(),
+    LocalVastuSizes provides VastuSizes(),
     LocalVastuTypography provides typography,
     content = content,
 )
@@ -102,5 +141,7 @@ object VastuTheme {
     val spacing @Composable get() = LocalVastuSpacing.current
     val shapes  @Composable get() = LocalVastuShapes.current
     val elevation @Composable get() = LocalVastuElevation.current
+    val borders @Composable get() = LocalVastuBorders.current
+    val sizes   @Composable get() = LocalVastuSizes.current
     val type    @Composable get() = LocalVastuTypography.current
 }

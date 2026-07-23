@@ -1,0 +1,41 @@
+-- VastuFirst local store (Product PRD §5 — "plans stored locally by default").
+-- One row per saved home. The full engine INPUT (com.vastufirst.shared.Plan) is kept as
+-- JSON so a plan can be reopened and re-run offline; summary columns (name, score,
+-- rule_set_version, timestamps) drive the saved-plans list without deserialising every row.
+--
+-- rule_set_version is stored on every row (Product PRD §5): if the shipped ruleset later
+-- changes, we can tell a saved plan was scored under an older version and offer a re-run,
+-- rather than silently re-scoring it.
+
+CREATE TABLE planEntity (
+    id                TEXT    NOT NULL PRIMARY KEY,
+    name              TEXT    NOT NULL,
+    intent            TEXT    NOT NULL,   -- Intent enum name
+    propertyType      TEXT    NOT NULL,   -- PropertyType enum name
+    northOffset       INTEGER NOT NULL,   -- 0..359
+    planJson          TEXT    NOT NULL,   -- serialized shared.Plan (the engine input)
+    score             INTEGER NOT NULL,   -- last computed score, for the list view
+    ruleSetVersion    TEXT    NOT NULL,   -- e.g. "2026.07.19-1" (§5, mandatory)
+    unlocked          INTEGER NOT NULL DEFAULT 0,  -- local entitlement (Phase 2 stub; payments = Phase 5)
+    createdAt         INTEGER NOT NULL,
+    updatedAt         INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM planEntity ORDER BY updatedAt DESC;
+
+selectById:
+SELECT * FROM planEntity WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO planEntity(id, name, intent, propertyType, northOffset, planJson, score, ruleSetVersion, unlocked, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+setUnlocked:
+UPDATE planEntity SET unlocked = ?, updatedAt = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM planEntity WHERE id = ?;
+
+deleteAll:
+DELETE FROM planEntity;

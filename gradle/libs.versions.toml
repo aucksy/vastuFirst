@@ -12,6 +12,8 @@ kotlinxCoroutines = "1.9.0"
 koin = "4.0.0"                    # KMP-friendly DI (Impl PRD §2) — applied from Phase 1
 sqldelight = "2.0.2"             # KMP-native DB (Impl PRD §2) — applied from Phase 2
 turbine = "1.2.0"
+androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2 screen graph
+androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
 
 # Android SDK levels (Impl PRD §2): min 26 / target 35.
 compileSdk = "35"
@@ -29,6 +31,12 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+
+# Navigation + lifecycle (Android UI — Phase 2, :app only).
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 
 # DB (declared now, wired in Phase 2).
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
