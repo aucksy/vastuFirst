@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # --- Guardrails first: fail fast before compiling ---
+      - name: Module-boundary check (engine/rules/shared/data are Android-free)
+        run: bash scripts/check-boundaries.sh
+
+      - name: Token check (no raw hex / dp / sp outside the theme package)
+        run: bash scripts/check-tokens.sh
+
+      # --- Compile + test ---
+      - name: Unit tests (pure logic modules)
+        run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
+
+      - name: Build Android app (empty VastuTheme screen)
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: vastufirst-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn

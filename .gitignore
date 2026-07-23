@@ -1,0 +1,31 @@
+# Gradle / build
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# Kotlin / KMP / Native
+.kotlin/
+*.klib
+
+# IDE
+.idea/
+*.iml
+.fleet/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit (CLAUDE.md rule)
+*.keystore
+*.jks
+keystore.properties
+.env
+.env.*
+!.env.example
+
+# Design bundle: keep the zip (source), ignore the extracted working copy (Impl PRD §0.1)
+Design System/Final Designs/vastufirst-mobile-apps-implementation/

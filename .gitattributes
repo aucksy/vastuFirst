@@ -1,0 +1,19 @@
+# Normalise line endings so the Linux CI runner gets LF where it matters.
+* text=auto eol=lf
+
+# Shell scripts MUST be LF or bash on the CI runner fails with $'\r' errors.
+*.sh text eol=lf
+
+# Windows batch files stay CRLF.
+*.bat text eol=crlf
+
+# Binary assets — never normalise.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.zip binary
+*.ttf binary
+*.otf binary
+*.jar binary
+*.keystore binary
+*.jks binary

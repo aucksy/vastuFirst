@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VastuFirst — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ivory:#FFFBF2; --paper:#FFFFFF;
+  --ink:#2A2118; --ink-soft:#6B5D4D; --ink-faint:#A2937F;
+  --line:#E8DFCD;
+  --saffron:#E8862B; --marigold:#F0A93B;
+  --teal:#17877D; --leaf:#4E9A51; --kumkum:#C9403A; --amber:#D98C0F;
+  --z-NE:#2E9CA6; --z-E:#F0A93B; --z-SE:#E2582F; --z-S:#B9453E;
+  --z-SW:#8A6A45; --z-W:#4A6FA5; --z-NW:#7BA88F; --z-N:#3E8E7E; --z-C:#B99BC9;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #FFF4DE 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, #EAF6F3 0%, transparent 55%),
+    var(--ivory);
+  color:var(--ink); font-family:"DM Sans",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 56px}
+
+.mast{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:34px;height:34px;flex:0 0 34px}
+.brand h1{font-family:"Marcellus",serif;font-size:26px;line-height:1}
+.brand h1 span{color:var(--saffron)}
+.brand .tag{font-size:11.5px;color:var(--ink-faint);letter-spacing:.09em;text-transform:uppercase;margin-top:4px}
+.badge{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-soft);border:1px solid var(--line);background:var(--paper);padding:6px 11px;border-radius:100px}
+
+.stage{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:34px;align-items:start}
+
+/* ---------- phone ---------- */
+.phone{width:100%;max-width:360px;height:min(720px,80vh);min-height:540px;
+  background:var(--paper);border:1px solid var(--line);border-radius:32px;
+  box-shadow:0 1px 0 #fff inset, 0 24px 60px -22px rgba(42,33,24,.28), 0 4px 14px -6px rgba(42,33,24,.10);
+  overflow:hidden;position:relative;display:flex;flex-direction:column;margin:0 auto}
+.notch{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+  font-family:"DM Mono",monospace;font-size:9.5px;color:var(--ink-faint)}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 22px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.screen::-webkit-scrollbar{width:5px}
+.screen::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+
+.eyebrow{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.h2{font-family:"Marcellus",serif;font-size:24px;line-height:1.18}
+.h3{font-family:"Marcellus",serif;font-size:16.5px;line-height:1.25}
+.body{font-size:13.5px;line-height:1.55;color:var(--ink-soft)}
+.small{font-size:11.5px;line-height:1.5;color:var(--ink-faint)}
+
+.btn{display:block;width:100%;border:0;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;
+  padding:14px 16px;border-radius:100px;background:var(--ink);color:#FFF8EA;min-height:46px;
+  transition:transform .12s ease, filter .12s ease}
+.btn:hover{filter:brightness(1.12)}
+.btn:active{transform:scale(.985)}
+.btn.primary{background:linear-gradient(135deg,var(--saffron),var(--marigold));color:#fff;
+  box-shadow:0 8px 20px -8px rgba(232,134,43,.75)}
+.btn.ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
+.btn.soft{background:#FFF7EC;color:var(--ink);border:1px solid var(--line);font-size:13px;padding:11px;min-height:0}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:12px;padding:9px 13px;border-radius:100px;border:1px solid var(--line);background:var(--paper);
+  color:var(--ink-soft);cursor:pointer;font-family:inherit;min-height:36px;transition:all .14s ease}
+.chip[aria-pressed="true"]{background:var(--ink);color:#FFF8EA;border-color:var(--ink)}
+
+.opt{width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px;cursor:pointer;font-family:inherit;display:flex;gap:12px;transition:all .14s ease}
+.opt:hover{border-color:var(--saffron);background:#FFFCF6}
+.opt[aria-pressed="true"]{border-color:var(--saffron);background:#FFF7EC;box-shadow:0 0 0 1px var(--saffron)}
+.opt.mute{opacity:.72}
+.opt .t{font-size:13.5px;font-weight:500}
+.opt .s{font-size:11.5px;color:var(--ink-faint);margin-top:2px}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.defect{border-left:3px solid var(--kumkum)}
+.warn{border-left:3px solid var(--amber)}
+.good{border-left:3px solid var(--leaf)}
+.pill{display:inline-flex;font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;padding:3px 8px;border-radius:100px}
+.pill.bad{background:#FBEAE9;color:var(--kumkum)}
+.pill.mid{background:#FDF3E0;color:#9A6407}
+.pill.ok{background:#EAF5EB;color:#357038}
+
+/* ---------- plan ---------- */
+.planwrap{position:relative;width:100%;aspect-ratio:1;user-select:none;-webkit-user-select:none}
+.planlayer{position:absolute;inset:0}
+.planlayer svg{width:100%;height:100%;display:block}
+.roomlabel{font-family:"DM Sans",sans-serif;font-size:4.4px;font-weight:500;fill:var(--ink);text-anchor:middle}
+.roomzone{font-family:"DM Mono",monospace;font-size:3.4px;text-anchor:middle}
+.wedgelabel{font-family:"DM Mono",monospace;font-size:4px;font-weight:500;text-anchor:middle}
+
+/* the knob is NEVER re-rendered — pointer capture stays attached to it */
+.knob{position:absolute;width:50px;height:50px;margin:0;padding:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;display:grid;place-items:center;border-radius:50%;z-index:3}
+.knob:active{cursor:grabbing}
+.knob .face{width:37px;height:37px;border-radius:50%;background:var(--paper);border:2px solid var(--saffron);
+  display:grid;place-items:center;box-shadow:0 3px 11px -3px rgba(232,134,43,.65);transition:transform .1s}
+.knob:active .face,.knob.hot .face{transform:scale(1.1)}
+.knob .nlab{font-family:"DM Mono",monospace;font-size:14px;font-weight:500;color:var(--saffron);line-height:1}
+/* pointer sits outside the face and rotates — it is the compass needle */
+.knob .ptr{position:absolute;inset:0;width:50px;height:50px;pointer-events:none}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:8px}
+.lg{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-soft)}
+.lg i{width:11px;height:11px;border-radius:3px;flex:0 0 11px;display:block}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:100px;background:var(--line)}
+input[type=range]::-moz-range-track{height:5px;border-radius:100px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--paper);border:2px solid var(--saffron);margin-top:-10.5px;
+  box-shadow:0 2px 7px -2px rgba(232,134,43,.8)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--paper);
+  border:2px solid var(--saffron)}
+
+.scorebig{font-family:"Marcellus",serif;font-size:60px;line-height:1}
+.scoreunit{font-family:"DM Mono",monospace;font-size:12px;color:var(--ink-faint)}
+.meter{height:7px;border-radius:100px;background:var(--line);overflow:hidden;margin-top:10px}
+.meter i{display:block;height:100%;border-radius:100px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+
+/* ---------- prototype sheet ---------- */
+.sheet{position:absolute;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(42,33,24,0);transition:background .22s ease;pointer-events:none}
+.sheet.on{background:rgba(42,33,24,.42);pointer-events:auto}
+.sheet-card{width:100%;background:var(--paper);border-radius:22px 22px 32px 32px;padding:20px 18px 18px;
+  transform:translateY(102%);transition:transform .26s cubic-bezier(.2,.9,.25,1);box-shadow:0 -8px 30px -8px rgba(42,33,24,.3)}
+.sheet.on .sheet-card{transform:translateY(0)}
+.sheet-card h3{font-family:"Marcellus",serif;font-size:19px;margin:8px 0 6px}
+.sheet-card p{font-size:13px;line-height:1.55;color:var(--ink-soft);margin-bottom:16px}
+.sheet-tag{display:inline-block;font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--saffron);background:#FFF3E2;padding:4px 9px;border-radius:100px}
+
+/* ---------- notes ---------- */
+.notes{position:sticky;top:24px}
+.note{padding-bottom:16px}
+.note h4{font-family:"Marcellus",serif;font-size:15px;margin-bottom:5px}
+.note p{font-size:13px;line-height:1.6;color:var(--ink-soft)}
+.note p b{color:var(--ink);font-weight:500}
+.steps{display:flex;flex-direction:column;gap:2px;margin-bottom:20px}
+.step{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;color:var(--ink-faint)}
+.step .n{font-family:"DM Mono",monospace;font-size:10px;width:19px;height:19px;border-radius:50%;
+  display:grid;place-items:center;border:1px solid var(--line);flex:0 0 19px}
+.step.on{color:var(--ink);font-weight:500}
+.step.on .n{background:var(--saffron);border-color:var(--saffron);color:#fff}
+.step.done .n{background:#EAF5EB;border-color:#CBE5CC;color:#357038}
+.disclaim{font-size:11px;line-height:1.55;color:var(--ink-faint);border:1px dashed var(--line);
+  border-radius:10px;padding:11px;background:#FFFDF8}
+
+.split{display:flex;gap:8px}
+.split>*{flex:1}
+hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
+.rowline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;font-size:12.5px}
+.rowline+.rowline{border-top:1px dashed var(--line)}
+
+/* ---------- mobile ---------- */
+@media(max-width:880px){
+  .stage{grid-template-columns:1fr;gap:22px}
+  .notes{position:static}
+  .wrap{padding:18px 13px 40px}
+  .brand h1{font-size:22px}
+  .mark{width:30px;height:30px;flex:0 0 30px}
+  .badge{font-size:9.5px;padding:5px 9px}
+  /* The phone frame stops being its own scroll container. On a phone the card
+     fills the screen, so an inner scroll area with overscroll-behavior:contain
+     trapped the gesture and the page below could never be reached. */
+  .phone{height:auto;min-height:0;border-radius:26px}
+  .screen{overflow:visible;overscroll-behavior:auto;-webkit-overflow-scrolling:auto}
+  /* the notice sheet anchors to the viewport, not to a now-tall card */
+  .sheet{position:fixed}
+  .sheet-card{border-radius:22px 22px 0 0;padding-bottom:26px}
+  .h2{font-size:22px}
+  .scorebig{font-size:52px}
+}
+@media(max-width:400px){
+  .wrap{padding:14px 9px 32px}
+  .phone{border-radius:22px}
+  .screen{padding:0 14px 20px}
+  .h2{font-size:21px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#E8DFCD" stroke-width="1.4"/>
+        <line x1="14" y1="2" x2="14" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
+        <line x1="26" y1="2" x2="26" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
+        <line x1="2" y1="14" x2="38" y2="14" stroke="#E8DFCD" stroke-width=".8"/>
+        <line x1="2" y1="26" x2="38" y2="26" stroke="#E8DFCD" stroke-width=".8"/>
+        <rect x="14" y="14" width="12" height="12" fill="#FFF3DC"/>
+        <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#E8862B"/>
+        <circle cx="20" cy="20" r="2.6" fill="#C9962B"/>
+      </svg>
+      <div><h1>Vastu<span>First</span></h1><div class="tag">Working prototype</div></div>
+    </div>
+    <div class="badge">Live rules engine</div>
+  </div>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"><span>9:41</span><span>VastuFirst</span><span>▮▮▮</span></div>
+      <div class="screen" id="screen"></div>
+
+      <!-- prototype notice sheet -->
+      <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+        <div class="sheet-card">
+          <span class="sheet-tag">Not in this prototype</span>
+          <h3 id="shTitle"></h3>
+          <p id="shBody"></p>
+          <button class="btn" onclick="closeSheet()">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="steps" id="steps"></div>
+      <div id="notes"></div>
+      <div class="disclaim" style="margin-top:16px">
+        <b>Prototype scope.</b> The scoring engine, zone mapping and defect logic are real — computed live from room
+        positions. Anything not built will say so when you tap it. Vastu is a traditional practice; outcomes are not
+        scientifically established and nothing here is a guarantee.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   RULES ENGINE — 8-direction Mandala model
+   ideal 100 · ok 70 · neutral 50 · bad 10, weighted per room
+   NOTE: weight is `wt`. Never `w` — that is the room's width.
+========================================================= */
+const ZONE_META={
+  N :{deity:'Kubera', element:'—',    domain:'Wealth, career'},
+  NE:{deity:'Ishana', element:'Water',domain:'Clarity, health'},
+  E :{deity:'Indra',  element:'—',    domain:'Vitality, social'},
+  SE:{deity:'Agni',   element:'Fire', domain:'Energy, finances'},
+  S :{deity:'Yama',   element:'—',    domain:'Rest, fame'},
+  SW:{deity:'Nirriti',element:'Earth',domain:'Stability, bonds'},
+  W :{deity:'Varuna', element:'—',    domain:'Gains, learning'},
+  NW:{deity:'Vayu',   element:'Air',  domain:'Movement, talk'},
+  C :{deity:'Brahma', element:'Space',domain:'Must stay open'}
+};
+const ROOM_RULES={
+  entrance:{label:'Entrance',wt:3,ideal:['N','NE','E'],ok:['W'],bad:['SW','S']},
+  kitchen:{label:'Kitchen',wt:3,ideal:['SE'],ok:['NW'],bad:['NE','SW','C','N']},
+  master:{label:'Master bedroom',wt:3,ideal:['SW'],ok:['S','W'],bad:['NE','SE','C']},
+  bedroom:{label:'Bedroom',wt:1.5,ideal:['W','NW'],ok:['N','E','S'],bad:['SE','C']},
+  pooja:{label:'Pooja room',wt:2,ideal:['NE'],ok:['E','N'],bad:['S','SW','C','NW']},
+  toilet:{label:'Toilet',wt:2.5,ideal:['NW','W'],ok:['S'],bad:['NE','SW','C','E']},
+  living:{label:'Living room',wt:1.5,ideal:['N','E','NE'],ok:['W','NW'],bad:['SW','C']},
+  stair:{label:'Staircase',wt:2,ideal:['S','SW','W'],ok:['NW'],bad:['NE','C']},
+  study:{label:'Study',wt:1,ideal:['W','NW'],ok:['N','E','NE'],bad:['S','SW']}
+};
+const FIXES={
+  toilet:{move:'Shift the toilet to the North-West or West.',
+    why:'The North-East is the water and clarity zone. A drain here is the most-cited defect in classical Vastu.',
+    remedy:['Keep a bowl of rock salt inside; replace it weekly.','Keep the door shut and the exhaust running.','Use white or pale blue tiles.','Place a Vastu pyramid on the outer wall.']},
+  kitchen:{move:'Shift the kitchen to the South-East. If that is impossible, the North-West is the accepted second choice.',
+    why:'The South-East belongs to Agni, the fire element. Cooking is fire work.',
+    remedy:['Position the hob so the cook faces East.','Keep sink and hob apart — fire and water should not touch.','Use warm yellows or oranges on the walls.']},
+  master:{move:'Shift the master bedroom to the South-West.',
+    why:'The South-West is the earth zone — the heaviest, most grounding part of a home.',
+    remedy:['Sleep with the head to the South.','Use earthy browns and beige.','Keep the heaviest wardrobe along the South-West wall.']},
+  pooja:{move:'Shift the pooja room to the North-East.',
+    why:'The North-East is the zone of Ishana — traditionally the most auspicious for prayer.',
+    remedy:['Face the idols East.','Raise the platform about six inches off the floor.','Keep it clear of any shared toilet wall.']},
+  stair:{move:'Move the staircase to the South, South-West or West edge.',
+    why:'The centre is the Brahmasthan and is meant to stay open. Weight in the centre is a classic defect.',
+    remedy:['Keep the space under the stair empty — never a store or toilet.','Light the centre well.','Odd number of steps, per tradition.']},
+  entrance:{move:'Shift the main door to the North, North-East or East.',
+    why:'The entrance is how energy enters. Classical texts weight it more heavily than any other single element.',
+    remedy:['Keep the approach clear and well lit.','Use a brass or copper threshold strip.','Hang a toran at the frame.']},
+  living:{move:'Shift the living room to the North or East.',why:'Social, active space suits the light-facing zones.',
+    remedy:['Seat guests facing East or North.','Keep the heaviest furniture South-West.']},
+  bedroom:{move:'Shift this bedroom to the West or North-West.',why:'These zones traditionally suit rest and study for younger occupants.',
+    remedy:['Head to the South or East while sleeping.','Avoid a mirror facing the bed.']},
+  study:{move:'Shift the study to the West or North-West.',why:'The West is linked with learning and gains.',
+    remedy:['Face East or North while working.','Avoid a beam directly overhead.']}
+};
+const DISPUTES=[
+  {type:'toilet',zone:'S',t:'Traditional 8-zone treats the South as tolerable for a toilet.',s:'The 16-zone school splits the South — SSW acceptable, SSE a defect.'},
+  {type:'kitchen',zone:'NW',t:'Traditional 8-zone accepts the North-West as second choice for a kitchen.',s:'The 16-zone school prefers WNW and warns against NNW.'},
+  {type:'master',zone:'W',t:'Traditional 8-zone allows the West for a master bedroom.',s:'The 16-zone school reads WSW as the education zone and advises against sleeping there.'},
+  {type:'entrance',zone:'SE',t:'Most consultants call a South-East entrance workable with care.',s:'Folk belief often rejects it outright — classical texts do not.'}
+];
+
+const bearing=(px,py)=>(Math.atan2(px-50,-(py-50))*180/Math.PI+360)%360;
+function zoneFor(rm,north){
+  const px=rm.x+rm.w/2, py=rm.y+rm.h/2;
+  if(Math.hypot(px-50,py-50)<11) return 'C';
+  const b=(bearing(px,py)-north+360)%360;
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(b/45)%8];
+}
+function verdict(t,z){
+  const r=ROOM_RULES[t];
+  if(r.ideal.includes(z))return{v:'ideal',pts:100};
+  if(r.ok.includes(z))   return{v:'ok',pts:70};
+  if(r.bad.includes(z))  return{v:'bad',pts:10};
+  return{v:'plain',pts:50};
+}
+function analyse(plan,north){
+  let num=0,den=0;const rows=[];
+  plan.rooms.forEach(rm=>{
+    const zone=zoneFor(rm,north), {v,pts}=verdict(rm.type,zone), wt=ROOM_RULES[rm.type].wt;
+    num+=pts*wt; den+=wt; rows.push({...rm,zone,v,pts,wt});
+  });
+  return{score:Math.round(num/den),rows,
+    defects:rows.filter(r=>r.v==='bad').sort((a,b)=>b.wt-a.wt),
+    weak:rows.filter(r=>r.v==='plain').sort((a,b)=>b.wt-a.wt),
+    good:rows.filter(r=>r.v==='ideal')};
+}
+function bestNorth(p){let b={s:-1,n:0};for(let n=0;n<360;n++){const s=analyse(p,n).score;if(s>b.s)b={s,n};}return b;}
+
+const PLANS=[
+ {id:'p1',name:"Builder's draft — 2BHK",sub:'30×40 ft plot · Gurugram',rooms:[
+   {type:'pooja',label:'Pooja',x:6,y:6,w:28,h:20},
+   {type:'bedroom',label:'Bed 2',x:38,y:6,w:26,h:24},
+   {type:'toilet',label:'Toilet',x:68,y:6,w:26,h:20},
+   {type:'kitchen',label:'Kitchen',x:6,y:34,w:28,h:26},
+   {type:'stair',label:'Stairs',x:42,y:41,w:17,h:18},
+   {type:'living',label:'Living',x:66,y:32,w:28,h:30},
+   {type:'master',label:'Master',x:6,y:66,w:34,h:28},
+   {type:'entrance',label:'Entry',x:66,y:70,w:28,h:24}]},
+ {id:'p2',name:'Architect revision — 2BHK',sub:'Same plot, rooms re-placed',rooms:[
+   {type:'study',label:'Study',x:6,y:6,w:26,h:22},
+   {type:'living',label:'Living',x:36,y:6,w:28,h:26},
+   {type:'pooja',label:'Pooja',x:68,y:6,w:26,h:20},
+   {type:'bedroom',label:'Bed 2',x:6,y:32,w:22,h:26},
+   {type:'stair',label:'Stairs',x:30,y:36,w:14,h:20},
+   {type:'entrance',label:'Entry',x:68,y:32,w:26,h:26},
+   {type:'master',label:'Master',x:6,y:62,w:32,h:32},
+   {type:'toilet',label:'Toilet',x:40,y:74,w:20,h:20},
+   {type:'kitchen',label:'Kitchen',x:66,y:64,w:28,h:30}]}
+];
+
+const S={step:0,lang:'English',intent:null,plan:PLANS[0],north:0,school:'trad'};
+const STEPS=['Welcome','Add your home','Mark North','Your score','Full report'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const scoreColor=s=>s>=75?'var(--leaf)':s>=50?'var(--amber)':'var(--kumkum)';
+
+/* ---------- prototype notice ---------- */
+function sheet(title,body){
+  $('#shTitle').textContent=title; $('#shBody').textContent=body;
+  $('#sheet').classList.add('on');
+}
+function closeSheet(){ $('#sheet').classList.remove('on'); }
+$('#sheet').addEventListener('click',e=>{ if(e.target.id==='sheet') closeSheet(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+/* =========================================================
+   PLAN SVG — plan 4..96 · ring R=66 · viewBox -30..130 (centre = 50,50)
+========================================================= */
+const RING=66, LBL=73, VB0=-30, VBS=160;
+function planSVG(live){
+  const A=analyse(S.plan,S.north);
+  const wedges=['N','NE','E','SE','S','SW','W','NW'].map((z,i)=>{
+    const a0=(i*45-22.5+S.north)*Math.PI/180, a1=(i*45+22.5+S.north)*Math.PI/180, m=(i*45+S.north)*Math.PI/180;
+    /* when live, the draggable knob sits exactly on the N label — so hide it and let the knob be the N */
+    const lbl = (live && z==='N') ? '' :
+      `<text class="wedgelabel" x="${(50+LBL*Math.sin(m)).toFixed(2)}" y="${(50-LBL*Math.cos(m)+1.4).toFixed(2)}"
+        fill="var(--z-${z})">${z}</text>`;
+    return `<path d="M50 50 L${(50+RING*Math.sin(a0)).toFixed(2)} ${(50-RING*Math.cos(a0)).toFixed(2)}
+      A${RING} ${RING} 0 0 1 ${(50+RING*Math.sin(a1)).toFixed(2)} ${(50-RING*Math.cos(a1)).toFixed(2)} Z"
+      fill="var(--z-${z})" opacity=".10"/>${lbl}`;
+  }).join('');
+  const rooms=A.rows.map(r=>{
+    const fill=r.v==='bad'?'#FBEAE9':r.v==='ideal'?'#EDF7EE':r.v==='ok'?'#F6FAF6':'#FDF6E9';
+    const strk=r.v==='bad'?'var(--kumkum)':r.v==='ideal'?'var(--leaf)':r.v==='ok'?'#9CC79E':'var(--amber)';
+    const zc=r.v==='bad'?'var(--kumkum)':r.v==='ideal'?'#357038':'var(--ink-faint)';
+    const cx=r.x+r.w/2;
+    return `<g><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="1.4" fill="${fill}" stroke="${strk}" stroke-width=".7"/>
+      <text class="roomlabel" x="${cx}" y="${r.y+r.h/2-.6}">${esc(r.label)}</text>
+      <text class="roomzone" x="${cx}" y="${r.y+r.h/2+4.4}" fill="${zc}">${r.zone}${r.v==='bad'?' ✕':r.v==='ideal'?' ✓':''}</text></g>`;
+  }).join('');
+  const na=S.north*Math.PI/180;
+  const staticN = live?'':`<g transform="translate(${(50+RING*Math.sin(na)).toFixed(2)} ${(50-RING*Math.cos(na)).toFixed(2)}) rotate(${S.north})">
+      <circle r="7.4" fill="var(--paper)" stroke="var(--saffron)" stroke-width="1"/>
+      <path d="M0 -4.8 L3 3.3 L0 1.5 L-3 3.3 Z" fill="var(--saffron)"/></g>`;
+  return `<svg viewBox="${VB0} ${VB0} ${VBS} ${VBS}" role="img"
+    aria-label="Floor plan with Vastu zones. North at ${S.north} degrees. Score ${A.score} of 100.">
+    <circle cx="50" cy="50" r="${RING}" fill="none" stroke="var(--line)" stroke-width=".6"/>
+    ${wedges}
+    <circle cx="50" cy="50" r="11" fill="var(--z-C)" opacity=".12"/>
+    <circle cx="50" cy="50" r="11" fill="none" stroke="var(--z-C)" stroke-width=".5" stroke-dasharray="1.6 1.6"/>
+    <rect x="4" y="4" width="92" height="92" rx="2" fill="none" stroke="var(--ink-faint)" stroke-width=".6"/>
+    ${rooms}
+    <line x1="50" y1="50" x2="${(50+56*Math.sin(na)).toFixed(2)}" y2="${(50-56*Math.cos(na)).toFixed(2)}"
+      stroke="var(--saffron)" stroke-width=".7" stroke-dasharray="2 2"/>
+    ${staticN}
+  </svg>`;
+}
+
+/* =========================================================
+   NORTH CONTROL
+   The knob is a persistent element. It is positioned by transform
+   and NEVER re-created, so setPointerCapture survives every repaint.
+   That was the bug: replacing innerHTML detached the touch target,
+   so touchmove/touchend stopped reaching the listener.
+========================================================= */
+function knobPos(deg){
+  const rad=deg*Math.PI/180;
+  return{ left:((50+RING*Math.sin(rad))-VB0)/VBS*100, top:((50-RING*Math.cos(rad))-VB0)/VBS*100 };
+}
+function paintPlan(){
+  const layer=document.getElementById('plansvg');
+  if(layer) layer.innerHTML=planSVG(true);
+  const A=analyse(S.plan,S.north);
+  const nv=document.getElementById('northval'); if(nv) nv.textContent=S.north+'°';
+  const sv=document.getElementById('scoreval');
+  if(sv){ sv.textContent=A.score+'/100'; sv.style.color=scoreColor(A.score); }
+  const sl=document.getElementById('northslider'); if(sl && +sl.value!==S.north) sl.value=S.north;
+  const k=document.getElementById('knob');
+  if(k){
+    const p=knobPos(S.north);
+    k.style.left=p.left+'%'; k.style.top=p.top+'%';
+    k.style.transform='translate(-50%,-50%)';
+    k.setAttribute('aria-valuenow',S.north);
+    const f=k.querySelector('.ptr'); if(f) f.style.transform='rotate('+S.north+'deg)';
+  }
+}
+function setNorth(d){ const n=((Math.round(d)%360)+360)%360; if(n!==S.north){ S.north=n; paintPlan(); } }
+
+let rafOn=false, pending=null;
+function angleFromEvent(e){
+  const wrap=document.getElementById('planwrap'); if(!wrap) return null;
+  const b=wrap.getBoundingClientRect();
+  return Math.atan2(e.clientX-(b.left+b.width/2), -(e.clientY-(b.top+b.height/2)))*180/Math.PI;
+}
+function queueAngle(e){
+  pending=e; if(rafOn) return; rafOn=true;
+  requestAnimationFrame(()=>{ rafOn=false; const a=angleFromEvent(pending); if(a!==null) setNorth(a); });
+}
+function bindKnob(){
+  const k=document.getElementById('knob'); if(!k) return;
+  k.addEventListener('pointerdown',e=>{
+    k.setPointerCapture(e.pointerId);   // capture on a node that never gets replaced
+    k.classList.add('hot'); e.preventDefault();
+  });
+  k.addEventListener('pointermove',e=>{
+    if(!k.hasPointerCapture(e.pointerId)) return;
+    queueAngle(e); e.preventDefault();
+  });
+  const end=e=>{ k.classList.remove('hot'); try{k.releasePointerCapture(e.pointerId)}catch(_){} };
+  k.addEventListener('pointerup',end);
+  k.addEventListener('pointercancel',end);
+  k.addEventListener('keydown',e=>{
+    const m={ArrowLeft:-5,ArrowDown:-5,ArrowRight:5,ArrowUp:5,PageUp:45,PageDown:-45,Home:0};
+    if(e.key in m){ setNorth(e.key==='Home'?0:S.north+m[e.key]); e.preventDefault(); }
+  });
+}
+
+/* =========================================================
+   SCREENS
+========================================================= */
+function scWelcome(){return `
+  <div style="padding-top:24px">
+    <svg viewBox="0 0 40 40" style="width:50px;height:50px;margin-bottom:18px" aria-hidden="true">
+      <rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#E8DFCD" stroke-width="1.4"/>
+      <line x1="14" y1="2" x2="14" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
+      <line x1="26" y1="2" x2="26" y2="38" stroke="#E8DFCD" stroke-width=".8"/>
+      <line x1="2" y1="14" x2="38" y2="14" stroke="#E8DFCD" stroke-width=".8"/>
+      <line x1="2" y1="26" x2="38" y2="26" stroke="#E8DFCD" stroke-width=".8"/>
+      <rect x="14" y="14" width="12" height="12" fill="#FFF3DC"/>
+      <path d="M20 5 L23.4 15.6 L20 13.4 L16.6 15.6 Z" fill="#E8862B"/>
+      <circle cx="20" cy="20" r="2.6" fill="#C9962B"/>
+    </svg>
+    <div class="eyebrow" style="margin-bottom:9px">No sign-up · No phone number</div>
+    <div class="h2">Fix your home's Vastu<br>on paper — before<br>you build.</div>
+    <p class="body" style="margin-top:12px">Upload the plan. Mark which way North is. See exactly what to change, while changing it is still free.</p>
+    <hr class="sep">
+    <div class="eyebrow" style="margin-bottom:9px">Language</div>
+    <div class="chips" style="margin-bottom:18px">
+      ${['English','हिन्दी','தமிழ்','తెలుగు','मराठी','বাংলা'].map(l=>
+        `<button class="chip" aria-pressed="${S.lang===l}" onclick="pickLang('${l}')">${l}</button>`).join('')}
+    </div>
+    <div class="eyebrow" style="margin-bottom:9px">What brings you here?</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${[['build','I am building a home','The plan is not final yet'],
+         ['buy','I am buying a home','Deciding between options'],
+         ['own','I already live here','Looking for remedies']].map(([k,t,s])=>
+        `<button class="opt" aria-pressed="${S.intent===k}" onclick="S.intent='${k}';render()">
+           <div><div class="t">${t}</div><div class="s">${s}</div></div></button>`).join('')}
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn primary" ${S.intent?'':'disabled style="opacity:.4;cursor:not-allowed"'} onclick="go(1)">Continue</button>
+    </div>
+  </div>`;}
+
+function scAddHome(){return `
+  <div style="padding-top:16px">
+    <div class="eyebrow">Step 1 of 3</div>
+    <div class="h2" style="margin:7px 0 10px">Add your home</div>
+    <p class="body">Use the plan your builder or architect sent — a photo, a PDF, even a rough sketch.</p>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="opt mute" onclick="sheet('Plan upload','In the real app you photograph or upload your floor plan and it reads the rooms automatically. Reading an arbitrary plan is the hardest part of the build, so it is not wired up here. Use a sample plan below to see the rest of the flow.')">
+        <div><div class="t">Upload a plan</div><div class="s">Photo, PDF or sketch</div></div></button>
+      <button class="opt mute" onclick="sheet('Draw it myself','In the real app you drag room blocks onto a grid to rebuild your layout by hand. Not wired up here — try a sample plan below.')">
+        <div><div class="t">Draw it myself</div><div class="s">Drag room blocks onto a grid</div></div></button>
+    </div>
+    <hr class="sep">
+    <div class="eyebrow" style="margin-bottom:9px">Try a sample plan</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${PLANS.map(p=>`<button class="opt" aria-pressed="${S.plan.id===p.id}"
+        onclick="S.plan=PLANS.find(x=>x.id==='${p.id}');S.north=0;render()">
+        <div><div class="t">${esc(p.name)}</div><div class="s">${esc(p.sub)}</div></div></button>`).join('')}
+    </div>
+    <div style="margin-top:20px" class="split">
+      <button class="btn ghost" onclick="go(0)">Back</button>
+      <button class="btn primary" onclick="go(2)">Next</button>
+    </div>
+  </div>`;}
+
+function scNorth(){
+  const A=analyse(S.plan,S.north), p=knobPos(S.north);
+  return `
+  <div style="padding-top:16px">
+    <div class="eyebrow">Step 2 of 3</div>
+    <div class="h2" style="margin:7px 0 8px">Which way is North?</div>
+    <p class="body">Drag the <b style="color:var(--saffron)">N</b> dial, or use the slider. Everything else follows from this.</p>
+    <div class="planwrap" id="planwrap">
+      <div class="planlayer" id="plansvg">${planSVG(true)}</div>
+      <button class="knob" id="knob" role="slider" tabindex="0"
+        aria-label="North direction in degrees" aria-valuemin="0" aria-valuemax="359" aria-valuenow="${S.north}"
+        style="left:${p.left}%;top:${p.top}%;transform:translate(-50%,-50%)">
+        <svg class="ptr" viewBox="0 0 50 50" style="transform:rotate(${S.north}deg)" aria-hidden="true">
+          <path d="M25 0.5 L29.5 8.5 L20.5 8.5 Z" fill="var(--saffron)"/>
+        </svg>
+        <span class="face"><span class="nlab">N</span></span>
+      </button>
+    </div>
+    <div class="legend">
+      <span class="lg"><i style="background:#EDF7EE;border:1.5px solid var(--leaf)"></i>Ideal</span>
+      <span class="lg"><i style="background:#F6FAF6;border:1.5px solid #9CC79E"></i>Fine</span>
+      <span class="lg"><i style="background:#FDF6E9;border:1.5px solid var(--amber)"></i>Not ideal</span>
+      <span class="lg"><i style="background:#FBEAE9;border:1.5px solid var(--kumkum)"></i>Defect</span>
+    </div>
+    <p class="small" style="margin-top:5px">The letters under each room are its zone — not its colour. Amber means the room works, but sits in a better-elsewhere zone.</p>
+    <input type="range" id="northslider" min="0" max="359" value="${S.north}"
+      aria-label="North angle" oninput="setNorth(+this.value)">
+    <div class="card" style="margin-top:4px">
+      <div class="rowline" style="padding-top:0">
+        <span style="color:var(--ink-faint)">North is at</span>
+        <b id="northval" style="font-family:'DM Mono',monospace">${S.north}°</b></div>
+      <div class="rowline"><span style="color:var(--ink-faint)">Live score</span>
+        <b id="scoreval" style="font-family:'DM Mono',monospace;color:${scoreColor(A.score)}">${A.score}/100</b></div>
+    </div>
+    <div class="split" style="margin-top:8px">
+      ${[['N',0],['E',90],['S',180],['W',270]].map(([l,d])=>
+        `<button class="chip" style="width:100%;justify-content:center;display:flex" onclick="setNorth(${d})">${l}</button>`).join('')}
+    </div>
+    <button class="btn soft" style="margin-top:7px" onclick="setNorth(bestNorth(S.plan).n)">Find the best angle</button>
+
+    <hr class="sep" style="margin:14px 0">
+    <div class="eyebrow" style="margin-bottom:7px">Standing at the plot?</div>
+    <button class="btn soft" style="display:flex;align-items:center;gap:10px;text-align:left"
+      onclick="sheet('Use your phone as a compass','If you are physically at the plot, the real app reads your phone\\'s magnetometer to set North for you — corrected for magnetic declination at your location, with calibration and a live accuracy meter. It is a helper, not the main path: most people plan a home from an architect\\'s PDF at home, where a compass cannot help. Not wired up in the prototype.')">
+      <span style="flex:0 0 26px;display:grid;place-items:center">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.4" fill="none" stroke="var(--saffron)" stroke-width="1.5"/>
+          <path d="M15.4 8.6 L10.6 10.6 L8.6 15.4 L13.4 13.4 Z" fill="var(--saffron)"/>
+        </svg></span>
+      <span style="flex:1">
+        <span style="display:block;font-weight:500">Use my phone's compass</span>
+        <span style="display:block;font-size:11px;color:var(--ink-faint);margin-top:1px">Sets North automatically · in the full app</span>
+      </span>
+      <span class="pill mid" style="flex:0 0 auto">Soon</span>
+    </button>
+
+    <p class="small" style="margin-top:10px">On a real plot the angle is fixed by the land — the slider is here so you can see how much orientation changes.</p>
+    <hr class="sep" style="margin:13px 0">
+    <button class="opt mute" style="border-style:dashed;align-items:center"
+      onclick="sheet('Compass — coming in the final app','Standing at the plot? The final app reads North straight from your phone\u2019s compass — corrected for magnetic declination, with a calibration prompt and a live accuracy meter, so you are not trusting a stray reading. Phones without a magnetometer get a sun-and-shadow fallback. Not wired up in the prototype: drag the dial or use the slider instead.')">
+      <span style="width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#FFF3E2;display:grid;place-items:center">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="var(--saffron)" stroke-width="1.6"/>
+          <path d="M15.5 8.5 L10.5 10.5 L8.5 15.5 L13.5 13.5 Z" fill="var(--saffron)"/>
+        </svg>
+      </span>
+      <div><div class="t">Use my phone's compass</div>
+        <div class="s">Standing at the plot · in the final app</div></div>
+    </button>
+    <div style="margin-top:14px" class="split">
+      <button class="btn ghost" onclick="go(1)">Back</button>
+      <button class="btn primary" onclick="go(3)">Read my home</button>
+    </div>
+  </div>`;
+}
+
+function scScore(){
+  const A=analyse(S.plan,S.north), top=A.defects.slice(0,3);
+  const rest=(A.defects.length-top.length)+A.weak.length;
+  return `
+  <div style="padding-top:16px">
+    <div class="eyebrow">Your result · free</div>
+    <div style="display:flex;align-items:flex-end;gap:8px;margin-top:8px">
+      <div class="scorebig" style="color:${scoreColor(A.score)}">${A.score}</div>
+      <div class="scoreunit" style="padding-bottom:11px">/ 100</div></div>
+    <div class="meter"><i style="width:${A.score}%;background:${scoreColor(A.score)}"></i></div>
+    <p class="body" style="margin-top:10px">${
+      A.score>=75?'Strong. A few refinements left.':
+      A.score>=50?'Workable, with real problems to fix while the plan is still on paper.':
+                  'Several core placements are working against you — worth fixing now.'}</p>
+    <hr class="sep">
+    <div class="eyebrow" style="margin-bottom:9px">Zone map</div>
+    <div class="planwrap"><div class="planlayer">${planSVG(false)}</div></div>
+    <div class="legend">
+      <span class="lg"><i style="background:#EDF7EE;border:1.5px solid var(--leaf)"></i>Ideal</span>
+      <span class="lg"><i style="background:#F6FAF6;border:1.5px solid #9CC79E"></i>Fine</span>
+      <span class="lg"><i style="background:#FDF6E9;border:1.5px solid var(--amber)"></i>Not ideal</span>
+      <span class="lg"><i style="background:#FBEAE9;border:1.5px solid var(--kumkum)"></i>Defect</span>
+    </div>
+    <hr class="sep">
+    <div class="eyebrow" style="margin-bottom:9px">Biggest problems</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${top.length?top.map(d=>`<div class="card defect"><span class="pill bad">Defect</span>
+        <div class="h3" style="margin:7px 0 3px">${esc(ROOM_RULES[d.type].label)} is in the ${d.zone==='C'?'centre':d.zone}</div>
+        <p class="small">${esc(FIXES[d.type].why)}</p></div>`).join('')
+      :`<div class="card good"><span class="pill ok">Clear</span>
+         <p class="small" style="margin-top:7px">No hard defects at this orientation.</p></div>`}
+    </div>
+    ${rest>0?`<div class="card" style="margin-top:8px;background:#FFF9EF;border-style:dashed;text-align:center">
+      <div style="font-size:13px;font-weight:500">${rest} more issue${rest>1?'s':''} found</div>
+      <p class="small" style="margin-top:3px">See every fix, ranked — what to change, and what to remedy.</p></div>`:''}
+    <div style="margin-top:16px" class="split">
+      <button class="btn ghost" onclick="go(2)">Back</button>
+      <button class="btn primary" onclick="go(4)">See the full report</button></div>
+    <p class="small" style="text-align:center;margin-top:9px">One-time · price shown before you pay · no hidden wall</p>
+  </div>`;
+}
+
+function scReport(){
+  const A=analyse(S.plan,S.north), items=[...A.defects,...A.weak];
+  const disputes=DISPUTES.filter(d=>A.rows.some(r=>r.type===d.type&&r.zone===d.zone));
+  return `
+  <div style="padding-top:16px">
+    <div class="eyebrow">Full report</div>
+    <div class="h2" style="margin:7px 0 4px">What to change</div>
+    <p class="body">Ranked by how much each one matters.${S.intent==='build'?' Nothing is built yet — every layout change below is still free to make.':''}</p>
+    <div class="chips" style="margin:14px 0 4px">
+      <button class="chip" aria-pressed="${S.school==='trad'}" onclick="S.school='trad';render()">Traditional 8-zone</button>
+      <button class="chip" aria-pressed="${S.school==='16'}" onclick="S.school='16';render()">16-zone school</button>
+    </div>
+    <p class="small" style="margin-bottom:14px">Schools genuinely differ. Where they do, we show you both rather than pick for you.</p>
+    ${items.length?items.map((d,i)=>`
+      <div class="card ${d.v==='bad'?'defect':'warn'}" style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="pill ${d.v==='bad'?'bad':'mid'}">${d.v==='bad'?'Defect':'Not ideal'}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-faint)">#${i+1}</span></div>
+        <div class="h3" style="margin:8px 0 3px">${esc(ROOM_RULES[d.type].label)} — ${d.zone==='C'?'centre (Brahmasthan)':d.zone}</div>
+        <p class="small" style="margin-bottom:9px">${esc(ZONE_META[d.zone].deity)}${ZONE_META[d.zone].element!=='—'?' · '+esc(ZONE_META[d.zone].element):''} · ${esc(ZONE_META[d.zone].domain)}</p>
+        <div style="background:#FFF7EC;border-radius:9px;padding:10px;margin-bottom:8px">
+          <div class="eyebrow" style="color:var(--saffron);margin-bottom:4px">Change the layout</div>
+          <p style="font-size:12.5px;line-height:1.5">${esc(FIXES[d.type].move)}</p></div>
+        <div style="background:#F3F8F7;border-radius:9px;padding:10px">
+          <div class="eyebrow" style="color:var(--teal);margin-bottom:5px">If it cannot move — remedies</div>
+          ${FIXES[d.type].remedy.map(r=>`<div style="font-size:12px;line-height:1.5;color:var(--ink-soft);display:flex;gap:6px">
+            <span style="color:var(--teal)">·</span><span>${esc(r)}</span></div>`).join('')}</div>
+      </div>`).join('')
+      :`<div class="card good"><p class="small">Nothing to change at this orientation.</p></div>`}
+    ${A.good.length?`<hr class="sep"><div class="eyebrow" style="margin-bottom:9px">Already right — leave alone</div>
+      <div class="card good">${A.good.map(g=>`<div class="rowline"><span>${esc(ROOM_RULES[g.type].label)}</span>
+        <b style="font-family:'DM Mono',monospace;color:var(--leaf)">${g.zone} ✓</b></div>`).join('')}</div>`:''}
+    ${disputes.length?`<hr class="sep"><div class="eyebrow" style="margin-bottom:9px">Where the schools disagree</div>
+      ${disputes.map(d=>`<div class="card" style="border-left:3px solid var(--teal);margin-bottom:8px">
+        <div class="h3" style="margin-bottom:7px">${esc(ROOM_RULES[d.type].label)} in the ${d.zone}</div>
+        <p class="small" style="margin-bottom:5px"><b style="color:var(--ink)">Traditional —</b> ${esc(d.t)}</p>
+        <p class="small"><b style="color:var(--ink)">16-zone —</b> ${esc(d.s)}</p></div>`).join('')}`:''}
+    <hr class="sep">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn ghost" onclick="sheet('Send to your architect','The real app exports this report as a PDF you can WhatsApp or email to your architect — the moment that makes it useful. Not wired up in the prototype.')">Send this to my architect (PDF)</button>
+      <button class="btn ghost" onclick="sheet('Vastu assistant','The real app answers follow-up questions from the same sourced knowledge base behind this report, and cites where each answer came from. Not wired up in the prototype.')">Ask the Vastu assistant</button>
+      <button class="btn ghost" onclick="sheet('Remedy store','The real app sells the exact remedies named in your report — rock salt, pyramids, yantras, plants. Not wired up in the prototype.')">Shop the remedies</button>
+    </div>
+    <hr class="sep">
+    <div class="card" style="background:#FFFDF8;border-style:dashed">
+      <p class="small">Architect sent a revised plan? Upload it and watch the score move.</p>
+      <button class="btn soft" style="margin-top:9px" onclick="S.plan=PLANS[1];S.north=0;go(2)">Try the revised plan</button>
+    </div>
+    <div style="margin-top:14px"><button class="btn ghost" onclick="go(3)">Back to score</button></div>
+    <p class="small" style="margin-top:14px;text-align:center">Vastu is a traditional practice. This is guidance for your own decisions — not a guaranteed outcome.</p>
+  </div>`;
+}
+
+function pickLang(l){
+  S.lang=l; render();
+  if(l!=='English') sheet('Language','The real app ships in Hindi, Tamil, Telugu, Marathi and Bengali — most rivals are English-only. Translations are not loaded in the prototype, so the screens stay in English.');
+}
+
+const NOTES=[
+ ['The first 30 seconds','No signup, no phone number, no OTP. Rival apps gate this and it is their most-hated moment. The one question asked — <b>building, buying, or already living there</b> — is the only one that matters, because it decides whether we can sell layout changes or only remedies.'],
+ ['Where the money is','A home not yet built can be <b>changed</b>. A home already standing can only be <b>remedied</b>. The pre-construction user is worth far more, so the whole funnel should chase people who have not poured concrete yet.'],
+ ['The signature moment','Drag the dial or pull the slider — every room re-zones and the score moves live. The most-downloaded rival puts its own logo over the exact centre point users need; ours stays clean.<br><br>The <b>phone compass is deliberately secondary</b>. Rivals lead with it, but you cannot stand inside a house that has not been built — so it only matters on the day you visit the plot. Marking North on the plan is the primary act.<br><br>Try <b>Find the best angle</b>: it scans all 360° for the peak.'],
+ ['The free hook','A number and a colour map — understood without reading. Then three named problems, and a locked count of the rest. This moment has to feel valuable enough that paying is obvious.'],
+ ['Two kinds of fix','<b>Change the layout</b> — free right now, on paper. <b>Remedies</b> — for what cannot move. Rivals only ever sell the second kind.<br><br>The school toggle shows both readings where Vastu genuinely contradicts itself. No other app admits this.']
+];
+
+function go(n){
+  S.step=n; render();
+  /* desktop scrolls the inner card; mobile scrolls the page, since the card no longer scrolls */
+  if(window.matchMedia('(max-width:880px)').matches){
+    const ph=document.querySelector('.phone');
+    if(ph) ph.scrollIntoView({behavior:'smooth',block:'start'});
+  }else{
+    $('#screen').scrollTop=0;
+  }
+}
+function render(){
+  $('#screen').innerHTML=[scWelcome,scAddHome,scNorth,scScore,scReport][S.step]();
+  $('#steps').innerHTML=STEPS.map((s,i)=>
+    `<div class="step ${i===S.step?'on':''} ${i<S.step?'done':''}">
+      <span class="n">${i<S.step?'✓':i+1}</span><span>${s}</span></div>`).join('');
+  const [h,p]=NOTES[S.step];
+  $('#notes').innerHTML=`<div class="note"><h4>${h}</h4><p>${p}</p></div>`;
+  if(S.step===2) bindKnob();
+}
+Object.assign(window,{S,go,PLANS,render,paintPlan,setNorth,bestNorth,sheet,closeSheet,pickLang});
+render();
+</script>
+</body>
+</html>

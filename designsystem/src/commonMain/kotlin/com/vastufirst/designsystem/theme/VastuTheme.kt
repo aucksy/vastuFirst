@@ -1,0 +1,106 @@
+// VastuTheme.kt — commonMain · Saffron & Ivory · the single source of truth.
+// No colour, size, or radius appears anywhere downstream as a raw value.
+// Material3 ColorScheme cannot hold ~38 semantic colours, so this is an OWNED theme
+// exposed through CompositionLocals — not a MaterialTheme override.
+//
+// Values copied EXACTLY from the design handoff (handoff/VastuTheme.kt + tokens.json).
+// Do not "improve" the palette; it passed a contrast and colourblind audit in the handoff.
+package com.vastufirst.designsystem.theme
+
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Immutable
+data class VastuColors(
+    val paper: Color, val surface: Color, val surfaceRaised: Color,
+    val primary: Color, val primaryDark: Color, val onPrimary: Color,
+    val secondary: Color, val secondaryText: Color,
+    val textPrimary: Color, val textSecondary: Color, val textTertiary: Color,
+    val borderDefault: Color, val borderStrong: Color, val borderFocus: Color,
+    val zoneN: Color, val zoneNE: Color, val zoneE: Color, val zoneSE: Color,
+    val zoneS: Color, val zoneSW: Color, val zoneW: Color, val zoneNW: Color, val zoneCentre: Color,
+    val verdictIdeal: Color, val verdictAcceptable: Color, val verdictSuboptimal: Color,
+    val verdictDefect: Color, val verdictNotAssessed: Color,
+    val scoreStrong: Color, val scoreWorkable: Color, val scoreAttention: Color,
+    val provenanceText: Color, val provenanceDeriv: Color, val provenanceMod: Color, val provenanceDisp: Color,
+    val success: Color, val warning: Color, val error: Color, val info: Color,
+)
+
+val SaffronIvory = VastuColors(
+    paper = Color(0xFFFFFDF7), surface = Color(0xFFFFFBF0), surfaceRaised = Color(0xFFFFFFFF),
+    primary = Color(0xFFE8862B), primaryDark = Color(0xFFCF6F16), onPrimary = Color(0xFF2A2118),
+    secondary = Color(0xFF17877D), secondaryText = Color(0xFF0F776D),
+    textPrimary = Color(0xFF2A2118), textSecondary = Color(0xFF645444), textTertiary = Color(0xFF6F6152),
+    borderDefault = Color(0xFFDCD9D5), borderStrong = Color(0xFFB6ADA4), borderFocus = Color(0xFF17877D),
+    zoneN = Color(0xFF2E8B8B), zoneNE = Color(0xFF2F6FBF), zoneE = Color(0xFFE0A21E), zoneSE = Color(0xFFE0662F),
+    zoneS = Color(0xFFC83B32), zoneSW = Color(0xFF8A6A45), zoneW = Color(0xFF6A5FB0), zoneNW = Color(0xFF4E9A55), zoneCentre = Color(0xFF9A57B0),
+    verdictIdeal = Color(0xFF3E9256), verdictAcceptable = Color(0xFF8FBE95), verdictSuboptimal = Color(0xFFD68C18),
+    verdictDefect = Color(0xFFC8453A), verdictNotAssessed = Color(0xFF948C84),
+    scoreStrong = Color(0xFF3E9256), scoreWorkable = Color(0xFFD68C18), scoreAttention = Color(0xFFC8453A),
+    provenanceText = Color(0xFF17877D), provenanceDeriv = Color(0xFF9A6B33), provenanceMod = Color(0xFF5B7089), provenanceDisp = Color(0xFF7A5AA6),
+    success = Color(0xFF3E9256), warning = Color(0xFFD68C18), error = Color(0xFFC8453A), info = Color(0xFF2F6FBF),
+)
+
+@Immutable
+data class VastuSpacing(
+    val s1: Dp = 4.dp, val s2: Dp = 8.dp, val s3: Dp = 12.dp, val s4: Dp = 16.dp,
+    val s6: Dp = 24.dp, val s8: Dp = 32.dp, val s10: Dp = 40.dp, val s12: Dp = 48.dp, val s16: Dp = 64.dp,
+)
+
+@Immutable
+data class VastuShapes(
+    val sm: CornerBasedShape = RoundedCornerShape(8.dp),
+    val md: CornerBasedShape = RoundedCornerShape(14.dp),
+    val lg: CornerBasedShape = RoundedCornerShape(22.dp),
+    val full: CornerBasedShape = RoundedCornerShape(percent = 50),
+)
+
+@Immutable
+data class VastuElevation(
+    val flat: Dp = 0.dp, val raised: Dp = 2.dp, val overlay: Dp = 8.dp, val modal: Dp = 20.dp,
+)
+
+@Immutable
+data class VastuTypography(
+    val display: TextStyle, val h1: TextStyle, val h2: TextStyle, val h3: TextStyle,
+    val bodyLg: TextStyle, val body: TextStyle, val bodySm: TextStyle,
+    val label: TextStyle, val caption: TextStyle, val mono: TextStyle,
+)
+
+val LocalVastuColors     = staticCompositionLocalOf<VastuColors> { error("VastuTheme missing") }
+val LocalVastuSpacing    = staticCompositionLocalOf { VastuSpacing() }
+val LocalVastuShapes     = staticCompositionLocalOf { VastuShapes() }
+val LocalVastuElevation  = staticCompositionLocalOf { VastuElevation() }
+val LocalVastuTypography = staticCompositionLocalOf<VastuTypography> { error("VastuTheme missing") }
+
+@Composable
+fun VastuTheme(
+    typography: VastuTypography = vastuTypography(),   // locale-aware — see VastuTypography.kt
+    content: @Composable () -> Unit,
+) = CompositionLocalProvider(
+    LocalVastuColors provides SaffronIvory,
+    LocalVastuSpacing provides VastuSpacing(),
+    LocalVastuShapes provides VastuShapes(),
+    LocalVastuElevation provides VastuElevation(),
+    LocalVastuTypography provides typography,
+    content = content,
+)
+
+object VastuTheme {
+    val colors  @Composable get() = LocalVastuColors.current
+    val spacing @Composable get() = LocalVastuSpacing.current
+    val shapes  @Composable get() = LocalVastuShapes.current
+    val elevation @Composable get() = LocalVastuElevation.current
+    val type    @Composable get() = LocalVastuTypography.current
+}
