@@ -86,8 +86,11 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
             if (abs(dy) < EDGE_EPS && abs(dx) > EDGE_EPS) horiz.merge(round(a.y), abs(dx)) { x, y -> x + y }
             if (abs(dx) < EDGE_EPS && abs(dy) > EDGE_EPS) vert.merge(round(a.x), abs(dy)) { x, y -> x + y }
         }
-        val hThreshold = cfg.modalEdgeFraction * bbox.width
-        val vThreshold = cfg.modalEdgeFraction * bbox.height
+        // A relative tolerance on the modal-edge threshold: a footprint whose wing is *exactly*
+        // 40% of the side (edge exactly at the 60% threshold) must resolve deterministically, not
+        // flip between "cut" and "irregular" on floating-point noise. Borderline ⇒ qualifies.
+        val hThreshold = cfg.modalEdgeFraction * bbox.width - bbox.width * MODAL_EPS
+        val vThreshold = cfg.modalEdgeFraction * bbox.height - bbox.height * MODAL_EPS
         val north = horiz.filterValues { it >= hThreshold }.keys.maxOrNull() ?: return null
         val south = horiz.filterValues { it >= hThreshold }.keys.minOrNull() ?: return null
         val east = vert.filterValues { it >= vThreshold }.keys.maxOrNull() ?: return null
@@ -109,5 +112,6 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
     companion object {
         private const val EDGE_EPS = 1e-6
         private const val MIN_ZONE_SHARE = 0.01   // ignore per-zone slivers below 1% of reference
+        private const val MODAL_EPS = 1e-9        // relative slack so an exact-threshold edge is stable
     }
 }

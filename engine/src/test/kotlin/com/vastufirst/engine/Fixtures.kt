@@ -79,12 +79,13 @@ internal object Fixtures {
         )
     }
 
-    /** An L-shaped footprint (missing the NE corner). Its area centroid (~44.3, 44.3) differs from
-     *  its bbox centre (50, 50), so a rotation test on it distinguishes the two origins. */
+    /** An L-shaped footprint (missing the NE corner). Its area centroid (~44.8, 44.8) differs from
+     *  its bbox centre (50, 50), so a rotation test on it distinguishes the two origins. The notch
+     *  is kept clear of the 60%-of-side modal-edge threshold so the reference rectangle is stable. */
     fun lShaped(): Plan {
         val outline = listOf(
-            Point(0.0, 0.0), Point(100.0, 0.0), Point(100.0, 60.0),
-            Point(60.0, 60.0), Point(60.0, 100.0), Point(0.0, 100.0),
+            Point(0.0, 0.0), Point(100.0, 0.0), Point(100.0, 62.0),
+            Point(62.0, 62.0), Point(62.0, 100.0), Point(0.0, 100.0),
         )
         val rooms = listOf(
             Room("master", RoomType.MASTER_BEDROOM, rect(6.0, 6.0, 30.0, 26.0)),   // SW
