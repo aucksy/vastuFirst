@@ -108,6 +108,7 @@ data class VastuSizes(
 
 @Immutable
 data class VastuTypography(
+    val scoreDisplay: TextStyle,   // the oversized Marcellus score number (Score screen)
     val display: TextStyle, val h1: TextStyle, val h2: TextStyle, val h3: TextStyle,
     val bodyLg: TextStyle, val body: TextStyle, val bodySm: TextStyle,
     val label: TextStyle, val caption: TextStyle, val mono: TextStyle,

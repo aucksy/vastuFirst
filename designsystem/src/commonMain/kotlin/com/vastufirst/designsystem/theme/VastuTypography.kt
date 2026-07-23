@@ -80,6 +80,7 @@ private fun familiesFor(script: VastuScript): ScriptFamilies =
     }
 
 private val LatinLineHeights = mapOf(
+    "score" to 1.00f,
     "display" to 1.20f, "h1" to 1.25f, "h2" to 1.30f, "h3" to 1.35f,
     "bodyLg" to 1.50f, "body" to 1.55f, "bodySm" to 1.50f,
     "label" to 1.20f, "caption" to 1.40f, "mono" to 1.20f,
@@ -123,6 +124,7 @@ private fun style(
 fun vastuTypography(script: VastuScript = VastuScript.LATIN): VastuTypography {
     val f = familiesFor(script)
     return VastuTypography(
+        scoreDisplay = style(56f, "score", f.display, FontWeight.Normal, script),
         display = style(34f, "display", f.display, FontWeight.Normal, script),
         h1      = style(28f, "h1", f.display, FontWeight.Normal, script),
         h2      = style(22f, "h2", f.display, FontWeight.Normal, script),  // Marcellus is single-weight
