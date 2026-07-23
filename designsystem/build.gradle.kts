@@ -17,8 +17,16 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)
+            implementation(compose.components.resources)   // bundled OFL fonts (Marcellus / DM Sans / DM Mono)
         }
     }
+}
+
+// Bundled fonts live in commonMain/composeResources/font and generate a typed `Res` accessor.
+// (Default generateResClass = auto emits the class because the module has resources + the
+// components.resources dependency.)
+compose.resources {
+    packageOfResClass = "com.vastufirst.designsystem.generated.resources"
 }
 
 android {

@@ -1,21 +1,20 @@
 // VastuTypography.kt — the locale-aware type ramp (Impl PRD §3.4; ramp from the handoff).
 //
 // The ramp (from handoff/VastuTheme.kt comments):
-//   display  Marcellus 34/1.2 (400)   h1 28/1.25   h2 22/1.3   h3 18/1.35
+//   display  Marcellus 34/1.2 (400)   h1 28/1.25   h2 22/1.3    h3 18/1.35
 //   body-lg  DM Sans 18/1.5           body 16/1.55 body-sm 14/1.5
-//   label    DM Sans 14/1.2 (600)     caption DM Mono 12/1.4   mono 16/1.2 (500)
+//   label    DM Sans 14/1.2 (600)     caption DM Mono 12/1.4    mono 16/1.2 (500)
 //
-// Six languages, five non-Latin scripts. Marcellus/DM Sans/DM Mono cover Latin only;
-// per-script Noto faces are selected by locale so a Hindi or Tamil screen keeps the same
-// weight and rhythm as English. INDIC SCRIPTS GET LINE-HEIGHT 1.5–1.6, not the Latin 1.2 —
-// baked in per script. Never pin a text container's height (Product PRD §10, handoff L10n).
+// FONTS (Block A-2): the Latin faces are now BUNDLED as OFL files in
+// commonMain/composeResources/font — Marcellus (single weight), DM Sans (400/500/700),
+// DM Mono (400/500). Two ramp weights are reconciled to the cuts we actually ship:
+//   - Marcellus is single-weight, so h2/h3 use its natural 400 (never faux-bold a serif).
+//   - DM Sans ships no 600, so `label` uses Medium (500) — the nearest real cut.
 //
-// FONT SEAM (Phase 0): the exact typefaces are free OFL faces (Marcellus, DM Sans, DM Mono,
-// Noto Sans Devanagari/Tamil/Telugu/Bengali). Until the .ttf files are bundled via Compose
-// Resources, the families below resolve to the platform defaults — which on Android already
-// fall back to Noto for Indic scripts, so the ramp renders in Hindi/Tamil WITHOUT clipping
-// (the Phase 0 bar). Swapping in the bundled faces is a change to `familiesFor()` only;
-// no call site changes.
+// Six languages, five non-Latin scripts. Indic scripts still fall back to the platform Noto
+// faces (which render Hindi/Tamil without clipping) until their Noto files are bundled in
+// Phase 4 localisation; INDIC LINE-HEIGHT stays 1.5–1.6, never the Latin 1.2. Never pin a
+// text container's height (Product PRD §10, handoff L10n).
 package com.vastufirst.designsystem.theme
 
 import androidx.compose.runtime.Composable
@@ -25,6 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import com.vastufirst.designsystem.generated.resources.Res
+import com.vastufirst.designsystem.generated.resources.dm_mono_medium
+import com.vastufirst.designsystem.generated.resources.dm_mono_regular
+import com.vastufirst.designsystem.generated.resources.dm_sans_bold
+import com.vastufirst.designsystem.generated.resources.dm_sans_medium
+import com.vastufirst.designsystem.generated.resources.dm_sans_regular
+import com.vastufirst.designsystem.generated.resources.marcellus_regular
+import org.jetbrains.compose.resources.Font
 
 /** The scripts VastuFirst ships (Product PRD §6.1 / §7.5). */
 enum class VastuScript { LATIN, DEVANAGARI, TAMIL, TELUGU, BENGALI }
@@ -39,23 +46,31 @@ fun scriptForLanguage(languageTag: String): VastuScript =
         else -> VastuScript.LATIN               // English + fallback
     }
 
-/** The three font roles. Bundled OFL faces slot in here per script (see FONT SEAM above). */
+/** The three font roles. Bundled OFL faces slot in here per script (see FONTS note above). */
 private data class ScriptFamilies(
     val display: FontFamily,   // Marcellus (serif) / Noto Serif <script>
     val sans: FontFamily,      // DM Sans / Noto Sans <script>
     val mono: FontFamily,      // DM Mono / Noto Sans Mono
 )
 
+@Composable
 private fun familiesFor(script: VastuScript): ScriptFamilies =
     when (script) {
-        // Latin: Marcellus (serif) for display, DM Sans for text, DM Mono for numerals.
+        // Latin: bundled Marcellus (display), DM Sans (text), DM Mono (numerals/labels).
         VastuScript.LATIN -> ScriptFamilies(
-            display = FontFamily.Serif,
-            sans = FontFamily.SansSerif,
-            mono = FontFamily.Monospace,
+            display = FontFamily(Font(Res.font.marcellus_regular, FontWeight.Normal)),
+            sans = FontFamily(
+                Font(Res.font.dm_sans_regular, FontWeight.Normal),
+                Font(Res.font.dm_sans_medium, FontWeight.Medium),
+                Font(Res.font.dm_sans_bold, FontWeight.Bold),
+            ),
+            mono = FontFamily(
+                Font(Res.font.dm_mono_regular, FontWeight.Normal),
+                Font(Res.font.dm_mono_medium, FontWeight.Medium),
+            ),
         )
-        // Indic: system fallback resolves to the installed Noto <script> faces today;
-        // the bundled Noto faces replace these once the .ttf files are added.
+        // Indic: platform fallback resolves to the installed Noto <script> faces today;
+        // bundled Noto faces replace these in Phase 4 localisation.
         VastuScript.DEVANAGARI, VastuScript.TAMIL, VastuScript.TELUGU, VastuScript.BENGALI ->
             ScriptFamilies(
                 display = FontFamily.Serif,
@@ -110,12 +125,12 @@ fun vastuTypography(script: VastuScript = VastuScript.LATIN): VastuTypography {
     return VastuTypography(
         display = style(34f, "display", f.display, FontWeight.Normal, script),
         h1      = style(28f, "h1", f.display, FontWeight.Normal, script),
-        h2      = style(22f, "h2", f.display, FontWeight.Medium, script),
-        h3      = style(18f, "h3", f.display, FontWeight.Medium, script),
+        h2      = style(22f, "h2", f.display, FontWeight.Normal, script),  // Marcellus is single-weight
+        h3      = style(18f, "h3", f.display, FontWeight.Normal, script),
         bodyLg  = style(18f, "bodyLg", f.sans, FontWeight.Normal, script),
         body    = style(16f, "body", f.sans, FontWeight.Normal, script),
         bodySm  = style(14f, "bodySm", f.sans, FontWeight.Normal, script),
-        label   = style(14f, "label", f.sans, FontWeight.SemiBold, script),
+        label   = style(14f, "label", f.sans, FontWeight.Medium, script),  // DM Sans ships no 600
         caption = style(12f, "caption", f.mono, FontWeight.Normal, script),
         mono    = style(16f, "mono", f.mono, FontWeight.Medium, script),
     )
