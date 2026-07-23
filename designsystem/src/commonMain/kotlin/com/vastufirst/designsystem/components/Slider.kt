@@ -84,7 +84,7 @@ fun VastuSlider(
                 .matchParentSize()
                 .then(
                     if (cd != null) Modifier.semantics {
-                        contentDescription = cd
+                        this.contentDescription = cd
                         progressBarRangeInfo = ProgressBarRangeInfo(value, valueRange)
                     } else Modifier
                 )
