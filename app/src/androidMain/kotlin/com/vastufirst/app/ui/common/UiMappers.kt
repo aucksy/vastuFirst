@@ -54,6 +54,12 @@ fun RoomType.label(): String = when (this) {
     RoomType.COURTYARD -> "Courtyard"; RoomType.UTILITY -> "Utility"; RoomType.CORRIDOR -> "Corridor"
 }
 
+/** A defect card title: "<Room> — <Zone>" when it belongs to a room, else "<Zone> — structure". */
+fun defectTitle(defect: com.vastufirst.shared.Defect, rooms: List<com.vastufirst.shared.RoomResult>): String {
+    val label = defect.roomId?.let { id -> rooms.firstOrNull { it.roomId == id }?.type?.label() }
+    return if (label != null) "$label — ${defect.zone.short()}" else "${defect.zone.short()} — structure"
+}
+
 private fun VastuVerdict.glyph(): String = when (this) {
     VastuVerdict.IDEAL, VastuVerdict.ACCEPTABLE -> "✓"
     VastuVerdict.SUBOPTIMAL -> "△"

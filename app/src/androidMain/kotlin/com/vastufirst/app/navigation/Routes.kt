@@ -14,5 +14,6 @@ object Routes {
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
     const val SCORE = "score"
+    const val UNLOCK = "unlock"
     const val REPORT = "report"
 }

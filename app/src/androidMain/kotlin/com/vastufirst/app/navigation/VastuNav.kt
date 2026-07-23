@@ -1,12 +1,7 @@
 package com.vastufirst.app.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -16,11 +11,13 @@ import androidx.navigation.navigation
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.grid.GuidedGridScreen
 import com.vastufirst.app.ui.home.HomeScreen
+import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
+import com.vastufirst.app.ui.report.ReportScreen
+import com.vastufirst.app.ui.score.ScoreScreen
+import com.vastufirst.app.ui.unlock.UnlockScreen
 import com.vastufirst.app.ui.welcome.WelcomeScreen
-import com.vastufirst.designsystem.components.VText
-import com.vastufirst.designsystem.theme.VastuTheme
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -61,9 +58,29 @@ fun VastuNavHost() {
                 val vm = sharedVm(nav, entry)
                 GuidedGridScreen(vm = vm, onNext = { nav.navigate(Routes.MARK_NORTH) })
             }
-            composable(Routes.MARK_NORTH) { Stub("Mark North — coming next") }
-            composable(Routes.SCORE) { Stub("Score — coming next") }
-            composable(Routes.REPORT) { Stub("Full report — coming next") }
+            composable(Routes.MARK_NORTH) { entry ->
+                val vm = sharedVm(nav, entry)
+                MarkNorthScreen(
+                    vm = vm,
+                    onRead = { vm.save(); nav.navigate(Routes.SCORE) },
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            composable(Routes.SCORE) { entry ->
+                val vm = sharedVm(nav, entry)
+                ScoreScreen(vm = vm, onUnlock = { nav.navigate(Routes.UNLOCK) })
+            }
+            composable(Routes.UNLOCK) { entry ->
+                val vm = sharedVm(nav, entry)
+                UnlockScreen(onUnlocked = {
+                    vm.unlock()
+                    nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true } }
+                })
+            }
+            composable(Routes.REPORT) { entry ->
+                val vm = sharedVm(nav, entry)
+                ReportScreen(vm = vm)
+            }
         }
     }
 }
@@ -73,13 +90,4 @@ fun VastuNavHost() {
 private fun sharedVm(nav: NavHostController, entry: NavBackStackEntry): NewPlanViewModel {
     val parent = remember(entry) { nav.getBackStackEntry(Routes.NEWPLAN_GRAPH) }
     return koinViewModel(viewModelStoreOwner = parent)
-}
-
-@Composable
-private fun Stub(text: String) {
-    Column(
-        modifier = Modifier.fillMaxSize().background(VastuTheme.colors.paper).padding(VastuTheme.spacing.s6),
-    ) {
-        VText(text = text, style = VastuTheme.type.h3, color = VastuTheme.colors.textPrimary)
-    }
 }
