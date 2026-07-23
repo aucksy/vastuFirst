@@ -130,6 +130,11 @@ class NewPlanViewModel(
         viewModelScope.launch { repo.setUnlocked(id, true, now()) }
     }
 
+    /** Reopen a saved home by id (from the saved-plans list). */
+    fun loadById(id: String) {
+        viewModelScope.launch { repo.getPlan(id)?.let(::load) }
+    }
+
     /** Load an existing saved home into the flow (reopen from the saved-plans list). */
     fun load(saved: SavedPlan) {
         planId = saved.id

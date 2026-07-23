@@ -74,6 +74,8 @@ class PlanRepository(
 
     suspend fun delete(id: String): Unit = withContext(io) { queries.deleteById(id) }
 
+    suspend fun deleteAll(): Unit = withContext(io) { queries.deleteAll() }
+
     private fun toDomain(e: PlanEntity): SavedPlan = SavedPlan(
         id = e.id,
         name = e.name,

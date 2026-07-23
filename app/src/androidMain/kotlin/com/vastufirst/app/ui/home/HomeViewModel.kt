@@ -7,9 +7,12 @@ import com.vastufirst.data.SavedPlan
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** Backs the saved-plans list. Reads the DB as a cold flow; the UI reacts to changes. */
-class HomeViewModel(repo: PlanRepository) : ViewModel() {
+class HomeViewModel(private val repo: PlanRepository) : ViewModel() {
     val plans: StateFlow<List<SavedPlan>> = repo.observePlans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun deleteAll() { viewModelScope.launch { repo.deleteAll() } }
 }

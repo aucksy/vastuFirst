@@ -1,122 +1,95 @@
 package com.vastufirst.app.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.data.SavedPlan
+import com.vastufirst.designsystem.components.BrandMark
+import com.vastufirst.designsystem.components.EmptyState
+import com.vastufirst.designsystem.components.VText
+import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuListRow
+import com.vastufirst.designsystem.components.scoreBandColor
+import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import org.koin.androidx.compose.koinViewModel
 
 /**
- * Saved-plans start screen (Product PRD §6 · design system screen 11). Block A-1 wires the
- * real data path — Koin → ViewModel → DB flow → tokens; the polished list, empty-state art,
- * and side-by-side comparison land in Block D.
+ * Saved-plans home (§6 · design system screen 11). Add a home, or reopen a saved one (which
+ * re-runs the engine from the stored plan). Two plans sit side by side so a BUYING user can
+ * compare — the promised comparison, honestly (Impl PRD §8.4).
  */
 @Composable
 fun HomeScreen(
     onAddHome: () -> Unit,
+    onOpenPlan: (String) -> Unit,
+    onSettings: () -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
+    val colors = VastuTheme.colors
     val plans by viewModel.plans.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(VastuTheme.colors.paper)
-            .padding(VastuTheme.spacing.s6),
+        modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
-        androidx.compose.foundation.text.BasicText(
-            text = "Your plans",
-            style = VastuTheme.type.h1.copy(color = VastuTheme.colors.textPrimary),
-        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                BrandMark(size = VastuTheme.sizes.tile)
+                VText("Your plans", style = VastuTheme.type.h2, color = colors.textPrimary)
+            }
+            Box(
+                Modifier.size(VastuTheme.sizes.control).clip(CircleShape).background(colors.surface).clickableTap(onClick = onSettings),
+                contentAlignment = Alignment.Center,
+            ) { VText("⚙", style = VastuTheme.type.h3, color = colors.textSecondary) }
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
         if (plans.isEmpty()) {
-            EmptyPlans(modifier = Modifier.fillMaxWidth().weight(1f))
+            EmptyState(
+                title = "No plans yet",
+                body = "Add your first floor plan to see its Vastu score.",
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            )
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
-            ) {
-                items(plans, key = { it.id }) { PlanRow(it) }
+            LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                items(plans, key = { it.id }) { plan -> PlanRow(plan, onOpenPlan) }
             }
         }
 
-        PrimaryButton(text = "Add your home", onClick = onAddHome)
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        VastuButton("Add a home", onClick = onAddHome)
     }
 }
 
 @Composable
-private fun EmptyPlans(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        androidx.compose.foundation.text.BasicText(
-            text = "No plans yet",
-            style = VastuTheme.type.h3.copy(color = VastuTheme.colors.textPrimary, textAlign = TextAlign.Center),
-        )
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        androidx.compose.foundation.text.BasicText(
-            text = "Add your first floor plan to see its Vastu score.",
-            style = VastuTheme.type.body.copy(color = VastuTheme.colors.textSecondary, textAlign = TextAlign.Center),
-        )
-    }
-}
-
-@Composable
-private fun PlanRow(plan: SavedPlan) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(VastuTheme.shapes.md)
-            .background(VastuTheme.colors.surfaceRaised)
-            .padding(VastuTheme.spacing.s4),
-    ) {
-        androidx.compose.foundation.text.BasicText(
-            text = plan.name,
-            style = VastuTheme.type.h3.copy(color = VastuTheme.colors.textPrimary),
-        )
-        androidx.compose.foundation.text.BasicText(
-            text = "Score ${plan.score} / 100",
-            style = VastuTheme.type.bodySm.copy(color = VastuTheme.colors.textSecondary),
-        )
-    }
-}
-
-/** Temporary token-styled CTA for the A-1 smoke test; replaced by the real VastuButton in Block B. */
-@Composable
-private fun PrimaryButton(text: String, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(VastuTheme.sizes.cta)
-            .clip(VastuTheme.shapes.full)
-            .background(VastuTheme.colors.primary)
-            .clickable(onClick = onClick)
-            .wrapContentHeight(),
-        contentAlignment = Alignment.Center,
-    ) {
-        androidx.compose.foundation.text.BasicText(
-            text = text,
-            style = VastuTheme.type.label.copy(color = VastuTheme.colors.onPrimary),
-        )
-    }
+private fun PlanRow(plan: SavedPlan, onOpen: (String) -> Unit) {
+    val colors = VastuTheme.colors
+    VastuListRow(
+        title = plan.name,
+        subtitle = "${plan.intent.name.lowercase().replaceFirstChar { it.uppercase() }} · updated recently",
+        modifier = Modifier.clickableTap(onClick = { onOpen(plan.id) }),
+        trailing = {
+            Column(horizontalAlignment = Alignment.End) {
+                VText("${plan.score}", style = VastuTheme.type.h2, color = scoreBandColor(plan.score))
+                VText("/100", style = VastuTheme.type.caption, color = colors.textTertiary)
+            }
+        },
+    )
 }

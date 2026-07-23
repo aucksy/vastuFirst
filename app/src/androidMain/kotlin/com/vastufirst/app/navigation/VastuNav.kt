@@ -1,21 +1,26 @@
 package com.vastufirst.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.grid.GuidedGridScreen
 import com.vastufirst.app.ui.home.HomeScreen
+import com.vastufirst.app.ui.legal.LegalScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportScreen
 import com.vastufirst.app.ui.score.ScoreScreen
+import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
 import com.vastufirst.app.ui.welcome.WelcomeScreen
 import org.koin.androidx.compose.koinViewModel
@@ -30,7 +35,18 @@ fun VastuNavHost() {
     NavHost(navController = nav, startDestination = Routes.HOME) {
 
         composable(Routes.HOME) {
-            HomeScreen(onAddHome = { nav.navigate(Routes.NEWPLAN_GRAPH) })
+            HomeScreen(
+                onAddHome = { nav.navigate(Routes.NEWPLAN_GRAPH) },
+                onOpenPlan = { id -> nav.navigate("${Routes.SCORE}?planId=$id") },
+                onSettings = { nav.navigate(Routes.SETTINGS) },
+            )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onLegal = { nav.navigate(Routes.LEGAL) }, onBack = { nav.popBackStack() })
+        }
+        composable(Routes.LEGAL) {
+            LegalScreen(onBack = { nav.popBackStack() })
         }
 
         navigation(startDestination = Routes.WELCOME, route = Routes.NEWPLAN_GRAPH) {
@@ -66,8 +82,13 @@ fun VastuNavHost() {
                     onBack = { nav.popBackStack() },
                 )
             }
-            composable(Routes.SCORE) { entry ->
+            composable(
+                route = "${Routes.SCORE}?planId={planId}",
+                arguments = listOf(navArgument("planId") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { entry ->
                 val vm = sharedVm(nav, entry)
+                val planId = entry.arguments?.getString("planId")
+                LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
                 ScoreScreen(vm = vm, onUnlock = { nav.navigate(Routes.UNLOCK) })
             }
             composable(Routes.UNLOCK) { entry ->
