@@ -25,7 +25,7 @@ class StrategySwapTest {
     )
 
     @Test
-    fun `CENTROID lands in the notch (BRAHMASTHAN); LARGEST_OVERLAP lands on the corner (NE)`() {
+    fun `CENTROID lands in the notch (BRAHMASTHAN) while LARGEST_OVERLAP lands on the corner (NE)`() {
         val config = RuleSetLoader.loadDefault().config
         val grid = PadaGrid(Rect(0.0, 0.0, 100.0, 100.0), config.gridSize)
         val overlaps = grid.overlaps(uShape)
