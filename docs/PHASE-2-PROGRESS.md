@@ -60,3 +60,10 @@ tags and disputes → save it and reopen it later.
 
 ## Next
 Client testing (Phase 3) + the owner decisions above. iOS/payments/AI/languages are Phases 4–5.
+
+**Phase 3 audit round 1 done (v0.2.1)** — see `docs/PHASE-3-AUDIT.md`. Fixed the no-scary-error
+gap (INSUFFICIENT no longer shows red 0/100), the save-timing score bug, blank reopen zone map,
+ruleSetVersion re-score, intent-blind verdict, unlock "Pay" wording, and the a11y/review-gate items
+(48dp targets, icon-button labels, slider semantics, button clip-safety, delete-all confirm).
+Deferred + surfaced to owner: L-shaped/notched homes are scored as a filled rectangle (needs an
+outline-capture step) — candidate #1 for the refinement plan.

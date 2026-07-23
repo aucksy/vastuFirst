@@ -17,6 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import com.vastufirst.designsystem.theme.VastuTheme
 
 /**
@@ -29,7 +33,9 @@ fun VastuSlider(
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
 ) {
+    val cd = contentDescription
     val start = valueRange.start
     val end = valueRange.endInclusive
     val fraction = ((value - start) / (end - start)).coerceIn(0f, 1f)
@@ -76,6 +82,12 @@ fun VastuSlider(
         Box(
             Modifier
                 .matchParentSize()
+                .then(
+                    if (cd != null) Modifier.semantics {
+                        contentDescription = cd
+                        progressBarRangeInfo = ProgressBarRangeInfo(value, valueRange)
+                    } else Modifier
+                )
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragStart = { o -> setFromX(o.x, size.width) },

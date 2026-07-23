@@ -89,7 +89,11 @@ fun VastuNavHost() {
                 val vm = sharedVm(nav, entry)
                 val planId = entry.arguments?.getString("planId")
                 LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
-                ScoreScreen(vm = vm, onUnlock = { nav.navigate(Routes.UNLOCK) })
+                ScoreScreen(
+                    vm = vm,
+                    onUnlock = { nav.navigate(Routes.UNLOCK) },
+                    onFix = { nav.navigate(Routes.GUIDED_GRID) },
+                )
             }
             composable(Routes.UNLOCK) { entry ->
                 val vm = sharedVm(nav, entry)

@@ -73,6 +73,7 @@ fun MarkNorthScreen(
             value = vm.north.toFloat(),
             onValueChange = { vm.updateNorth(it.roundToInt()) },
             valueRange = 0f..359f,
+            contentDescription = "North bearing, ${vm.north} degrees",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 

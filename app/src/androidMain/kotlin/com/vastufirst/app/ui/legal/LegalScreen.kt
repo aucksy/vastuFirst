@@ -16,11 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuProvenance
-import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 
 /**
@@ -35,7 +35,7 @@ fun LegalScreen(onBack: () -> Unit) {
         modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            VText("‹", style = VastuTheme.type.h2, color = colors.textSecondary, modifier = Modifier.clickableTap(onClick = onBack))
+            IconTapButton("‹", contentDescription = "Back", onClick = onBack)
             VText("Honesty & sources", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))

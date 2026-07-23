@@ -11,12 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.window.Dialog
+import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
+import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import org.koin.androidx.compose.koinViewModel
@@ -34,11 +42,12 @@ fun SettingsScreen(
     homeViewModel: HomeViewModel = koinViewModel(),
 ) {
     val colors = VastuTheme.colors
+    var showConfirm by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            VText("‹", style = VastuTheme.type.h2, color = colors.textSecondary, modifier = Modifier.clickableTap(onClick = onBack))
+            IconTapButton("‹", contentDescription = "Back", onClick = onBack)
             VText("Settings", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -56,10 +65,44 @@ fun SettingsScreen(
         Group {
             RowItem("Your plans stay on this device", trailing = "On", trailingColor = colors.verdictIdeal)
             RowItem("Honesty & sources", trailing = "›", onClick = onLegal)
-            RowItem("Delete all my data", trailing = "›", labelColor = colors.error, trailingColor = colors.error, onClick = { homeViewModel.deleteAll() })
+            RowItem("Delete all my data", trailing = "›", labelColor = colors.error, trailingColor = colors.error, onClick = { showConfirm = true })
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         VText("No account. No phone number. Nothing leaves your phone unless you export it.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
+    }
+
+    if (showConfirm) {
+        Dialog(onDismissRequest = { showConfirm = false }) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VastuTheme.shapes.lg)
+                    .background(colors.paper)
+                    .padding(VastuTheme.spacing.s6),
+                verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+            ) {
+                VText("Delete all your data?", style = VastuTheme.type.h3, color = colors.textPrimary)
+                VText(
+                    "This permanently removes every saved home from this device. It can't be undone.",
+                    style = VastuTheme.type.body, color = colors.textSecondary,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                    VastuButton(
+                        "Keep my data",
+                        onClick = { showConfirm = false },
+                        large = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                    VastuButton(
+                        "Delete everything",
+                        onClick = { homeViewModel.deleteAll(); showConfirm = false },
+                        style = VastuButtonStyle.SECONDARY,
+                        large = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
     }
 }
 

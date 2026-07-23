@@ -19,6 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.data.SavedPlan
 import com.vastufirst.designsystem.components.BrandMark
@@ -55,7 +58,9 @@ fun HomeScreen(
                 VText("Your plans", style = VastuTheme.type.h2, color = colors.textPrimary)
             }
             Box(
-                Modifier.size(VastuTheme.sizes.control).clip(CircleShape).background(colors.surface).clickableTap(onClick = onSettings),
+                Modifier.size(VastuTheme.sizes.control).clip(CircleShape).background(colors.surface)
+                    .clickableTap(role = Role.Button, onClick = onSettings)
+                    .semantics(mergeDescendants = true) { contentDescription = "Settings" },
                 contentAlignment = Alignment.Center,
             ) { VText("⚙", style = VastuTheme.type.h3, color = colors.textSecondary) }
         }

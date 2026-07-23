@@ -21,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.vastufirst.designsystem.foundation.clickableTap
@@ -108,22 +110,23 @@ fun DegreeStepper(
         horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
     ) {
         VText(text = "$degrees°", style = VastuTheme.type.mono, color = colors.textPrimary)
-        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
-            StepBtn("▲") { onChange(((degrees + 1) % 360 + 360) % 360) }
-            StepBtn("▼") { onChange(((degrees - 1) % 360 + 360) % 360) }
+        Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
+            StepBtn("▼", "Turn North one degree anticlockwise") { onChange(((degrees - 1) % 360 + 360) % 360) }
+            StepBtn("▲", "Turn North one degree clockwise") { onChange(((degrees + 1) % 360 + 360) % 360) }
         }
     }
 }
 
 @Composable
-private fun StepBtn(glyph: String, onClick: () -> Unit) {
+private fun StepBtn(glyph: String, description: String, onClick: () -> Unit) {
     val colors = VastuTheme.colors
     Box(
         modifier = Modifier
-            .size(VastuTheme.sizes.iconLg)
+            .size(VastuTheme.sizes.minTouch)
             .clip(VastuTheme.shapes.sm)
             .background(colors.primary.copy(alpha = 0.14f))
-            .clickableTap(role = Role.Button, onClick = onClick),
+            .clickableTap(role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         VText(text = glyph, style = VastuTheme.type.bodySm, color = colors.primary)

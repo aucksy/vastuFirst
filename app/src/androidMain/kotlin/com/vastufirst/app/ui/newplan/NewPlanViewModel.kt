@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** The guided grid is [GRID]×[GRID] cells; rooms and the door are placed on it. */
 const val GRID = 8
@@ -105,23 +107,29 @@ class NewPlanViewModel(
     // --- persistence ---
 
     fun save() {
-        val plan = buildPlan() ?: return
-        val a = _analysis.value
+        // Assign the id BEFORE building, so the serialized Plan.id matches its row id.
         val id = planId ?: "plan-${now()}"
         planId = id
-        val saved = SavedPlan(
-            id = id,
-            name = defaultName(),
-            intent = plan.intent,
-            propertyType = plan.propertyType,
-            plan = plan,
-            score = a?.score ?: 0,
-            ruleSetVersion = engine.ruleSetVersion(),
-            unlocked = unlocked,
-            createdAt = now(),
-            updatedAt = now(),
-        )
-        viewModelScope.launch { repo.save(saved, now()) }
+        val plan = buildPlan() ?: return
+        viewModelScope.launch {
+            // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
+            // null): guarantees the stored list-view score equals what a reopen recomputes.
+            val a = withContext(Dispatchers.Default) { engine.analyze(plan) }
+            _analysis.value = a
+            val saved = SavedPlan(
+                id = id,
+                name = defaultName(),
+                intent = plan.intent,
+                propertyType = plan.propertyType,
+                plan = plan,
+                score = a.score,
+                ruleSetVersion = engine.ruleSetVersion(),
+                unlocked = unlocked,
+                createdAt = now(),
+                updatedAt = now(),
+            )
+            repo.save(saved, now())
+        }
     }
 
     fun unlock() {
@@ -142,10 +150,21 @@ class NewPlanViewModel(
         propertyType = saved.propertyType
         north = saved.plan.northOffsetDegrees
         unlocked = saved.unlocked
-        // The engine re-runs from the stored Plan; the grid editor is not repopulated in Phase 2.
+        // Rebuild the grid draft from the stored Plan so the zone map (and any further edit) has
+        // its rooms/door back — the inverse of buildPlan(), exact for the integer grid geometry.
+        rooms = gridRoomsFromPlan(saved.plan)
+        door = gridDoorFromPlan(saved.plan, rooms)
         viewModelScope.launch {
             val result = withContext(Dispatchers.Default) { engine.analyze(saved.plan) }
             _analysis.value = result
+            // If the ruleset changed since this home was saved, refresh the stored score + version
+            // instead of leaving the list showing a number computed under an older ruleset (§5).
+            if (saved.ruleSetVersion != engine.ruleSetVersion()) {
+                repo.save(
+                    saved.copy(score = result.score, ruleSetVersion = engine.ruleSetVersion(), updatedAt = now()),
+                    now(),
+                )
+            }
         }
     }
 
@@ -197,6 +216,51 @@ class NewPlanViewModel(
             levels = listOf(Level(index = 0, outline = outline, rooms = engineRooms, doors = doors)),
             northOffsetDegrees = north,
         )
+    }
+
+    /** Rebuild the placed grid rooms from a stored engine [Plan] — the exact inverse of the
+     *  buildPlan() flip (engine y = GRID − row), so a reopened home shows its rooms again. */
+    private fun gridRoomsFromPlan(plan: Plan): List<GridRoom> {
+        val level = plan.levels.firstOrNull() ?: return emptyList()
+        return level.rooms.mapNotNull { room ->
+            if (room.polygon.isEmpty()) return@mapNotNull null
+            val xs = room.polygon.map { it.x }
+            val ys = room.polygon.map { it.y }
+            val x0 = xs.min(); val x1 = xs.max()
+            val yTop = ys.max(); val yBottom = ys.min()
+            GridRoom(
+                id = room.id,
+                type = room.type,
+                col = x0.roundToInt(),
+                row = (GRID - yTop).roundToInt(),
+                w = (x1 - x0).roundToInt().coerceAtLeast(1),
+                h = (yTop - yBottom).roundToInt().coerceAtLeast(1),
+            )
+        }
+    }
+
+    /** Rebuild the placed door from a stored [Plan], classifying its wall from the footprint edges. */
+    private fun gridDoorFromPlan(plan: Plan, rooms: List<GridRoom>): GridDoor? {
+        val level = plan.levels.firstOrNull() ?: return null
+        val d = level.doors.firstOrNull { it.isMainEntrance } ?: return null
+        if (rooms.isEmpty()) return null
+        val minC = rooms.minOf { it.col }
+        val maxC = rooms.maxOf { it.col + it.w }
+        val minR = rooms.minOf { it.row }
+        val maxR = rooms.maxOf { it.row + it.h }
+        val yNorth = (GRID - minR).toDouble()   // ey(minR)
+        val ySouth = (GRID - maxR).toDouble()   // ey(maxR)
+        val xEast = maxC.toDouble()
+        val xWest = minC.toDouble()
+        val eps = 1e-6
+        val horizontal = abs(d.wallStart.y - d.wallEnd.y) < eps
+        return when {
+            horizontal && abs(d.centre.y - yNorth) < eps -> GridDoor(DoorSide.N, (d.centre.x - 0.5).roundToInt())
+            horizontal && abs(d.centre.y - ySouth) < eps -> GridDoor(DoorSide.S, (d.centre.x - 0.5).roundToInt())
+            abs(d.centre.x - xEast) < eps -> GridDoor(DoorSide.E, ((GRID - d.centre.y) - 0.5).roundToInt())
+            abs(d.centre.x - xWest) < eps -> GridDoor(DoorSide.W, ((GRID - d.centre.y) - 0.5).roundToInt())
+            else -> null
+        }
     }
 
     /** The door centre + wall span on the footprint perimeter for the chosen side/cell. */

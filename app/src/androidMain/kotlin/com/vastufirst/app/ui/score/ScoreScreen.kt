@@ -18,10 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.toVastu
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.designsystem.components.GuidanceState
+import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.ScoreDisplay
 import com.vastufirst.designsystem.components.SectionLabel
@@ -32,21 +35,57 @@ import com.vastufirst.designsystem.components.VerdictPill
 import com.vastufirst.designsystem.components.ZoneMap
 import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.shared.Analysis
+import com.vastufirst.shared.AnalysisQuality
+import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Verdict
 
 /**
  * Score — free tier (§6.4). The big band-coloured number, the zone map, the top 3 problems, and
  * an HONEST count of the rest (no hidden wall). A tappable note explains the number is the app's
  * own construction, not traditional (§4.5.3).
+ *
+ * Never a scary dead-end ([[vastufirst-no-error-states]]): while the engine computes we show a
+ * calm loading line (never a bare red 0), and if a plan is too sparse to read we guide the user
+ * back to add rooms instead of showing "0 / 100".
  */
 @Composable
 fun ScoreScreen(
     vm: NewPlanViewModel,
     onUnlock: () -> Unit,
+    onFix: () -> Unit,
 ) {
     val colors = VastuTheme.colors
     val analysis by vm.analysis.collectAsStateWithLifecycle()
     val a = analysis
+
+    when {
+        a == null -> Box(
+            Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+            contentAlignment = Alignment.Center,
+        ) {
+            LoadingState("Reading your home…")
+        }
+
+        a.quality == AnalysisQuality.INSUFFICIENT -> Box(
+            Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+            contentAlignment = Alignment.Center,
+        ) {
+            GuidanceState(
+                title = "Let's finish your plan",
+                body = a.notes.firstOrNull()?.message
+                    ?: "Add a few rooms and your front door, and we'll read your home.",
+                action = { VastuButton("Add my rooms", onClick = onFix) },
+            )
+        }
+
+        else -> ScoreContent(vm, a, onUnlock)
+    }
+}
+
+@Composable
+private fun ScoreContent(vm: NewPlanViewModel, a: Analysis, onUnlock: () -> Unit) {
+    val colors = VastuTheme.colors
     val model = buildZoneMapModel(vm.rooms, a, vm.north)
 
     Column(
@@ -54,21 +93,27 @@ fun ScoreScreen(
     ) {
         SectionLabel("Your result · free")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        ScoreDisplay(score = a?.score ?: 0)
+        ScoreDisplay(score = a.score)
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        VText(verdictLine(a?.score ?: 0), style = VastuTheme.type.body, color = colors.textSecondary)
+        VText(verdictLine(a.score, vm.intent), style = VastuTheme.type.body, color = colors.textSecondary)
+
+        // The engine's honest, plain-language caveats (unusual shape, tilt, long-and-narrow).
+        if (a.notes.isNotEmpty()) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            NotesStrip(a.notes)
+        }
 
         Divider()
         SectionLabel("Zone map")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            ZoneMap(model = model, modifier = Modifier.fillMaxWidth(0.62f), showLabels = false, contentDescription = "Your plan with Vastu zones, North at ${vm.north} degrees, score ${a?.score ?: 0} of 100.")
+            ZoneMap(model = model, modifier = Modifier.fillMaxWidth(0.62f), showLabels = false, contentDescription = "Your plan with Vastu zones, North at ${vm.north} degrees, score ${a.score} of 100.")
         }
 
         Divider()
         SectionLabel("Biggest problems")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        val defects = a?.defects.orEmpty()
+        val defects = a.defects
         val top = defects.take(3)
         if (top.isEmpty()) {
             VText("No major defects found — a strong start.", style = VastuTheme.type.body, color = colors.textSecondary)
@@ -81,9 +126,9 @@ fun ScoreScreen(
                             ProvenanceTag(d.provenance.toVastu())
                         }
                         Spacer(Modifier.height(VastuTheme.spacing.s2))
-                        VText(defectTitle(d, a?.roomResults.orEmpty()), style = VastuTheme.type.h3, color = colors.textPrimary)
+                        VText(defectTitle(d, a.roomResults), style = VastuTheme.type.h3, color = colors.textPrimary)
                         Spacer(Modifier.height(VastuTheme.spacing.s1))
-                        VText(d.explanation, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+                        VText(d.explanation, style = VastuTheme.type.bodySm, color = colors.textSecondary)
                     }
                 }
             }
@@ -95,21 +140,25 @@ fun ScoreScreen(
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
-            "The 0–100 score is VastuFirst's own way of summarising the report — it is not part of the tradition.",
+            "The 0–100 score is VastuFirst's own way of summarising the report — it is not part of the tradition. Vastu is traditional guidance for your own decisions, not a guaranteed outcome.",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }
 
-private fun verdictLine(score: Int): String = when {
-    score >= 75 -> "Strong — a few refinements left."
-    score >= 50 -> "Workable, with real problems to fix while it is still on paper."
-    else -> "Several core placements work against you — worth fixing now, on paper."
+private fun verdictLine(score: Int, intent: Intent?): String {
+    val living = intent == Intent.LIVING
+    return when {
+        score >= 75 -> "Strong — a few refinements left."
+        score >= 50 && living -> "Workable, with real problems worth addressing — remedies can help."
+        score >= 50 -> "Workable, with real problems to fix while it is still on paper."
+        living -> "Several core placements work against the tradition — remedies can help."
+        else -> "Several core placements work against you — worth fixing now, on paper."
+    }
 }
 
-private fun remainingIssueCount(a: com.vastufirst.shared.Analysis?): Int {
-    if (a == null) return 0
+private fun remainingIssueCount(a: Analysis): Int {
     val moreDefects = (a.defects.size - 3).coerceAtLeast(0)
     val suboptimal = a.roomResults.count { it.verdict == Verdict.SUBOPTIMAL }
     return moreDefects + suboptimal
@@ -139,8 +188,8 @@ private fun UnlockCard(remaining: Int, onUnlock: () -> Unit) {
                 VText("ONE-TIME", style = VastuTheme.type.caption, color = colors.textTertiary)
             }
         }
-        VastuButton("Unlock full report & remedies · ₹699", onClick = onUnlock)
-        VText("One-time · price shown before you pay · no hidden wall", style = VastuTheme.type.caption, color = colors.textTertiary)
+        VastuButton("See the full report", onClick = onUnlock)
+        VText("Preview build: no payment is taken yet — the report unlocks on this device.", style = VastuTheme.type.caption, color = colors.textTertiary)
     }
 }
 

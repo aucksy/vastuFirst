@@ -49,7 +49,7 @@ fun UnlockScreen(onUnlocked: () -> Unit) {
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s8))
-        VastuButton("Pay ₹699 & unlock", onClick = onUnlocked)
+        VastuButton("Unlock on this device", onClick = onUnlocked)
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
             "Preview build: no payment is taken yet — the report unlocks on this device. Real checkout arrives in a later update.",

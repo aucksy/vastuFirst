@@ -18,11 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.toVastu
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.TagPill
@@ -51,6 +53,13 @@ fun ReportScreen(vm: NewPlanViewModel) {
     val intent = vm.intent ?: Intent.BUILDING
     val living = intent == Intent.LIVING
 
+    if (a == null) {
+        Box(Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6), contentAlignment = Alignment.Center) {
+            LoadingState("Preparing your report…")
+        }
+        return
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
@@ -67,6 +76,11 @@ fun ReportScreen(vm: NewPlanViewModel) {
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+
+        if (a.notes.isNotEmpty()) {
+            NotesStrip(a.notes)
+            Spacer(Modifier.height(VastuTheme.spacing.s4))
+        }
 
         VastuSegmented(options = listOf("Traditional 8-zone", "16-zone school"), selectedIndex = 0, onSelect = {})
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -91,7 +105,8 @@ fun ReportScreen(vm: NewPlanViewModel) {
                     VastuCard(accent = colors.verdictIdeal) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
                             VerdictPill(r.verdict.toVastu())
-                            VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.body, color = colors.textPrimary)
+                            VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                            r.rule?.provenance?.let { ProvenanceTag(it.toVastu()) }
                         }
                     }
                 }
@@ -118,8 +133,8 @@ fun ReportScreen(vm: NewPlanViewModel) {
         // Not assessed.
         val notAssessed = a?.notAssessed.orEmpty()
         if (notAssessed.isNotEmpty()) {
-            SectionHeader("Not assessed")
-            VText("We didn't have the input to check these — they are neither passed nor failed.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
+            SectionHeader("Couldn't check these yet")
+            VText("We didn't have the input to check these — they are neither passed nor failed. Add the details later and they'll be included.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
                 notAssessed.forEach { VText("· $it", style = VastuTheme.type.bodySm, color = colors.textTertiary) }

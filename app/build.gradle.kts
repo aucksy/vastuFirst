@@ -50,8 +50,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "0.2.0"   // Phase 2 — guided-grid app (4 Aug client milestone)
+        versionCode = 3
+        versionName = "0.2.1"   // Phase 3 audit round 1 — no-error-state + save/reopen + a11y fixes
     }
 
     buildTypes {

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -246,10 +247,12 @@ private fun SizeChip(text: String, onClick: () -> Unit) {
     val colors = VastuTheme.colors
     Box(
         modifier = Modifier
+            .heightIn(min = VastuTheme.sizes.minTouch)
             .clip(VastuTheme.shapes.full)
             .background(colors.primary.copy(alpha = 0.14f))
-            .clickableTap(onClick = onClick)
+            .clickableTap(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
             .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s2),
+        contentAlignment = Alignment.Center,
     ) {
         VText(text, style = VastuTheme.type.bodySm, color = colors.primary)
     }

@@ -64,6 +64,17 @@ fun GuidanceState(
     }
 }
 
+/** A calm "working on it" surface while the engine computes — never a blank or a bare 0. */
+@Composable
+fun LoadingState(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(VastuTheme.spacing.s6),
+        contentAlignment = Alignment.Center,
+    ) {
+        VText(text = text, style = VastuTheme.type.body, color = VastuTheme.colors.textSecondary, align = TextAlign.Center)
+    }
+}
+
 /** A dark toast strip ("Plan saved to your device"). */
 @Composable
 fun Toast(text: String, modifier: Modifier = Modifier) {
