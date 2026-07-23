@@ -73,10 +73,12 @@ fun VastuTextField(
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.borderFocus),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 decorationBox = { inner ->
-                    if (value.isEmpty() && placeholder.isNotEmpty()) {
-                        VText(text = placeholder, style = VastuTheme.type.body, color = colors.textTertiary)
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (value.isEmpty() && placeholder.isNotEmpty()) {
+                            VText(text = placeholder, style = VastuTheme.type.body, color = colors.textTertiary)
+                        }
+                        inner()
                     }
-                    inner()
                 },
             )
         }
