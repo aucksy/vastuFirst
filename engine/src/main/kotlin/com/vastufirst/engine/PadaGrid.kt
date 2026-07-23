@@ -72,6 +72,33 @@ internal class PadaGrid(
         return Rect(x0, y0, x1, y1)
     }
 
+    /**
+     * A zone's band rectangle with its OUTER bands extended far beyond the analysis rectangle.
+     * The three cardinal band-lines (fixed to the Brahmasthan) are what actually define a
+     * direction; the finite grid is only cropped to the footprint's bounding box. When a
+     * building's own reference rectangle is tilted and pokes past that box at the very corner
+     * being assessed (e.g. a cut NE corner), the outward extension keeps that area attributable
+     * to the correct cardinal zone instead of being lost off the edge of the grid.
+     */
+    fun zoneRectExtended(zone: Zone): Rect {
+        val margin = 2.0 * (rect.width + rect.height) + 1.0
+        val xw = rect.minX + band * padaW
+        val xe = rect.minX + 2 * band * padaW
+        val ys = rect.minY + band * padaH
+        val yn = rect.maxY - band * padaH
+        val (x0, x1) = when (zone) {
+            Zone.NW, Zone.W, Zone.SW -> (rect.minX - margin) to xw
+            Zone.N, Zone.BRAHMASTHAN, Zone.S -> xw to xe
+            Zone.NE, Zone.E, Zone.SE -> xe to (rect.maxX + margin)
+        }
+        val (y0, y1) = when (zone) {
+            Zone.NW, Zone.N, Zone.NE -> yn to (rect.maxY + margin)
+            Zone.W, Zone.BRAHMASTHAN, Zone.E -> ys to yn
+            Zone.SW, Zone.S, Zone.SE -> (rect.minY - margin) to ys
+        }
+        return Rect(x0, y0, x1, y1)
+    }
+
     /** Overlap area of [poly] with every pada, and the aggregate by zone. */
     fun overlaps(poly: List<Point>): PadaOverlaps {
         val perPada = HashMap<Pair<Int, Int>, Double>()

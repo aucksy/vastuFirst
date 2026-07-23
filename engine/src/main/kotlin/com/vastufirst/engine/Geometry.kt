@@ -2,6 +2,7 @@ package com.vastufirst.engine
 
 import com.vastufirst.shared.Point
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -152,6 +153,135 @@ internal object Geometry {
         return area(output)
     }
 
+    /**
+     * Clip [subject] (may be concave) by a CONVEX clip polygon given CCW, returning the clipped
+     * polygon. Used for the reference rectangle when it is rotated to the building's own axes
+     * (a rotated rectangle is a convex quad, not axis-aligned). Shoelace area of the result is
+     * exact for a convex clip window.
+     */
+    fun clipByConvex(subject: List<Point>, convex: List<Point>): List<Point> {
+        if (subject.size < 3 || convex.size < 3) return emptyList()
+        var output = subject
+        for (i in convex.indices) {
+            if (output.size < 3) return emptyList()
+            val a = convex[i]
+            val b = convex[(i + 1) % convex.size]
+            // interior of a CCW convex polygon is on the LEFT of each directed edge a→b.
+            output = clipHalfPlane(output) { p -> cross(a, b, p) >= -HALFPLANE_EPS }
+        }
+        return output
+    }
+
+    fun clipAreaByConvex(subject: List<Point>, convex: List<Point>): Double {
+        val out = clipByConvex(subject, convex)
+        return if (out.size < 3) 0.0 else area(out)
+    }
+
+    /** z-component of (b−a) × (p−a); positive ⇒ p is left of the directed edge a→b. */
+    private fun cross(a: Point, b: Point, p: Point): Double =
+        (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
+
+    /**
+     * The footprint's OWN dominant orientation, in degrees within [0, 90) — the tilt of the
+     * building's principal axis relative to true-North east/x. For a rectilinear footprint (walls
+     * meeting at right angles — essentially every real building) all edges lie at this angle or
+     * 90° from it, so shape analysis done in this frame is rotation-invariant: a clean rectangle
+     * reads clean at any angle. Length-weighted so long walls dominate short jogs; computed with
+     * the doubled-then-doubled angle trick to average correctly modulo 90°.
+     */
+    fun dominantOrientation(poly: List<Point>): Double {
+        if (poly.size < 2) return 0.0
+        var sumSin = 0.0
+        var sumCos = 0.0
+        for (i in poly.indices) {
+            val a = poly[i]
+            val b = poly[(i + 1) % poly.size]
+            val dx = b.x - a.x
+            val dy = b.y - a.y
+            val len = hypot(dx, dy)
+            if (len < 1e-12) continue
+            val ang = atan2(dy, dx)          // edge angle, period 180° for an undirected edge
+            // Map modulo 90° onto a full circle via ×4, average, divide back.
+            sumSin += len * sin(4.0 * ang)
+            sumCos += len * cos(4.0 * ang)
+        }
+        if (abs(sumSin) < 1e-12 && abs(sumCos) < 1e-12) return 0.0
+        var deg = Math.toDegrees(atan2(sumSin, sumCos) / 4.0)
+        deg %= 90.0
+        if (deg < 0) deg += 90.0
+        // Snap a near-cardinal footprint to exactly 0° so it takes the identity fast path and
+        // stays bit-for-bit consistent (a building 0.0001° off is indistinguishable from aligned).
+        if (deg < TILT_SNAP_DEG || deg > 90.0 - TILT_SNAP_DEG) return 0.0
+        return deg
+    }
+
+    fun isFinite(p: Point): Boolean = p.x.isFinite() && p.y.isFinite()
+
+    /** Drop non-finite points and collapse consecutive (and closing) near-duplicate vertices. */
+    fun cleanRing(poly: List<Point>): List<Point> {
+        val finite = poly.filter(::isFinite)
+        if (finite.isEmpty()) return emptyList()
+        val span = run {
+            val xs = finite.map { it.x }; val ys = finite.map { it.y }
+            (xs.max() - xs.min()) + (ys.max() - ys.min())
+        }
+        val tol = (span * 1e-9).coerceAtLeast(1e-12)
+        val out = ArrayList<Point>(finite.size)
+        for (p in finite) {
+            val last = out.lastOrNull()
+            if (last == null || hypot(p.x - last.x, p.y - last.y) > tol) out += p
+        }
+        while (out.size > 1 && hypot(out.first().x - out.last().x, out.first().y - out.last().y) <= tol) {
+            out.removeAt(out.size - 1)
+        }
+        return out
+    }
+
+    /** Does a simple polygon self-intersect (any non-adjacent edge pair crossing)? O(n²). */
+    fun isSelfIntersecting(poly: List<Point>): Boolean {
+        val n = poly.size
+        if (n < 4) return false
+        for (i in 0 until n) {
+            val a1 = poly[i]; val a2 = poly[(i + 1) % n]
+            for (j in i + 1 until n) {
+                // skip adjacent/shared-vertex edges
+                if (j == i) continue
+                if ((j + 1) % n == i || (i + 1) % n == j) continue
+                val b1 = poly[j]; val b2 = poly[(j + 1) % n]
+                if (segmentsProperlyIntersect(a1, a2, b1, b2)) return true
+            }
+        }
+        return false
+    }
+
+    private fun segmentsProperlyIntersect(p1: Point, p2: Point, p3: Point, p4: Point): Boolean {
+        val d1 = cross(p3, p4, p1)
+        val d2 = cross(p3, p4, p2)
+        val d3 = cross(p1, p2, p3)
+        val d4 = cross(p1, p2, p4)
+        return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+            ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+    }
+
+    /** Convex hull (Andrew's monotone chain), CCW. A safe fallback footprint for a messy trace. */
+    fun convexHull(points: List<Point>): List<Point> {
+        val pts = points.filter(::isFinite).distinct().sortedWith(compareBy({ it.x }, { it.y }))
+        if (pts.size < 3) return pts
+        val lower = ArrayList<Point>()
+        for (p in pts) {
+            while (lower.size >= 2 && cross(lower[lower.size - 2], lower[lower.size - 1], p) <= 0) lower.removeAt(lower.size - 1)
+            lower += p
+        }
+        val upper = ArrayList<Point>()
+        for (p in pts.asReversed()) {
+            while (upper.size >= 2 && cross(upper[upper.size - 2], upper[upper.size - 1], p) <= 0) upper.removeAt(upper.size - 1)
+            upper += p
+        }
+        lower.removeAt(lower.size - 1)
+        upper.removeAt(upper.size - 1)
+        return lower + upper
+    }
+
     private fun clipHalfPlane(poly: List<Point>, inside: (Point) -> Boolean): List<Point> {
         if (poly.isEmpty()) return poly
         val out = ArrayList<Point>(poly.size + 4)
@@ -187,4 +317,6 @@ internal object Geometry {
 
     private const val REL_COLLINEAR = 1e-6   // perpendicular tolerance, relative to plan scale
     private const val REL_OVERLAP = 1e-5     // min shared-wall length, relative to plan scale
+    private const val HALFPLANE_EPS = 1e-9   // keep points exactly on a convex clip edge
+    private const val TILT_SNAP_DEG = 1e-4   // snap a near-cardinal footprint to 0° (identity path)
 }

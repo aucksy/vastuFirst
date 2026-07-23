@@ -62,8 +62,13 @@ data class Analysis(
     val defects: List<Defect>,                   // sorted severity, then weight
     val cuts: List<ZoneAnomaly>,
     val extensions: List<ZoneAnomaly>,
-    val shapeIrregular: Boolean,                 // cut/extension skipped (§4.2.7)
+    val shapeIrregular: Boolean,                 // footprint is not rectangle-family (rare)
     val notAssessed: List<String>,               // rules skipped for missing input
     val disputes: List<Dispute>,                 // relevant to THIS plan only
     val ruleSetVersion: String,                  // e.g. "2026.07.19-1" — mandatory (§5)
+    // --- production robustness / transparency ---
+    val quality: AnalysisQuality = AnalysisQuality.OK,
+    val notes: List<AnalysisNote> = emptyList(),
+    val footprintTiltDegrees: Double = 0.0,      // building's own tilt vs true north (0..90)
+    val aspectRatio: Double = 1.0,               // long side / short side of the footprint
 )

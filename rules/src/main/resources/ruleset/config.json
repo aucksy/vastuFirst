@@ -23,5 +23,7 @@
   "penaltyCap": 30,
   "scorePoints": { "IDEAL": 100, "ACCEPTABLE": 70, "SUBOPTIMAL": 45, "DEFECT": 10 },
   "padaPoints": { "AUSPICIOUS": 100, "MODERATE": 60, "MIXED": 50, "INAUSPICIOUS": 15 },
-  "unruledRoomTypes": ["BATHROOM", "COURTYARD", "UTILITY", "CORRIDOR"]
+  "unruledRoomTypes": ["BATHROOM", "COURTYARD", "UTILITY", "CORRIDOR"],
+  "aspectSoftFlag": 1.5,
+  "aspectHardFlag": 2.0
 }

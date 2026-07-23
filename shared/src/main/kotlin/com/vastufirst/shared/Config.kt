@@ -39,6 +39,10 @@ data class RulesetConfig(
     ),
     /** §4.4.2: room types with no placement rule; evaluate to NOT_SCORED. */
     val unruledRoomTypes: Set<RoomType> = emptySet(),
+    /** Plot elongation (research: square/rectangle ideal within 1:1–1:2). A note at the soft flag,
+     *  a MINOR defect beyond the hard flag. Measured on the footprint's OWN axes (rotation-free). */
+    val aspectSoftFlag: Double = 1.5,
+    val aspectHardFlag: Double = 2.0,
 )
 
 @Serializable

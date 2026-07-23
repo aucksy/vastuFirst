@@ -87,6 +87,12 @@
     "requiresFixtureTypes": ["MIRROR", "CEILING_BEAM"]
   },
   {
+    "id": "X-15", "title": "Over-elongated footprint", "severity": "MINOR", "provenance": "DERIV", "tier": "B",
+    "explanation": "A square or a rectangle within a 1:1 to 1:2 proportion is ideal. This plan is more than twice as long as it is wide, which the tradition treats as less balanced.",
+    "layoutFix": "Where possible, keep the built footprint closer to a 1:1.5 proportion.",
+    "remedyIds": ["structural-correction", "vastu-shanti"]
+  },
+  {
     "id": "X-GEN", "title": "Room in a prohibited zone", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
     "explanation": "This room sits in a zone its placement rule prohibits.",
     "layoutFix": "Move the room out of the prohibited zone.",

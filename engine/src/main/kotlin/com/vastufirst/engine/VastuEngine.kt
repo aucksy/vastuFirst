@@ -3,44 +3,73 @@ package com.vastufirst.engine
 import com.vastufirst.rules.RuleSet
 import com.vastufirst.rules.RuleSetLoader
 import com.vastufirst.shared.Analysis
+import com.vastufirst.shared.AnalysisNote
+import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Defect
+import com.vastufirst.shared.DefectDefinition
 import com.vastufirst.shared.Dispute
 import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.Fixture
+import com.vastufirst.shared.NoteLevel
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.SchoolProfile
 import com.vastufirst.shared.Severity
 import com.vastufirst.shared.Zone
-import com.vastufirst.shared.Verdict
+import kotlin.math.roundToInt
 
 /**
  * The Vastu engine (Product PRD §4) — the heart of the product. Pure Kotlin, headless, offline:
  * plan → zones → door → verdicts → score → defects, with no UI and no network.
  *
- * The pipeline: rotate all geometry to true-North about the footprint area centroid, lay the
- * square 81-pada grid on the resulting bounding rectangle, evaluate each room and the main door,
- * then score and detect defects. **Building orientation is never a scoring input** (§0.4) — it
- * enters only here, as a geometry rotation, and the rotation-invariance test proves it.
+ * Production contract: `analyze` is TOTAL — it never throws and always returns a usable [Analysis].
+ * Malformed input is sanitised and recovered (never a crash); a genuinely un-scoreable plan comes
+ * back as [AnalysisQuality.INSUFFICIENT] with a friendly prompt, never a scary "error/irregular".
+ *
+ * Orientation: everything is rotated to true North about the footprint area centroid; the square
+ * 81-pada grid is laid on the resulting bounding rectangle; rooms and the door are scored on that
+ * cardinal grid (the grid is NEVER rotated to the walls — confirmed by field research). Building
+ * SHAPE (cuts/extensions/elongation) is judged in the building's OWN frame so an angled home
+ * scores normally. Orientation is never a scoring term (§0.4) — the rotation-invariance test proves it.
  */
 class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
 
     fun ruleSetVersion(): String = ruleSet.version
 
     fun analyze(plan: Plan): Analysis {
-        // Only the default 81-pada school is implemented; the angular geometries are a different
-        // computation gated on the M-11 ruling (§4.7). Refuse rather than silently mis-score.
-        require(plan.schoolProfile == SchoolProfile.TRADITIONAL_8) {
-            "Only TRADITIONAL_8 is implemented. ${plan.schoolProfile} is a separate angular geometry " +
-                "gated on the M-11 expert ruling (§4.7) — it is not a reinterpretation of the 81-pada grid."
+        return try {
+            val san = PlanSanitizer.sanitize(plan)
+            val level = san.level ?: return insufficient(plan, san.notes)
+            val notes = san.notes.toMutableList()
+            if (plan.schoolProfile != SchoolProfile.TRADITIONAL_8) {
+                notes += AnalysisNote(
+                    "school-default",
+                    "Showing the classic 8-direction reading; other schools are coming soon.",
+                    NoteLevel.INFO,
+                )
+            }
+            runCore(plan, level, san.northOffset, san.quality, notes)
+        } catch (t: Throwable) {
+            // Absolute safety net — an unforeseen input must degrade, never crash the app.
+            insufficient(
+                plan,
+                listOf(AnalysisNote("recovered", "We couldn't fully read this plan — add or adjust your layout to try again.", NoteLevel.WARNING)),
+            )
         }
-        val level = plan.levels.firstOrNull { it.index == 0 }
-            ?: error("Plan ${plan.id} has no ground floor (a Level with index 0).")
-        val config = ruleSet.config
-        val angle = plan.northOffsetDegrees.toDouble()
+    }
 
-        // 1. Rotate every point to true-North alignment about the footprint area centroid (§4.0, §4.2).
+    private fun runCore(
+        plan: Plan,
+        level: SanitizedLevel,
+        north: Int,
+        quality: AnalysisQuality,
+        notes: MutableList<AnalysisNote>,
+    ): Analysis {
+        val config = ruleSet.config
+        val angle = north.toDouble()
+
+        // 1. Rotate every point to true-North about the footprint area centroid (§4.0, §4.2).
         val origin = Geometry.centroid(level.outline)
         val rotatedOutline = Geometry.rotatePoly(level.outline, angle, origin)
 
@@ -49,8 +78,7 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         val grid = PadaGrid(analysisRect, config.gridSize)
         val assigner = ZoneAssigner(config)
 
-        // 3. Rooms → verdicts. Keep the rotated polygons (adjacency, X-10) and the full list of
-        //    prohibited zones each room violates (§4.6 — one defect per violated zone).
+        // 3. Rooms → verdicts (+ rotated polygons for adjacency, + every violated prohibited zone).
         val evaluator = RoomEvaluator(ruleSet, grid, assigner, analysisRect.area)
         val roomResults = ArrayList<RoomResult>(level.rooms.size)
         val roomPolys = HashMap<String, List<Point>>(level.rooms.size)
@@ -82,8 +110,22 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             ) to rd.bearing
         } else null to null
 
-        // 5. Cuts / extensions vs the reference rectangle.
+        // 5. Cuts / extensions in the building's OWN frame, attributed to cardinal zones.
         val anomalies = AnomalyDetector(config.anomaly).detect(rotatedOutline, grid)
+        if (anomalies.tiltDegrees >= TILT_NOTE_DEG) {
+            notes += AnalysisNote(
+                "tilted",
+                "This home sits about ${anomalies.tiltDegrees.roundToInt()}° off the compass; the score accounts for that.",
+                NoteLevel.INFO,
+            )
+        }
+        if (anomalies.shapeIrregular) {
+            notes += AnalysisNote(
+                "unusual-shape",
+                "Your home isn't a standard rectangle, so we've focused on room placement and the entrance.",
+                NoteLevel.INFO,
+            )
+        }
 
         // 6. Defects + not-assessed (fixtures/site rotated into true-North space).
         val rotatedFixtures: List<Pair<Fixture, Point>> =
@@ -91,8 +133,19 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         val outcome = DefectDetector(ruleSet, grid)
             .detect(roomResults, roomDefectZones, roomPolys, doorBearing, anomalies, rotatedFixtures, plan.site)
 
+        // 6b. Elongation (research: ideal within 1:1–1:2). Note past the soft flag, MINOR past the hard flag.
+        val defects = outcome.defects.toMutableList()
+        if (!anomalies.shapeIrregular) {
+            val ar = anomalies.aspectRatio
+            if (ar > config.aspectHardFlag) {
+                ruleSet.defects.firstOrNull { it.id == "X-15" }?.let { defects += buildDefect(it, Zone.BRAHMASTHAN) }
+            } else if (ar > config.aspectSoftFlag) {
+                notes += AnalysisNote("elongated", "This home is a bit long and narrow; a squarer shape is considered more balanced.", NoteLevel.INFO)
+            }
+        }
+
         // 7. Score.
-        val scored = Scorer(config).score(roomResults, doorResult, outcome.defects)
+        val scored = Scorer(config).score(roomResults, doorResult, defects)
 
         // 8. Disputes relevant to THIS plan.
         val disputes = surfaceDisputes(plan, roomResults)
@@ -101,22 +154,62 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             planId = plan.id,
             intent = plan.intent,
             propertyType = plan.propertyType,
-            northOffsetDegrees = plan.northOffsetDegrees,
+            northOffsetDegrees = north,
             schoolProfile = plan.schoolProfile,
             score = scored.score,
             base = scored.base,
             defectPenalty = scored.defectPenalty,
             roomResults = roomResults,
             doorResult = doorResult,
-            defects = outcome.defects.sortedWith(severityThenWeight(roomResults)),
+            defects = defects.sortedWith(severityThenWeight(roomResults)),
             cuts = anomalies.cuts,
             extensions = anomalies.extensions,
             shapeIrregular = anomalies.shapeIrregular,
             notAssessed = outcome.notAssessed,
             disputes = disputes,
             ruleSetVersion = ruleSet.version,
+            quality = quality,
+            notes = notes,
+            footprintTiltDegrees = anomalies.tiltDegrees,
+            aspectRatio = anomalies.aspectRatio,
         )
     }
+
+    /** A usable-but-empty result the app can turn into onboarding guidance (never an error screen). */
+    private fun insufficient(plan: Plan, notes: List<AnalysisNote>): Analysis = Analysis(
+        planId = plan.id,
+        intent = plan.intent,
+        propertyType = plan.propertyType,
+        northOffsetDegrees = ((plan.northOffsetDegrees % 360) + 360) % 360,
+        schoolProfile = plan.schoolProfile,
+        score = 0,
+        base = 0.0,
+        defectPenalty = 0,
+        roomResults = emptyList(),
+        doorResult = null,
+        defects = emptyList(),
+        cuts = emptyList(),
+        extensions = emptyList(),
+        shapeIrregular = false,
+        notAssessed = emptyList(),
+        disputes = emptyList(),
+        ruleSetVersion = ruleSet.version,
+        quality = AnalysisQuality.INSUFFICIENT,
+        notes = notes,
+    )
+
+    private fun buildDefect(def: DefectDefinition, zone: Zone): Defect = Defect(
+        id = def.id,
+        severity = def.severity,
+        zone = zone,
+        roomId = null,
+        fixtureId = null,
+        ruleSourceId = def.id,
+        provenance = def.provenance,
+        explanation = def.explanation,
+        layoutFix = def.layoutFix,
+        remedies = ruleSet.remediesFor(def),
+    )
 
     /** Sort defects by severity (MAJOR first), then by the offending element's weight (§5). */
     private fun severityThenWeight(rooms: List<RoomResult>): Comparator<Defect> {
@@ -142,5 +235,9 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             if (match) out += dispute
         }
         return out.sortedBy { it.id }
+    }
+
+    private companion object {
+        const val TILT_NOTE_DEG = 1.0   // note the user only when the tilt is actually noticeable
     }
 }

@@ -15,7 +15,6 @@ import com.vastufirst.shared.SchoolProfile
 import com.vastufirst.shared.Site
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -101,9 +100,10 @@ class AuditFixesTest {
     }
 
     @Test
-    fun `an unimplemented school profile is refused, not silently mis-scored`() {
-        val p = Fixtures.sample01().copy(schoolProfile = SchoolProfile.SIXTEEN_ZONE)
-        assertFailsWith<IllegalArgumentException> { engine.analyze(p) }
+    fun `an unimplemented school profile degrades to the default reading with a note, never an error`() {
+        val a = engine.analyze(Fixtures.sample01().copy(schoolProfile = SchoolProfile.SIXTEEN_ZONE))
+        assertEquals(31, a.score, "falls back to the classic 8-direction score")
+        assertTrue(a.notes.any { it.code == "school-default" })
     }
 
     @Test
