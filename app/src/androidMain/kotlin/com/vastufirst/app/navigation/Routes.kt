@@ -1,12 +1,18 @@
 package com.vastufirst.app.navigation
 
 /**
- * The Phase 2 screen graph (Product PRD §6). Routes are added as each screen lands; the
- * guided-grid path is: Home → Welcome → Add home → (Guided grid | Sample) → Mark North →
- * Score → Report.
+ * The Phase 2 screen graph (Product PRD §6). The guided-grid path lives in a nested "newplan"
+ * graph so every screen in it shares one [com.vastufirst.app.ui.newplan.NewPlanViewModel]:
+ * Home → Welcome → Add home → (Guided grid | Sample) → Mark North → Score → Report.
  */
 object Routes {
-    const val HOME = "home"          // saved plans (start destination)
-    const val WELCOME = "welcome"    // language + intent
-    // Add home, guided grid, mark north, score, report — land in Block C.
+    const val HOME = "home"
+
+    const val NEWPLAN_GRAPH = "newplan"
+    const val WELCOME = "welcome"
+    const val ADD_HOME = "add_home"
+    const val GUIDED_GRID = "guided_grid"
+    const val MARK_NORTH = "mark_north"
+    const val SCORE = "score"
+    const val REPORT = "report"
 }

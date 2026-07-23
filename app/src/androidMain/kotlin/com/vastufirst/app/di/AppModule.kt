@@ -2,6 +2,7 @@ package com.vastufirst.app.di
 
 import com.vastufirst.app.platform.createAndroidSqlDriver
 import com.vastufirst.app.ui.home.HomeViewModel
+import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.data.VastuDatabaseFactory
 import com.vastufirst.engine.VastuEngine
@@ -28,4 +29,5 @@ val appModule = module {
 
     // ViewModels.
     viewModel { HomeViewModel(repo = get()) }
+    viewModel { NewPlanViewModel(engine = get(), repo = get()) }
 }
