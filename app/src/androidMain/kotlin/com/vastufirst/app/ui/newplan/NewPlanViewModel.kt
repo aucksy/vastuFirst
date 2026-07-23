@@ -93,9 +93,9 @@ class NewPlanViewModel(
 
     // --- mutations (each nudges a debounced recompute) ---
 
-    fun setRooms(list: List<GridRoom>) { rooms = list; markDirty() }
-    fun setDoor(d: GridDoor?) { door = d; markDirty() }
-    fun setNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
+    fun updateRooms(list: List<GridRoom>) { rooms = list; markDirty() }
+    fun updateDoor(d: GridDoor?) { door = d; markDirty() }
+    fun updateNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
 
     private fun markDirty() { dirty.tryEmit(Unit) }
 

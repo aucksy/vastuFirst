@@ -68,6 +68,18 @@ val GRID_ROOM_TYPES: List<RoomType> = listOf(
     RoomType.DINING, RoomType.STORE, RoomType.BALCONY,
 )
 
+/** A stable editor colour per room type (before scoring) — reuses the zone/verdict palette. */
+@Composable
+fun RoomType.editorColor(): Color = with(VastuTheme.colors) {
+    when (this@editorColor) {
+        RoomType.LIVING -> zoneN; RoomType.KITCHEN -> zoneSE; RoomType.MASTER_BEDROOM -> zoneSW
+        RoomType.BEDROOM -> zoneW; RoomType.POOJA -> zoneNW; RoomType.TOILET -> verdictDefect
+        RoomType.STAIRCASE -> zoneS; RoomType.STUDY -> zoneE; RoomType.DINING -> zoneNE
+        RoomType.BALCONY -> zoneCentre; RoomType.GUEST_BEDROOM -> zoneW
+        else -> textTertiary
+    }
+}
+
 /**
  * Build the [ZoneMapModel] the ZoneMap/NorthDial render, from the placed grid rooms + the live
  * engine [analysis]. Rooms are coloured by their verdict when scored, neutral before. Runs in a

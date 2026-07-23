@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.vastufirst.app.ui.addhome.AddHomeScreen
+import com.vastufirst.app.ui.grid.GuidedGridScreen
 import com.vastufirst.app.ui.home.HomeScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
@@ -48,15 +49,18 @@ fun VastuNavHost() {
                     onDrawGrid = { nav.navigate(Routes.GUIDED_GRID) },
                     onSample = {
                         val sample = SamplePlans.all.first()
-                        vm.setRooms(sample.rooms)
-                        vm.setDoor(sample.door)
-                        vm.setNorth(sample.north)
+                        vm.updateRooms(sample.rooms)
+                        vm.updateDoor(sample.door)
+                        vm.updateNorth(sample.north)
                         nav.navigate(Routes.MARK_NORTH)
                     },
                 )
             }
 
-            composable(Routes.GUIDED_GRID) { Stub("Guided grid — coming next") }
+            composable(Routes.GUIDED_GRID) { entry ->
+                val vm = sharedVm(nav, entry)
+                GuidedGridScreen(vm = vm, onNext = { nav.navigate(Routes.MARK_NORTH) })
+            }
             composable(Routes.MARK_NORTH) { Stub("Mark North — coming next") }
             composable(Routes.SCORE) { Stub("Score — coming next") }
             composable(Routes.REPORT) { Stub("Full report — coming next") }
