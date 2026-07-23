@@ -63,7 +63,13 @@ internal object PlanSanitizer {
             if (hull.size >= 3 && !isDegenerate(hull)) {
                 outline = hull
                 quality = AnalysisQuality.DEGRADED
-                notes += AnalysisNote("outline-rebuilt", "We drew the home's outline from your rooms.", NoteLevel.INFO)
+                // We guessed the outline from the rooms — it may miss a real cut/extension, so the
+                // corner/shape checks aren't reliable. Say so; don't let it read as "shape is fine".
+                notes += AnalysisNote(
+                    "outline-rebuilt",
+                    "We estimated the home's outline from your rooms — add the real outline for accurate corner and shape checks.",
+                    NoteLevel.WARNING,
+                )
             } else {
                 notes += AnalysisNote("no-outline", "Add your home's outline to see its score.", NoteLevel.WARNING)
                 return SanitizeResult(null, north, AnalysisQuality.INSUFFICIENT, notes)
@@ -73,7 +79,13 @@ internal object PlanSanitizer {
             if (hull.size >= 3 && !isDegenerate(hull)) {
                 outline = hull
                 quality = AnalysisQuality.DEGRADED
-                notes += AnalysisNote("outline-tidied", "We tidied up the home's outline.", NoteLevel.INFO)
+                // Tidying a self-crossing trace to its hull can erase a genuine cut — flag it so a
+                // missing corner is never silently reported as clear.
+                notes += AnalysisNote(
+                    "outline-tidied",
+                    "The outline crossed itself, so we simplified it — please recheck it for accurate corner and shape checks.",
+                    NoteLevel.WARNING,
+                )
             }
         }
 

@@ -104,6 +104,8 @@ class AuditFixesTest {
         val a = engine.analyze(Fixtures.sample01().copy(schoolProfile = SchoolProfile.SIXTEEN_ZONE))
         assertEquals(31, a.score, "falls back to the classic 8-direction score")
         assertTrue(a.notes.any { it.code == "school-default" })
+        // Must report the reading it ACTUALLY gave, never mislabel it as the requested school.
+        assertEquals(SchoolProfile.TRADITIONAL_8, a.schoolProfile)
     }
 
     @Test

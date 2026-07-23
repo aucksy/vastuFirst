@@ -120,10 +120,12 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             )
         }
         if (anomalies.shapeIrregular) {
+            // Honest: an irregular footprint is traditionally less ideal, and we could not run the
+            // missing-corner / extension checks on it — so we must NOT imply the shape is fine.
             notes += AnalysisNote(
                 "unusual-shape",
-                "Your home isn't a standard rectangle, so we've focused on room placement and the entrance.",
-                NoteLevel.INFO,
+                "Your home isn't a regular rectangle. A squarer, more regular shape is traditionally preferred; we've scored the rooms and entrance, and the corner checks need a clearer outline.",
+                NoteLevel.WARNING,
             )
         }
 
@@ -155,7 +157,9 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             intent = plan.intent,
             propertyType = plan.propertyType,
             northOffsetDegrees = north,
-            schoolProfile = plan.schoolProfile,
+            // Report the school we ACTUALLY used (the 81-pada reading), not the one requested —
+            // otherwise a 16-zone request would be mislabelled while showing 8-direction numbers.
+            schoolProfile = SchoolProfile.TRADITIONAL_8,
             score = scored.score,
             base = scored.base,
             defectPenalty = scored.defectPenalty,
