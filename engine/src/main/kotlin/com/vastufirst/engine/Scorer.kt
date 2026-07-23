@@ -2,6 +2,7 @@ package com.vastufirst.engine
 
 import com.vastufirst.shared.Defect
 import com.vastufirst.shared.DoorResult
+import com.vastufirst.shared.Provenance
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.RulesetConfig
 import com.vastufirst.shared.Verdict
@@ -37,7 +38,12 @@ internal class Scorer(private val config: RulesetConfig) {
 
         val base = if (weightSum > 0.0) weightedPoints / weightSum else 0.0
 
-        val rawPenalty = defects.sumOf { config.penalties[it.severity.name] ?: 0 }
+        // Disputed (DISP) defects are surfaced in the report with both readings but must NOT commit
+        // the score to one side of a genuine dispute — mirroring how disputed room rules are
+        // NOT_SCORED (§4.4.1). They are shown, not counted against the user, until a ruling lands.
+        val rawPenalty = defects
+            .filter { it.provenance != Provenance.DISP }
+            .sumOf { config.penalties[it.severity.name] ?: 0 }
         val penalty = minOf(rawPenalty, config.penaltyCap)
 
         val score = Math.round(base - penalty).toInt().coerceIn(0, 100)

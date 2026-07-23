@@ -40,6 +40,17 @@ class RuleSetLoaderTest {
     }
 
     @Test
+    fun `an unimplemented Brahmasthan extent is rejected loudly, not silently run as 3x3`() {
+        val broken = """{"brahmasthanExtent":"ONE_NINTH_BY_AREA","unruledRoomTypes":["BATHROOM","COURTYARD","UTILITY","CORRIDOR"]}"""
+        val ex = assertFailsWith<IllegalStateException> {
+            RuleSetLoader.load { path ->
+                if (path.endsWith("config.json")) broken else realResource(path)
+            }
+        }
+        assertTrue(ex.message!!.contains("brahmasthanExtent"))
+    }
+
+    @Test
     fun `a defect with no remedy is rejected loudly`() {
         // Replace defects.json with a single defect that has an empty remedy list.
         val broken = """[{"id":"X-01","title":"t","severity":"MAJOR","provenance":"DERIV","tier":"A","explanation":"e","remedyIds":[]}]"""

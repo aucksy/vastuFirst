@@ -61,6 +61,43 @@ internal object Fixtures {
         )
     }
 
+    /** Rotate an ENTIRE plan by −deg about its level-0 footprint AREA centroid, and set
+     *  northOffsetDegrees = deg — the exact inverse of the engine's rotation, so the engine
+     *  reconstructs the original true-North geometry. Works for any footprint (not just squares),
+     *  so it genuinely exercises the area-centroid rotation origin (§4.0), not bbox-centre. */
+    fun rotate(plan: Plan, deg: Int): Plan {
+        val lvl = plan.levels.first { it.index == 0 }
+        val origin = Geometry.centroid(lvl.outline)
+        fun p(pt: Point) = Geometry.rotate(pt, -deg.toDouble(), origin)
+        fun poly(ps: List<Point>) = ps.map(::p)
+        val rooms = lvl.rooms.map { it.copy(polygon = poly(it.polygon)) }
+        val doors = lvl.doors.map { it.copy(centre = p(it.centre), wallStart = p(it.wallStart), wallEnd = p(it.wallEnd)) }
+        val fixtures = lvl.fixtures.map { it.copy(position = p(it.position)) }
+        return plan.copy(
+            levels = listOf(lvl.copy(outline = poly(lvl.outline), rooms = rooms, doors = doors, fixtures = fixtures)),
+            northOffsetDegrees = deg,
+        )
+    }
+
+    /** An L-shaped footprint (missing the NE corner). Its area centroid (~44.3, 44.3) differs from
+     *  its bbox centre (50, 50), so a rotation test on it distinguishes the two origins. */
+    fun lShaped(): Plan {
+        val outline = listOf(
+            Point(0.0, 0.0), Point(100.0, 0.0), Point(100.0, 60.0),
+            Point(60.0, 60.0), Point(60.0, 100.0), Point(0.0, 100.0),
+        )
+        val rooms = listOf(
+            Room("master", RoomType.MASTER_BEDROOM, rect(6.0, 6.0, 30.0, 26.0)),   // SW
+            Room("kitchen", RoomType.KITCHEN, rect(70.0, 6.0, 24.0, 24.0)),        // SE
+            Room("living", RoomType.LIVING, rect(6.0, 70.0, 24.0, 24.0)),          // NW
+        )
+        val door = Door("main", Point(30.0, 0.0), Point(0.0, 0.0), Point(100.0, 0.0), isMainEntrance = true)
+        return Plan(
+            id = "l-shape", propertyType = PropertyType.INDEPENDENT_HOUSE, intent = Intent.BUILDING,
+            levels = listOf(Level(0, outline, rooms, listOf(door))), northOffsetDegrees = 0,
+        )
+    }
+
     /** A clean, well-placed plan (`sample-02`) used to prove the engine also rewards good layouts. */
     fun sample02(): Plan {
         val rooms = listOf(

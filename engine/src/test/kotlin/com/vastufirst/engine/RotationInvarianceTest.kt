@@ -30,4 +30,16 @@ class RotationInvarianceTest {
             assertEquals("E6", a.doorResult!!.pada.id, "door pada changed at $deg° — should map back to E6")
         }
     }
+
+    @Test
+    fun `a NON-square (L-shaped) plan is also rotation-invariant — proves the area-centroid origin`() {
+        // The L's area centroid (~44.3, 44.3) differs from its bbox centre (50, 50). If the engine
+        // rotated about the bbox centre instead of the mandated area centroid (§4.0), this
+        // round-trip would NOT reconstruct and the score would drift. A square could not catch that.
+        val base = Fixtures.lShaped()
+        val expected = engine.analyze(base).score
+        for (deg in intArrayOf(37, 90, 128, 213, 300)) {
+            assertEquals(expected, engine.analyze(Fixtures.rotate(base, deg)).score, "L-shape score changed at $deg°")
+        }
+    }
 }

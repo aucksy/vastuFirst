@@ -8,7 +8,7 @@ import com.vastufirst.shared.Fixture
 import com.vastufirst.shared.FixtureType
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.RoomResult
-import com.vastufirst.shared.Severity
+import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Site
 import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.Zone
@@ -29,6 +29,8 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
 
     fun detect(
         roomResults: List<RoomResult>,
+        roomDefectZones: Map<String, List<Zone>>,      // roomId -> every prohibited zone it violates
+        roomPolys: Map<String, List<Point>>,           // roomId -> rotated polygon (for adjacency)
         doorBearingDeg: Double?,
         anomalies: AnomalyResult,
         rotatedFixtures: List<Pair<Fixture, Point>>,   // fixture + rotated position
@@ -36,13 +38,17 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
     ): DefectOutcome {
         val defects = mutableListOf<Defect>()
 
-        // 1. Room-derived structural defects: every DEFECT-verdict room maps to an id (or X-GEN).
+        // 1. Room-derived structural defects: one defect per violated prohibited zone (§4.6 —
+        //    every (RoomType, prohibited Zone) pair must resolve to a defect id, or X-GEN).
         for (rr in roomResults) {
             if (rr.verdict != Verdict.DEFECT) continue
-            val def = ruleSet.defects.firstOrNull { d ->
-                d.appliesTo.any { it.roomType == rr.type && it.zone == rr.zone }
-            } ?: genDef
-            defects += toDefect(def, rr.zone, roomId = rr.roomId, sourceId = rr.rule?.sourceId ?: def.id)
+            val zones = roomDefectZones[rr.roomId]?.ifEmpty { listOf(rr.zone) } ?: listOf(rr.zone)
+            for (z in zones) {
+                val def = ruleSet.defects.firstOrNull { d ->
+                    d.appliesTo.any { it.roomType == rr.type && it.zone == z }
+                } ?: genDef
+                defects += toDefect(def, z, roomId = rr.roomId, sourceId = rr.rule?.sourceId ?: def.id)
+            }
         }
 
         // 2. Door: X-06 fires only in the near-universally condemned SW-corner arc (§4.3.3).
@@ -60,7 +66,13 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
         // 4. Fixture defects (Tier C) — evaluated only when the relevant fixture is present.
         detectFixtureDefects(rotatedFixtures, defects)
 
-        // 5. notAssessed: Tier C/D defects whose input is absent (§4.6).
+        // 5. X-10 (Tier A): pooja sharing a wall with a toilet; store/toilet beneath a staircase.
+        detectAdjacencyDefects(roomResults, roomPolys, rotatedFixtures, defects)
+
+        // 6. X-11 (Tier D): Veedhi Shoola — a road thrusting at the plot from a harmful direction.
+        if (site != null) detectRoadThrust(site, defects)
+
+        // 7. notAssessed: Tier C/D defects whose input is absent (§4.6). Never report "clear".
         val notAssessed = mutableListOf<String>()
         for (def in ruleSet.defects) {
             if (def.requiresFixtureTypes.isNotEmpty()) {
@@ -70,7 +82,60 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
             if (def.requiresSite && site == null) notAssessed += def.id
         }
 
-        return DefectOutcome(defects, notAssessed.distinct().sorted())
+        return DefectOutcome(dedupe(defects), notAssessed.distinct().sorted())
+    }
+
+    /** Collapse identical structural defects (e.g. a staircase room AND a stair fixture in the
+     *  Brahmasthan both mapping to X-03) so the penalty is not double-counted. */
+    private fun dedupe(defects: List<Defect>): List<Defect> {
+        val seen = HashSet<String>()
+        return defects.filter { seen.add("${it.id}|${it.zone}|${it.roomId}|${it.fixtureId}") }
+    }
+
+    private fun detectAdjacencyDefects(
+        roomResults: List<RoomResult>,
+        roomPolys: Map<String, List<Point>>,
+        rotatedFixtures: List<Pair<Fixture, Point>>,
+        out: MutableList<Defect>,
+    ) {
+        val def = ruleSet.defects.firstOrNull { it.id == "X-10" } ?: return
+        val poojas = roomResults.filter { it.type == RoomType.POOJA }
+        val toilets = roomResults.filter { it.type == RoomType.TOILET }
+        for (p in poojas) {
+            val pPoly = roomPolys[p.roomId] ?: continue
+            for (t in toilets) {
+                val tPoly = roomPolys[t.roomId] ?: continue
+                if (Geometry.sharesWall(pPoly, tPoly)) {
+                    out += toDefect(def, p.zone, roomId = p.roomId); break
+                }
+            }
+        }
+        // Store/toilet beneath a staircase: a fixture flagged as sitting under a STAIRCASE room.
+        val staircaseIds = roomResults.filter { it.type == RoomType.STAIRCASE }.map { it.roomId }.toSet()
+        for ((fx, _) in rotatedFixtures) {
+            if (fx.underRoomId != null && fx.underRoomId in staircaseIds) {
+                out += toDefect(def, Zone.BRAHMASTHAN, roomId = fx.underRoomId, fixtureId = fx.id)
+            }
+        }
+    }
+
+    private fun detectRoadThrust(site: Site, out: MutableList<Defect>) {
+        val def = ruleSet.defects.firstOrNull { it.id == "X-11" } ?: return
+        for (road in site.roads) {
+            if (!road.pointsAtPlot) continue
+            val zone = bearingToZone(road.bearingDegrees.toDouble())
+            // Reading A (directional, §8.5 W-10): harmful from S, SW, SE or NW. Provenance stays DISP.
+            if (zone in setOf(Zone.S, Zone.SW, Zone.SE, Zone.NW)) {
+                out += toDefect(def, zone, roomId = null)
+            }
+        }
+    }
+
+    /** Map a compass bearing (clockwise from North) to its 45°-wide sector zone. */
+    private fun bearingToZone(bearingDeg: Double): Zone {
+        val b = ((bearingDeg % 360.0) + 360.0) % 360.0
+        val sectors = arrayOf(Zone.N, Zone.NE, Zone.E, Zone.SE, Zone.S, Zone.SW, Zone.W, Zone.NW)
+        return sectors[((b + 22.5) / 45.0).toInt() % 8]
     }
 
     private fun detectFixtureDefects(rotatedFixtures: List<Pair<Fixture, Point>>, out: MutableList<Defect>) {

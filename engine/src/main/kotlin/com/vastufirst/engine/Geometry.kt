@@ -1,7 +1,9 @@
 package com.vastufirst.engine
 
 import com.vastufirst.shared.Point
+import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 
 /** An axis-aligned rectangle in plan space (x east, y north). */
@@ -84,6 +86,56 @@ internal object Geometry {
         poly.map { rotate(it, degrees, origin) }
 
     /**
+     * Do two simple polygons share a wall — i.e. do any of their edges lie on the same line and
+     * overlap over a non-trivial length? Used for the pooja-shares-a-wall-with-toilet defect
+     * (X-10). Rotation-invariant, so it works in either plan or true-North space.
+     */
+    fun sharesWall(a: List<Point>, b: List<Point>): Boolean {
+        // Scale-relative tolerances so the engine stays scale-free (a plan in [0,1] units must
+        // detect adjacency just like one in metres). Derive a characteristic length from the two
+        // polygons' combined extent.
+        val scale = characteristicLength(a, b).coerceAtLeast(1e-12)
+        val perpTol = scale * REL_COLLINEAR
+        val overlapTol = scale * REL_OVERLAP
+        for (i in a.indices) {
+            val a1 = a[i]; val a2 = a[(i + 1) % a.size]
+            for (j in b.indices) {
+                val b1 = b[j]; val b2 = b[(j + 1) % b.size]
+                if (segmentsOverlapCollinear(a1, a2, b1, b2, perpTol, overlapTol)) return true
+            }
+        }
+        return false
+    }
+
+    private fun characteristicLength(a: List<Point>, b: List<Point>): Double {
+        val all = a + b
+        val w = all.maxOf { it.x } - all.minOf { it.x }
+        val h = all.maxOf { it.y } - all.minOf { it.y }
+        return maxOf(w, h)
+    }
+
+    private fun segmentsOverlapCollinear(
+        p1: Point, p2: Point, q1: Point, q2: Point, perpTol: Double, overlapTol: Double,
+    ): Boolean {
+        val dx = p2.x - p1.x
+        val dy = p2.y - p1.y
+        val len = hypot(dx, dy)
+        if (len < overlapTol) return false
+        // q1, q2 must sit on the (infinite) line through p1→p2.
+        if (perpDistance(p1, dx, dy, len, q1) > perpTol) return false
+        if (perpDistance(p1, dx, dy, len, q2) > perpTol) return false
+        // Project everything onto the p1→p2 axis and test 1-D interval overlap length.
+        val tq1 = ((q1.x - p1.x) * dx + (q1.y - p1.y) * dy) / (len * len)
+        val tq2 = ((q2.x - p1.x) * dx + (q2.y - p1.y) * dy) / (len * len)
+        val lo = maxOf(0.0, minOf(tq1, tq2))
+        val hi = minOf(1.0, maxOf(tq1, tq2))
+        return (hi - lo) * len > overlapTol
+    }
+
+    private fun perpDistance(p1: Point, dx: Double, dy: Double, len: Double, q: Point): Double =
+        abs((q.x - p1.x) * dy - (q.y - p1.y) * dx) / len
+
+    /**
      * Area of the intersection of an arbitrary simple [subject] polygon with an axis-aligned
      * rectangle, via Sutherland–Hodgman clipping. The clip window is convex, so the clipped
      * polygon's shoelace area is exact even for concave (L-shaped) subjects.
@@ -132,4 +184,7 @@ internal object Geometry {
         val t = (lo + hi) / 2.0
         return Point(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
     }
+
+    private const val REL_COLLINEAR = 1e-6   // perpendicular tolerance, relative to plan scale
+    private const val REL_OVERLAP = 1e-5     // min shared-wall length, relative to plan scale
 }

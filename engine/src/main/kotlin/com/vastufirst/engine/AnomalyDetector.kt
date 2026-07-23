@@ -40,11 +40,15 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
         val extByZone = HashMap<Zone, Double>()
         for (zone in Zone.entries) {
             val z = grid.zoneRect(zone)
-            val refZ = intersect(reference, z) ?: continue
+            // A zone can lie ENTIRELY outside the reference rectangle — that is exactly where a
+            // deep extension protrudes (an outer band beyond the modal edge). Must NOT skip it:
+            // its whole footprint area is then extension (footInRefZone = 0). Dropping it silently
+            // loses X-05 (SW extension) for deep protrusions.
+            val refZ = intersect(reference, z)
             val footInZone = Geometry.clipArea(rotatedOutline, z)
-            val footInRefZone = Geometry.clipArea(rotatedOutline, refZ)
-            val cut = refZ.area - footInRefZone
-            val ext = footInZone - footInRefZone
+            val footInRefZone = if (refZ != null) Geometry.clipArea(rotatedOutline, refZ) else 0.0
+            val cut = (refZ?.area ?: 0.0) - footInRefZone       // inside reference, outside footprint
+            val ext = footInZone - footInRefZone                // inside footprint, outside reference
             if (cut > refArea * MIN_ZONE_SHARE) cutByZone[zone] = cut
             if (ext > refArea * MIN_ZONE_SHARE) extByZone[zone] = ext
         }

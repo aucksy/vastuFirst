@@ -19,27 +19,36 @@ internal class RoomEvaluator(
     private val assigner: ZoneAssigner,
     private val analysisRectArea: Double,
 ) {
-    /** Evaluate a room whose polygon is already rotated to true-North. Also returns the
-     *  prohibited zone that triggered a DEFECT, for structural-defect mapping. */
-    fun evaluate(room: Room, rotatedPoly: List<Point>): Pair<RoomResult, Zone?> {
+    /**
+     * Evaluate a room whose polygon is already rotated to true-North. Returns the [RoomResult]
+     * plus the FULL list of prohibited zones it violates — §4.6 requires every (RoomType,
+     * prohibited Zone) pair to resolve to a defect, so a room straddling two prohibited zones
+     * must produce two defects, not one. The list is empty for a non-DEFECT room.
+     */
+    fun evaluate(room: Room, rotatedPoly: List<Point>): Pair<RoomResult, List<Zone>> {
         val rule = ruleSet.ruleFor(room.type)
         val overlaps = grid.overlaps(rotatedPoly)
         val centroidZone = grid.zoneOf(Geometry.centroid(rotatedPoly))
 
         // No rule ⇒ unruled type (loader guarantees ruled-or-unruled) ⇒ NOT_SCORED.
         if (rule == null) {
-            return RoomResult(room.id, room.type, centroidZone, Verdict.NOT_SCORED, 0, 0.0, null, overlaps.perPada) to null
+            return RoomResult(room.id, room.type, centroidZone, Verdict.NOT_SCORED, 0, 0.0, null, overlaps.perPada) to emptyList()
         }
 
         val positiveZone = assigner.positiveZone(rule.positiveStrategy, overlaps, centroidZone)
 
         // Disputed (§4.4.1) or pending/scored-elsewhere (§4.4.2) ⇒ NOT_SCORED, excluded from both sums.
         if (rule.disputeId != null || rule.excludeFromScore) {
-            return RoomResult(room.id, room.type, positiveZone, Verdict.NOT_SCORED, 0, rule.weight, rule, overlaps.perPada) to null
+            return RoomResult(room.id, room.type, positiveZone, Verdict.NOT_SCORED, 0, rule.weight, rule, overlaps.perPada) to emptyList()
         }
 
         val roomArea = Geometry.area(rotatedPoly)
-        val defectZones = defectZones(rule, overlaps, positiveZone, centroidZone, roomArea)
+
+        // All prohibited zones this room actually violates: those flagged by the defect strategy,
+        // plus the credited zone itself if it happens to be prohibited (largest-overlap case).
+        val flagged = LinkedHashSet<Zone>()
+        flagged += defectZones(rule, overlaps, positiveZone, centroidZone, roomArea)
+        if (positiveZone in rule.prohibited) flagged += positiveZone
 
         val baseVerdict = when (positiveZone) {
             in rule.ideal -> Verdict.IDEAL
@@ -48,15 +57,11 @@ internal class RoomEvaluator(
             else -> Verdict.SUBOPTIMAL
         }
 
-        val (verdict, zone) =
-            if (defectZones.isNotEmpty()) Verdict.DEFECT to defectZones.first()
-            else baseVerdict to positiveZone
-
-        // baseVerdict is never NOT_SCORED here (disputed/excluded returned early), so it always scores.
+        val verdict = if (flagged.isNotEmpty()) Verdict.DEFECT else baseVerdict
+        val zone = if (flagged.isNotEmpty()) flagged.first() else positiveZone
         val points = ruleSet.config.scorePoints[verdict.name] ?: 0
 
-        val defectZone = if (verdict == Verdict.DEFECT) zone else null
-        return RoomResult(room.id, room.type, zone, verdict, points, rule.weight, rule, overlaps.perPada) to defectZone
+        return RoomResult(room.id, room.type, zone, verdict, points, rule.weight, rule, overlaps.perPada) to flagged.toList()
     }
 
     private fun defectZones(

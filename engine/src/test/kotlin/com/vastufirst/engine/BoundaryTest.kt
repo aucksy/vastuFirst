@@ -41,6 +41,22 @@ class BoundaryTest {
     }
 
     @Test
+    fun `a deep SW extension is detected even where it lies fully outside the reference rectangle`() {
+        // Main body [0,100]² plus a deep south-west bump x[0,30] y[-60,0]. The SW zone of the
+        // analysis grid falls entirely below the reference rectangle (minY=0); the bump's bulk
+        // lives there. Regression guard: this must still register as an extension → X-05.
+        val outline = listOf(
+            Point(0.0, -60.0), Point(30.0, -60.0), Point(30.0, 0.0),
+            Point(100.0, 0.0), Point(100.0, 100.0), Point(0.0, 100.0),
+        )
+        val a = engine.analyze(plan(outline, listOf(Room("m", RoomType.MASTER_BEDROOM, Fixtures.rect(40.0, 5.0, 25.0, 25.0)))))
+        assertFalse(a.shapeIrregular)
+        assertTrue(a.extensions.isNotEmpty(), "the deep SW bump must register as an extension, not vanish")
+        assertTrue(a.extensions.any { it.zone == Zone.SW })
+        assertTrue(a.defects.any { it.id == "X-05" }, "a SW extension raises X-05")
+    }
+
+    @Test
     fun `a genuinely irregular polygon skips cut and extension analysis honestly`() {
         val triangle = listOf(Point(0.0, 0.0), Point(100.0, 0.0), Point(50.0, 100.0))
         val a = engine.analyze(plan(triangle, emptyList()))

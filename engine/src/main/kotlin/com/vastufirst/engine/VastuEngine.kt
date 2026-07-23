@@ -10,7 +10,9 @@ import com.vastufirst.shared.Fixture
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.RoomResult
+import com.vastufirst.shared.SchoolProfile
 import com.vastufirst.shared.Severity
+import com.vastufirst.shared.Zone
 import com.vastufirst.shared.Verdict
 
 /**
@@ -27,8 +29,14 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
     fun ruleSetVersion(): String = ruleSet.version
 
     fun analyze(plan: Plan): Analysis {
-        require(plan.levels.isNotEmpty()) { "Plan ${plan.id} has no levels." }
-        val level = plan.levels.first { it.index == 0 }
+        // Only the default 81-pada school is implemented; the angular geometries are a different
+        // computation gated on the M-11 ruling (§4.7). Refuse rather than silently mis-score.
+        require(plan.schoolProfile == SchoolProfile.TRADITIONAL_8) {
+            "Only TRADITIONAL_8 is implemented. ${plan.schoolProfile} is a separate angular geometry " +
+                "gated on the M-11 expert ruling (§4.7) — it is not a reinterpretation of the 81-pada grid."
+        }
+        val level = plan.levels.firstOrNull { it.index == 0 }
+            ?: error("Plan ${plan.id} has no ground floor (a Level with index 0).")
         val config = ruleSet.config
         val angle = plan.northOffsetDegrees.toDouble()
 
@@ -41,12 +49,18 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         val grid = PadaGrid(analysisRect, config.gridSize)
         val assigner = ZoneAssigner(config)
 
-        // 3. Rooms → verdicts.
+        // 3. Rooms → verdicts. Keep the rotated polygons (adjacency, X-10) and the full list of
+        //    prohibited zones each room violates (§4.6 — one defect per violated zone).
         val evaluator = RoomEvaluator(ruleSet, grid, assigner, analysisRect.area)
         val roomResults = ArrayList<RoomResult>(level.rooms.size)
+        val roomPolys = HashMap<String, List<Point>>(level.rooms.size)
+        val roomDefectZones = HashMap<String, List<Zone>>(level.rooms.size)
         for (room in level.rooms) {
             val rotated = Geometry.rotatePoly(room.polygon, angle, origin)
-            roomResults += evaluator.evaluate(room, rotated).first
+            roomPolys[room.id] = rotated
+            val (rr, zones) = evaluator.evaluate(room, rotated)
+            roomResults += rr
+            roomDefectZones[room.id] = zones
         }
 
         // 4. The main door → the 32-pada verdict (the highest-weighted element).
@@ -75,7 +89,7 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         val rotatedFixtures: List<Pair<Fixture, Point>> =
             level.fixtures.map { it to Geometry.rotate(it.position, angle, origin) }
         val outcome = DefectDetector(ruleSet, grid)
-            .detect(roomResults, doorBearing, anomalies, rotatedFixtures, plan.site)
+            .detect(roomResults, roomDefectZones, roomPolys, doorBearing, anomalies, rotatedFixtures, plan.site)
 
         // 7. Score.
         val scored = Scorer(config).score(roomResults, doorResult, outcome.defects)

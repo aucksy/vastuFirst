@@ -54,12 +54,27 @@ object RuleSetLoader {
     private fun validate(rs: RuleSet) {
         val errors = mutableListOf<String>()
 
-        // 1. Exactly 32 door padas, ordinals 1..32 contiguous, and every side covers 8.
+        // 1. Exactly 32 door padas, ordinals 1..32 contiguous, ids unique, EACH SIDE covers 8,
+        //    and — the part that actually matters for door resolution — the startBearings tile
+        //    [0,360) at exact 11.25° steps with no gap or overlap. Without this a corrupt bearing
+        //    silently resolves a door to the wrong (N1) pada instead of failing loud (§5.1).
         if (rs.doorPadas.size != 32) errors += "Expected 32 door padas, found ${rs.doorPadas.size}."
         val ordinals = rs.doorPadas.map { it.ordinal }.sorted()
         if (ordinals != (1..32).toList()) errors += "Door pada ordinals must be 1..32 contiguous; got $ordinals."
         val ids = rs.doorPadas.map { it.id }
         if (ids.toSet().size != ids.size) errors += "Duplicate door pada ids: ${ids.groupingBy { it }.eachCount().filter { it.value > 1 }.keys}."
+        listOf(com.vastufirst.shared.Zone.N, com.vastufirst.shared.Zone.E,
+            com.vastufirst.shared.Zone.S, com.vastufirst.shared.Zone.W).forEach { side ->
+            val n = rs.doorPadas.count { it.side == side }
+            if (n != 8) errors += "Door side $side must have 8 padas; found $n."
+        }
+        val bearings = rs.doorPadas.map { it.startBearing }.sorted()
+        bearings.forEachIndexed { i, b ->
+            val expected = i * 11.25
+            if (kotlin.math.abs(b - expected) > 1e-6) {
+                errors += "Door pada startBearings must tile [0,360) at 11.25° steps; index $i is $b, expected $expected."
+            }
+        }
 
         // 2. Every RoomType either has a rule or is explicitly listed as unruled.
         val ruled = rs.rooms.map { it.roomType }.toSet()
@@ -86,7 +101,15 @@ object RuleSetLoader {
         }
         if (rs.defects.none { it.id == "X-GEN" }) errors += "Dataset must define the fallback defect 'X-GEN'."
 
-        // 5. Every config lookup table covers its enum.
+        // 5. The Brahmasthan extent must be one the engine actually implements — the config knob
+        //    must not silently fall back to 3×3 (M-05 is unresolved; only CENTRAL_3X3 is built).
+        if (rs.config.brahmasthanExtent != "CENTRAL_3X3") {
+            errors += "config.brahmasthanExtent '${rs.config.brahmasthanExtent}' is not implemented; " +
+                "only CENTRAL_3X3 is built (M-05 is unresolved — §13)."
+        }
+        if (rs.config.gridSize % 3 != 0) errors += "config.gridSize ${rs.config.gridSize} must be divisible by 3."
+
+        // 6. Every config lookup table covers its enum.
         listOf("MAJOR", "MODERATE", "MINOR").forEach {
             if (it !in rs.config.penalties) errors += "config.penalties missing severity '$it'."
         }
