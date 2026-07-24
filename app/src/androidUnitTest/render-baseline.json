@@ -5,6 +5,12 @@
   "home": 1,
   "home-empty": 0,
   "legal": 2,
+  "marknorth": 17,
+  "report": 27,
+  "report-living": 28,
+  "score": 5,
+  "score-insufficient": 0,
+  "score-loading": 0,
   "settings": 1,
   "unlock": 1,
   "welcome": 9
