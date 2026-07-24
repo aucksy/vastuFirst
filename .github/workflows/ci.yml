@@ -75,8 +75,26 @@ jobs:
         run: gradle :app:verifyRoborazziDebug --stacktrace
 
       - name: Record goldens if verify failed (bootstrap / deliberate change)
+        id: record_render
         if: steps.verify_render.outcome == 'failure' && github.event_name == 'push'
+        continue-on-error: true
         run: gradle :app:recordRoborazziDebug --stacktrace
+
+      # Diagnostics: a genuine render failure (record could not produce goldens). The console
+      # truncates the stack, so dump the full test-results XML, then re-fail the job (record was
+      # continue-on-error so we could reach this). A successful bootstrap record does NOT come here.
+      - name: Show render test stack traces (record failed)
+        if: steps.record_render.outcome == 'failure'
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in app/build/test-results/testDebugUnitTest/*.xml; do
+            found=1
+            echo "=================== $f ==================="
+            cat "$f"
+          done
+          [ "$found" = 0 ] && echo "No test-results XML found."
+          exit 1
 
       - name: Commit new / updated goldens back
         if: steps.verify_render.outcome == 'failure' && github.event_name == 'push'

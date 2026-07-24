@@ -1,10 +1,12 @@
 package com.vastufirst.app.ui.grid
 
+import android.app.Application
 import com.vastufirst.app.render.captureAcrossMatrix
 import com.vastufirst.app.ui.newplan.SamplePlans
 import org.junit.runner.RunWith
 import org.junit.Test
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -22,6 +24,10 @@ import org.robolectric.annotation.GraphicsMode
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
+// Render from a PLAIN Application, not the app's VastuApp — the editor here is stateless fixture
+// content and needs no DI. Booting VastuApp would call startKoin() once per test method in the
+// shared JVM and throw KoinApplicationAlreadyStartedException on the second (UI-POLISH §6 harness).
+@Config(application = Application::class)
 class EditorScreenshotTest {
 
     private val sample = SamplePlans.all.first()
