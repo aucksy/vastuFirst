@@ -68,8 +68,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 6
-        versionName = "0.2.4"   // render harness — CI now draws + measures every screen (UI-POLISH §6)
+        versionCode = 7
+        versionName = "0.2.5"   // render harness — Welcome/Home/Settings now drawn + measured too (UI-POLISH §6)
     }
 
     buildTypes {

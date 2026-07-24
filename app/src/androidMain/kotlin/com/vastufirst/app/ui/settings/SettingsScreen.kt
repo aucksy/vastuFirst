@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.window.Dialog
 import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
@@ -42,13 +43,25 @@ fun SettingsScreen(
     onBack: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
 ) {
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
+    // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
+    SettingsContent(onLegal = onLegal, onBack = onBack, onDeleteAll = homeViewModel::deleteAll)
+}
+
+/** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */
+@Composable
+fun SettingsContent(
+    onLegal: () -> Unit,
+    onBack: () -> Unit,
+    onDeleteAll: () -> Unit,
+) {
     val colors = VastuTheme.colors
     var showConfirm by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            IconTapButton("‹", contentDescription = "Back", onClick = onBack)
+            IconTapButton("‹", contentDescription = "Back", onClick = onBack, modifier = Modifier.testTag("settings.back"))
             VText("Settings", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -96,7 +109,7 @@ fun SettingsScreen(
                     )
                     VastuButton(
                         "Delete everything",
-                        onClick = { homeViewModel.deleteAll(); showConfirm = false },
+                        onClick = { onDeleteAll(); showConfirm = false },
                         style = VastuButtonStyle.SECONDARY,
                         large = false,
                         modifier = Modifier.weight(1f),

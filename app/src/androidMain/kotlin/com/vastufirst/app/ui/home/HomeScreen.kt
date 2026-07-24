@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -47,8 +48,21 @@ fun HomeScreen(
     onSettings: () -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
-    val colors = VastuTheme.colors
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the list below renders headlessly
+    // from a fixture in the screenshot harness — including the empty state (UI-POLISH §6).
     val plans by viewModel.plans.collectAsStateWithLifecycle()
+    HomeContent(plans = plans, onAddHome = onAddHome, onOpenPlan = onOpenPlan, onSettings = onSettings)
+}
+
+/** Saved-plans home as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@Composable
+fun HomeContent(
+    plans: List<SavedPlan>,
+    onAddHome: () -> Unit,
+    onOpenPlan: (String) -> Unit,
+    onSettings: () -> Unit,
+) {
+    val colors = VastuTheme.colors
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
@@ -80,7 +94,7 @@ fun HomeScreen(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        VastuButton("Add a home", onClick = onAddHome)
+        VastuButton("Add a home", onClick = onAddHome, modifier = Modifier.testTag("home.add"))
     }
 }
 

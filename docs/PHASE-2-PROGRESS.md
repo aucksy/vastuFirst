@@ -119,3 +119,27 @@ of six controls, which overflows a 320 dp screen.
   early `return` before the first pointer-down, which would have spun `awaitEachGesture` into an ANR;
   and reading `positionChange()` after consuming the change, which always reports zero movement and
   would have frozen the placement ghost.
+
+---
+
+## Render harness — batch 2: Welcome, Home, Settings drawn (v0.2.5, 2026-07-24)
+
+Three more screens the build had never rendered can now be seen. Each got the editor's proven
+stateless seam: a thin `Screen(vm)` wrapper that is the only thing touching the ViewModel, calling a
+pure `…Content(state, callbacks)` the screenshot harness drives from a fixture.
+
+- **`WelcomeScreen` → `WelcomeContent(intent, onIntentChange, onContinue)`** — `testTag("welcome.continue")`.
+- **`HomeScreen` → `HomeContent(plans, onAddHome, onOpenPlan, onSettings)`** — `testTag("home.add")`;
+  the wrapper still collects `viewModel.plans`. Rendered in two states: with two saved homes, and
+  **empty** (`home-empty`) — the state a first-time user lands on and the one most likely to collapse.
+- **`SettingsScreen` → `SettingsContent(onLegal, onBack, onDeleteAll)`** — `testTag("settings.back")`;
+  the delete-confirm dialog state stays inside `Content`, the ViewModel's `deleteAll` is now a callback.
+
+New harness files: `render/RenderFixtures.kt` (a minimal `SavedPlan` list — the list view only reads
+id/name/intent/score, so the `Plan` inside is deliberately trivial) and
+`render/ViewModelScreensScreenshotTest.kt` (four screens × the full §6.4 matrix, screenshot +
+manifest each). CI records the goldens and the ratchet adopts each screen into `render-baseline.json`.
+
+**Behaviour unchanged** — this is a pure extract-a-seam refactor; every `vm.x` became a parameter,
+no layout or logic moved. Still cannot see: window insets, IME, gesture conflicts, rotation, real
+TalkBack (UI-POLISH §6.7).

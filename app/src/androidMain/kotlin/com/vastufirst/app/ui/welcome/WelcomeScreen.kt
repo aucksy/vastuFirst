@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.SectionLabel
@@ -38,14 +39,30 @@ import com.vastufirst.app.ui.common.screenRoot
  * the whole product — intent (§2). No sign-up, no phone number. Continue is disabled until an
  * intent is chosen. Phase 2 ships English; the other five scripts arrive in Phase 4.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WelcomeScreen(
     vm: NewPlanViewModel,
     onContinue: () -> Unit,
 ) {
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen below renders
+    // headlessly from fixture state in the screenshot harness (UI-POLISH §6, stateless-content).
+    WelcomeContent(
+        intent = vm.intent,
+        onIntentChange = { vm.intent = it },
+        onContinue = onContinue,
+    )
+}
+
+/** Welcome as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun WelcomeContent(
+    intent: Intent?,
+    onIntentChange: (Intent) -> Unit,
+    onContinue: () -> Unit,
+) {
     val colors = VastuTheme.colors
-    val chosen = vm.intent
+    val chosen = intent
 
     Column(
         modifier = Modifier
@@ -85,13 +102,13 @@ fun WelcomeScreen(
         SectionLabel("What brings you here?")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { vm.intent = Intent.BUILDING }
-            IntentCard("I am buying a home", "Deciding between options", chosen == Intent.BUYING) { vm.intent = Intent.BUYING }
-            IntentCard("I already live here", "Looking for remedies", chosen == Intent.LIVING) { vm.intent = Intent.LIVING }
+            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { onIntentChange(Intent.BUILDING) }
+            IntentCard("I am buying a home", "Deciding between options", chosen == Intent.BUYING) { onIntentChange(Intent.BUYING) }
+            IntentCard("I already live here", "Looking for remedies", chosen == Intent.LIVING) { onIntentChange(Intent.LIVING) }
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
-        VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null)
+        VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }

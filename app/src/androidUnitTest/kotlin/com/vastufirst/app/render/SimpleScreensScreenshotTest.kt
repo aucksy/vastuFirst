@@ -12,9 +12,9 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The stateless, callback-only screens — rendered + measured across the §6.4 matrix. These take no
- * ViewModel, so they render straight from their public composable. (The ViewModel-backed screens —
- * Welcome, Home, Settings, MarkNorth, Score, Report — get the same treatment once each has a
- * stateless `…Content` seam like the editor's; that is the next batch, and the pattern is proven.)
+ * ViewModel, so they render straight from their public composable. (Welcome, Home and Settings are
+ * driven through their new stateless `…Content` seams in ViewModelScreensScreenshotTest; MarkNorth,
+ * Score and Report — which need an engine-computed Analysis fixture — follow in the next batch.)
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
