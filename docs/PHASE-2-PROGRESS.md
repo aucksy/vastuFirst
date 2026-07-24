@@ -313,3 +313,10 @@ Also opportunistically: Score's zone-map model is now `remember`ed (§H, was reb
 **Deferred to Wave 2:** B7 (Mark-North compass labels collide at font 2.0), B12 (all homes named
 "My home"), C13 (TalkBack can't set North), C14 (Mark-North drag perf), C15 (minor a11y). **Group D**
 (L-shape footprint, score-is-a-ceiling labelling, the 8 rulings + ₹699) awaits owner decisions.
+
+**Adversarial review before tagging** (standing rule): no blockers/majors. Two cheap review fixes
+applied — F1: the terminal `repo.save` (both autosave and the Mark-North `save()`) is now
+`NonCancellable`, so the one-tap "See all my plans" (which pops the flow's ViewModel scope) can't
+drop an in-flight save; F2: `updateGrid` only recomputes/re-saves when a room actually moved or the
+door cleared, so a pure canvas *grow* no longer bumps the plan's `updatedAt`. F3 (autosave writes the
+constant "My home" name) is inert until naming ships — folded into Wave 2's B12.

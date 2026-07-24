@@ -17,6 +17,7 @@ import com.vastufirst.shared.editor.CellRect
 import com.vastufirst.shared.editor.fitWithoutOverlap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,14 +105,14 @@ class NewPlanViewModel(
                 // draft (planId == null) is still first persisted at Mark North's "Read my home", so
                 // this never creates junk rows while the user is still drawing (E2E-ASSESSMENT §A3).
                 planId?.let { id ->
-                    repo.save(
-                        SavedPlan(
-                            id = id, name = defaultName(), intent = plan.intent, propertyType = plan.propertyType,
-                            plan = plan, score = result.score, ruleSetVersion = engine.ruleSetVersion(),
-                            unlocked = unlocked, createdAt = now(), updatedAt = now(),
-                        ),
-                        now(),
+                    val saved = SavedPlan(
+                        id = id, name = defaultName(), intent = plan.intent, propertyType = plan.propertyType,
+                        plan = plan, score = result.score, ruleSetVersion = engine.ruleSetVersion(),
+                        unlocked = unlocked, createdAt = now(), updatedAt = now(),
                     )
+                    // NonCancellable: leaving the flow (goHome pops the graph-scoped VM, cancelling
+                    // this scope) must not drop the final save mid-write (E2E-ASSESSMENT §A3 / review F1).
+                    withContext(NonCancellable) { repo.save(saved, now()) }
                 }
             }
         }
@@ -138,19 +139,24 @@ class NewPlanViewModel(
         val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r) ?: return
         gridCols = c
         gridRows = r
+        var changed = false
         val repacked = rooms.mapIndexed { i, room ->
             val f = fitted[i]
             room.copy(col = f.col, row = f.row, w = f.w, h = f.h)
         }
-        if (repacked != rooms) rooms = repacked
+        if (repacked != rooms) { rooms = repacked; changed = true }
         door?.let { d ->
             val fits = when (d.side) {
                 DoorSide.N, DoorSide.S -> d.cell in 0 until c
                 DoorSide.E, DoorSide.W -> d.cell in 0 until r
             }
-            if (!fits) door = null
+            if (!fits) { door = null; changed = true }
         }
-        markDirty()
+        // Only a resize that moved a room or cleared the door changes the score — a pure grow that
+        // shifts nothing leaves the analysis identical (grid size doesn't enter the score), so don't
+        // recompute or bump the saved plan's updatedAt for it (review F2). The canvas still resizes:
+        // gridCols/gridRows are state, so the editor and zone map recompose regardless.
+        if (changed) markDirty()
     }
 
     private fun markDirty() { dirty.tryEmit(Unit) }
@@ -166,23 +172,28 @@ class NewPlanViewModel(
         planId = id
         val plan = buildPlan() ?: return
         viewModelScope.launch {
-            // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
-            // null): guarantees the stored list-view score equals what a reopen recomputes.
-            val a = withContext(Dispatchers.Default) { engine.analyze(plan) }
-            _analysis.value = a
-            val saved = SavedPlan(
-                id = id,
-                name = defaultName(),
-                intent = plan.intent,
-                propertyType = plan.propertyType,
-                plan = plan,
-                score = a.score,
-                ruleSetVersion = engine.ruleSetVersion(),
-                unlocked = unlocked,
-                createdAt = now(),
-                updatedAt = now(),
-            )
-            repo.save(saved, now())
+            // NonCancellable: "Read my home" saves then immediately navigates to Score; if the user
+            // taps on to "See all my plans" (goHome pops this graph-scoped VM), the save must still
+            // land — otherwise the home they just made is missing from the list (review F1).
+            withContext(NonCancellable) {
+                // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
+                // null): guarantees the stored list-view score equals what a reopen recomputes.
+                val a = withContext(Dispatchers.Default) { engine.analyze(plan) }
+                _analysis.value = a
+                val saved = SavedPlan(
+                    id = id,
+                    name = defaultName(),
+                    intent = plan.intent,
+                    propertyType = plan.propertyType,
+                    plan = plan,
+                    score = a.score,
+                    ruleSetVersion = engine.ruleSetVersion(),
+                    unlocked = unlocked,
+                    createdAt = now(),
+                    updatedAt = now(),
+                )
+                repo.save(saved, now())
+            }
         }
     }
 
