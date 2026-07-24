@@ -110,6 +110,16 @@ jobs:
           [ "$found" = 0 ] && echo "No test-results XML found."
           exit 1
 
+      - name: DEBUG — locate rendered images
+        if: always()
+        run: |
+          echo "--- every *.png under a roborazzi path ---"
+          find . -path '*roborazzi*' -name '*.png' 2>/dev/null | head -60
+          echo "--- every *.png anywhere under app/build ---"
+          find app/build -name '*.png' 2>/dev/null | head -60
+          echo "--- committed golden dir ---"
+          ls -laR app/src/androidUnitTest/roborazzi 2>/dev/null | head -40 || echo "(golden dir does not exist)"
+
       - name: Commit new / updated goldens back
         if: steps.record_render.outcome == 'success'
         run: |
