@@ -1,6 +1,8 @@
 # Floor-plan editor rework — direct manipulation
 
-**Status:** designed, agreed, prototyped, **not yet implemented.**
+**Status:** **Build A shipped in v0.2.3** (2026-07-24) — items 1–5 below are built, CI green.
+Build B (items 6–10) is next, after the owner has had the interaction in their hands.
+Design and research below are settled; do not re-open them.
 **Owner ask (2026-07-24):** *"the floor plan builder needs to be more intuitive and easy to use…
 I should be able to drag, resize the shapes easily with fingers on screen… tap into it then I get
 option to play around with that shape… move it, resize it by dragging the corners."*
@@ -242,19 +244,35 @@ Full-list snapshots (a dozen rooms is a few hundred bytes; a command/diff patter
 
 ## 5. Ship order
 
-**Build A — the interaction** (ship and let the owner feel it):
-1. Gesture arbiter + hit-testing + `DragState` (§4.1, §4.2)
-2. Corner handles, 1-cell special case (§4.3)
-3. Take-off placement with ghost + zone chip (§4.4)
-4. Overlap blocking + snap-back (§4.5)
-5. Move/resize feedback + haptics (§4.5)
+**Build A — the interaction** (ship and let the owner feel it) — ✅ **DONE, v0.2.3:**
+1. ✅ Gesture arbiter + hit-testing + `DragState` (§4.1, §4.2)
+2. ✅ Corner handles, 1-cell special case (§4.3)
+3. ✅ Take-off placement with ghost + zone chip (§4.4)
+4. ✅ Overlap blocking + snap-back (§4.5)
+5. ✅ Move/resize feedback + haptics (§4.5)
+7. ✅ **Pulled forward from Build B:** move arrows + steppers in the selected-room panel (§4.6).
+   The moment move-by-drag exists, WCAG 2.2 SC 2.5.7 requires a non-drag path for it — shipping the
+   drag without the arrows would have shipped a conformance failure, and the arrows are ~20 lines.
 
 **Build B — completeness:**
 6. Undo (§4.8)
-7. Move arrows + steppers in the selected-room panel (§4.6)
-8. Full semantics: customActions, live region, traversal order (§4.6)
-9. Perf pass + `UseOfNonLambdaOffsetOverload` as an error (§4.7)
-10. Roborazzi screenshot coverage of the editor at the standard config matrix (UI-POLISH §6.4)
+8. Full semantics: customActions, live region, traversal order (§4.6). *Basic* per-room semantics
+   (name, size, zone, selected state, a click action) ship in Build A; the custom-action menu does not.
+9. Perf pass + `UseOfNonLambdaOffsetOverload` as an error (§4.7). Build A already uses the lambda
+   `offset` overload and only re-publishes drag state on a **snapped cell change**, so a drag
+   recomposes a handful of times rather than per pointer event — but this has not been measured.
+10. Roborazzi screenshot coverage of the editor at the standard config matrix (UI-POLISH §6.4).
+    ⚠ **This is the gap that makes Build A's hand-over honest-but-unverified**: there is still no
+    machine in this project that has ever *rendered* this screen. See "What was and was not verified"
+    in `docs/PHASE-2-PROGRESS.md`.
+
+### What Build A deviates from, deliberately
+
+| Spec | Built | Why |
+|---|---|---|
+| §4.4 labels the plan `NORTH / EAST / SOUTH / WEST` around the grid | NORTH above; `WEST · SOUTH · EAST` in one row below | Side labels cost the grid ~40 dp of width, and a cell is already only 34 dp at 320 dp. Rotated side text needs a custom layout that cannot be verified without a renderer. Positions still read correctly: west is at the left, east at the right. |
+| §4.5 "snap-back" on a refused drag | The room stays at its last **valid** position; the refused position shows as a red ghost | This is what the prototype does, and the prototype wins on behaviour. Snapping all the way back would discard a legal partial move the user made. |
+| Chip is one line | `maxLines = 1`, ellipsised | A two-line chip changes the reserved row's height and shifts the whole plan. The same information is repeated in full in the selected-room panel below. |
 
 ---
 

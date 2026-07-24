@@ -50,8 +50,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "0.2.2"   // UI polish round 1 — window insets, the guided grid, launcher icon
+        versionCode = 5
+        versionName = "0.2.3"   // floor-plan editor rework Build A — direct manipulation
     }
 
     buildTypes {

@@ -30,6 +30,23 @@ zones*, so a room the user pictures as "NE corner" can be placed such that it sc
 warning that placement is approximate.
 - Silent: yes. Moves number: near zone boundaries, yes. Fix path: finer grid or a "nudge into
   zone" affordance; at minimum a note that placement is approximate.
+- **v0.2.3 mitigates the *silent* half:** the editor now names the zone live in the chip above the
+  plan ("Kitchen · 2×2 · North-East") and draws the two band boundaries stronger, so a room landing a
+  cell away from the zone the user intends is visible **while placing it** rather than discovered in
+  the report. It does not make the input finer — that remains the open fix.
+
+### 2b. The editor's zone chip is a placement aid, not the scored zone
+`zoneOfRect()` names the zone from the room's **centre on the 8×8 drawing grid**. The engine scores on
+the **footprint** (the bounding box of the placed rooms, which is smaller than the grid until the
+drawing fills it) and credits the **largest overlap**, not the centre. So the chip and the report can
+name different zones for the same room — most visibly when only one or two rooms have been placed and
+the footprint is therefore tiny.
+- Silent: the chip never claims to be the score and the report is the authority. Moves number: **no** —
+  the chip is display-only; the engine is untouched by it.
+- Fix path: derive the chip from the live footprint using the engine's own largest-overlap rule. Not
+  done in v0.2.3 because it makes the chip's answer jump as the footprint grows while rooms are being
+  added, which defeats the thing the chip exists to do. Revisit alongside the outline-capture step
+  (#1), which fixes the footprint properly.
 
 ### 3. North is set by the user and cannot be verified
 The whole zone assignment rotates with North. The user sets it by dial / slider / degree — if their

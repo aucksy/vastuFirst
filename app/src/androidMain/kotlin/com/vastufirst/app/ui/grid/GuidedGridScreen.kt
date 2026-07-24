@@ -636,6 +636,9 @@ private fun BoxScope.RoomTile(
             // recomposes the tile for every pointer event (§4.7).
             .offset { IntOffset((rect.col * cellPx).roundToInt(), (rect.row * cellPx).roundToInt()) }
             .size(width = cell * rect.w, height = cell * rect.h)
+            .padding(VastuTheme.spacing.s1)
+            // AFTER the padding, so the lift's shadow traces the room the user can see rather than
+            // a box 4dp larger on every side, and the scale grows about that same rectangle.
             .then(
                 if (lifted) Modifier.graphicsLayer {
                     scaleX = LIFT_SCALE
@@ -644,7 +647,6 @@ private fun BoxScope.RoomTile(
                     shape = tileShape
                 } else Modifier,
             )
-            .padding(VastuTheme.spacing.s1)
             .clip(tileShape)
             .background(tint.copy(alpha = if (lifted) 0.28f else 0.18f))
             .border(

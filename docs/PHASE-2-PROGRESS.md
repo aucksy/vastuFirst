@@ -67,3 +67,55 @@ ruleSetVersion re-score, intent-blind verdict, unlock "Pay" wording, and the a11
 (48dp targets, icon-button labels, slider semantics, button clip-safety, delete-all confirm).
 Deferred + surfaced to owner: L-shaped/notched homes are scored as a filled rectangle (needs an
 outline-capture step) — candidate #1 for the refinement plan.
+
+---
+
+## v0.2.3 — the floor-plan editor becomes direct manipulation (Build A)
+
+**What changed for the user.** Before: tapping the plan dropped a 2×2 room the instant your finger
+touched it, and the only way to change it was four `W −/+ H −/+` buttons — a room in the wrong place
+had to be deleted and drawn again. Now: touch a room and slide it, pull a corner to resize it, and
+when you add a room a dashed outline follows your finger and only lands **when you lift**. A chip
+above the plan names what you are about to get ("Kitchen · 2×2 · North-East") while you are still
+holding it. Rooms cannot be dropped on top of each other — the outline turns red, the phone buzzes,
+and nothing is committed.
+
+Built to `docs/EDITOR-REWORK-PLAN.md` §5 Build A (items 1–5, plus item 7 pulled forward).
+
+**Under it:**
+- All the arithmetic that decides where a room lands is a pure function in `shared/…/editor/` with
+  21 unit tests that run on every push. That is deliberate: with no screenshot harness in this
+  project yet, a gesture written inside a Composable is a gesture nothing can prove.
+- One gesture arbiter (`awaitEachGesture` + manual hit-testing) on the grid, never per-child, so the
+  corner grips can hang outside a room and still be grabbable. Priority: selected room's grips
+  (circular hit test) → room bodies topmost-first → empty space.
+- The drag consumes at touch-slop, which is what stops the page scroll from stealing a vertical
+  drag inside the plan. A drag starting on **empty** grid space deliberately does not consume, so
+  the page still scrolls from there.
+- Drag state is republished only when the **snapped cell** changes, so a drag recomposes a handful
+  of times rather than once per pointer event.
+
+**Three older defects closed on the way:** the `pointerInput` was keyed on the room list (so the
+first edit a drag made cancelled the very gesture making it — UI audit item 25); the room palette's
+scroll position reset to the far left on every placement (item 16); the size steppers were one Row
+of six controls, which overflows a 320 dp screen.
+
+**Engine untouched** — `sample-01` still scores exactly 31.
+
+### ⚠ What was and was not verified for v0.2.3
+
+- **Verified:** green CI on `aucksy/vastuFirst` — module boundaries, token discipline, window-inset
+  screen-roots, design fidelity against the frozen contract, and every pure-module test including
+  the engine's `sample-01 = 31` and rotation invariance. The editor's own maths is covered by the 21
+  new tests. The agreed interaction was re-read line by line against
+  `tools/grid-prototype/index.html`, which remains the behavioural spec.
+- **NOT verified:** nobody and nothing has *rendered* this screen. The Roborazzi harness of
+  UI-POLISH §6 is Build B item 10 and does not exist yet, so there are no screenshots to look at and
+  the pre-APK ritual of UI-POLISH §7 steps 2–4 **could not be performed**. Everything visual here —
+  chip position, grip size against a real fingertip, the lift shadow, behaviour at 360 dp and at
+  200 % font scale — is reasoned, not seen. Runtime gesture behaviour (does the drag genuinely beat
+  the page scroll on a real phone?) is likewise unproven off-device.
+- Two logic defects were caught in self-review after the code was written and before it shipped: an
+  early `return` before the first pointer-down, which would have spun `awaitEachGesture` into an ANR;
+  and reading `positionChange()` after consuming the change, which always reports zero movement and
+  would have frozen the placement ghost.
