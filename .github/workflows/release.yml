@@ -60,6 +60,8 @@ jobs:
         run: gradle :app:verifyRoborazziDebug --stacktrace
       - name: L1 render-manifest check (measured geometry)
         run: node scripts/check-render-manifest.mjs .
+      - name: A11y check (ATF contrast / labels / traversal)
+        run: node scripts/check-a11y-manifest.mjs .
 
       - name: Upload rendered screenshots
         uses: actions/upload-artifact@v4
@@ -69,6 +71,7 @@ jobs:
             app/src/androidUnitTest/roborazzi/**
             app/build/outputs/roborazzi/**
             app/build/render-manifest/**
+            app/build/a11y-manifest/**
           if-no-files-found: warn
 
       - name: Build Android app

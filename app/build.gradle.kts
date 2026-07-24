@@ -68,8 +68,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 9
-        versionName = "0.2.7"   // compass LTR-locked (no RTL mirror) + Unlock scrolls (harness findings, UI-POLISH §6)
+        versionCode = 10
+        versionName = "0.2.8"   // accessibility check (ATF) now runs headless in CI, ratcheted (UI-POLISH §6.6)
     }
 
     buildTypes {

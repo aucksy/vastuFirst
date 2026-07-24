@@ -189,3 +189,29 @@ The render harness surfaced these two on the earlier batches; both are now fixed
 
 Both are verified by the render harness re-rendering the affected configs (`editor`/`editor-empty`
 at `rtl`, `unlock` at `font2_0`); the goldens in this release show the corrected layout.
+
+---
+
+## Accessibility check now runs in CI (v0.2.8, 2026-07-24)
+
+Google's Accessibility Test Framework — contrast, touch-target size, missing/duplicate labels,
+traversal order — now runs **headless inside the same JVM render** via Roborazzi's
+`checkRoboAccessibility` (`AccessibilityTest` → `A11yHarness`). No emulator; it turns a whole class
+of accessibility defects from "needs a device" into a CI check.
+
+- **Ratcheted like the geometry gate**, never a hard cliff: `scripts/check-a11y-manifest.mjs` records
+  the error-level finding count per screen in `a11y-baseline.json`, and fails only when a screen's
+  count *increases*. a11y is additive — the render + L1 gates already catch the worst geometry.
+- **Fail-loud if the check itself breaks.** This is the most version-sensitive piece of the harness
+  on the pinned Roborazzi 1.60.0. If `checkRoboAccessibility` throws anything other than the expected
+  findings exception, the manifest records `errored: true` and the gate exits 2 — a broken check must
+  never read as "0 findings".
+- **Robust to the toolchain.** Runs at the baseline config only (ATF's added value over L1 — contrast,
+  label quality, traversal — is config-independent; touch targets are already measured per-config by
+  L1). Catches `Throwable` and reads the finding count via reflection `getResults()`, so nothing here
+  depends on the ATF/espresso exception types being on the test compile classpath — only Roborazzi's
+  own `checkRoboAccessibility` is imported. The caught exception is swallowed: the test never fails
+  the build; the ratchet script decides.
+
+The 11 rendered screens now pass through four gates on every build: L0 tokens/fidelity, L1 measured
+geometry, the inset grep gate, and now L2 accessibility.

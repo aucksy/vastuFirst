@@ -127,6 +127,12 @@ jobs:
       - name: L1 render-manifest check (measured geometry)
         run: node scripts/check-render-manifest.mjs .
 
+      # Gate 3c: accessibility (UI-POLISH §6.6). Google's ATF (contrast / touch target / labels /
+      # traversal) ran headless inside the same JVM render (AccessibilityTest). Ratchet like L1:
+      # adopt new screens, fail only on a NEW finding; fail-loud (exit 2) if the check itself broke.
+      - name: A11y check (ATF contrast / labels / traversal)
+        run: node scripts/check-a11y-manifest.mjs .
+
       # Runs on any push (implicit success() — a gate regression fails the job first and skips this).
       # The porcelain check no-ops when nothing changed, so this also persists a baseline the gate
       # adopted on a verify-pass run where no record happened.
@@ -134,10 +140,10 @@ jobs:
         if: github.event_name == 'push'
         run: |
           set -e
-          # Goldens AND the ratchet baseline (the gate above adopts new screens / tightens counts).
-          git add app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json
+          # Goldens AND the ratchet baselines (the gates above adopt new screens / tighten counts).
+          git add app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json app/src/androidUnitTest/a11y-baseline.json
           # --porcelain sees UNTRACKED files too (git diff would miss brand-new goldens).
-          if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json)" ]; then
+          if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json app/src/androidUnitTest/a11y-baseline.json)" ]; then
             echo "No golden or baseline changes to commit."
             exit 0
           fi
@@ -158,6 +164,7 @@ jobs:
             app/src/androidUnitTest/roborazzi/**
             app/build/outputs/roborazzi/**
             app/build/render-manifest/**
+            app/build/a11y-manifest/**
           if-no-files-found: warn
 
       - name: Build Android app (empty VastuTheme screen)

@@ -1,0 +1,58 @@
+package com.vastufirst.app.render
+
+import android.app.Application
+import androidx.compose.runtime.Composable
+import com.vastufirst.app.ui.addhome.AddHomeScreen
+import com.vastufirst.app.ui.grid.GuidedGridContent
+import com.vastufirst.app.ui.home.HomeContent
+import com.vastufirst.app.ui.legal.LegalScreen
+import com.vastufirst.app.ui.marknorth.MarkNorthContent
+import com.vastufirst.app.ui.newplan.SamplePlans
+import com.vastufirst.app.ui.report.ReportContent
+import com.vastufirst.app.ui.score.ScoreContent
+import com.vastufirst.app.ui.settings.SettingsContent
+import com.vastufirst.app.ui.unlock.UnlockScreen
+import com.vastufirst.app.ui.welcome.WelcomeContent
+import com.vastufirst.shared.Intent
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/**
+ * The accessibility pass over every screen (UI-POLISH.md §6.6) — Google's ATF (contrast, touch
+ * targets, missing/duplicate labels, traversal) run headless in the same JVM render, ratcheted like
+ * L1 (never a hard gate). One config per screen (baseline); see A11yHarness for why. This never fails
+ * the build itself — the ratchet script scripts/check-a11y-manifest.mjs decides.
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(application = Application::class)
+class AccessibilityTest {
+
+    private val sample = SamplePlans.all.first()
+
+    @Test
+    fun accessibility() {
+        val screens: List<Pair<String, @Composable () -> Unit>> = listOf(
+            "welcome" to { WelcomeContent(intent = Intent.BUILDING, onIntentChange = {}, onContinue = {}) },
+            "home" to { HomeContent(RenderFixtures.savedPlans, {}, {}, {}) },
+            "home-empty" to { HomeContent(emptyList(), {}, {}, {}) },
+            "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
+            "legal" to { LegalScreen(onBack = {}) },
+            "unlock" to { UnlockScreen(onUnlocked = {}) },
+            "addhome" to { AddHomeScreen(onDrawGrid = {}, onSample = {}) },
+            "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
+            "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
+            "marknorth" to {
+                MarkNorthContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleAnalysis, {}, {}, {})
+            },
+            "score" to {
+                ScoreContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleIntent, RenderFixtures.sampleAnalysis, {}, {})
+            },
+            "report" to { ReportContent(RenderFixtures.sampleAnalysis, Intent.BUILDING) },
+        )
+        screens.forEach { (name, content) -> writeA11yManifest(name, content) }
+    }
+}
