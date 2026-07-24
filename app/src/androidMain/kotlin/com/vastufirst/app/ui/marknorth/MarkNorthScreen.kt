@@ -32,6 +32,7 @@ import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.scoreBandColor
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.screenRoot
 import kotlin.math.roundToInt
 
 /**
@@ -51,7 +52,7 @@ fun MarkNorthScreen(
     val score = analysis?.score
 
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         SectionLabel("Step 2 of 3")
         Spacer(Modifier.height(VastuTheme.spacing.s2))

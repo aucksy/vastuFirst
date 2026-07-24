@@ -31,6 +31,7 @@ import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Welcome (Product PRD §6.1 · design system screen 1). Language + the one question that changes
@@ -48,8 +49,7 @@ fun WelcomeScreen(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(colors.paper)
+            .screenRoot(colors.paper)
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {

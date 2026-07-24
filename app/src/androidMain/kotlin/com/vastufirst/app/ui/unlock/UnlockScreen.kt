@@ -17,6 +17,7 @@ import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Unlock (§6.5 · design system screen 8) — no dark patterns; the price is shown before you pay.
@@ -27,7 +28,7 @@ import com.vastufirst.designsystem.theme.VastuTheme
 fun UnlockScreen(onUnlocked: () -> Unit) {
     val colors = VastuTheme.colors
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
         VText("Unlock the full report", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))

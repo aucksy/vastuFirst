@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Platform-level colours only. These exist because the OS needs them BEFORE any Compose frame is
+  drawn (window background, splash, adaptive-icon layers) — VastuTheme is not available that early.
+
+  ⭐ They MUST stay identical to the Sage & Gold design contract (handoff/tokens.json):
+       paper #F8F6F0 · primary #7A9E7E · secondary #C9A227 · border-default #DDDED3
+  scripts/check-design-fidelity.mjs verifies these against tokens.json.
+-->
+<resources>
+    <color name="paper">#F8F6F0</color>
+    <color name="primary">#7A9E7E</color>
+    <color name="secondary">#C9A227</color>
+    <color name="border_default">#DDDED3</color>
+</resources>

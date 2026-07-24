@@ -32,12 +32,25 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Set up Node 20 (design-fidelity gate)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       # --- Guardrails first: fail fast before compiling ---
       - name: Module-boundary check (engine/rules/shared/data are Android-free)
         run: bash scripts/check-boundaries.sh
 
       - name: Token check (no raw hex / dp / sp outside the theme package)
         run: bash scripts/check-tokens.sh
+
+      # UI-POLISH.md gates. These exist because CI used to compile the UI without ever looking
+      # at it — see docs/UI-AUDIT-2026-07-24.md for what that let through.
+      - name: Window-inset check (every screen root clears the system bars)
+        run: bash scripts/check-screen-roots.sh
+
+      - name: Design-fidelity check (theme matches handoff/tokens.json + the design type ramp)
+        run: node scripts/check-design-fidelity.mjs .
 
       # --- Compile + test ---
       - name: Unit tests (pure logic modules)

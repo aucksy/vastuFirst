@@ -29,6 +29,7 @@ import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import org.koin.androidx.compose.koinViewModel
 import com.vastufirst.app.ui.home.HomeViewModel
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Settings (§ design system screen 12). Phase 2: preferences are shown (language + school are
@@ -44,7 +45,7 @@ fun SettingsScreen(
     val colors = VastuTheme.colors
     var showConfirm by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             IconTapButton("‹", contentDescription = "Back", onClick = onBack)

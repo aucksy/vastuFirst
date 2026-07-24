@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.RoomType
+import com.vastufirst.app.ui.common.screenRoot
 import kotlin.math.min
 
 private val PALETTE = listOf(
@@ -64,6 +67,9 @@ fun GuidedGridScreen(
 ) {
     val colors = VastuTheme.colors
     val gLine = colors.borderDefault
+    // Captured here because a DrawScope cannot read a @Composable theme value. A bare `1f` inside
+    // drawBehind is ONE PHYSICAL PIXEL — 0.33dp on a 3x phone, i.e. an invisible grid (UI-POLISH §5).
+    val gridStroke = VastuTheme.borders.regular
     var activeType by remember { mutableStateOf(RoomType.LIVING) }
     var selectedId by remember { mutableStateOf<String?>(null) }
     var doorMode by remember { mutableStateOf(false) }
@@ -98,7 +104,10 @@ fun GuidedGridScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+        modifier = Modifier
+            .screenRoot(colors.paper)
+            .verticalScroll(rememberScrollState())
+            .padding(VastuTheme.spacing.s6),
     ) {
         VText(if (doorMode) "Mark your front door" else "Place your rooms", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -113,14 +122,20 @@ fun GuidedGridScreen(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
+                // MANDATORY. The children are placed with Modifier.offset, which does NOT contribute
+                // to the parent's measured size — so without an explicit height this Box measures to
+                // the tallest child, and to ZERO when no room has been placed yet. That is the state
+                // the user lands in every time: an invisible, untappable grid (UI-POLISH §3.C).
+                .aspectRatio(1f)
                 .clip(VastuTheme.shapes.md)
                 .background(colors.surface)
                 .border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.md)
                 .drawBehind {
                     val step = size.width / GRID
+                    val stroke = gridStroke.toPx()
                     for (i in 1 until GRID) {
-                        drawLine(gLine, Offset(step * i, 0f), Offset(step * i, size.height), strokeWidth = 1f)
-                        drawLine(gLine, Offset(0f, step * i), Offset(size.width, step * i), strokeWidth = 1f)
+                        drawLine(gLine, Offset(step * i, 0f), Offset(step * i, size.height), strokeWidth = stroke)
+                        drawLine(gLine, Offset(0f, step * i), Offset(size.width, step * i), strokeWidth = stroke)
                     }
                 }
                 .pointerInput(doorMode, rooms, activeType) {

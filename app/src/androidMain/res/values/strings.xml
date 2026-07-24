@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label. A string resource (not a manifest literal) because the app ships in
+         six languages — values-hi/, values-ta/, values-te/, values-mr/, values-bn/ land in Phase 4. -->
+    <string name="app_name">VastuFirst</string>
+</resources>

@@ -39,6 +39,7 @@ import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Verdict
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Score — free tier (§6.4). The big band-coloured number, the zone map, the top 3 problems, and
@@ -61,14 +62,14 @@ fun ScoreScreen(
 
     when {
         a == null -> Box(
-            Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
             contentAlignment = Alignment.Center,
         ) {
             LoadingState("Reading your home…")
         }
 
         a.quality == AnalysisQuality.INSUFFICIENT -> Box(
-            Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
             contentAlignment = Alignment.Center,
         ) {
             GuidanceState(
@@ -89,7 +90,7 @@ private fun ScoreContent(vm: NewPlanViewModel, a: Analysis, onUnlock: () -> Unit
     val model = buildZoneMapModel(vm.rooms, a, vm.north)
 
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         SectionLabel("Your result · free")
         Spacer(Modifier.height(VastuTheme.spacing.s3))

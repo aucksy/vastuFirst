@@ -22,6 +22,7 @@ import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuProvenance
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Honesty & sources (§ design system screen 13). The visible disclaimer (§0.1 / §11) and the
@@ -32,7 +33,7 @@ import com.vastufirst.designsystem.theme.VastuTheme
 fun LegalScreen(onBack: () -> Unit) {
     val colors = VastuTheme.colors
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             IconTapButton("‹", contentDescription = "Back", onClick = onBack)

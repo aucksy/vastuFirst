@@ -39,6 +39,7 @@ import com.vastufirst.shared.Defect
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.Verdict
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Full report (§6.5/§6.6) — branches on intent (§2). BUILDING/BUYING lead with layout changes
@@ -54,14 +55,14 @@ fun ReportScreen(vm: NewPlanViewModel) {
     val living = intent == Intent.LIVING
 
     if (a == null) {
-        Box(Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6), contentAlignment = Alignment.Center) {
+        Box(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6), contentAlignment = Alignment.Center) {
             LoadingState("Preparing your report…")
         }
         return
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             SectionLabel("Full report")

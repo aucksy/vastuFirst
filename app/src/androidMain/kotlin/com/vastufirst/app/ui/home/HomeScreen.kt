@@ -32,6 +32,7 @@ import com.vastufirst.designsystem.components.VastuListRow
 import com.vastufirst.designsystem.components.scoreBandColor
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.screenRoot
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -50,7 +51,7 @@ fun HomeScreen(
     val plans by viewModel.plans.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier.fillMaxSize().background(colors.paper).padding(VastuTheme.spacing.s6),
+        modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {

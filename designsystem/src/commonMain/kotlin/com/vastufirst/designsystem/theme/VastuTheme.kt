@@ -74,7 +74,7 @@ data class VastuElevation(
 /** Border widths (design system §04). Every stroke in the app reads one of these. */
 @Immutable
 data class VastuBorders(
-    val hairline: Dp = 0.6.dp,   // fine dividers / svg-like rules
+    val hairline: Dp = 1.dp,     // fine dividers / svg-like rules (tokens.json: border-hairline = 1)
     val regular: Dp = 1.dp,      // default card & control border
     val strong: Dp = 1.5.dp,     // selected / emphasised outline
     val focus: Dp = 2.dp,        // focused field / active selection

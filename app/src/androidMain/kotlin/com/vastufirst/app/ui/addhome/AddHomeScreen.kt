@@ -21,6 +21,7 @@ import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Add home — method choice (§6.2 · design system screen 2). Phase 2 wires the guided grid and
@@ -35,8 +36,7 @@ fun AddHomeScreen(
     val colors = VastuTheme.colors
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(colors.paper)
+            .screenRoot(colors.paper)
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.vastufirst.designsystem.generated.resources.Res
 import com.vastufirst.designsystem.generated.resources.dm_mono_medium
@@ -87,6 +88,17 @@ private val LatinLineHeights = mapOf(
 )
 
 /**
+ * Letter-spacing (tracking), in `em`, straight from the design ramp's `tr` column. Everything not
+ * listed here is 0 — the design only tracks the four small/tight styles.
+ */
+private val LatinTracking = mapOf(
+    "score" to 0f,
+    "display" to 0f, "h1" to 0f, "h2" to 0f, "h3" to 0.005f,
+    "bodyLg" to 0f, "body" to 0f, "bodySm" to 0f,
+    "label" to 0.01f, "caption" to 0.02f, "mono" to 0.02f,
+)
+
+/**
  * Indic scripts need more vertical room for stacked marks: floor every line-height at 1.5,
  * cap at 1.6 (Impl PRD §3.4). Latin values already ≥1.5 are left as-is.
  */
@@ -94,6 +106,14 @@ private fun lineHeightMultiplier(role: String, script: VastuScript): Float {
     val latin = LatinLineHeights.getValue(role)
     return if (script == VastuScript.LATIN) latin else latin.coerceIn(1.5f, 1.6f)
 }
+
+/**
+ * Tracking applies to LATIN ONLY. Positive letter-spacing pulls apart the conjunct clusters and
+ * attached matras of Devanagari, Tamil, Telugu and Bengali, which is a legibility defect, not a
+ * style — so non-Latin scripts always get 0 regardless of the ramp.
+ */
+private fun trackingEm(role: String, script: VastuScript): Float =
+    if (script == VastuScript.LATIN) LatinTracking.getValue(role) else 0f
 
 private fun style(
     fontSizeSp: Float,
@@ -108,6 +128,7 @@ private fun style(
         fontWeight = weight,
         fontSize = size,
         lineHeight = (fontSizeSp * lineHeightMultiplier(role, script)).sp,
+        letterSpacing = trackingEm(role, script).em,
         // Center text within its (script-appropriate) line box; never clip ascenders/descenders.
         lineHeightStyle = LineHeightStyle(
             alignment = LineHeightStyle.Alignment.Center,

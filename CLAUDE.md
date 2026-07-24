@@ -36,6 +36,27 @@ compile + test runs on **GitHub Actions** (`.github/workflows/ci.yml`) in `aucks
 The loop is: author code → push → watch CI go green → fix from the CI logs. Slower per step,
 but it's the only path. "Prove it works" = green CI, not a local claim.
 
+## 2b. ⭐ UI polish is a HARD RULE — `docs/UI-POLISH.md`
+
+**Every build must follow `docs/UI-POLISH.md`. It is binding, not advisory.** It exists because
+v0.2.1 shipped with the status bar overlapping every screen, a guided grid that measured to zero
+height (so no room could be placed at all), and the default Android robot as the launcher icon —
+all while CI was green. **CI compiled the UI without ever rendering it.**
+
+The three non-negotiables:
+
+- **The build must be able to see.** Every screen is rendered headlessly in CI at the standard
+  configuration matrix (412 dp, **360 dp**, **200 % font scale**, with insets, Hindi/Tamil) and the
+  images are published as an artifact. A screen that has never been rendered is not done.
+- **Design conformance is mechanical, not an opinion.** `scripts/check-design-fidelity.mjs` compares
+  the theme against the design contract (`handoff/tokens.json` + the `ramp`/`auditRows` data in the
+  Sage & Gold design file) and fails the build on drift. Deliberate deviations go in the script's
+  allow-list with a reason — never silently.
+- **Never hand over an APK for a screen I have not looked at.** Before every release I download the
+  rendered screenshots, compare them to the design side by side, walk the review gate, and say which
+  screens I verified. "CI is green" is **not** "the screen is right" and must never be presented as
+  if it were.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."

@@ -50,8 +50,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "0.2.1"   // Phase 3 audit round 1 — no-error-state + save/reopen + a11y fixes
+        versionCode = 4
+        versionName = "0.2.2"   // UI polish round 1 — window insets, the guided grid, launcher icon
     }
 
     buildTypes {

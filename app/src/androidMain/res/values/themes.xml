@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      windowBackground is `paper`, so the very first frame the OS paints is the app's own cream
+      rather than the platform default white. Without it the launch flashes white and then snaps
+      to cream, which reads as a stutter.
+      Bar colours are transparent because MainActivity opts into edge-to-edge; this just avoids a
+      one-frame coloured bar before Compose takes over.
+    -->
+    <style name="Theme.VastuFirst" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
