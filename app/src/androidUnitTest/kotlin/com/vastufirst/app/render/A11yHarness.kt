@@ -24,11 +24,14 @@ import java.io.File
  *  - Run at the BASELINE config only. ATF's added value over the L1 gate is contrast + label quality
  *    + traversal, which are config-independent; touch targets (which DO vary by width) are already
  *    measured per-config by L1. One config keeps the ATF pass fast and its bitmap work bounded.
- *  - `CheckLevel.Error` → `checkRoboAccessibility` THROWS an AccessibilityViewCheckException listing
- *    the error-level findings. We catch **Throwable** (not the typed exception) and read the count via
- *    reflection `getResults()`, so nothing here depends on the ATF/espresso types being on the test
- *    COMPILE classpath — only Roborazzi's own `checkRoboAccessibility` is imported. The caught
- *    exception is swallowed: this test never fails the build; the ratchet script decides.
+ *  - `CheckLevel.Warning` (errors AND warnings both raise) → `checkRoboAccessibility` THROWS an
+ *    AccessibilityViewCheckException listing the findings. We catch **Throwable** (not the typed
+ *    exception) and read the count via reflection `getResults()`, so nothing here depends on the
+ *    ATF/espresso types being on the test COMPILE classpath — only Roborazzi's own
+ *    `checkRoboAccessibility` is imported. The caught exception is swallowed: this test never fails
+ *    the build; the ratchet script decides. Warning (not Error) is deliberate: it also captures the
+ *    contrast warnings — incl. the three documented sub-3:1 accent colours (UI-POLISH §2 rule 3) —
+ *    which both proves the check is genuinely executing (not a silent skip) and gives a richer signal.
  *  - ATF is skipped by the library below API 34; we render at SDK 35, so it runs.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalRoborazziApi::class)
@@ -44,10 +47,10 @@ fun writeA11yManifest(screen: String, content: @Composable () -> Unit) {
         try {
             onRoot().checkRoboAccessibility(
                 roborazziATFAccessibilityCheckOptions = RoborazziATFAccessibilityCheckOptions(
-                    failureLevel = RoborazziATFAccessibilityChecker.CheckLevel.Error,
+                    failureLevel = RoborazziATFAccessibilityChecker.CheckLevel.Warning,
                 ),
             )
-            // No exception → no error-level findings.
+            // No exception → no error- or warning-level findings.
         } catch (e: Throwable) {
             val results = resultsOf(e)
             if (results != null) {
