@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +35,7 @@ import com.vastufirst.designsystem.components.ScoreDisplay
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VerdictPill
 import com.vastufirst.designsystem.components.ZoneMap
@@ -57,6 +61,7 @@ fun ScoreScreen(
     vm: NewPlanViewModel,
     onUnlock: () -> Unit,
     onFix: () -> Unit,
+    onDone: () -> Unit,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
     // "insufficient plan" states) renders headlessly from fixture state in the harness (UI-POLISH §6).
@@ -68,6 +73,8 @@ fun ScoreScreen(
         analysis = analysis,
         onUnlock = onUnlock,
         onFix = onFix,
+        onDone = onDone,
+        unlocked = vm.unlocked,
         cols = vm.gridCols,
         rows = vm.gridRows,
     )
@@ -84,6 +91,8 @@ fun ScoreContent(
     analysis: Analysis?,
     onUnlock: () -> Unit,
     onFix: () -> Unit,
+    onDone: () -> Unit = {},
+    unlocked: Boolean = false,
     cols: Int = GRID,
     rows: Int = GRID,
 ) {
@@ -91,11 +100,26 @@ fun ScoreContent(
     val a = analysis
 
     when {
-        a == null -> Box(
+        // Draft present but the engine is still computing (normal, ~50 ms): a calm loading line.
+        a == null && rooms.isNotEmpty() -> Box(
             Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
             contentAlignment = Alignment.Center,
         ) {
             LoadingState("Reading your home…")
+        }
+
+        // No draft AND nothing computed — the OS reclaimed the in-progress plan (process death on a
+        // low-memory phone). Never a forever spinner: guide the user back to their saved plans so they
+        // can reopen, instead of trapping them on "Reading your home…" (E2E-ASSESSMENT §A4).
+        a == null -> Box(
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
+            contentAlignment = Alignment.Center,
+        ) {
+            GuidanceState(
+                title = "Let's pick up where you left off",
+                body = "We couldn't find this plan on screen — it may have closed in the background. Head back to your saved plans to reopen it.",
+                action = { VastuButton("Go to my plans", onClick = onDone) },
+            )
         }
 
         a.quality == AnalysisQuality.INSUFFICIENT -> Box(
@@ -110,14 +134,16 @@ fun ScoreContent(
             )
         }
 
-        else -> ScoreResult(rooms, north, intent, a, onUnlock, cols, rows)
+        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows)
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, cols: Int, rows: Int) {
+private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
-    val model = buildZoneMapModel(rooms, a, north, cols, rows)
+    // remember the Canvas model keyed on its inputs so it isn't rebuilt every recomposition (§H).
+    val model = remember(rooms, a, north, cols, rows) { buildZoneMapModel(rooms, a, north, cols, rows) }
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
@@ -152,7 +178,15 @@ private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: A
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
                 top.forEach { d ->
                     VastuCard(accent = colors.verdictDefect) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
+                        // FlowRow, not Row: the verdict pill + a multi-word provenance tag are two
+                        // unweighted children that, at 320 dp / font 2.0, overflow and clip (the tag
+                        // broke mid-word: "Traditiona/l practice"). FlowRow wraps the tag onto its own
+                        // line instead. Matches the Report screen's fix (UI-POLISH §3.D).
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                        ) {
                             VerdictPill(VastuVerdict.DEFECT)
                             ProvenanceTag(d.provenance.toVastu())
                         }
@@ -166,14 +200,25 @@ private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: A
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        val remaining = remainingIssueCount(a)
-        UnlockCard(remaining = remaining, onUnlock = onUnlock)
+        // Once the report is unlocked, don't keep showing the ₹699 paywall — offer the report
+        // straight away (E2E-ASSESSMENT §B11). onUnlock routes to the report when already unlocked.
+        if (unlocked) {
+            VastuButton("See the full report", onClick = onUnlock)
+        } else {
+            val remaining = remainingIssueCount(a)
+            UnlockCard(remaining = remaining, onUnlock = onUnlock)
+        }
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
             "The 0–100 score is VastuFirst's own way of summarising the report — it is not part of the tradition. Vastu is traditional guidance for your own decisions, not a guaranteed outcome.",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
+
+        // Always a visible way out of the flow to the saved-plans list — a first-time user has no
+        // other in-app path to Home (E2E-ASSESSMENT §A2).
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        VastuButton("See all my plans", onClick = onDone, style = VastuButtonStyle.SECONDARY)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }

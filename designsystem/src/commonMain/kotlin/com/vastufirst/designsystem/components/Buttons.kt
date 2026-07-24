@@ -66,7 +66,8 @@ fun VastuButton(
                     Modifier.border(VastuTheme.borders.regular, colors.borderStrong, VastuTheme.shapes.full)
                 else Modifier
             )
-            .clickableTap(enabled = enabled, role = Role.Button, interactionSource = interaction, onClick = onClick)
+            // pressEffect = false: this button owns a richer pressed state (fill swap + graphicsLayer above).
+            .clickableTap(enabled = enabled, role = Role.Button, pressEffect = false, interactionSource = interaction, onClick = onClick)
             .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s2),
         contentAlignment = Alignment.Center,
     ) {
@@ -102,7 +103,8 @@ fun VastuButtonInline(
                     Modifier.border(VastuTheme.borders.regular, colors.borderStrong, RoundedCornerShape(percent = 50))
                 else Modifier
             )
-            .clickableTap(enabled = enabled, role = Role.Button, interactionSource = interaction, onClick = onClick)
+            // pressEffect = false: owns a richer pressed state (fill swap + graphicsLayer above).
+            .clickableTap(enabled = enabled, role = Role.Button, pressEffect = false, interactionSource = interaction, onClick = onClick)
             .padding(horizontal = VastuTheme.spacing.s6),
         contentAlignment = Alignment.Center,
     ) {

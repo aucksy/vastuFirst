@@ -13,6 +13,8 @@ import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.CellRect
+import com.vastufirst.shared.editor.fitWithoutOverlap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
@@ -97,6 +99,20 @@ class NewPlanViewModel(
                 val plan = buildPlan() ?: run { _analysis.value = null; return@collectLatest }
                 val result = withContext(Dispatchers.Default) { engine.analyze(plan) }
                 _analysis.value = result
+                // Autosave edits to an ALREADY-saved home (planId != null) so a reopen → Fix → edit →
+                // Back never silently loses them, and the saved-plans list stays in sync. A brand-new
+                // draft (planId == null) is still first persisted at Mark North's "Read my home", so
+                // this never creates junk rows while the user is still drawing (E2E-ASSESSMENT §A3).
+                planId?.let { id ->
+                    repo.save(
+                        SavedPlan(
+                            id = id, name = defaultName(), intent = plan.intent, propertyType = plan.propertyType,
+                            plan = plan, score = result.score, ruleSetVersion = engine.ruleSetVersion(),
+                            unlocked = unlocked, createdAt = now(), updatedAt = now(),
+                        ),
+                        now(),
+                    )
+                }
             }
         }
     }
@@ -115,12 +131,16 @@ class NewPlanViewModel(
         if (c == gridCols && r == gridRows) return
         gridCols = c
         gridRows = r
-        val clamped = rooms.map { room ->
-            val w = room.w.coerceAtMost(c)
-            val h = room.h.coerceAtMost(r)
-            room.copy(w = w, h = h, col = room.col.coerceIn(0, c - w), row = room.row.coerceIn(0, r - h))
+        // Clamp each room to the new bounds, then RE-PACK so none overlap. Clamping alone can push
+        // two rooms onto the same cells (the editor never otherwise allows this), which makes the
+        // engine score the buried room twice — a silently wrong score. fitWithoutOverlap keeps each
+        // room's size and order and relocates only what would collide (docs/E2E-ASSESSMENT §A1).
+        val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r)
+        val repacked = rooms.mapIndexed { i, room ->
+            val f = fitted[i]
+            room.copy(col = f.col, row = f.row, w = f.w, h = f.h)
         }
-        if (clamped != rooms) rooms = clamped
+        if (repacked != rooms) rooms = repacked
         door?.let { d ->
             val fits = when (d.side) {
                 DoorSide.N, DoorSide.S -> d.cell in 0 until c

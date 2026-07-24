@@ -49,13 +49,20 @@ fun VastuChip(
     }
 }
 
-/** Two-option segmented toggle (school profile, numerals). Active segment sits raised on the track. */
+/**
+ * Two-option segmented toggle (school profile, numerals). Active segment sits raised on the track.
+ *
+ * An index in [disabledIndices] renders dimmed and is **not tappable** — so a "coming soon" option
+ * looks unavailable instead of a live-looking control that silently does nothing (UI-POLISH §3.F,
+ * "no dead controls"). Give it a "· soon"-style label so the state is spoken, not only shown.
+ */
 @Composable
 fun VastuSegmented(
     options: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    disabledIndices: Set<Int> = emptySet(),
 ) {
     val colors = VastuTheme.colors
     Row(
@@ -67,6 +74,7 @@ fun VastuSegmented(
     ) {
         options.forEachIndexed { i, label ->
             val active = i == selectedIndex
+            val disabled = i in disabledIndices
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -75,14 +83,21 @@ fun VastuSegmented(
                     .heightIn(min = VastuTheme.sizes.minTouch)
                     .clip(VastuTheme.shapes.full)
                     .background(if (active) colors.surfaceRaised else colors.surface)
-                    .clickableTap(role = Role.Tab, onClick = { onSelect(i) })
+                    .then(
+                        if (disabled) Modifier
+                        else Modifier.clickableTap(role = Role.Tab, onClick = { onSelect(i) })
+                    )
                     .padding(vertical = VastuTheme.spacing.s3),
                 contentAlignment = Alignment.Center,
             ) {
                 VText(
                     text = label,
                     style = VastuTheme.type.bodySm,
-                    color = if (active) colors.textPrimary else colors.textSecondary,
+                    color = when {
+                        disabled -> colors.textTertiary
+                        active -> colors.textPrimary
+                        else -> colors.textSecondary
+                    },
                 )
             }
         }

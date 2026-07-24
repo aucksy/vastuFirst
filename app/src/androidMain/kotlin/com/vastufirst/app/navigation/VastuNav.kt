@@ -73,14 +73,14 @@ fun VastuNavHost() {
 
         composable(Routes.HOME) {
             HomeScreen(
-                onAddHome = { nav.navigate(Routes.NEWPLAN_GRAPH) },
-                onOpenPlan = { id -> nav.navigate("${Routes.SCORE}?planId=$id") },
-                onSettings = { nav.navigate(Routes.SETTINGS) },
+                onAddHome = { nav.go(Routes.NEWPLAN_GRAPH) },
+                onOpenPlan = { id -> nav.go("${Routes.SCORE}?planId=$id") },
+                onSettings = { nav.go(Routes.SETTINGS) },
             )
         }
 
         composable(Routes.SETTINGS) {
-            SettingsScreen(onLegal = { nav.navigate(Routes.LEGAL) }, onBack = { nav.popBackStack() })
+            SettingsScreen(onLegal = { nav.go(Routes.LEGAL) }, onBack = { nav.popBackStack() })
         }
         composable(Routes.LEGAL) {
             LegalScreen(onBack = { nav.popBackStack() })
@@ -90,32 +90,32 @@ fun VastuNavHost() {
 
             composable(Routes.WELCOME) { entry ->
                 val vm = sharedVm(nav, entry)
-                WelcomeScreen(vm = vm, onContinue = { nav.navigate(Routes.ADD_HOME) })
+                WelcomeScreen(vm = vm, onContinue = { nav.go(Routes.ADD_HOME) })
             }
 
             composable(Routes.ADD_HOME) { entry ->
                 val vm = sharedVm(nav, entry)
                 AddHomeScreen(
-                    onDrawGrid = { nav.navigate(Routes.GUIDED_GRID) },
+                    onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
                     onSample = {
                         val sample = SamplePlans.all.first()
                         vm.updateRooms(sample.rooms)
                         vm.updateDoor(sample.door)
                         vm.updateNorth(sample.north)
-                        nav.navigate(Routes.MARK_NORTH)
+                        nav.go(Routes.MARK_NORTH)
                     },
                 )
             }
 
             composable(Routes.GUIDED_GRID) { entry ->
                 val vm = sharedVm(nav, entry)
-                GuidedGridScreen(vm = vm, onNext = { nav.navigate(Routes.MARK_NORTH) })
+                GuidedGridScreen(vm = vm, onNext = { nav.go(Routes.MARK_NORTH) })
             }
             composable(Routes.MARK_NORTH) { entry ->
                 val vm = sharedVm(nav, entry)
                 MarkNorthScreen(
                     vm = vm,
-                    onRead = { vm.save(); nav.navigate(Routes.SCORE) },
+                    onRead = { vm.save(); nav.go(Routes.SCORE) },
                     onBack = { nav.popBackStack() },
                 )
             }
@@ -128,23 +128,35 @@ fun VastuNavHost() {
                 LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
                 ScoreScreen(
                     vm = vm,
-                    onUnlock = { nav.navigate(Routes.UNLOCK) },
-                    onFix = { nav.navigate(Routes.GUIDED_GRID) },
+                    // Already paid? go straight to the report rather than the paywall again (B11).
+                    onUnlock = { nav.go(if (vm.unlocked) Routes.REPORT else Routes.UNLOCK) },
+                    onFix = { nav.go(Routes.GUIDED_GRID) },
+                    onDone = { nav.goHome() },
                 )
             }
             composable(Routes.UNLOCK) { entry ->
                 val vm = sharedVm(nav, entry)
                 UnlockScreen(onUnlocked = {
                     vm.unlock()
-                    nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true } }
+                    nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true }; launchSingleTop = true }
                 })
             }
             composable(Routes.REPORT) { entry ->
                 val vm = sharedVm(nav, entry)
-                ReportScreen(vm = vm)
+                ReportScreen(vm = vm, onDone = { nav.goHome() })
             }
         }
     }
+}
+
+/** Navigate, debounced: a fast double-tap can't push two copies of the same destination (§B6). */
+private fun NavHostController.go(route: String) = navigate(route) { launchSingleTop = true }
+
+/** Leave the guided-grid flow for the saved-plans list, clearing the flow so Back doesn't re-enter
+ *  it. A first-time user (sent straight into the flow by LAUNCH) otherwise has no path to Home (§A2). */
+private fun NavHostController.goHome() = navigate(Routes.HOME) {
+    popUpTo(Routes.NEWPLAN_GRAPH) { inclusive = true }
+    launchSingleTop = true
 }
 
 /** The NewPlanViewModel scoped to the whole "newplan" graph, so every step shares one draft. */

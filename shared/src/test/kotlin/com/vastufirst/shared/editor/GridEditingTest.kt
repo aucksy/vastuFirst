@@ -48,6 +48,52 @@ class GridEditingTest {
         assertTrue(anyOverlap(CellRect(0, 0, 2, 2), listOf(CellRect(4, 4, 2, 2), CellRect(1, 1, 1, 1))))
     }
 
+    // ── fitWithoutOverlap (the plot-resize guard) ────────────────────────────────────────────────
+
+    /** Every pair in a layout must be clear of every other — the invariant the score depends on. */
+    private fun assertNoOverlaps(rects: List<CellRect>) {
+        for (i in rects.indices) for (j in i + 1 until rects.size) {
+            assertFalse(rects[i].overlaps(rects[j]), "rooms $i and $j overlap: ${rects[i]} / ${rects[j]}")
+        }
+    }
+
+    @Test
+    fun `a non-overlapping layout is returned unchanged`() {
+        val rooms = listOf(CellRect(0, 0, 2, 2), CellRect(3, 0, 2, 2), CellRect(0, 3, 2, 2))
+        assertEquals(rooms, fitWithoutOverlap(rooms, 8, 8))
+    }
+
+    @Test
+    fun `shrinking the plot that would stack two rooms relocates one instead`() {
+        // The audit's exact repro: two 2-wide rooms at cols 6-7 and 8-9 in a 10-wide grid. Shrink to
+        // 8 wide and a naive independent clamp puts BOTH at col 6 (fully overlapping → double-count).
+        val rooms = listOf(CellRect(6, 0, 2, 2), CellRect(8, 0, 2, 2))
+        val fitted = fitWithoutOverlap(rooms, 8, 8)
+        assertEquals(2, fitted.size)
+        assertNoOverlaps(fitted)
+    }
+
+    @Test
+    fun `every room survives a resize (never dropped) and none overlap`() {
+        val rooms = listOf(
+            CellRect(0, 0, 3, 3), CellRect(4, 0, 3, 3), CellRect(0, 4, 3, 3),
+            CellRect(4, 4, 3, 3), CellRect(7, 7, 2, 2),
+        )
+        val fitted = fitWithoutOverlap(rooms, 6, 6)   // a hard squeeze from 9-wide down to 6
+        assertEquals(rooms.size, fitted.size)
+        assertNoOverlaps(fitted)
+        fitted.forEach { assertTrue(it.col >= 0 && it.row >= 0 && it.right <= 6 && it.bottom <= 6, "out of grid: $it") }
+    }
+
+    @Test
+    fun `an earlier room keeps its clamped spot; a later collider moves`() {
+        val a = CellRect(0, 0, 2, 2)
+        val b = CellRect(0, 0, 2, 2)   // identical → must be relocated
+        val fitted = fitWithoutOverlap(listOf(a, b), 8, 8)
+        assertEquals(CellRect(0, 0, 2, 2), fitted[0])
+        assertFalse(fitted[0].overlaps(fitted[1]))
+    }
+
     // ── handles ────────────────────────────────────────────────────────────────────────────────
 
     @Test

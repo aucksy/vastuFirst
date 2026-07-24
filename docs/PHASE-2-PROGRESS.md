@@ -268,3 +268,48 @@ the score — only the drawing canvas did (docs/RECT-PLOT-RESEARCH.md). This is 
   `editor`/`editor-empty` goldens are unchanged (`aspectRatio(8/8) == 1`).
 
 The default is still square, so anyone who doesn't set a size sees exactly the previous editor.
+
+---
+
+## End-to-end assessment + Wave 1 fixes (v0.3.1, 2026-07-24)
+
+Full v0.3.0 assessment (every screen rendered across the config matrix + 3 parallel code audits —
+UI catalogue, navigation/state, engine). Findings + tiers recorded in **docs/E2E-ASSESSMENT-2026-07-24.md**.
+The engine passed all three hard gates (31 / rotation-invariant / crash-safe); the real defects were
+in the *flow around the edges* and *touch polish*. **Wave 1** (owner-approved) fixes the correctness /
+dead-end bugs + the cheap high-impact polish; Wave 2 = the rest; Group D = owner decisions (no code).
+
+**Group A — correctness & dead-ends:**
+- **A1 · plot-resize no longer stacks rooms (score-corrupting).** Shrinking the plot clamped each room
+  independently and could push two onto the same cells → the engine double-counted the buried room.
+  New pure `fitWithoutOverlap(rects, cols, rows)` in `shared/editor/GridEditing.kt` re-packs after any
+  resize (keeps size/order, relocates only what would collide, never drops a room); `updateGrid` uses
+  it. 4 new `:shared:test` cases incl. the audit's exact 10→8-wide repro.
+- **A2 · first-run dead-end removed.** A first-timer had no in-app path back to "Your plans" (only
+  Back-to-exit). Score and Report now carry a "See all my plans" / "Done" button → `nav.goHome()`
+  (`popUpTo(NEWPLAN_GRAPH, inclusive)` so Back can't re-enter the flow).
+- **A3 · edits no longer vanish silently.** An already-saved home (planId != null) now **autosaves**
+  every debounced edit, so reopen → Fix → edit → Back keeps the changes and the list stays in sync.
+  A brand-new draft is still first saved at Mark North (no junk rows mid-draw).
+- **A4 · no more forever-spinner.** If the OS reclaims an in-progress draft (process death on a cheap
+  phone), Score/Report showed "Reading your home…" forever. Now the empty-draft case degrades to a
+  guidance card with a "Go to my plans" exit.
+
+**Group B — polish (UI-POLISH hard-rule):**
+- **B5 · every control now has a pressed state.** `clickableTap` dims content on press by default
+  (`pressEffect`, ~0.55 alpha); the buttons opt out (they own a fill swap). Fixes ~10 dead-to-touch
+  control types (chips, rows, gear, steppers, cards, icon buttons).
+- **B6 · double-tap can't double-navigate.** Added `launchSingleTop` to every navigation (`nav.go`).
+- **B8 · Settings scrolls** (was unreachable bottom rows at large font / small screens).
+- **B9 · Score provenance badge no longer breaks mid-word** at font 2.0 — the two-pill row is now
+  `FlowRow` (matches the Report fix).
+- **B10 · the "16-zone school" tab is honest** — shown disabled + "· soon", no longer a live-looking
+  no-op (`VastuSegmented(disabledIndices)`).
+- **B11 · after unlocking, Score drops the ₹699 paywall** and offers "See the full report"; tapping
+  it routes straight to the report, not the paywall again.
+
+Also opportunistically: Score's zone-map model is now `remember`ed (§H, was rebuilt every recomposition).
+
+**Deferred to Wave 2:** B7 (Mark-North compass labels collide at font 2.0), B12 (all homes named
+"My home"), C13 (TalkBack can't set North), C14 (Mark-North drag perf), C15 (minor a11y). **Group D**
+(L-shape footprint, score-is-a-ceiling labelling, the 8 rulings + ₹699) awaits owner decisions.

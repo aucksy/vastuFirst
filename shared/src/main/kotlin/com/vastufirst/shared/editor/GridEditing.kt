@@ -41,6 +41,59 @@ fun CellRect.overlaps(other: CellRect): Boolean =
 fun anyOverlap(candidate: CellRect, others: List<CellRect>): Boolean =
     others.any { candidate.overlaps(it) }
 
+/** [r] clamped to sit fully inside a [cols]×[rows] grid (size capped, then position). */
+private fun clampToGrid(r: CellRect, cols: Int, rows: Int): CellRect {
+    val w = r.w.coerceIn(1, cols)
+    val h = r.h.coerceIn(1, rows)
+    return CellRect(r.col.coerceIn(0, cols - w), r.row.coerceIn(0, rows - h), w, h)
+}
+
+/** The first free top-left cell (scanning row-major) where a [w]×[h] rect fits clear of [placed]. */
+private fun firstFreeSlot(w: Int, h: Int, cols: Int, rows: Int, placed: List<CellRect>): Pair<Int, Int>? {
+    if (w > cols || h > rows) return null
+    for (row in 0..rows - h) {
+        for (col in 0..cols - w) {
+            if (!anyOverlap(CellRect(col, row, w, h), placed)) return col to row
+        }
+    }
+    return null
+}
+
+/**
+ * Re-pack [rects] into a [cols]×[rows] grid so that **none overlap**, preserving each rectangle's
+ * order and size where possible.
+ *
+ * ⚠ This is the guard for the plot-resize bug: shrinking the plot and clamping every room to the new
+ * bounds *independently* can push two rooms onto the SAME cells. The editor never otherwise allows an
+ * overlap, and an overlap is score-corrupting — the engine scores the buried room a second time. So
+ * after any resize the rooms are run through here: an earlier rectangle keeps its clamped spot; a
+ * later one that would land on top is relocated to the nearest free slot (top-left → bottom-right);
+ * if the grid is too full for its size it is shrunk toward 1×1. Rooms are **never dropped**, and the
+ * result is 1:1 with the input in the same order (so callers can re-attach id/type by index).
+ */
+fun fitWithoutOverlap(rects: List<CellRect>, cols: Int, rows: Int): List<CellRect> {
+    val placed = ArrayList<CellRect>(rects.size)
+    for (r in rects) {
+        val clamped = clampToGrid(r, cols, rows)
+        if (!anyOverlap(clamped, placed)) { placed.add(clamped); continue }
+        val slot = firstFreeSlot(clamped.w, clamped.h, cols, rows, placed)
+        if (slot != null) { placed.add(CellRect(slot.first, slot.second, clamped.w, clamped.h)); continue }
+        // Grid too full at this size: shrink toward 1×1 until a slot opens up.
+        var w = clamped.w
+        var h = clamped.h
+        var seated: CellRect? = null
+        while (seated == null && (w > 1 || h > 1)) {
+            if (w > 1) w--
+            if (h > 1) h--
+            firstFreeSlot(w, h, cols, rows, placed)?.let { seated = CellRect(it.first, it.second, w, h) }
+        }
+        // Last resort (grid genuinely can't hold even a 1×1 — needs >cols×rows rooms): keep the
+        // clamped rect rather than drop the room. Unreachable for any realistic plan.
+        placed.add(seated ?: firstFreeSlot(1, 1, cols, rows, placed)?.let { CellRect(it.first, it.second, 1, 1) } ?: clamped)
+    }
+    return placed
+}
+
 /**
  * The grips shown on the selected room.
  *

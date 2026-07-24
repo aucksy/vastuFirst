@@ -28,6 +28,8 @@ import com.vastufirst.app.ui.common.toVastu
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.ProvenanceTag
+import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.TagPill
 import com.vastufirst.designsystem.components.VText
@@ -49,11 +51,11 @@ import com.vastufirst.app.ui.common.screenRoot
  * renovate". Every rule carries its provenance tag. Disputes show both readings, no winner.
  */
 @Composable
-fun ReportScreen(vm: NewPlanViewModel) {
+fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
-    ReportContent(analysis = analysis, intent = vm.intent)
+    ReportContent(analysis = analysis, intent = vm.intent, onDone = onDone)
 }
 
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
@@ -62,6 +64,7 @@ fun ReportScreen(vm: NewPlanViewModel) {
 fun ReportContent(
     analysis: Analysis?,
     intent: Intent?,
+    onDone: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val a = analysis
@@ -69,8 +72,16 @@ fun ReportContent(
     val living = resolvedIntent == Intent.LIVING
 
     if (a == null) {
-        Box(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6), contentAlignment = Alignment.Center) {
+        // Never a forever spinner: if the draft was reclaimed in the background, offer a way back to
+        // the saved plans instead of trapping the user on "Preparing your report…" (E2E-ASSESSMENT §A4).
+        Column(
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+        ) {
+            Spacer(Modifier.height(VastuTheme.spacing.s8))
             LoadingState("Preparing your report…")
+            VastuButton("Go to my plans", onClick = onDone, style = VastuButtonStyle.SECONDARY)
         }
         return
     }
@@ -97,7 +108,14 @@ fun ReportContent(
             Spacer(Modifier.height(VastuTheme.spacing.s4))
         }
 
-        VastuSegmented(options = listOf("Traditional 8-zone", "16-zone school"), selectedIndex = 0, onSelect = {})
+        // The 16-zone reading isn't built yet, so its segment is shown disabled ("· soon") and is not
+        // tappable — no live-looking control that silently does nothing (E2E-ASSESSMENT §B10).
+        VastuSegmented(
+            options = listOf("Traditional 8-zone", "16-zone school · soon"),
+            selectedIndex = 0,
+            onSelect = {},
+            disabledIndices = setOf(1),
+        )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText("The 16-zone school is a separate reading — coming in a later update.", style = VastuTheme.type.caption, color = colors.textTertiary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
@@ -173,6 +191,11 @@ fun ReportContent(
                 style = VastuTheme.type.body, color = colors.textPrimary,
             )
         }
+
+        // The end of the flow: a visible way out to the saved-plans list. A first-time user reaches
+        // the report with no other in-app path to Home (E2E-ASSESSMENT §A2).
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        VastuButton("Done — see all my plans", onClick = onDone)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }
