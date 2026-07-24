@@ -92,7 +92,9 @@ jobs:
           github.event_name == 'push' &&
           (steps.golden_state.outputs.present == 'false' || steps.verify_render.outcome == 'failure')
         continue-on-error: true
-        run: gradle :app:recordRoborazziDebug --rerun-tasks --stacktrace
+        # Explicit record property on the test task (the convenience task recordRoborazziDebug ran
+        # but produced no images). --rerun-tasks so the test can't be served from cache.
+        run: gradle :app:testDebugUnitTest -Proborazzi.test.record=true --rerun-tasks --stacktrace
 
       # Diagnostics: a genuine render failure (record could not produce goldens). The console
       # truncates the stack, so dump the full test-results XML, then re-fail the job (record was
@@ -113,10 +115,13 @@ jobs:
       - name: DEBUG — locate rendered images
         if: always()
         run: |
-          echo "--- every *.png under a roborazzi path ---"
+          echo "--- any editor__*.png ANYWHERE on the runner ---"
+          find / -name 'editor*__*.png' 2>/dev/null | head -60
+          echo "--- any *.png under any roborazzi path in the repo ---"
           find . -path '*roborazzi*' -name '*.png' 2>/dev/null | head -60
-          echo "--- every *.png anywhere under app/build ---"
-          find app/build -name '*.png' 2>/dev/null | head -60
+          echo "--- roborazzi result/report files (what Roborazzi thinks it did) ---"
+          find app/build -path '*roborazzi*' 2>/dev/null | head -60
+          find app/build -name '*.json' -path '*roborazzi*' -exec sh -c 'echo "== {} =="; cat {}' \; 2>/dev/null | head -40
           echo "--- committed golden dir ---"
           ls -laR app/src/androidUnitTest/roborazzi 2>/dev/null | head -40 || echo "(golden dir does not exist)"
 
