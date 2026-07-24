@@ -70,6 +70,9 @@ fun VastuSegmented(
             Box(
                 modifier = Modifier
                     .weight(1f)
+                    // 48dp touch floor (review gate): the vertical padding alone left each tab 45dp,
+                    // 3dp under the Material minimum — the render harness measured it.
+                    .heightIn(min = VastuTheme.sizes.minTouch)
                     .clip(VastuTheme.shapes.full)
                     .background(if (active) colors.surfaceRaised else colors.surface)
                     .clickableTap(role = Role.Tab, onClick = { onSelect(i) })
