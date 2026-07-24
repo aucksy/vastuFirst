@@ -34,11 +34,21 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # Guardrails + tests must pass before we publish anything.
+      - name: Set up Node 20 (design-fidelity gate)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Guardrails + tests must pass before we publish anything. A release clears the SAME UI
+      # gates as CI — otherwise tagging becomes a way to ship unverified UI (docs/UI-POLISH.md).
       - name: Module-boundary check
         run: bash scripts/check-boundaries.sh
       - name: Token check
         run: bash scripts/check-tokens.sh
+      - name: Window-inset check (every screen root clears the system bars)
+        run: bash scripts/check-screen-roots.sh
+      - name: Design-fidelity check (theme matches the design contract)
+        run: node scripts/check-design-fidelity.mjs .
       - name: Unit tests (pure logic modules)
         run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
 
