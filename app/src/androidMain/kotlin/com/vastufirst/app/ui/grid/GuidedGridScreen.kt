@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -57,6 +59,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
@@ -338,6 +341,11 @@ fun GuidedGridContent(
             }
         }
 
+        // ⭐ The compass is LOCKED to left-to-right, no matter the app's locale. North/East/South/
+        // West are cardinal directions, not text — under an RTL locale (e.g. a future Urdu build) the
+        // SpaceBetween label row would mirror WEST↔EAST and the grid would flip, silently reversing
+        // every Vastu direction the engine scored. The render harness caught this on the ar-XB pass.
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         // NORTH above the plan, WEST · SOUTH · EAST below it. Users of a Vastu app think in
         // directions, and this is the vocabulary the report uses (§2). The labels sit outside the
         // grid box so they cost the plan no width — a cell is only 34 dp on a 320 dp phone.
@@ -585,6 +593,7 @@ fun GuidedGridContent(
             VText("SOUTH", style = VastuTheme.type.caption, color = colors.textTertiary)
             VText("EAST", style = VastuTheme.type.caption, color = colors.textTertiary)
         }
+        } // end LTR lock (compass never mirrors)
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 

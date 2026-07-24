@@ -168,3 +168,24 @@ state is `.copy()`d from that real analysis (quality + note changed), so every o
 
 **Behaviour unchanged** — the ViewModel produces byte-identical plans (same maths, now in a shared
 function). Still cannot see: window insets, IME, gesture conflicts, rotation, real TalkBack.
+
+---
+
+## Two harness findings fixed (v0.2.7, 2026-07-24)
+
+The render harness surfaced these two on the earlier batches; both are now fixed.
+
+- **The compass can never mirror.** The guided-grid plan — the NORTH/EAST/SOUTH/WEST labels and the
+  grid itself — is now wrapped in `CompositionLocalProvider(LocalLayoutDirection provides
+  LayoutDirection.Ltr)`. North/East/South/West are cardinal directions, not translatable text: under
+  an RTL locale (a future Urdu build) the `SpaceBetween` label row would swap WEST↔EAST and the grid
+  would flip, silently reversing every Vastu direction the engine scored. The harness caught this on
+  the `ar-XB` pseudolocale pass. The lock is a no-op in every LTR locale, so only the RTL render
+  changes. (The zone-map/dial compass in Mark North & Score is Canvas-drawn with absolute geometry
+  and does not mirror, so it needs no lock.)
+- **The Unlock screen scrolls.** `UnlockScreen` had no scroll container, so at font scale 2.0 the
+  "What you get" list pushed the disclaimer off the bottom and it clipped. Added
+  `verticalScroll(rememberScrollState())` at the screen root (UI-POLISH §3.B).
+
+Both are verified by the render harness re-rendering the affected configs (`editor`/`editor-empty`
+at `rtl`, `unlock` at `font2_0`); the goldens in this release show the corrected layout.

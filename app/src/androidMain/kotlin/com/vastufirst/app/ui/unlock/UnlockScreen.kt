@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +30,10 @@ import com.vastufirst.app.ui.common.screenRoot
 fun UnlockScreen(onUnlocked: () -> Unit) {
     val colors = VastuTheme.colors
     Column(
-        modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
+        // verticalScroll so the disclaimer at the bottom is reachable at font scale 2.0 — without it
+        // the "What you get" list pushes the disclaimer off the bottom and it clips (UI-POLISH §3.B,
+        // measured by the render harness).
+        modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         VText("Unlock the full report", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))

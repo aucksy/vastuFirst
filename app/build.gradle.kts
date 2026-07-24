@@ -68,8 +68,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 8
-        versionName = "0.2.6"   // render harness — MarkNorth/Score/Report now drawn against a real engine Analysis (UI-POLISH §6)
+        versionCode = 9
+        versionName = "0.2.7"   // compass LTR-locked (no RTL mirror) + Unlock scrolls (harness findings, UI-POLISH §6)
     }
 
     buildTypes {
