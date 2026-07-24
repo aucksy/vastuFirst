@@ -112,11 +112,29 @@ jobs:
           [ "$found" = 0 ] && echo "No test-results XML found."
           exit 1
 
+      # Fail the job if verify failed on a PR (no auto-record path there) — a PR must not merge a
+      # screen the harness could not verify. On push we record below, so this passes.
+      - name: Enforce render verify on pull requests
+        if: steps.verify_render.outcome == 'failure' && github.event_name == 'pull_request'
+        run: |
+          echo "::error::Screen render verification failed. Pull the CI-committed goldens, or fix the screen."
+          exit 1
+
+      # L1 geometry gate — MUST run BEFORE the commit, because it adopts new screens / tightens
+      # counts into render-baseline.json, and that updated file is part of what the commit persists.
+      # Reads the measurement manifests the render test just wrote; ratchet (fails only on a NEW
+      # finding); fail-loud if no manifest was produced.
+      - name: L1 render-manifest check (measured geometry)
+        run: node scripts/check-render-manifest.mjs .
+
+      # Runs on any push (implicit success() — a gate regression fails the job first and skips this).
+      # The porcelain check no-ops when nothing changed, so this also persists a baseline the gate
+      # adopted on a verify-pass run where no record happened.
       - name: Commit new / updated goldens back
-        if: steps.record_render.outcome == 'success'
+        if: github.event_name == 'push'
         run: |
           set -e
-          # Goldens AND the ratchet baseline (the gate adopts new screens / tightens counts into it).
+          # Goldens AND the ratchet baseline (the gate above adopts new screens / tightens counts).
           git add app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json
           # --porcelain sees UNTRACKED files too (git diff would miss brand-new goldens).
           if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json)" ]; then
@@ -128,20 +146,6 @@ jobs:
           git commit -m "ci: record screen render goldens [skip ci]"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
-
-      # Fail the job if verify failed on a PR (no auto-record path there) — a PR must not merge a
-      # screen the harness could not verify. On push we recorded above, so this passes.
-      - name: Enforce render verify on pull requests
-        if: steps.verify_render.outcome == 'failure' && github.event_name == 'pull_request'
-        run: |
-          echo "::error::Screen render verification failed. Pull the CI-committed goldens, or fix the screen."
-          exit 1
-
-      # L1 geometry gate: reads the measurement manifests the render test just wrote and asserts on
-      # them (zero-size layout, clipping, tiny touch targets, missing labels). Ratchet — fails only
-      # on a NEW finding vs render-baseline.json — and fail-loud if no manifest was produced.
-      - name: L1 render-manifest check (measured geometry)
-        run: node scripts/check-render-manifest.mjs .
 
       - name: Upload rendered screenshots
         if: always()
