@@ -93,11 +93,10 @@ fun VastuSegmented(
                 VText(
                     text = label,
                     style = VastuTheme.type.bodySm,
-                    color = when {
-                        disabled -> colors.textTertiary
-                        active -> colors.textPrimary
-                        else -> colors.textSecondary
-                    },
+                    // A disabled segment reads the same muted tone as an inactive one (known to meet
+                    // the contrast floor). Its "unavailable" meaning is carried by the "· soon" label
+                    // and by being non-tappable — never by colour alone (review gate / a11y).
+                    color = if (active) colors.textPrimary else colors.textSecondary,
                 )
             }
         }
