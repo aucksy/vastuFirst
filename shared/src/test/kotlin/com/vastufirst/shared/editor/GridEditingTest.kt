@@ -68,28 +68,41 @@ class GridEditingTest {
         // The audit's exact repro: two 2-wide rooms at cols 6-7 and 8-9 in a 10-wide grid. Shrink to
         // 8 wide and a naive independent clamp puts BOTH at col 6 (fully overlapping → double-count).
         val rooms = listOf(CellRect(6, 0, 2, 2), CellRect(8, 0, 2, 2))
-        val fitted = fitWithoutOverlap(rooms, 8, 8)
+        val fitted = fitWithoutOverlap(rooms, 8, 8)!!
         assertEquals(2, fitted.size)
         assertNoOverlaps(fitted)
+        assertEquals(CellRect(6, 0, 2, 2), fitted[0])   // the earlier room keeps its clamped spot
     }
 
     @Test
-    fun `every room survives a resize (never dropped) and none overlap`() {
+    fun `a feasible squeeze keeps every room at full size, none overlapping`() {
+        // Four 2×2 rooms (16 cells) squeezed into a 4×4 grid (16 cells): a perfect tiling exists, so
+        // the pack must succeed with every room preserved at 2×2 and no overlap.
         val rooms = listOf(
-            CellRect(0, 0, 3, 3), CellRect(4, 0, 3, 3), CellRect(0, 4, 3, 3),
-            CellRect(4, 4, 3, 3), CellRect(7, 7, 2, 2),
+            CellRect(0, 0, 2, 2), CellRect(3, 0, 2, 2), CellRect(0, 3, 2, 2), CellRect(3, 3, 2, 2),
         )
-        val fitted = fitWithoutOverlap(rooms, 6, 6)   // a hard squeeze from 9-wide down to 6
+        val fitted = fitWithoutOverlap(rooms, 4, 4)!!
         assertEquals(rooms.size, fitted.size)
         assertNoOverlaps(fitted)
-        fitted.forEach { assertTrue(it.col >= 0 && it.row >= 0 && it.right <= 6 && it.bottom <= 6, "out of grid: $it") }
+        fitted.forEach {
+            assertEquals(2, it.w); assertEquals(2, it.h)
+            assertTrue(it.col >= 0 && it.row >= 0 && it.right <= 4 && it.bottom <= 4, "out of grid: $it")
+        }
+    }
+
+    @Test
+    fun `an infeasible squeeze is refused (null), never overlapping`() {
+        // Five 3×3 rooms = 45 cells can't fit a 6×6 grid (36 cells) without overlap. The pack must
+        // FAIL rather than force an overlap — the caller (updateGrid) then refuses the resize.
+        val rooms = List(5) { CellRect(0, 0, 3, 3) }
+        assertEquals(null, fitWithoutOverlap(rooms, 6, 6))
     }
 
     @Test
     fun `an earlier room keeps its clamped spot while a later collider moves`() {
         val a = CellRect(0, 0, 2, 2)
         val b = CellRect(0, 0, 2, 2)   // identical → must be relocated
-        val fitted = fitWithoutOverlap(listOf(a, b), 8, 8)
+        val fitted = fitWithoutOverlap(listOf(a, b), 8, 8)!!
         assertEquals(CellRect(0, 0, 2, 2), fitted[0])
         assertFalse(fitted[0].overlaps(fitted[1]))
     }

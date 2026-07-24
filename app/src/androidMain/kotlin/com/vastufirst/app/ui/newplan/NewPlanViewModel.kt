@@ -129,13 +129,15 @@ class NewPlanViewModel(
         val c = cols.coerceIn(MIN_GRID, MAX_GRID)
         val r = rows.coerceIn(MIN_GRID, MAX_GRID)
         if (c == gridCols && r == gridRows) return
+        // RE-PACK the rooms into the requested size so none overlap. Clamping each room to the new
+        // bounds independently can push two onto the same cells (the editor never otherwise allows
+        // this), which makes the engine score the buried room twice — a silently wrong score. If the
+        // rooms can't all fit at the requested size (a plot smaller than they need), fitWithoutOverlap
+        // returns null and we REFUSE the resize — the stepper simply won't go below the size the
+        // current rooms require, rather than force an overlap (docs/E2E-ASSESSMENT §A1).
+        val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r) ?: return
         gridCols = c
         gridRows = r
-        // Clamp each room to the new bounds, then RE-PACK so none overlap. Clamping alone can push
-        // two rooms onto the same cells (the editor never otherwise allows this), which makes the
-        // engine score the buried room twice — a silently wrong score. fitWithoutOverlap keeps each
-        // room's size and order and relocates only what would collide (docs/E2E-ASSESSMENT §A1).
-        val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r)
         val repacked = rooms.mapIndexed { i, room ->
             val f = fitted[i]
             room.copy(col = f.col, row = f.row, w = f.w, h = f.h)
