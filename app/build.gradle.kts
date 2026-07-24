@@ -6,6 +6,9 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    // Screenshot/render harness (UI-POLISH.md §6): registers record/verify/compareRoborazzi*
+    // tasks on the JVM unit-test task. Runs headless — no emulator — on the cloud runner.
+    alias(libs.plugins.roborazzi)
 }
 
 kotlin {
@@ -39,6 +42,19 @@ kotlin {
 
             implementation(libs.sqldelight.android.driver)
         }
+
+        // JVM render harness — screenshot + measurement + accessibility, no emulator (UI-POLISH §6).
+        // Lives in the android unit-test source set so it runs as a plain `testDebugUnitTest`.
+        androidUnitTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.robolectric)
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.compose)
+            implementation(libs.roborazzi.junit.rule)
+            implementation(libs.roborazzi.accessibility.check)
+            // Version-matched Compose UI-test rule (createComposeRule / captureRoboImage host).
+            implementation(compose.uiTest)
+        }
     }
 }
 
@@ -64,4 +80,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // Required by Robolectric so the render harness can resolve app resources, and so
+    // src/androidUnitTest/resources/robolectric.properties (sdk = 35) is honoured (UI-POLISH §6.1).
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// Goldens live OUTSIDE build/ so CI can commit them back on first record (the Now-in-Android
+// bootstrap — UI-POLISH §6.3; build/ is git-ignored, so goldens kept there could never persist).
+roborazzi {
+    outputDir.set(file("src/androidUnitTest/roborazzi"))
 }

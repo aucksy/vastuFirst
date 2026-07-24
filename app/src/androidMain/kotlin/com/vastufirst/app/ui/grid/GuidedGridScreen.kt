@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
@@ -197,6 +199,31 @@ fun GuidedGridScreen(
     vm: NewPlanViewModel,
     onNext: () -> Unit,
 ) {
+    // Thin wrapper: it is the ONLY thing that touches the ViewModel, so the whole editor below can
+    // be rendered headlessly from fixture state by the screenshot harness (GuidedGridContent).
+    GuidedGridContent(
+        rooms = vm.rooms,
+        door = vm.door,
+        onRoomsChange = vm::updateRooms,
+        onDoorChange = vm::updateDoor,
+        onNext = onNext,
+    )
+}
+
+/**
+ * The editor as a pure function of its state — no ViewModel, no DI, no coroutine dispatcher — so a
+ * JVM screenshot test can draw it from a fixture list (UI-POLISH §6). The gesture/measurement logic
+ * is unchanged from Build A; only the data source (was `vm.rooms`/`vm.door`) and the two sinks (were
+ * `vm.updateRooms`/`vm.updateDoor`) are now parameters.
+ */
+@Composable
+fun GuidedGridContent(
+    rooms: List<GridRoom>,
+    door: GridDoor?,
+    onRoomsChange: (List<GridRoom>) -> Unit,
+    onDoorChange: (GridDoor?) -> Unit,
+    onNext: () -> Unit,
+) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
 
@@ -230,8 +257,11 @@ fun GuidedGridScreen(
     // down and reset to the far left every time a room was placed (UI audit item 16).
     val paletteScroll = rememberScrollState()
 
-    val rooms = vm.rooms
-    val door = vm.door
+    // Read fresh inside the gesture arbiter, which is keyed on Unit and captures this composable's
+    // lambda from the first composition (see the pointerInput block). rememberUpdatedState keeps a
+    // stable State whose .value is always the latest room list — the same "read live" guarantee the
+    // old `vm.rooms` read gave, without the ViewModel.
+    val roomsState = rememberUpdatedState(rooms)
     val selected = rooms.firstOrNull { it.id == selectedId }
 
     fun placeDoor(col: Int, row: Int) {
@@ -243,7 +273,7 @@ fun GuidedGridScreen(
             distW -> GridDoor(DoorSide.W, row)
             else -> GridDoor(DoorSide.E, row)
         }
-        vm.updateDoor(d)
+        onDoorChange(d)
     }
 
     /** The button path for every drag action (WCAG 2.2 SC 2.5.7) — refused the same way a drag is. */
@@ -254,7 +284,7 @@ fun GuidedGridScreen(
             return
         }
         if (next == sel.rect()) return
-        vm.updateRooms(rooms.map { if (it.id == sel.id) it.withRect(next) else it })
+        onRoomsChange(rooms.map { if (it.id == sel.id) it.withRect(next) else it })
     }
 
     Column(
@@ -320,6 +350,9 @@ fun GuidedGridScreen(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
+                // Tag matches the design's data-fid so the L1 gate can find this element and prove
+                // it has a non-zero size — the exact v0.2.1 defect this whole harness exists for.
+                .testTag("editor.grid")
                 // MANDATORY. The children are placed with Modifier.offset, which does NOT contribute
                 // to the parent's measured size — so without an explicit height this Box measures to
                 // the tallest child, and to ZERO when no room has been placed yet. That is the state
@@ -356,11 +389,11 @@ fun GuidedGridScreen(
                         val cellPx = gridPx / GRID
                         if (cellPx <= 0f) return@awaitEachGesture
 
-                        // ⚠ Read the list from the ViewModel HERE, after the down. The `rooms` val in
-                        // the composable body is captured BY VALUE, and pointerInput(Unit) keeps this
-                        // lambda from the FIRST composition — using it would hit-test against an empty
-                        // plan forever. Reading before the down would be stale by one gesture.
-                        val current = vm.rooms
+                        // ⚠ Read the list HERE, after the down. The `rooms` PARAM is captured BY
+                        // VALUE, and pointerInput(Unit) keeps this lambda from the FIRST composition —
+                        // using it would hit-test against an empty plan forever. roomsState is the
+                        // stable holder whose .value is always current (see rememberUpdatedState above).
+                        val current = roomsState.value
 
                         // --- front door: unchanged, still a tap (rework §7 out of scope) ---
                         if (doorMode) {
@@ -407,7 +440,7 @@ fun GuidedGridScreen(
                             } else {
                                 val id = newRoomId(current)
                                 val r = ghost.rect
-                                vm.updateRooms(current + GridRoom(id, arming, r.col, r.row, r.w, r.h))
+                                onRoomsChange(current + GridRoom(id, arming, r.col, r.row, r.w, r.h))
                                 // It lands ALREADY SELECTED: that is how the user discovers moving
                                 // and resizing without ever being told "tap to select" (§4.4).
                                 selectedId = id
@@ -479,7 +512,7 @@ fun GuidedGridScreen(
                         activeDrag = null
                         if (completed) {
                             if (landed.rect != start) {
-                                vm.updateRooms(
+                                onRoomsChange(
                                     current.map { if (it.id == hit.roomId) it.withRect(landed.rect) else it },
                                 )
                                 haptics.confirm()
@@ -571,7 +604,7 @@ fun GuidedGridScreen(
                         ),
                     )
                 },
-                onDelete = { vm.updateRooms(rooms.filterNot { it.id == selected.id }); selectedId = null },
+                onDelete = { onRoomsChange(rooms.filterNot { it.id == selected.id }); selectedId = null },
                 onDone = { selectedId = null },
             )
 
@@ -603,7 +636,10 @@ fun GuidedGridScreen(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        VastuButton("Next — mark North", onClick = onNext, enabled = rooms.isNotEmpty())
+        VastuButton(
+            "Next — mark North", onClick = onNext, enabled = rooms.isNotEmpty(),
+            modifier = Modifier.testTag("editor.next"),
+        )
     }
 }
 

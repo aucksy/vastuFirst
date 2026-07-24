@@ -15,6 +15,13 @@ turbine = "1.2.0"
 androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2 screen graph
 androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
 
+# --- UI render harness (UI-POLISH.md §6). PINS ARE LOAD-BEARING — read docs/UI-POLISH.md §6.1
+# before touching them. Roborazzi 1.62+ is published by Gradle 9.x; we are on the Gradle 8.9
+# wrapper AGP 8.7.3 needs, so 1.61.0 is the last release we can use. Robolectric 4.14.1 is the
+# first that renders SDK 35 (our targetSdk). Do NOT float these to "latest".
+roborazzi = "1.61.0"
+robolectric = "4.14.1"
+
 # Android SDK levels (Impl PRD §2): min 26 / target 35.
 compileSdk = "35"
 minSdk = "26"
@@ -48,6 +55,13 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
+# UI render harness (JVM screenshot tests — no emulator). See docs/UI-POLISH.md §6.
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
+roborazzi-accessibility-check = { module = "io.github.takahirom.roborazzi:roborazzi-accessibility-check", version.ref = "roborazzi" }
+
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -57,3 +71,4 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

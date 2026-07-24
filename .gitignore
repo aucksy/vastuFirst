@@ -29,3 +29,8 @@ keystore.properties
 
 # Design bundle: keep the zip (source), ignore the extracted working copy (Impl PRD §0.1)
 Design System/Final Designs/vastufirst-mobile-apps-implementation/
+
+# Render harness (UI-POLISH §6): COMMIT the goldens (src/androidUnitTest/roborazzi/*.png), but
+# never the transient verify diffs — they exist on disk for the CI artifact, not for the repo.
+**/roborazzi/*_compare.png
+**/roborazzi/*_actual.png
