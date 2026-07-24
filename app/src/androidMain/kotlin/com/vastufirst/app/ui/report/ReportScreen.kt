@@ -6,6 +6,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,6 +57,7 @@ fun ReportScreen(vm: NewPlanViewModel) {
 }
 
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReportContent(
     analysis: Analysis?,
@@ -115,9 +118,18 @@ fun ReportContent(
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
                 good.forEach { r ->
                     VastuCard(accent = colors.verdictIdeal) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                        // FlowRow, not Row: a verdict pill AND a provenance tag flanking a weight(1f)
+                        // label are two unweighted-and-bounded children, so at 320 dp / font 2.0 they
+                        // consume the width and crush the label to ZERO (the label then wrapped one
+                        // char per line, 0×650 dp). FlowRow wraps a cramped item onto its own full-
+                        // width line instead of squeezing it to nothing (UI-POLISH §3.D).
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                        ) {
                             VerdictPill(r.verdict.toVastu())
-                            VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                            VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.body, color = colors.textPrimary)
                             r.rule?.provenance?.let { ProvenanceTag(it.toVastu()) }
                         }
                     }
