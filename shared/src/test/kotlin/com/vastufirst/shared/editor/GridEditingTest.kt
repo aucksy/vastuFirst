@@ -86,7 +86,7 @@ class GridEditingTest {
     }
 
     @Test
-    fun `an earlier room keeps its clamped spot; a later collider moves`() {
+    fun `an earlier room keeps its clamped spot while a later collider moves`() {
         val a = CellRect(0, 0, 2, 2)
         val b = CellRect(0, 0, 2, 2)   // identical → must be relocated
         val fitted = fitWithoutOverlap(listOf(a, b), 8, 8)
