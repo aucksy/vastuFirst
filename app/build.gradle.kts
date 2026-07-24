@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 12
-        versionName = "0.3.0"   // editor Build C: rectangular plots (square cells, chosen cols×rows) — true-to-life drawing
+        versionCode = 13
+        versionName = "0.3.1"   // Wave 1 end-to-end fixes: plot-resize overlap, dead-ends, autosave, press states, double-tap, Settings scroll
     }
 
     buildTypes {
