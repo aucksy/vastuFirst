@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -142,8 +141,9 @@ fun ScoreContent(
 @Composable
 private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
-    // remember the Canvas model keyed on its inputs so it isn't rebuilt every recomposition (§H).
-    val model = remember(rooms, a, north, cols, rows) { buildZoneMapModel(rooms, a, north, cols, rows) }
+    // buildZoneMapModel is itself @Composable (it reads theme colours), so it can't be memoised in a
+    // plain remember{}. Score isn't dragged (unlike Mark North), so a per-recomposition build is fine.
+    val model = buildZoneMapModel(rooms, a, north, cols, rows)
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
