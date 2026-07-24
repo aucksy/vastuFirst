@@ -53,6 +53,8 @@ kotlin {
             implementation(libs.roborazzi.junit.rule)
             implementation(libs.roborazzi.accessibility.check)
             // Version-matched Compose UI-test rule (createComposeRule / captureRoboImage host).
+            // compose.uiTest is flagged experimental by the JB Compose plugin; opt in explicitly.
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
         }
     }
