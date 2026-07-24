@@ -47,7 +47,11 @@ fun writeManifestAcrossMatrix(screen: String, content: @Composable () -> Unit) {
                     VastuTheme { content() }
                 }
             }
-            val root = onRoot(useUnmergedTree = true).fetchSemanticsNode()
+            // The MERGED tree — what an accessibility service perceives: a clickable chip carries
+            // its own text label, and off-screen leaf text nodes don't appear as separate entries.
+            // (The unmerged tree splits a chip's button and its Text, which made the gate see the
+            // button as unlabeled and every scrolled-off leaf as a phantom node.)
+            val root = onRoot(useUnmergedTree = false).fetchSemanticsNode()
             val density = root.layoutInfo.density.density
             val nodes = ArrayList<String>()
             walk(root, density, nodes)
