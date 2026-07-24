@@ -68,8 +68,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 5
-        versionName = "0.2.3"   // floor-plan editor rework Build A — direct manipulation
+        versionCode = 6
+        versionName = "0.2.4"   // render harness — CI now draws + measures every screen (UI-POLISH §6)
     }
 
     buildTypes {
