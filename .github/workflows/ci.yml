@@ -64,21 +64,35 @@ jobs:
       # This is the gate that would have caught the zero-height grid, the inset overlap and the
       # shattered rows. It runs AFTER the fast guardrails above, so those still fail-fast.
       #
-      # Now-in-Android bootstrap (§6.3): verify the goldens; on the first run there are none, so
-      # verify fails, we record them and commit them back. Every later run verifies silently, and a
-      # deliberate screen change fails verify → re-records → the image diff in that commit IS the
-      # visual change to review. `[skip ci]` on the golden commit avoids a redundant re-run (the
-      # goldens were just rendered from this exact commit, so they are correct by construction).
+      # Now-in-Android bootstrap (§6.3), made robust:
+      #   - No goldens committed yet → RECORD and commit (first time this screen is drawn).
+      #   - Goldens present          → VERIFY; on a mismatch (a deliberate screen change) re-record
+      #     with --rerun-tasks (so Gradle can't serve a cached test task) and commit. The image diff
+      #     in that commit IS the visual change to review.
+      # `[skip ci]` on the golden commit avoids a redundant re-run — the goldens were just rendered
+      # from this exact commit, so they are correct by construction.
+      - name: Are goldens committed yet?
+        id: golden_state
+        run: |
+          if [ -n "$(find app/src/androidUnitTest/roborazzi -name '*.png' 2>/dev/null | head -1)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Render screens — verify goldens
         id: verify_render
+        if: steps.golden_state.outputs.present == 'true'
         continue-on-error: true
         run: gradle :app:verifyRoborazziDebug --stacktrace
 
-      - name: Record goldens if verify failed (bootstrap / deliberate change)
+      - name: Render screens — record goldens (bootstrap / deliberate change)
         id: record_render
-        if: steps.verify_render.outcome == 'failure' && github.event_name == 'push'
+        if: >-
+          github.event_name == 'push' &&
+          (steps.golden_state.outputs.present == 'false' || steps.verify_render.outcome == 'failure')
         continue-on-error: true
-        run: gradle :app:recordRoborazziDebug --stacktrace
+        run: gradle :app:recordRoborazziDebug --rerun-tasks --stacktrace
 
       # Diagnostics: a genuine render failure (record could not produce goldens). The console
       # truncates the stack, so dump the full test-results XML, then re-fail the job (record was
@@ -97,16 +111,17 @@ jobs:
           exit 1
 
       - name: Commit new / updated goldens back
-        if: steps.verify_render.outcome == 'failure' && github.event_name == 'push'
+        if: steps.record_render.outcome == 'success'
         run: |
           set -e
-          if git diff --quiet -- app/src/androidUnitTest/roborazzi; then
+          git add app/src/androidUnitTest/roborazzi
+          # --porcelain sees UNTRACKED files too (git diff would miss brand-new goldens).
+          if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi)" ]; then
             echo "No golden changes to commit."
             exit 0
           fi
           git config user.name "VastuFirst CI"
           git config user.email "simpleapps108@gmail.com"
-          git add app/src/androidUnitTest/roborazzi
           git commit -m "ci: record screen render goldens [skip ci]"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"

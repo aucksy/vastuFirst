@@ -92,6 +92,15 @@ android {
 
 // Goldens live OUTSIDE build/ so CI can commit them back on first record (the Now-in-Android
 // bootstrap — UI-POLISH §6.3; build/ is git-ignored, so goldens kept there could never persist).
+//
+// The AUTHORITATIVE control is the `roborazzi.output.dir` system property: captureRoboImage("a/b.png")
+// resolves its relative path against it (default build/outputs/roborazzi). The `roborazzi { outputDir }`
+// extension alone did NOT redirect the capture path in 1.60.0, so set the system property on the test
+// task too. An absolute path keeps it unambiguous regardless of the test JVM's working directory.
+val goldenDir = layout.projectDirectory.dir("src/androidUnitTest/roborazzi").asFile.absolutePath
 roborazzi {
-    outputDir.set(file("src/androidUnitTest/roborazzi"))
+    outputDir.set(file(goldenDir))
+}
+tasks.withType<Test>().configureEach {
+    systemProperty("roborazzi.output.dir", goldenDir)
 }
