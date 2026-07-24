@@ -2,6 +2,10 @@
   "addhome": 1,
   "editor": 14,
   "editor-empty": 11,
+  "home": 1,
+  "home-empty": 0,
   "legal": 2,
-  "unlock": 1
+  "settings": 1,
+  "unlock": 1,
+  "welcome": 9
 }
