@@ -1,0 +1,298 @@
+<meta charset="utf-8">
+<title>VastuFirst — floor-plan editor prototype</title>
+<style>
+  :root{
+    --paper:#F8F6F0; --surface:#F2EEE4; --raised:#FFFFFF;
+    --primary:#7A9E7E; --primary-dark:#5F8465; --secondary:#C9A227;
+    --ink:#232A22; --ink2:#4B5347; --ink3:#6B7064;
+    --line:#DDDED3; --line-strong:#B6BBA8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:#e9e7e1;font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);
+       display:flex;gap:32px;padding:28px;flex-wrap:wrap;justify-content:center}
+  .phone{width:360px;background:var(--paper);border-radius:28px;border:1px solid var(--line);
+         box-shadow:0 24px 60px -28px rgba(35,42,34,.45);overflow:hidden;flex:0 0 auto}
+  .bar{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+       font:12px 'DM Mono',monospace;color:#98A08C}
+  .body{padding:24px}
+  h2{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:22px;margin:0 0 8px}
+  p.sub{font-size:15px;line-height:1.5;color:var(--ink2);margin:0 0 16px}
+
+  /* ---- the grid ---- */
+  .stage{position:relative;width:312px;height:312px;background:var(--surface);
+         border:1px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
+  .glines{position:absolute;inset:0;pointer-events:none}
+  .glines i{position:absolute;background:var(--line)}
+  .glines i.gv{top:0;bottom:0;width:1px}
+  .glines i.gh{left:0;right:0;height:1px}
+
+  .room{position:absolute;border-radius:8px;border:1px solid currentColor;display:flex;
+        align-items:center;justify-content:center;font-size:12px;font-weight:500;
+        text-align:center;line-height:1.15;padding:2px;overflow:hidden;
+        transition:box-shadow .12s ease, transform .12s ease}
+  .room .nm{color:var(--ink);opacity:.92;pointer-events:none}
+  .room.sel{border-width:2px;box-shadow:0 6px 18px -6px rgba(35,42,34,.35);z-index:5}
+  .room.dragging{z-index:9;box-shadow:0 12px 28px -8px rgba(35,42,34,.45);transform:scale(1.03)}
+
+  /* reserved: ghost preview of the landing cell, if we decide we need it */
+  .ghost{position:absolute;border-radius:8px;border:2px dashed var(--primary);
+         background:rgba(122,158,126,.10);pointer-events:none;z-index:4}
+
+  /* handles: drawn small, hit area large */
+  .h{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;z-index:10;
+     display:flex;align-items:center;justify-content:center;touch-action:none}
+  .h::after{content:'';width:16px;height:16px;border-radius:50%;background:var(--raised);
+            border:2px solid var(--primary-dark);box-shadow:0 2px 6px -1px rgba(35,42,34,.35)}
+  .h:active::after{transform:scale(1.15)}
+
+  .badge{position:absolute;z-index:11;background:var(--ink);color:var(--paper);
+         font:12px 'DM Mono',monospace;padding:4px 8px;border-radius:999px;pointer-events:none;
+         white-space:nowrap;transform:translate(-50%,-50%)}
+
+  /* ---- chrome ---- */
+  .label{font:12px 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;
+         color:var(--ink3);margin:18px 0 9px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--raised);border-radius:999px;
+        padding:11px 14px;font-size:14px;color:var(--ink2);cursor:pointer}
+  .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  .tools{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .tools h3{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:18px;margin:0 0 10px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{flex:1 1 auto;min-height:48px;border-radius:999px;border:1px solid var(--line);
+       background:var(--raised);color:var(--ink);font-size:15px;font-weight:500;cursor:pointer;
+       display:flex;align-items:center;justify-content:center;padding:0 16px}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--ink)}
+  .btn.ghostbtn{background:transparent}
+  .step{min-width:48px;min-height:48px;border-radius:999px;border:0;background:rgba(122,158,126,.16);
+        color:var(--primary-dark);font-size:15px;font-weight:600;cursor:pointer}
+  .hint{font-size:13px;color:var(--ink3);margin-top:10px;line-height:1.45}
+
+  .notes{max-width:380px;font-size:14px;line-height:1.6;color:#333}
+  .notes h1{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:26px;margin:0 0 4px}
+  .notes h4{margin:18px 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#666}
+  .notes li{margin-bottom:7px}
+  kbd{background:#fff;border:1px solid #ccc;border-bottom-width:2px;border-radius:4px;padding:1px 5px;font:12px 'DM Mono',monospace}
+</style>
+
+<div class="phone">
+  <div class="bar"><span>9:41</span><span>VastuFirst</span><span>▮▮▮</span></div>
+  <div class="body">
+    <h2 id="title">Place your rooms</h2>
+    <p class="sub" id="sub">Tap the grid to add a room. Tap a room to move or resize it.</p>
+
+    <div class="stage" id="stage">
+      <div class="glines" id="glines"></div>
+    </div>
+
+    <div id="chrome"></div>
+  </div>
+</div>
+
+<div class="notes">
+  <h1>Floor-plan editor</h1>
+  <p>Interactive prototype at a real 360 dp phone width — the narrow, common case. One grid cell is
+  <strong>39 dp</strong>, smaller than the 48 dp minimum touch target, which is the constraint that
+  shapes the whole design.</p>
+
+  <h4>Try this</h4>
+  <ul>
+    <li>Pick a room type, then <strong>tap the grid</strong> — a 2×2 room appears.</li>
+    <li><strong>Drag the room</strong> anywhere to move it — it snaps to the grid as you go.</li>
+    <li><strong>Tap it</strong> to select — four round corner handles appear.</li>
+    <li><strong>Drag a handle</strong> to resize. The size badge follows above your finger, never under it.</li>
+    <li>Tap empty space to deselect. <kbd>Undo</kbd> reverses any move, resize, add or remove.</li>
+  </ul>
+
+  <h4>Why these choices</h4>
+  <ul>
+    <li><strong>Handles are 16 px drawn, 44 px touchable</strong> — a small target you can actually hit.</li>
+    <li><strong>Handles sit on the corners, half outside the shape</strong>, so a 1-cell room can still be resized without the handles burying it.</li>
+    <li><strong>The size badge sits above the shape</strong>, out from under the hand.</li>
+    <li><strong>Drag moves relative to where you grabbed</strong>, so the room doesn't jump to centre under your finger.</li>
+    <li><strong>The +/− buttons stay.</strong> Dragging is impossible with a screen reader and hard for shaky hands — every gesture keeps a button equivalent.</li>
+  </ul>
+  <p style="color:#777;font-size:13px">This is a prototype for agreeing the interaction, not the shipping build. Colours and type are the real Sage &amp; Gold tokens.</p>
+</div>
+
+<script>
+const GRID = 8, CELL = 312 / GRID;
+const TYPES = [
+  ['Living','#4E9A55'], ['Kitchen','#E0662F'], ['Master bed','#8A6A45'], ['Bedroom','#6A5FB0'],
+  ['Pooja','#9A57B0'], ['Toilet','#2E8B8B'], ['Stairs','#C83B32'], ['Study','#2F6FBF'], ['Dining','#E0A21E'],
+];
+let rooms = [], selected = null, active = 0, uid = 0;
+const history = [];
+
+const stage = document.getElementById('stage');
+const glines = document.getElementById('glines');
+for (let i = 1; i < GRID; i++) {
+  glines.insertAdjacentHTML('beforeend', `<i class="gv" style="left:${i*CELL}px"></i><i class="gh" style="top:${i*CELL}px"></i>`);
+}
+
+const snap = (px) => Math.round(px / CELL);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const push = () => { history.push(JSON.stringify(rooms)); if (history.length > 40) history.shift(); };
+
+function render() {
+  [...stage.querySelectorAll('.room,.h,.badge,.ghost')].forEach(n => n.remove());
+  for (const r of rooms) {
+    const [name, colour] = TYPES[r.t];
+    const el = document.createElement('div');
+    el.className = 'room' + (r.id === selected ? ' sel' : '');
+    el.style.cssText = `left:${r.c*CELL}px;top:${r.r*CELL}px;width:${r.w*CELL}px;height:${r.h*CELL}px;
+                        color:${colour};background:${colour}2E`;
+    el.innerHTML = `<span class="nm">${r.w*r.h >= 2 ? name : ''}</span>`;
+    el.dataset.id = r.id;
+    stage.appendChild(el);
+  }
+  const sel = rooms.find(r => r.id === selected);
+  if (sel) {
+    // badge above the shape — never under the hand
+    const b = document.createElement('div');
+    b.className = 'badge';
+    // Sit above the shape, except for a top-row room where "above" would cover its own corner
+    // handles — then sit below. Either way it stays clear of the hand during a corner drag.
+    const above = sel.r > 0;
+    b.style.left = (sel.c + sel.w / 2) * CELL + 'px';
+    b.style.top = (above ? sel.r * CELL - 14 : (sel.r + sel.h) * CELL + 14) + 'px';
+    b.textContent = `${sel.w} × ${sel.h}`;
+    stage.appendChild(b);
+    for (const [hx, hy] of [[0,0],[1,0],[0,1],[1,1]]) {
+      const h = document.createElement('div');
+      h.className = 'h';
+      // Clamp the centre so the full 44px touch box stays inside the grid. Without this, a room
+      // on an edge has its handles half-clipped and you cannot grab them at all.
+      const HALF = 22, SIDE = GRID * CELL;
+      h.style.left = clamp((sel.c + hx * sel.w) * CELL, HALF, SIDE - HALF) + 'px';
+      h.style.top  = clamp((sel.r + hy * sel.h) * CELL, HALF, SIDE - HALF) + 'px';
+      h.dataset.hx = hx; h.dataset.hy = hy;
+      stage.appendChild(h);
+    }
+  }
+  renderChrome();
+}
+
+function renderChrome() {
+  const sel = rooms.find(r => r.id === selected);
+  const c = document.getElementById('chrome');
+  if (sel) {
+    const [name] = TYPES[sel.t];
+    c.innerHTML = `<div class="tools">
+      <h3>${name} · ${sel.w} × ${sel.h}</h3>
+      <div class="row" style="margin-bottom:8px">
+        <button class="step" data-a="w-1">W −</button><button class="step" data-a="w1">W +</button>
+        <button class="step" data-a="h-1">H −</button><button class="step" data-a="h1">H +</button>
+      </div>
+      <div class="row">
+        <button class="btn ghostbtn" data-a="del">Remove</button>
+        <button class="btn primary" data-a="done">Done</button>
+      </div>
+      <div class="hint">Drag the room to move it, or drag a corner to resize.</div>
+    </div>`;
+  } else {
+    c.innerHTML = `<div class="label">Rooms</div>
+      <div class="chips">${TYPES.map(([n], i) =>
+        `<button class="chip ${i===active?'on':''}" data-t="${i}">${n}</button>`).join('')}</div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn ghostbtn" data-a="undo">Undo</button>
+        <button class="btn ghostbtn" data-a="clear">Clear all</button>
+      </div>
+      <div class="hint">${rooms.length ? 'Tap a room to move or resize it.' : 'Pick a room type, then tap the grid to place it.'}</div>`;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-t]'); if (t) { active = +t.dataset.t; renderChrome(); return; }
+  const a = e.target.closest('[data-a]'); if (!a) return;
+  const sel = rooms.find(r => r.id === selected);
+  const act = a.dataset.a;
+  if (act === 'undo') { if (history.length) { rooms = JSON.parse(history.pop()); selected = null; render(); } return; }
+  if (act === 'clear') { push(); rooms = []; selected = null; render(); return; }
+  if (act === 'done') { selected = null; render(); return; }
+  if (!sel) return;
+  push();
+  if (act === 'del') { rooms = rooms.filter(r => r.id !== sel.id); selected = null; }
+  if (act === 'w-1') sel.w = Math.max(1, sel.w - 1);
+  if (act === 'w1')  sel.w = Math.min(GRID - sel.c, sel.w + 1);
+  if (act === 'h-1') sel.h = Math.max(1, sel.h - 1);
+  if (act === 'h1')  sel.h = Math.min(GRID - sel.r, sel.h + 1);
+  render();
+});
+
+// ---- pointer: tap to place / select, drag to move, drag handle to resize ----
+let drag = null;
+const local = (e) => { const b = stage.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+const hitRoom = (p) => [...rooms].reverse().find(r =>
+  p.x >= r.c*CELL && p.x < (r.c+r.w)*CELL && p.y >= r.r*CELL && p.y < (r.r+r.h)*CELL);
+
+stage.addEventListener('pointerdown', (e) => {
+  stage.setPointerCapture(e.pointerId);
+  const p = local(e);
+  const handle = e.target.closest('.h');
+  if (handle) {
+    const r = rooms.find(x => x.id === selected);
+    drag = { kind:'resize', id:r.id, hx:+handle.dataset.hx, hy:+handle.dataset.hy, moved:false, o:{...r} };
+    push();
+    return;
+  }
+  const r = hitRoom(p);
+  if (r) {
+    drag = { kind:'move', id:r.id, moved:false, o:{...r},
+             grab:{ cx: p.x/CELL - r.c, cy: p.y/CELL - r.r } };
+    push();
+    document.querySelector(`.room[data-id="${r.id}"]`)?.classList.add('dragging');
+  } else {
+    drag = { kind:'empty', at:p, moved:false };
+  }
+});
+
+stage.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const p = local(e);
+  drag.moved = drag.moved || Math.abs(p.x - (drag.at?.x ?? p.x)) > 6 || Math.abs(p.y - (drag.at?.y ?? p.y)) > 6;
+  const r = rooms.find(x => x.id === drag.id);
+  if (drag.kind === 'move' && r) {
+    drag.moved = true;
+    // move relative to the grab point so the room doesn't jump under the finger
+    r.c = clamp(snap(p.x - drag.grab.cx * CELL), 0, GRID - r.w);
+    r.r = clamp(snap(p.y - drag.grab.cy * CELL), 0, GRID - r.h);
+    render(); document.querySelector(`.room[data-id="${r.id}"]`)?.classList.add('dragging');
+  } else if (drag.kind === 'resize' && r) {
+    drag.moved = true;
+    const o = drag.o;
+    if (drag.hx === 1) r.w = clamp(snap(p.x) - o.c, 1, GRID - o.c);
+    else { const right = o.c + o.w; const nc = clamp(snap(p.x), 0, right - 1); r.c = nc; r.w = right - nc; }
+    if (drag.hy === 1) r.h = clamp(snap(p.y) - o.r, 1, GRID - o.r);
+    else { const bot = o.r + o.h; const nr = clamp(snap(p.y), 0, bot - 1); r.r = nr; r.h = bot - nr; }
+    render();
+  }
+});
+
+stage.addEventListener('pointerup', (e) => {
+  if (!drag) return;
+  const p = local(e);
+  if (drag.kind === 'empty' && !drag.moved) {
+    const r = hitRoom(p);
+    if (!r) {
+      if (selected) { selected = null; history.pop(); }         // first tap on empty = deselect
+      else {
+        const c = clamp(Math.floor(p.x/CELL), 0, GRID-1), rw = clamp(Math.floor(p.y/CELL), 0, GRID-1);
+        const w = Math.min(2, GRID-c), h = Math.min(2, GRID-rw);
+        rooms.push({ id:++uid, t:active, c, r:rw, w, h });
+        selected = uid;
+      }
+    }
+  } else if (drag.kind === 'move' && !drag.movedFar) {
+    // a move that snapped back to where it started counts as a tap -> select
+    const r = rooms.find(x => x.id === drag.id);
+    if (r && r.c === drag.o.c && r.r === drag.o.r) { selected = r.id; history.pop(); }
+  }
+  drag = null;
+  render();
+});
+
+render();
+</script>
