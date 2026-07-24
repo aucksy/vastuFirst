@@ -38,6 +38,7 @@ kotlin {
 
             implementation(libs.koin.core)
             implementation(libs.koin.android)
+            implementation(libs.koin.compose)          // koinInject in the launch decider
             implementation(libs.koin.androidx.compose)
 
             implementation(libs.sqldelight.android.driver)
@@ -68,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 10
-        versionName = "0.2.8"   // accessibility check (ATF) now runs headless in CI, ratcheted (UI-POLISH §6.6)
+        versionCode = 11
+        versionName = "0.2.9"   // first-run skips empty Home; app-wide haptics; N-dial arrow; refined editor grips
     }
 
     buildTypes {

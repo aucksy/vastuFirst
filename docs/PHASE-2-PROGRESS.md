@@ -215,3 +215,29 @@ of accessibility defects from "needs a device" into a CI check.
 
 The 11 rendered screens now pass through four gates on every build: L0 tokens/fidelity, L1 measured
 geometry, the inset grep gate, and now L2 accessibility.
+
+---
+
+## Owner device-feedback pass (v0.2.9, 2026-07-24)
+
+Four fixes from the first real-device review (a fifth — rectangular plots — is a research
+recommendation in docs/RECT-PLOT-RESEARCH.md, awaiting sign-off before any code):
+
+- **First run no longer opens on an empty "Your plans".** A one-frame `Routes.LAUNCH` decider (the
+  new start destination) reads the DB once behind a themed splash: a returning user lands on their
+  saved plans, a first-timer goes straight into the flow. `popUpTo(LAUNCH, inclusive)` so Back from
+  the first real screen exits.
+- **Haptics, app-wide.** New `VastuHaptics` vocabulary (`LocalVastuHaptics`, no-op default; Android
+  impl routes through `View.performHapticFeedback` so it honours the system setting). A light tap on
+  every discrete control (wired once in `clickableTap`, so all buttons/chips/rows/icons get it), and
+  a fine per-step tick on the North dial (per degree) and the slider. The editor keeps its existing
+  on-touch-down haptics. *(Design note: the Sage & Gold spec suggests a soft detent every 15° on the
+  dial; per the owner's request this ships as a tick every degree — trivially switchable if it reads
+  as too busy on hardware.)*
+- **The North knob has its direction arrow** (design: the sage triangle above the "N" circle), drawn
+  rotated to the bearing so it always points radially outward — at North=0 that is straight up,
+  exactly the prototype. Reads as a compass needle.
+- **The selected-room corner grips are refined** — smaller solid dots with a thin cream halo instead
+  of the large hollow rings that floated over the corner (owner: "not looking good"). *(The render
+  harness draws the editor with nothing selected, so this one is reasoned + needs the on-device look;
+  the dial arrow IS in the goldens.)*

@@ -21,13 +21,18 @@ fun Modifier.clickableTap(
     role: Role? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     onClick: () -> Unit,
-): Modifier = clickable(
-    interactionSource = interactionSource,
-    indication = null,
-    enabled = enabled,
-    role = role,
-    onClick = onClick,
-)
+): Modifier {
+    // One light tap haptic for every discrete control in the app — buttons, chips, icon buttons,
+    // list rows and cards all route through here (VastuHaptics.None is a no-op off-device).
+    val haptics = LocalVastuHaptics.current
+    return clickable(
+        interactionSource = interactionSource,
+        indication = null,
+        enabled = enabled,
+        role = role,
+        onClick = { haptics.tap(); onClick() },
+    )
+}
 
 /** Attach a content description (accessibility) to any node — used on graphics like the zone map. */
 fun Modifier.semanticsLabel(description: String): Modifier =

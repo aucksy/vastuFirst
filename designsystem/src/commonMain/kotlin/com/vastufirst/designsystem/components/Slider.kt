@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +25,9 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
+import kotlin.math.roundToInt
 
 /**
  * Owned horizontal slider — no Material control (Impl PRD §7, so iOS is a mechanical re-skin).
@@ -40,9 +46,19 @@ fun VastuSlider(
     val end = valueRange.endInclusive
     val fraction = ((value - start) / (end - start)).coerceIn(0f, 1f)
 
+    val haptics = LocalVastuHaptics.current
+    // One tick per whole step crossed while scrubbing, matching the dial's per-degree detent.
+    var lastStep by remember { mutableStateOf(value.roundToInt()) }
+
     fun setFromX(x: Float, widthPx: Int) {
         val f = (x / widthPx.toFloat()).coerceIn(0f, 1f)
-        onValueChange(start + f * (end - start))
+        val v = start + f * (end - start)
+        val step = v.roundToInt()
+        if (step != lastStep) {
+            lastStep = step
+            haptics.tick()
+        }
+        onValueChange(v)
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth().height(VastuTheme.sizes.knobHit)) {

@@ -6,6 +6,10 @@ package com.vastufirst.app.navigation
  * Home → Welcome → Add home → (Guided grid | Sample) → Mark North → Score → Report.
  */
 object Routes {
+    // A one-frame decider (start destination): sends a returning user to their saved plans, and a
+    // first-time user straight into the flow — never a "No plans yet" dead-end on a fresh install.
+    const val LAUNCH = "launch"
+
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val LEGAL = "legal"

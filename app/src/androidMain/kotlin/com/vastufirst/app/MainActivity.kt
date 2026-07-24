@@ -6,7 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import com.vastufirst.app.navigation.VastuNavHost
+import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,8 +26,12 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         setContent {
-            VastuTheme {
-                VastuNavHost()
+            // Provide the app-wide haptics once at the root; every clickableTap and the North dial
+            // read it from LocalVastuHaptics (VastuHaptics.None off-device keeps renders silent).
+            CompositionLocalProvider(LocalVastuHaptics provides rememberAndroidVastuHaptics()) {
+                VastuTheme {
+                    VastuNavHost()
+                }
             }
         }
     }

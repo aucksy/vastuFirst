@@ -1,8 +1,16 @@
 package com.vastufirst.app.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,7 +31,12 @@ import com.vastufirst.app.ui.score.ScoreScreen
 import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
 import com.vastufirst.app.ui.welcome.WelcomeScreen
+import com.vastufirst.data.PlanRepository
+import com.vastufirst.designsystem.components.BrandMark
+import com.vastufirst.designsystem.theme.VastuTheme
+import kotlinx.coroutines.flow.first
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 /**
  * The app's navigation host. The guided-grid path is a nested graph so its screens share one
@@ -32,7 +45,31 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun VastuNavHost() {
     val nav = rememberNavController()
-    NavHost(navController = nav, startDestination = Routes.HOME) {
+    NavHost(navController = nav, startDestination = Routes.LAUNCH) {
+
+        // First frame decides where to land, so a fresh install never opens on an empty
+        // "No plans yet" screen: returning users go to their saved plans, first-timers go straight
+        // into the flow. A themed splash (no white flash) shows for the single frame it takes to
+        // read the DB. popUpTo removes LAUNCH so Back from the first real screen exits the app.
+        composable(Routes.LAUNCH) {
+            val repo = koinInject<PlanRepository>()
+            var target by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(Unit) {
+                val hasPlans = repo.observePlans().first().isNotEmpty()
+                target = if (hasPlans) Routes.HOME else Routes.NEWPLAN_GRAPH
+            }
+            LaunchedEffect(target) {
+                target?.let { dest ->
+                    nav.navigate(dest) { popUpTo(Routes.LAUNCH) { inclusive = true } }
+                }
+            }
+            Box(
+                Modifier.fillMaxSize().background(VastuTheme.colors.paper),
+                contentAlignment = Alignment.Center,
+            ) {
+                BrandMark()
+            }
+        }
 
         composable(Routes.HOME) {
             HomeScreen(

@@ -578,11 +578,11 @@ fun GuidedGridContent(
                 val shown = if (d?.roomId == sel.id) d.rect else sel.rect()
                 for (h in handlesFor(shown)) {
                     val centre = handleCentre(shown, h, cp, size.width, touchPx / 2f)
+                    // A small SOLID dot with a thin cream halo — reads as a deliberate grip on any
+                    // room tint. The old large hollow ring floated over the corner and looked clunky
+                    // (owner feedback, v0.2.8). Halo first (slightly larger), solid core on top.
                     drawCircle(color = gripFill, radius = gripRadiusPx, center = centre)
-                    drawCircle(
-                        color = gripStroke, radius = gripRadiusPx, center = centre,
-                        style = Stroke(width = strokePx),
-                    )
+                    drawCircle(color = gripStroke, radius = gripRadiusPx - strokePx, center = centre)
                 }
             }
         }
