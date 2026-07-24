@@ -90,6 +90,13 @@ android {
     }
 }
 
+dependencies {
+    // Merges the ComponentActivity manifest entry into the debug variant so runComposeUiTest (the
+    // L1 semantics walk) can launch under Robolectric. Must be debugImplementation — the unit test
+    // uses the debug variant's merged manifest.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
 // Goldens live OUTSIDE build/ so CI can commit them back on first record (the Now-in-Android
 // bootstrap — UI-POLISH §6.3; build/ is git-ignored, so goldens kept there could never persist).
 //

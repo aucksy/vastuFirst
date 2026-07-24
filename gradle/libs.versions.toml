@@ -27,6 +27,10 @@ androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose coll
 # Robolectric 4.14.1 is the first that renders SDK 35 (our targetSdk). Do NOT float these.
 roborazzi = "1.60.0"
 robolectric = "4.14.1"
+# ui-test-manifest supplies the ComponentActivity that runComposeUiTest (the L1 semantics walk)
+# launches under Robolectric. Pinned to the Jetpack Compose version that Compose Multiplatform
+# 1.7.1 maps to (1.7.5, per the JB compatibility table) so it matches the compose-ui on the classpath.
+androidxComposeUiTestManifest = "1.7.5"
 
 # Android SDK levels (Impl PRD §2): min 26 / target 35.
 compileSdk = "35"
@@ -67,6 +71,7 @@ roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = 
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
 roborazzi-accessibility-check = { module = "io.github.takahirom.roborazzi:roborazzi-accessibility-check", version.ref = "roborazzi" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeUiTestManifest" }
 
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
