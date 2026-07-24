@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 11
-        versionName = "0.2.9"   // first-run skips empty Home; app-wide haptics; N-dial arrow; refined editor grips
+        versionCode = 12
+        versionName = "0.3.0"   // editor Build C: rectangular plots (square cells, chosen cols×rows) — true-to-life drawing
     }
 
     buildTypes {

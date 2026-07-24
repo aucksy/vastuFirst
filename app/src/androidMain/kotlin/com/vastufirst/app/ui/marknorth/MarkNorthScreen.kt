@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.buildZoneMapModel
+import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.shared.Analysis
@@ -58,6 +59,8 @@ fun MarkNorthScreen(
         onNorthChange = vm::updateNorth,
         onRead = onRead,
         onBack = onBack,
+        cols = vm.gridCols,
+        rows = vm.gridRows,
     )
 }
 
@@ -70,9 +73,11 @@ fun MarkNorthContent(
     onNorthChange: (Int) -> Unit,
     onRead: () -> Unit,
     onBack: () -> Unit,
+    cols: Int = GRID,
+    rows: Int = GRID,
 ) {
     val colors = VastuTheme.colors
-    val model = buildZoneMapModel(rooms, analysis, north)
+    val model = buildZoneMapModel(rooms, analysis, north, cols, rows)
     val score = analysis?.score
 
     Column(

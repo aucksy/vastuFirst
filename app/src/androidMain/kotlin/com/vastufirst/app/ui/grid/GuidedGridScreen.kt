@@ -127,11 +127,16 @@ private data class Hit(val roomId: String, val rect: CellRect, val handle: Handl
  * disagree. Centres are clamped [clampPx] inside the plan: a room on the edge would otherwise have
  * half its grips outside the grid, where no finger can reach them.
  */
-private fun handleCentre(rect: CellRect, handle: Handle, cellPx: Float, gridPx: Float, clampPx: Float): Offset {
+private fun handleCentre(
+    rect: CellRect, handle: Handle, cellPx: Float, gridWpx: Float, gridHpx: Float, clampPx: Float,
+): Offset {
     val (c, r) = handleAnchor(rect, handle)
-    val lo = min(clampPx, gridPx / 2f)                 // a very narrow plan must not invert the range
-    val hi = maxOf(gridPx - clampPx, gridPx / 2f)
-    return Offset((c * cellPx).coerceIn(lo, hi), (r * cellPx).coerceIn(lo, hi))
+    fun clamp(v: Float, extent: Float): Float {
+        val lo = min(clampPx, extent / 2f)             // a very narrow plan must not invert the range
+        val hi = maxOf(extent - clampPx, extent / 2f)
+        return v.coerceIn(lo, hi)
+    }
+    return Offset(clamp(c * cellPx, gridWpx), clamp(r * cellPx, gridHpx))
 }
 
 /**
@@ -143,14 +148,15 @@ private fun hitTest(
     rooms: List<GridRoom>,
     selectedId: String?,
     cellPx: Float,
-    gridPx: Float,
+    gridWpx: Float,
+    gridHpx: Float,
     touchPx: Float,
 ): Hit? {
     val radius = touchPx / 2f
     rooms.firstOrNull { it.id == selectedId }?.let { sel ->
         val r = sel.rect()
         for (h in handlesFor(r)) {
-            val centre = handleCentre(r, h, cellPx, gridPx, radius)
+            val centre = handleCentre(r, h, cellPx, gridWpx, gridHpx, radius)
             val dx = pos.x - centre.x
             val dy = pos.y - centre.y
             if (dx * dx + dy * dy <= radius * radius) return Hit(sel.id, r, h)
@@ -166,10 +172,12 @@ private fun hitTest(
 }
 
 /** A new room's ghost under the finger: 2×2 where it fits, trimmed at the south and east edges. */
-private fun placementAt(pos: Offset, type: RoomType, cellPx: Float, rooms: List<GridRoom>): ActiveDrag {
-    val col = cellIndex(pos.x, cellPx, GRID)
-    val row = cellIndex(pos.y, cellPx, GRID)
-    val rect = CellRect(col, row, min(2, GRID - col), min(2, GRID - row))
+private fun placementAt(
+    pos: Offset, type: RoomType, cellPx: Float, rooms: List<GridRoom>, cols: Int, rows: Int,
+): ActiveDrag {
+    val col = cellIndex(pos.x, cellPx, cols)
+    val row = cellIndex(pos.y, cellPx, rows)
+    val rect = CellRect(col, row, min(2, cols - col), min(2, rows - row))
     val blocked = anyOverlap(rect, rooms.map { it.rect() })
     return ActiveDrag(null, type, null, rect, IntOffset.Zero, rect, rect, blocked)
 }
@@ -181,8 +189,8 @@ private fun newRoomId(existing: List<GridRoom>): String {
     return "room-$n"
 }
 
-private fun describe(type: RoomType, rect: CellRect): String =
-    "${type.label()} · ${rect.w}×${rect.h} · ${zoneOfRect(rect, GRID).short()}"
+private fun describe(type: RoomType, rect: CellRect, cols: Int, rows: Int): String =
+    "${type.label()} · ${rect.w}×${rect.h} · ${zoneOfRect(rect, cols, rows).short()}"
 
 /**
  * Guided grid editor (§6.2a · design system screen 3) — the primary, always-available, offline
@@ -207,8 +215,11 @@ fun GuidedGridScreen(
     GuidedGridContent(
         rooms = vm.rooms,
         door = vm.door,
+        cols = vm.gridCols,
+        rows = vm.gridRows,
         onRoomsChange = vm::updateRooms,
         onDoorChange = vm::updateDoor,
+        onGridChange = vm::updateGrid,
         onNext = onNext,
     )
 }
@@ -226,6 +237,9 @@ fun GuidedGridContent(
     onRoomsChange: (List<GridRoom>) -> Unit,
     onDoorChange: (GridDoor?) -> Unit,
     onNext: () -> Unit,
+    cols: Int = GRID,
+    rows: Int = GRID,
+    onGridChange: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -248,7 +262,9 @@ fun GuidedGridContent(
     val cornerPx = with(density) { VastuTheme.spacing.s2.toPx() }
     val dashOnPx = with(density) { VastuTheme.spacing.s2.toPx() }
     val dashOffPx = with(density) { VastuTheme.spacing.s1.toPx() }
-    val bandLines = remember { bandBoundaries(GRID).toSet() }
+    // Third-band boundaries per axis (a rectangular plot has different thirds each way).
+    val bandLinesX = remember(cols) { bandBoundaries(cols).toSet() }
+    val bandLinesY = remember(rows) { bandBoundaries(rows).toSet() }
 
     var armedType by remember { mutableStateOf<RoomType?>(null) }
     var selectedId by remember { mutableStateOf<String?>(null) }
@@ -269,7 +285,7 @@ fun GuidedGridContent(
 
     fun placeDoor(col: Int, row: Int) {
         // Nearest outer wall to the tapped cell decides the side; the parallel coord is the position.
-        val distN = row; val distS = GRID - 1 - row; val distW = col; val distE = GRID - 1 - col
+        val distN = row; val distS = rows - 1 - row; val distW = col; val distE = cols - 1 - col
         val d = when (minOf(distN, distS, distW, distE)) {
             distN -> GridDoor(DoorSide.N, col)
             distS -> GridDoor(DoorSide.S, col)
@@ -319,8 +335,8 @@ fun GuidedGridContent(
         val dragNow = activeDrag
         val chipText = when {
             dragNow != null && dragNow.blocked -> "Rooms can’t overlap"
-            dragNow != null -> describe(dragNow.type, dragNow.rect)
-            selected != null -> describe(selected.type, selected.rect())
+            dragNow != null -> describe(dragNow.type, dragNow.rect, cols, rows)
+            selected != null -> describe(selected.type, selected.rect(), cols, rows)
             else -> null
         }
         Box(
@@ -365,20 +381,32 @@ fun GuidedGridContent(
                 // to the parent's measured size — so without an explicit height this Box measures to
                 // the tallest child, and to ZERO when no room has been placed yet. That is the state
                 // the user lands in every time: an invisible, untappable grid (UI-POLISH §3.C).
-                .aspectRatio(1f)
+                // Square cells at the plot's true proportions (cols × rows) — a rectangular home is
+                // drawn true-to-life, no forced square, no empty strip (docs/RECT-PLOT-RESEARCH.md).
+                .aspectRatio(cols.toFloat() / rows.toFloat())
                 .clip(VastuTheme.shapes.md)
                 .background(colors.surface)
                 .border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.md)
                 .drawBehind {
-                    val step = size.width / GRID
-                    for (i in 1 until GRID) {
-                        // The two band boundaries are drawn stronger: they are the thirds the zones
-                        // are cut on, so the user can see North-East before the chip names it.
-                        val band = i in bandLines
-                        val c = if (band) bandColor else lineColor
-                        val w = if (band) bandPx else linePx
-                        drawLine(c, Offset(step * i, 0f), Offset(step * i, size.height), strokeWidth = w)
-                        drawLine(c, Offset(0f, step * i), Offset(size.width, step * i), strokeWidth = w)
+                    val stepX = size.width / cols
+                    val stepY = size.height / rows
+                    // The two band boundaries per axis are drawn stronger: they are the thirds the
+                    // zones are cut on, so the user can see North-East before the chip names it.
+                    for (i in 1 until cols) {
+                        val band = i in bandLinesX
+                        drawLine(
+                            if (band) bandColor else lineColor,
+                            Offset(stepX * i, 0f), Offset(stepX * i, size.height),
+                            strokeWidth = if (band) bandPx else linePx,
+                        )
+                    }
+                    for (i in 1 until rows) {
+                        val band = i in bandLinesY
+                        drawLine(
+                            if (band) bandColor else lineColor,
+                            Offset(0f, stepY * i), Offset(size.width, stepY * i),
+                            strokeWidth = if (band) bandPx else linePx,
+                        )
                     }
                 }
                 // ⚠ keyed on Unit and NEVER on the room list. pointerInput(rooms) rebuilds this node
@@ -393,8 +421,9 @@ fun GuidedGridContent(
                         // held, so an early return here is a tight infinite loop, i.e. an ANR.
                         val down = awaitFirstDown()
 
-                        val gridPx = size.width.toFloat()
-                        val cellPx = gridPx / GRID
+                        val gridWpx = size.width.toFloat()
+                        val gridHpx = size.height.toFloat()
+                        val cellPx = gridWpx / cols          // square cells: width/cols == height/rows
                         if (cellPx <= 0f) return@awaitEachGesture
 
                         // ⚠ Read the list HERE, after the down. The `rooms` PARAM is captured BY
@@ -410,8 +439,8 @@ fun GuidedGridContent(
                             if (up != null) {
                                 up.consume()
                                 placeDoor(
-                                    cellIndex(up.position.x, cellPx, GRID),
-                                    cellIndex(up.position.y, cellPx, GRID),
+                                    cellIndex(up.position.x, cellPx, cols),
+                                    cellIndex(up.position.y, cellPx, rows),
                                 )
                                 haptics.confirm()
                             }
@@ -423,7 +452,7 @@ fun GuidedGridContent(
                         if (arming != null) {
                             down.consume()
                             haptics.grab()
-                            var ghost = placementAt(down.position, arming, cellPx, current)
+                            var ghost = placementAt(down.position, arming, cellPx, current, cols, rows)
                             activeDrag = ghost
                             while (true) {
                                 val event = awaitPointerEvent()
@@ -434,7 +463,7 @@ fun GuidedGridContent(
                                 }
                                 // Recomputed from the ABSOLUTE position, so this must read the change
                                 // before consuming it — a consumed change reports no movement at all.
-                                val next = placementAt(change.position, arming, cellPx, current)
+                                val next = placementAt(change.position, arming, cellPx, current, cols, rows)
                                 change.consume()
                                 if (next.rect != ghost.rect) {
                                     ghost = next
@@ -459,7 +488,7 @@ fun GuidedGridContent(
                         }
 
                         // --- move / resize ---
-                        val hit = hitTest(down.position, current, selectedId, cellPx, gridPx, touchPx)
+                        val hit = hitTest(down.position, current, selectedId, cellPx, gridWpx, gridHpx, touchPx)
                         if (hit == null) {
                             // Empty space. Deselect, and DON'T consume — a finger that starts here
                             // must still be able to scroll the page.
@@ -495,8 +524,8 @@ fun GuidedGridContent(
                             val stepRow = snapWithHysteresis(raw.y / cellPx, state.steps.y)
                             if (stepCol == state.steps.x && stepRow == state.steps.y) return
                             val attempt =
-                                if (handle == null) moveBy(start, stepCol, stepRow, GRID)
-                                else resizeBy(start, handle, stepCol, stepRow, GRID)
+                                if (handle == null) moveBy(start, stepCol, stepRow, cols, rows)
+                                else resizeBy(start, handle, stepCol, stepRow, cols, rows = rows)
                             val bad = anyOverlap(attempt, others)
                             state = state.copy(
                                 steps = IntOffset(stepCol, stepRow),
@@ -531,7 +560,7 @@ fun GuidedGridContent(
                     }
                 },
         ) {
-            val cell = maxWidth / GRID
+            val cell = maxWidth / cols            // square cell size in dp (width/cols == height/rows)
             val cellPx = with(density) { cell.toPx() }
             val live = activeDrag
 
@@ -542,19 +571,21 @@ fun GuidedGridContent(
                         rect = if (live?.roomId == room.id) live.rect else room.rect(),
                         cell = cell,
                         cellPx = cellPx,
+                        cols = cols,
+                        rows = rows,
                         selected = room.id == selectedId,
                         lifted = live?.roomId == room.id,
                         onSelect = { selectedId = room.id },
                     )
                 }
             }
-            door?.let { DoorMarker(it, cell) }
+            door?.let { DoorMarker(it, cell, cols, rows) }
 
             // Ghost + grips are DRAWN, not composed: they are pointer-only affordances (so they
             // carry no semantics — TalkBack reaches every one of these actions through the buttons
             // below instead) and drawing keeps them out of the layout pass entirely.
             Canvas(Modifier.matchParentSize()) {
-                val cp = size.width / GRID
+                val cp = size.width / cols
                 val d = activeDrag
                 if (d != null && (d.roomId == null || d.blocked)) {
                     val r = d.attempted
@@ -577,7 +608,7 @@ fun GuidedGridContent(
                 val sel = rooms.firstOrNull { it.id == selectedId } ?: return@Canvas
                 val shown = if (d?.roomId == sel.id) d.rect else sel.rect()
                 for (h in handlesFor(shown)) {
-                    val centre = handleCentre(shown, h, cp, size.width, touchPx / 2f)
+                    val centre = handleCentre(shown, h, cp, size.width, size.height, touchPx / 2f)
                     // A small SOLID dot with a thin cream halo — reads as a deliberate grip on any
                     // room tint. The old large hollow ring floated over the corner and looked clunky
                     // (owner feedback, v0.2.8). Halo first (slightly larger), solid core on top.
@@ -602,14 +633,16 @@ fun GuidedGridContent(
         when {
             selected != null -> SelectedRoomTools(
                 room = selected,
-                onNudge = { dc, dr -> applyToSelected(moveBy(selected.rect(), dc, dr, GRID)) },
+                cols = cols,
+                rows = rows,
+                onNudge = { dc, dr -> applyToSelected(moveBy(selected.rect(), dc, dr, cols, rows)) },
                 onResize = { dw, dh ->
                     val r = selected.rect()
                     applyToSelected(
                         CellRect(
                             r.col, r.row,
-                            (r.w + dw).coerceIn(1, GRID - r.col),
-                            (r.h + dh).coerceIn(1, GRID - r.row),
+                            (r.w + dw).coerceIn(1, cols - r.col),
+                            (r.h + dh).coerceIn(1, rows - r.row),
                         ),
                     )
                 },
@@ -622,6 +655,27 @@ fun GuidedGridContent(
             armed != null -> PlacingBar(type = armed, onCancel = { armedType = null })
 
             else -> Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                // Plot size — draw your real proportions (a rectangular plot, square cells). The score
+                // is unaffected (the engine scores the rooms' footprint), so this only shapes the
+                // canvas. Two rows so six controls never overflow a 320 dp screen (§3.D).
+                SectionLabel("Plot size")
+                Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                    EditorKey("−", "Narrower plot") { onGridChange(cols - 1, rows) }
+                    VText(
+                        "$cols wide", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                        maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+                    )
+                    EditorKey("+", "Wider plot") { onGridChange(cols + 1, rows) }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                    EditorKey("−", "Shallower plot") { onGridChange(cols, rows - 1) }
+                    VText(
+                        "$rows deep", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                        maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+                    )
+                    EditorKey("+", "Deeper plot") { onGridChange(cols, rows + 1) }
+                }
+
                 SectionLabel("Add a room")
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(paletteScroll),
@@ -663,6 +717,8 @@ private fun BoxScope.RoomTile(
     rect: CellRect,
     cell: androidx.compose.ui.unit.Dp,
     cellPx: Float,
+    cols: Int,
+    rows: Int,
     selected: Boolean,
     lifted: Boolean,
     onSelect: () -> Unit,
@@ -672,7 +728,7 @@ private fun BoxScope.RoomTile(
     val liftPx = with(LocalDensity.current) { VastuTheme.elevation.overlay.toPx() }
     // NOT named `shape`: inside graphicsLayer{} that would resolve to the scope's own property.
     val tileShape = VastuTheme.shapes.sm
-    val zone = zoneOfRect(rect, GRID).short()
+    val zone = zoneOfRect(rect, cols, rows).short()
     val description = "${room.type.label()}, ${rect.w} by ${rect.h} cells, $zone"
 
     Box(
@@ -749,13 +805,13 @@ private fun PlacingBar(type: RoomType, onCancel: () -> Unit) {
 }
 
 @Composable
-private fun BoxScope.DoorMarker(door: GridDoor, cell: androidx.compose.ui.unit.Dp) {
+private fun BoxScope.DoorMarker(door: GridDoor, cell: androidx.compose.ui.unit.Dp, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
     val (col, row) = when (door.side) {
         DoorSide.N -> door.cell to 0
-        DoorSide.S -> door.cell to (GRID - 1)
+        DoorSide.S -> door.cell to (rows - 1)
         DoorSide.W -> 0 to door.cell
-        DoorSide.E -> (GRID - 1) to door.cell
+        DoorSide.E -> (cols - 1) to door.cell
     }
     Box(
         modifier = Modifier
@@ -783,6 +839,8 @@ private fun BoxScope.DoorMarker(door: GridDoor, cell: androidx.compose.ui.unit.D
 @Composable
 private fun SelectedRoomTools(
     room: GridRoom,
+    cols: Int,
+    rows: Int,
     onNudge: (Int, Int) -> Unit,
     onResize: (Int, Int) -> Unit,
     onDelete: () -> Unit,
@@ -800,7 +858,7 @@ private fun SelectedRoomTools(
     ) {
         VText(room.type.label(), style = VastuTheme.type.h3, color = colors.textPrimary)
         VText(
-            "${room.w} × ${room.h} · ${zoneOfRect(room.rect(), GRID).short()}",
+            "${room.w} × ${room.h} · ${zoneOfRect(room.rect(), cols, rows).short()}",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
 

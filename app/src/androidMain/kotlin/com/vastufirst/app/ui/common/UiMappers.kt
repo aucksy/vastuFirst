@@ -96,6 +96,8 @@ fun buildZoneMapModel(
     gridRooms: List<GridRoom>,
     analysis: Analysis?,
     north: Int,
+    cols: Int = GRID,
+    rows: Int = GRID,
 ): ZoneMapModel {
     val neutralStroke = VastuTheme.colors.borderStrong
     val neutralFill = VastuTheme.colors.surface
@@ -113,10 +115,10 @@ fun buildZoneMapModel(
         val zone = zoneById[r.id]
         val zoneText = if (zone != null && v != null) "${zone.code()} ${v.glyph()}".trim() else ""
         ZoneMapRoom(
-            x = r.col.toFloat() / GRID * 100f,
-            y = r.row.toFloat() / GRID * 100f,
-            w = r.w.toFloat() / GRID * 100f,
-            h = r.h.toFloat() / GRID * 100f,
+            x = r.col.toFloat() / cols * 100f,
+            y = r.row.toFloat() / rows * 100f,
+            w = r.w.toFloat() / cols * 100f,
+            h = r.h.toFloat() / rows * 100f,
             label = r.type.label(),
             zoneText = zoneText,
             fill = fill,

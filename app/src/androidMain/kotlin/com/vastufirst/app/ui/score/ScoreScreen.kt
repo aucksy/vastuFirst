@@ -22,6 +22,7 @@ import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.toVastu
+import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.GuidanceState
@@ -67,6 +68,8 @@ fun ScoreScreen(
         analysis = analysis,
         onUnlock = onUnlock,
         onFix = onFix,
+        cols = vm.gridCols,
+        rows = vm.gridRows,
     )
 }
 
@@ -81,6 +84,8 @@ fun ScoreContent(
     analysis: Analysis?,
     onUnlock: () -> Unit,
     onFix: () -> Unit,
+    cols: Int = GRID,
+    rows: Int = GRID,
 ) {
     val colors = VastuTheme.colors
     val a = analysis
@@ -105,14 +110,14 @@ fun ScoreContent(
             )
         }
 
-        else -> ScoreResult(rooms, north, intent, a, onUnlock)
+        else -> ScoreResult(rooms, north, intent, a, onUnlock, cols, rows)
     }
 }
 
 @Composable
-private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit) {
+private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
-    val model = buildZoneMapModel(rooms, a, north)
+    val model = buildZoneMapModel(rooms, a, north, cols, rows)
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),

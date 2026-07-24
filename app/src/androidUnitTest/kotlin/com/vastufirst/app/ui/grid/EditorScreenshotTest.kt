@@ -59,6 +59,26 @@ class EditorScreenshotTest {
         }
     }
 
+    // A rectangular plot (8 wide × 5 deep) — proves the grid draws at the true aspect ratio with
+    // square cells and per-axis third-bands, not a forced square (editor Build C, rectangular plots).
+    @Test
+    fun editor_wide() {
+        captureAcrossMatrix("editor-wide") {
+            GuidedGridContent(
+                rooms = emptyList(),
+                door = null,
+                onRoomsChange = {},
+                onDoorChange = {},
+                onNext = {},
+                cols = 8,
+                rows = 5,
+            )
+        }
+        writeManifestAcrossMatrix("editor-wide") {
+            GuidedGridContent(emptyList(), null, {}, {}, {}, cols = 8, rows = 5)
+        }
+    }
+
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
     // nodes, clipped text, tiny touch targets and unreachable CTAs (UI-POLISH §6.5).
     @Test

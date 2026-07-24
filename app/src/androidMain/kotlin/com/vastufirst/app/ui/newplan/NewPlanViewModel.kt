@@ -26,8 +26,13 @@ import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** The guided grid is [GRID]×[GRID] cells; rooms and the door are placed on it. */
+/** The DEFAULT guided grid is [GRID]×[GRID] cells; the plot can be resized to [MIN_GRID]..[MAX_GRID]
+ *  cells per side (square cells, non-square plot) so a rectangular home is drawn true-to-life. The
+ *  score is unaffected by the grid size — the engine scores the bounding box of the placed rooms
+ *  (see docs/RECT-PLOT-RESEARCH.md) — so this is purely the shape of the drawing canvas. */
 const val GRID = 8
+const val MIN_GRID = 4
+const val MAX_GRID = 10
 
 /** A placed room: a cell rectangle (top-left col/row + size in cells) and its type. */
 data class GridRoom(
@@ -67,6 +72,13 @@ class NewPlanViewModel(
         private set
     var door by mutableStateOf<GridDoor?>(null)
         private set
+    // The plot's shape, in whole square cells. Default square; the user can set it to their real
+    // proportions (e.g. 8 wide × 6 deep). Not persisted on the Plan — the engine needs only the
+    // rooms — but re-derived from the rooms when a saved home is reopened (see load()).
+    var gridCols by mutableStateOf(GRID)
+        private set
+    var gridRows by mutableStateOf(GRID)
+        private set
     var north by mutableStateOf(0)
         private set
     var planId by mutableStateOf<String?>(null)
@@ -94,6 +106,30 @@ class NewPlanViewModel(
     fun updateRooms(list: List<GridRoom>) { rooms = list; markDirty() }
     fun updateDoor(d: GridDoor?) { door = d; markDirty() }
     fun updateNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
+
+    /** Resize the drawing plot. Existing rooms are clamped to fit the new bounds (shrunk/moved, never
+     *  dropped); a door on a wall that no longer exists is cleared. */
+    fun updateGrid(cols: Int, rows: Int) {
+        val c = cols.coerceIn(MIN_GRID, MAX_GRID)
+        val r = rows.coerceIn(MIN_GRID, MAX_GRID)
+        if (c == gridCols && r == gridRows) return
+        gridCols = c
+        gridRows = r
+        val clamped = rooms.map { room ->
+            val w = room.w.coerceAtMost(c)
+            val h = room.h.coerceAtMost(r)
+            room.copy(w = w, h = h, col = room.col.coerceIn(0, c - w), row = room.row.coerceIn(0, r - h))
+        }
+        if (clamped != rooms) rooms = clamped
+        door?.let { d ->
+            val fits = when (d.side) {
+                DoorSide.N, DoorSide.S -> d.cell in 0 until c
+                DoorSide.E, DoorSide.W -> d.cell in 0 until r
+            }
+            if (!fits) door = null
+        }
+        markDirty()
+    }
 
     private fun markDirty() { dirty.tryEmit(Unit) }
 
@@ -150,6 +186,10 @@ class NewPlanViewModel(
         // its rooms/door back — the inverse of buildPlan(), exact for the integer grid geometry.
         rooms = gridRoomsFromPlan(saved.plan)
         door = gridDoorFromPlan(saved.plan, rooms)
+        // The plot shape isn't stored on the Plan (the engine doesn't need it); re-derive the
+        // tightest grid that encloses the reopened rooms so a further edit keeps its proportions.
+        gridCols = (rooms.maxOfOrNull { it.col + it.w } ?: GRID).coerceIn(MIN_GRID, MAX_GRID)
+        gridRows = (rooms.maxOfOrNull { it.row + it.h } ?: GRID).coerceIn(MIN_GRID, MAX_GRID)
         viewModelScope.launch {
             val result = withContext(Dispatchers.Default) { engine.analyze(saved.plan) }
             _analysis.value = result

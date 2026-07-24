@@ -241,3 +241,30 @@ recommendation in docs/RECT-PLOT-RESEARCH.md, awaiting sign-off before any code)
   of the large hollow rings that floated over the corner (owner: "not looking good"). *(The render
   harness draws the editor with nothing selected, so this one is reasoned + needs the on-device look;
   the dial arrow IS in the goldens.)*
+
+---
+
+## Editor Build C — rectangular / true-to-life plots (v0.3.0, 2026-07-24)
+
+Owner item #2, approved (square cells, choose size). Users can now set the plot's true proportions
+so a rectangular home is drawn true-to-life — no forced square, no confusing empty strip.
+
+**No engine change, no scoring change.** The engine already scores the *rooms' bounding box* divided
+proportionally (`PadaGrid`: `padaW = width/N`, `padaH = height/N`), so the grid size never entered
+the score — only the drawing canvas did (docs/RECT-PLOT-RESEARCH.md). This is purely an editor change.
+
+- **Shared math generalised** (`GridEditing.kt`): `moveBy`/`resizeBy`/`zoneOfRect` take `cols` +
+  `rows = cols`. The `rows = cols` default means all 21 existing tests and every square call site
+  compile untouched; only the editor passes a rectangular pair.
+- **ViewModel**: `gridCols`/`gridRows` (default 8×8), `updateGrid(cols, rows)` clamps to
+  `MIN_GRID`..`MAX_GRID` (4..10) and shrinks/moves rooms to fit (never drops them); a door on a wall
+  that no longer exists is cleared; `load()` re-derives the plot shape from a reopened home's rooms.
+- **Editor** (`GuidedGridScreen`): grid draws at `aspectRatio(cols/rows)` with square cells and
+  per-axis third-bands; hit-test, placement, move/resize, tiles, door and grips all thread cols/rows.
+  A **Plot size** control (two `− n wide +` / `− n deep +` stepper rows) sits in the resting toolbar.
+- **Zone map** (`buildZoneMapModel`, Score + Mark North): normalises rooms by cols/rows so they align
+  to the plot's thirds at any proportion (default 8×8 unchanged).
+- **Render**: new `editor-wide` golden (8×5) proves the rectangular grid draws correctly; the 8×8
+  `editor`/`editor-empty` goldens are unchanged (`aspectRatio(8/8) == 1`).
+
+The default is still square, so anyone who doesn't set a size sees exactly the previous editor.

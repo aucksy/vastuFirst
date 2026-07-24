@@ -68,9 +68,9 @@ fun handleAnchor(rect: CellRect, handle: Handle): Pair<Int, Int> = when (handle)
  * dragged shape fall permanently behind the finger once it has touched a wall
  * (EDITOR-REWORK-PLAN §4.2, invariants 1 and 2). `moveBy` is pure so that property is testable.
  */
-fun moveBy(start: CellRect, dCol: Int, dRow: Int, grid: Int): CellRect = start.copy(
-    col = (start.col + dCol).coerceIn(0, grid - start.w),
-    row = (start.row + dRow).coerceIn(0, grid - start.h),
+fun moveBy(start: CellRect, dCol: Int, dRow: Int, cols: Int, rows: Int = cols): CellRect = start.copy(
+    col = (start.col + dCol).coerceIn(0, cols - start.w),
+    row = (start.row + dRow).coerceIn(0, rows - start.h),
 )
 
 /**
@@ -86,8 +86,9 @@ fun resizeBy(
     handle: Handle,
     dCol: Int,
     dRow: Int,
-    grid: Int,
+    cols: Int,
     minCells: Int = 1,
+    rows: Int = cols,
 ): CellRect {
     val pullsRight = handle == Handle.TOP_RIGHT || handle == Handle.BOTTOM_RIGHT
     val pullsDown = handle == Handle.BOTTOM_LEFT || handle == Handle.BOTTOM_RIGHT
@@ -96,7 +97,7 @@ fun resizeBy(
     val w: Int
     if (pullsRight) {
         col = start.col
-        w = (start.w + dCol).coerceIn(minCells, grid - start.col)
+        w = (start.w + dCol).coerceIn(minCells, cols - start.col)
     } else {
         col = (start.col + dCol).coerceIn(0, start.right - minCells)
         w = start.right - col
@@ -106,7 +107,7 @@ fun resizeBy(
     val h: Int
     if (pullsDown) {
         row = start.row
-        h = (start.h + dRow).coerceIn(minCells, grid - start.row)
+        h = (start.h + dRow).coerceIn(minCells, rows - start.row)
     } else {
         row = (start.row + dRow).coerceIn(0, start.bottom - minCells)
         h = start.bottom - row
@@ -144,17 +145,17 @@ fun cellIndex(coordPx: Float, cellPx: Float, grid: Int): Int {
  * two agree once the drawing fills the grid, and can differ while it does not — recorded in
  * docs/SCORE-ACCURACY-CAVEATS.md. The chip is a placement aid, not the score.
  */
-fun zoneOfRect(rect: CellRect, grid: Int): Zone {
-    fun band(centre: Float): Int {
-        val f = centre / grid
+fun zoneOfRect(rect: CellRect, cols: Int, rows: Int = cols): Zone {
+    fun band(centre: Float, n: Int): Int {
+        val f = centre / n
         return when {
             f < 1f / 3f -> 0
             f < 2f / 3f -> 1
             else -> 2
         }
     }
-    val rowBand = band(rect.row + rect.h / 2f)
-    val colBand = band(rect.col + rect.w / 2f)
+    val rowBand = band(rect.row + rect.h / 2f, rows)
+    val colBand = band(rect.col + rect.w / 2f, cols)
     return ZONE_MAP[rowBand][colBand]
 }
 
