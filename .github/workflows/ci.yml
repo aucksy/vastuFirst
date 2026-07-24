@@ -141,10 +141,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vastufirst-screenshots
-          # Goldens + any verify diffs (build/outputs/roborazzi holds *_compare.png on a mismatch).
+          # Goldens + any verify diffs (build/outputs/roborazzi holds *_compare.png on a mismatch)
+          # + the L1 measurement manifests (build/render-manifest).
           path: |
             app/src/androidUnitTest/roborazzi/**
             app/build/outputs/roborazzi/**
+            app/build/render-manifest/**
           if-no-files-found: warn
 
       - name: Build Android app (empty VastuTheme screen)

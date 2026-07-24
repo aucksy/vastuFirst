@@ -2,6 +2,7 @@ package com.vastufirst.app.ui.grid
 
 import android.app.Application
 import com.vastufirst.app.render.captureAcrossMatrix
+import com.vastufirst.app.render.writeManifestAcrossMatrix
 import com.vastufirst.app.ui.newplan.SamplePlans
 import org.junit.runner.RunWith
 import org.junit.Test
@@ -55,6 +56,22 @@ class EditorScreenshotTest {
                 onDoorChange = {},
                 onNext = {},
             )
+        }
+    }
+
+    // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
+    // nodes, clipped text, tiny touch targets and unreachable CTAs (UI-POLISH §6.5).
+    @Test
+    fun editor_manifest() {
+        writeManifestAcrossMatrix("editor") {
+            GuidedGridContent(sample.rooms, sample.door, {}, {}, {})
+        }
+    }
+
+    @Test
+    fun editor_empty_manifest() {
+        writeManifestAcrossMatrix("editor-empty") {
+            GuidedGridContent(emptyList(), null, {}, {}, {})
         }
     }
 }
