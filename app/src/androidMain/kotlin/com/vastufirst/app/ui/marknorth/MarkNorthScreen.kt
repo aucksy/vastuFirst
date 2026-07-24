@@ -21,7 +21,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.buildZoneMapModel
+import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.shared.Analysis
 import com.vastufirst.designsystem.components.DegreeStepper
 import com.vastufirst.designsystem.components.NorthDial
 import com.vastufirst.designsystem.components.SectionLabel
@@ -46,9 +48,31 @@ fun MarkNorthScreen(
     onRead: () -> Unit,
     onBack: () -> Unit,
 ) {
-    val colors = VastuTheme.colors
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly from
+    // fixture state (rooms + north + a live Analysis) in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
-    val model = buildZoneMapModel(vm.rooms, analysis, vm.north)
+    MarkNorthContent(
+        rooms = vm.rooms,
+        north = vm.north,
+        analysis = analysis,
+        onNorthChange = vm::updateNorth,
+        onRead = onRead,
+        onBack = onBack,
+    )
+}
+
+/** Mark North as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@Composable
+fun MarkNorthContent(
+    rooms: List<GridRoom>,
+    north: Int,
+    analysis: Analysis?,
+    onNorthChange: (Int) -> Unit,
+    onRead: () -> Unit,
+    onBack: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    val model = buildZoneMapModel(rooms, analysis, north)
     val score = analysis?.score
 
     Column(
@@ -63,18 +87,18 @@ fun MarkNorthScreen(
 
         NorthDial(
             model = model,
-            onNorthChange = { vm.updateNorth(it) },
-            contentDescription = "Floor plan compass. North at ${vm.north} degrees. Score ${score ?: 0} of 100. Drag to set North.",
+            onNorthChange = onNorthChange,
+            contentDescription = "Floor plan compass. North at $north degrees. Score ${score ?: 0} of 100. Drag to set North.",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Legend()
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
         com.vastufirst.designsystem.components.VastuSlider(
-            value = vm.north.toFloat(),
-            onValueChange = { vm.updateNorth(it.roundToInt()) },
+            value = north.toFloat(),
+            onValueChange = { onNorthChange(it.roundToInt()) },
             valueRange = 0f..359f,
-            contentDescription = "North bearing, ${vm.north} degrees",
+            contentDescription = "North bearing, $north degrees",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
@@ -85,7 +109,7 @@ fun MarkNorthScreen(
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 VText("North is at", style = VastuTheme.type.body, color = colors.textTertiary)
-                VText("${vm.north}°", style = VastuTheme.type.mono, color = colors.textPrimary)
+                VText("$north°", style = VastuTheme.type.mono, color = colors.textPrimary)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 VText("Live score", style = VastuTheme.type.body, color = colors.textTertiary)
@@ -98,12 +122,12 @@ fun MarkNorthScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
             listOf("N" to 0, "E" to 90, "S" to 180, "W" to 270).forEach { (label, deg) ->
                 Box(Modifier.weight(1f)) {
-                    VastuChip(text = label, selected = vm.north == deg, onClick = { vm.updateNorth(deg) }, modifier = Modifier.fillMaxWidth())
+                    VastuChip(text = label, selected = north == deg, onClick = { onNorthChange(deg) }, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        DegreeStepper(degrees = vm.north, onChange = { vm.updateNorth(it) })
+        DegreeStepper(degrees = north, onChange = onNorthChange)
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {

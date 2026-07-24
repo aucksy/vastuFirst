@@ -22,6 +22,7 @@ import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.toVastu
+import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
@@ -56,8 +57,32 @@ fun ScoreScreen(
     onUnlock: () -> Unit,
     onFix: () -> Unit,
 ) {
-    val colors = VastuTheme.colors
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
+    // "insufficient plan" states) renders headlessly from fixture state in the harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
+    ScoreContent(
+        rooms = vm.rooms,
+        north = vm.north,
+        intent = vm.intent,
+        analysis = analysis,
+        onUnlock = onUnlock,
+        onFix = onFix,
+    )
+}
+
+/** Score as a pure function of its state — no ViewModel — so the render harness can draw every
+ *  state: loading (analysis null), the "let's finish your plan" guidance (INSUFFICIENT), and the
+ *  full result. */
+@Composable
+fun ScoreContent(
+    rooms: List<GridRoom>,
+    north: Int,
+    intent: Intent?,
+    analysis: Analysis?,
+    onUnlock: () -> Unit,
+    onFix: () -> Unit,
+) {
+    val colors = VastuTheme.colors
     val a = analysis
 
     when {
@@ -80,14 +105,14 @@ fun ScoreScreen(
             )
         }
 
-        else -> ScoreContent(vm, a, onUnlock)
+        else -> ScoreResult(rooms, north, intent, a, onUnlock)
     }
 }
 
 @Composable
-private fun ScoreContent(vm: NewPlanViewModel, a: Analysis, onUnlock: () -> Unit) {
+private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit) {
     val colors = VastuTheme.colors
-    val model = buildZoneMapModel(vm.rooms, a, vm.north)
+    val model = buildZoneMapModel(rooms, a, north)
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
@@ -96,7 +121,7 @@ private fun ScoreContent(vm: NewPlanViewModel, a: Analysis, onUnlock: () -> Unit
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         ScoreDisplay(score = a.score)
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        VText(verdictLine(a.score, vm.intent), style = VastuTheme.type.body, color = colors.textSecondary)
+        VText(verdictLine(a.score, intent), style = VastuTheme.type.body, color = colors.textSecondary)
 
         // The engine's honest, plain-language caveats (unusual shape, tilt, long-and-narrow).
         if (a.notes.isNotEmpty()) {
@@ -108,7 +133,7 @@ private fun ScoreContent(vm: NewPlanViewModel, a: Analysis, onUnlock: () -> Unit
         SectionLabel("Zone map")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            ZoneMap(model = model, modifier = Modifier.fillMaxWidth(0.62f), showLabels = false, contentDescription = "Your plan with Vastu zones, North at ${vm.north} degrees, score ${a.score} of 100.")
+            ZoneMap(model = model, modifier = Modifier.fillMaxWidth(0.62f), showLabels = false, contentDescription = "Your plan with Vastu zones, North at $north degrees, score ${a.score} of 100.")
         }
 
         Divider()

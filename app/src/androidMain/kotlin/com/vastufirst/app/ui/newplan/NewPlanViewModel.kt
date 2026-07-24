@@ -9,13 +9,9 @@ import com.vastufirst.data.PlanRepository
 import com.vastufirst.data.SavedPlan
 import com.vastufirst.engine.VastuEngine
 import com.vastufirst.shared.Analysis
-import com.vastufirst.shared.Door
 import com.vastufirst.shared.Intent
-import com.vastufirst.shared.Level
 import com.vastufirst.shared.Plan
-import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
-import com.vastufirst.shared.Room
 import com.vastufirst.shared.RoomType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -171,52 +167,12 @@ class NewPlanViewModel(
     private fun defaultName(): String = "My home"
 
     /**
-     * Convert the placed grid rooms + door into the engine's [Plan] (Product PRD §4.1).
-     * Grid rows increase DOWNWARD; engine Y increases NORTH (up), so rows are flipped. Cell units
-     * are used directly as (arbitrary, self-consistent) plan units — the engine is scale-free.
+     * Convert the placed grid rooms + door into the engine's [Plan]. The maths lives in the pure
+     * [buildEnginePlan] (PlanConversion.kt) so the screenshot harness can build the exact same input
+     * — this delegate is the ViewModel's binding of it to the live draft state.
      */
-    fun buildPlan(): Plan? {
-        val theIntent = intent ?: return null
-        if (rooms.isEmpty()) return null
-
-        fun ex(col: Int) = col.toDouble()                 // east grows with column
-        fun ey(row: Int) = (GRID - row).toDouble()        // north grows as row decreases
-
-        val engineRooms = rooms.map { r ->
-            val x0 = ex(r.col); val x1 = ex(r.col + r.w)
-            val yTop = ey(r.row); val yBottom = ey(r.row + r.h)
-            Room(
-                id = r.id,
-                type = r.type,
-                polygon = listOf(
-                    Point(x0, yBottom), Point(x1, yBottom), Point(x1, yTop), Point(x0, yTop),
-                ),
-            )
-        }
-
-        // Footprint = bounding box of the placed rooms.
-        val minC = rooms.minOf { it.col }
-        val maxC = rooms.maxOf { it.col + it.w }
-        val minR = rooms.minOf { it.row }
-        val maxR = rooms.maxOf { it.row + it.h }
-        val outline = listOf(
-            Point(ex(minC), ey(maxR)), Point(ex(maxC), ey(maxR)),
-            Point(ex(maxC), ey(minR)), Point(ex(minC), ey(minR)),
-        )
-
-        val doors = door?.let { d ->
-            val (centre, ws, we) = doorGeometry(d, minC, maxC, minR, maxR)
-            listOf(Door(id = "door-main", centre = centre, wallStart = ws, wallEnd = we, isMainEntrance = true))
-        } ?: emptyList()
-
-        return Plan(
-            id = planId ?: "draft",
-            propertyType = propertyType,
-            intent = theIntent,
-            levels = listOf(Level(index = 0, outline = outline, rooms = engineRooms, doors = doors)),
-            northOffsetDegrees = north,
-        )
-    }
+    fun buildPlan(): Plan? =
+        buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft")
 
     /** Rebuild the placed grid rooms from a stored engine [Plan] — the exact inverse of the
      *  buildPlan() flip (engine y = GRID − row), so a reopened home shows its rooms again. */
@@ -260,32 +216,6 @@ class NewPlanViewModel(
             abs(d.centre.x - xEast) < eps -> GridDoor(DoorSide.E, ((GRID - d.centre.y) - 0.5).roundToInt())
             abs(d.centre.x - xWest) < eps -> GridDoor(DoorSide.W, ((GRID - d.centre.y) - 0.5).roundToInt())
             else -> null
-        }
-    }
-
-    /** The door centre + wall span on the footprint perimeter for the chosen side/cell. */
-    private fun doorGeometry(d: GridDoor, minC: Int, maxC: Int, minR: Int, maxR: Int): Triple<Point, Point, Point> {
-        fun ex(col: Double) = col
-        fun ey(row: Double) = (GRID - row)
-        val alongCol = (d.cell + 0.5).coerceIn(minC + 0.5, maxC - 0.5)
-        val alongRow = (d.cell + 0.5).coerceIn(minR + 0.5, maxR - 0.5)
-        return when (d.side) {
-            DoorSide.N -> Triple(
-                Point(ex(alongCol), ey(minR.toDouble())),
-                Point(ex(minC.toDouble()), ey(minR.toDouble())), Point(ex(maxC.toDouble()), ey(minR.toDouble())),
-            )
-            DoorSide.S -> Triple(
-                Point(ex(alongCol), ey(maxR.toDouble())),
-                Point(ex(minC.toDouble()), ey(maxR.toDouble())), Point(ex(maxC.toDouble()), ey(maxR.toDouble())),
-            )
-            DoorSide.E -> Triple(
-                Point(ex(maxC.toDouble()), ey(alongRow)),
-                Point(ex(maxC.toDouble()), ey(minR.toDouble())), Point(ex(maxC.toDouble()), ey(maxR.toDouble())),
-            )
-            DoorSide.W -> Triple(
-                Point(ex(minC.toDouble()), ey(alongRow)),
-                Point(ex(minC.toDouble()), ey(minR.toDouble())), Point(ex(minC.toDouble()), ey(maxR.toDouble())),
-            )
         }
     }
 }

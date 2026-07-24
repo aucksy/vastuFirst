@@ -48,11 +48,22 @@ import com.vastufirst.app.ui.common.screenRoot
  */
 @Composable
 fun ReportScreen(vm: NewPlanViewModel) {
-    val colors = VastuTheme.colors
+    // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
+    // fixture state in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
+    ReportContent(analysis = analysis, intent = vm.intent)
+}
+
+/** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@Composable
+fun ReportContent(
+    analysis: Analysis?,
+    intent: Intent?,
+) {
+    val colors = VastuTheme.colors
     val a = analysis
-    val intent = vm.intent ?: Intent.BUILDING
-    val living = intent == Intent.LIVING
+    val resolvedIntent = intent ?: Intent.BUILDING
+    val living = resolvedIntent == Intent.LIVING
 
     if (a == null) {
         Box(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6), contentAlignment = Alignment.Center) {
@@ -66,7 +77,7 @@ fun ReportScreen(vm: NewPlanViewModel) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             SectionLabel("Full report")
-            IntentBadge(intent)
+            IntentBadge(resolvedIntent)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(if (living) "What to do now" else "What to change", style = VastuTheme.type.h2, color = colors.textPrimary)

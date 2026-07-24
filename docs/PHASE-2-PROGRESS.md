@@ -143,3 +143,28 @@ manifest each). CI records the goldens and the ratchet adopts each screen into `
 **Behaviour unchanged** — this is a pure extract-a-seam refactor; every `vm.x` became a parameter,
 no layout or logic moved. Still cannot see: window insets, IME, gesture conflicts, rotation, real
 TalkBack (UI-POLISH §6.7).
+
+---
+
+## Render harness — batch 3: Mark North, Score, Report drawn (v0.2.6, 2026-07-24)
+
+The three score-driven screens — the ones that show the actual Vastu result — can now be seen. All
+eleven screens are now rendered + measured in CI.
+
+- **`MarkNorthScreen` → `MarkNorthContent(rooms, north, analysis, onNorthChange, onRead, onBack)`**.
+- **`ScoreScreen` → `ScoreContent(rooms, north, intent, analysis, onUnlock, onFix)`** — the state
+  `when` (loading / "insufficient plan" guidance / full result) moved into `Content`, so all three
+  states render. Rendered as `score`, `score-insufficient` and `score-loading`.
+- **`ReportScreen` → `ReportContent(analysis, intent)`** — rendered on both branches (`report` =
+  BUILDING/layout-led, `report-living` = remedy-led).
+
+**The fixture is real, not faked.** These screens need a scored `Analysis`. Rather than hand-build
+one, the grid→Plan conversion was lifted out of `NewPlanViewModel.buildPlan()` into a pure
+`buildEnginePlan(...)` (`ui/newplan/PlanConversion.kt`) that the ViewModel now delegates to — one
+source of truth for the row-flip and door geometry. `RenderFixtures` runs the bundled sample home
+through it and through the **real `VastuEngine`**, so the zone-map colours, the ranked defects, the
+remedies and the "already right" rows are the engine's genuine output. The `INSUFFICIENT` guidance
+state is `.copy()`d from that real analysis (quality + note changed), so every other field stays valid.
+
+**Behaviour unchanged** — the ViewModel produces byte-identical plans (same maths, now in a shared
+function). Still cannot see: window insets, IME, gesture conflicts, rotation, real TalkBack.
