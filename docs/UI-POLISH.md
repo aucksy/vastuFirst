@@ -236,8 +236,15 @@ are not inconvenient, they are **blocked**:
 
 **Pinned versions — do not float these:**
 
-- **Roborazzi `1.61.0`.** 1.62.0 and later are published by Gradle 9.x; we are on the **Gradle 8.9**
-  wrapper that AGP 8.7.3 requires. 1.61.0 is the last release on the Gradle 8 line.
+- **Roborazzi `1.60.0`.** Two independent ceilings, and 1.60.0 is the only version under **both**:
+  1. **Gradle** — 1.62.0+ are published by Gradle 9.x; we are on the **Gradle 8.9** wrapper AGP 8.7.3
+     requires.
+  2. **Kotlin metadata** — `1.61.0` was compiled with **Kotlin 2.3.0**, whose metadata (binary
+     version 2.3.0) our **Kotlin 2.0.21** compiler cannot read: it fails
+     `compileDebugUnitTestKotlin` with *"incompatible version of Kotlin … 2.3.0, expected 2.0.0"*.
+     **`1.60.0` is the last release built with Kotlin 2.0.21** (verified against Roborazzi's own
+     `gradle/libs.versions.toml` per tag). *(The original audit pinned 1.61.0 for the Gradle ceiling
+     alone and missed this one — corrected here after CI proved it, 2026-07-24.)*
 - **Robolectric `4.14.1`** — the first release that can render **SDK 35**.
 - `testOptions.unitTests.isIncludeAndroidResources = true` is required, and
   `src/test/resources/robolectric.properties` must say `sdk = 35`.

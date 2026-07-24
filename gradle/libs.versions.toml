@@ -16,10 +16,16 @@ androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2
 androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
 
 # --- UI render harness (UI-POLISH.md §6). PINS ARE LOAD-BEARING — read docs/UI-POLISH.md §6.1
-# before touching them. Roborazzi 1.62+ is published by Gradle 9.x; we are on the Gradle 8.9
-# wrapper AGP 8.7.3 needs, so 1.61.0 is the last release we can use. Robolectric 4.14.1 is the
-# first that renders SDK 35 (our targetSdk). Do NOT float these to "latest".
-roborazzi = "1.61.0"
+# before touching them. TWO independent ceilings, and 1.60.0 is the only version under both:
+#   1. Gradle: Roborazzi 1.62+ is published by Gradle 9.x; we are on the Gradle 8.9 wrapper AGP
+#      8.7.3 needs.
+#   2. Kotlin metadata: Roborazzi 1.61.0 was compiled with Kotlin 2.3.0 (metadata binary version
+#      2.3.0), which our Kotlin 2.0.21 compiler CANNOT read — it fails compileDebugUnitTestKotlin
+#      with "incompatible version of Kotlin ... 2.3.0, expected 2.0.0". 1.60.0 is the last release
+#      built with Kotlin 2.0.21. (Verified against Roborazzi's own gradle/libs.versions.toml at each
+#      tag: 1.60.0 = Kotlin 2.0.21; 1.61.0 = Kotlin 2.3.0.)
+# Robolectric 4.14.1 is the first that renders SDK 35 (our targetSdk). Do NOT float these.
+roborazzi = "1.60.0"
 robolectric = "4.14.1"
 
 # Android SDK levels (Impl PRD §2): min 26 / target 35.
