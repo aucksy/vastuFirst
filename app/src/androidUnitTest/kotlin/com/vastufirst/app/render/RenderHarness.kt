@@ -7,6 +7,18 @@ import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.vastufirst.designsystem.theme.VastuTheme
 import org.robolectric.RuntimeEnvironment
+import java.io.File
+
+/**
+ * Where a golden lives — an ABSOLUTE path under the committed dir. Roborazzi resolves a *relative*
+ * captureRoboImage path against the test JVM's working directory (the module root, `app/`), and it
+ * IGNORES the `roborazzi { outputDir }` extension for the golden path — so a bare "editor/x.png"
+ * would land at `app/editor/x.png`, outside the repo's committed area and invisible to CI. Passing
+ * an absolute path removes every base-resolution ambiguity: record and verify use the exact same
+ * file. `File("…").absolutePath` resolves against the same module-root working directory.
+ */
+private fun goldenPath(screen: String, config: String): String =
+    File("src/androidUnitTest/roborazzi/$screen/${screen}__$config.png").absolutePath
 
 /**
  * Render [content] once per configuration in [RenderMatrix] and write a golden PNG for each
@@ -28,7 +40,7 @@ import org.robolectric.RuntimeEnvironment
 fun captureAcrossMatrix(screen: String, content: @Composable () -> Unit) {
     RenderMatrix.configs.forEach { cfg ->
         RuntimeEnvironment.setQualifiers(cfg.qualifiers)
-        captureRoboImage("$screen/${screen}__${cfg.name}.png") {
+        captureRoboImage(goldenPath(screen, cfg.name)) {
             val base = LocalDensity.current
             CompositionLocalProvider(
                 LocalDensity provides Density(base.density, cfg.fontScale),

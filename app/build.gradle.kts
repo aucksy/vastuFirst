@@ -93,11 +93,8 @@ android {
 // Goldens live OUTSIDE build/ so CI can commit them back on first record (the Now-in-Android
 // bootstrap — UI-POLISH §6.3; build/ is git-ignored, so goldens kept there could never persist).
 //
-// ⚠ Use the `roborazzi { outputDir }` extension ALONE — this is the FINAL golden location. Roborazzi
-// captures into an intermediate dir (the `roborazzi.output.dir` system property, default under
-// build/) and the `finalizeTestRoborazzi` task copies those into `outputDir`. Do NOT also set the
-// system property to this same dir: that makes finalize's source (empty build intermediate) and its
-// target collide, and it wipes the goldens instead of writing them (learned the hard way in CI).
-roborazzi {
-    outputDir.set(file("src/androidUnitTest/roborazzi"))
-}
+// ⚠ The golden LOCATION is decided by the ABSOLUTE path each test passes to captureRoboImage (see
+// RenderHarness.goldenPath), NOT by any Gradle setting. Roborazzi's `roborazzi { outputDir }`
+// extension does NOT redirect the golden path — it resolves a relative path against the test JVM's
+// working dir (the module root). We verified this in CI: an unqualified "editor/x.png" landed at
+// app/editor/x.png. So there is deliberately no roborazzi{} block here; the path is owned in Kotlin.
