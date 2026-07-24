@@ -52,6 +52,17 @@ mechanical gate. **A rule with no gate is a wish, not a rule.**
 | Screen reference | 14 phone frames at 412 × 915 in the same file | what each screen is supposed to look like |
 | Review gate | `const gate` in the same file | the six-category checklist, reproduced in §8 |
 
+**⭐ The bundle is git-ignored, so the contract is frozen into the repo.**
+`scripts/extract-design-contract.mjs` reads the bundle and writes **`design/design-contract.json`**
+(~5 KB: tokens + ramp + contrast audit), which *is* committed. CI reads that file — otherwise the
+gate could not run at all in the cloud, which is the only place we build.
+
+- Re-run the extractor whenever the design bundle changes, and commit the result. The diff on that
+  file is a readable record of every design change.
+- When the bundle *is* present (on the authoring machine), the checker re-derives the contract and
+  **fails if the committed copy has gone stale** — so the frozen copy cannot silently drift from
+  the design it claims to represent.
+
 **Rules:**
 
 1. **The theme is generated from the contract, never typed from memory.** If a value in
