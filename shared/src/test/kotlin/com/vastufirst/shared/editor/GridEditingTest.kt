@@ -214,6 +214,18 @@ class GridEditingTest {
     }
 
     @Test
+    fun `the stronger band lines fall exactly where the zones change`() {
+        assertEquals(listOf(3, 5), bandBoundaries(8))
+        // Every drawn band line must be a genuine zone change for a cell either side of it.
+        for (i in bandBoundaries(8)) {
+            assertTrue(
+                zoneOfRect(CellRect(0, i - 1, 1, 1), 8) != zoneOfRect(CellRect(0, i, 1, 1), 8),
+                "line at $i is not a zone boundary",
+            )
+        }
+    }
+
+    @Test
     fun `a room's centre decides its zone, not its top-left corner`() {
         // Its top-left corner is dead centre, but its bulk — and its centre — is south-east.
         assertEquals(Zone.SE, zoneOfRect(CellRect(4, 4, 4, 4), grid))

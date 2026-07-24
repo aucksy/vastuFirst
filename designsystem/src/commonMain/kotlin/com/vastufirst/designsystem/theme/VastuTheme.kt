@@ -100,6 +100,8 @@ data class VastuSizes(
     val knob: Dp = 40.dp,            // North-dial knob visual circle
     val sliderThumb: Dp = 26.dp,
     val sliderTrack: Dp = 6.dp,
+    val handleGrip: Dp = 14.dp,      // floor-plan editor: the DRAWN corner grip
+    val handleTouch: Dp = 48.dp,     // …and the invisible target around it (a cell is only 34–45dp)
     val progressTrack: Dp = 8.dp,    // score bar
     val planThumb: Dp = 60.dp,       // saved-plan thumbnail
     val dot: Dp = 6.dp,              // provenance / status dot

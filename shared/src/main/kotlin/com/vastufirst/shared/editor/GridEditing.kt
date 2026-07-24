@@ -158,6 +158,23 @@ fun zoneOfRect(rect: CellRect, grid: Int): Zone {
     return ZONE_MAP[rowBand][colBand]
 }
 
+/**
+ * The grid lines where one third-band ends and the next begins, so the editor can draw them
+ * stronger. Derived from the same cell-centre rule [zoneOfRect] uses, rather than hard-coded, so the
+ * lines the user sees can never disagree with the zone the chip names. On an 8-cell grid: 3 and 5.
+ */
+fun bandBoundaries(grid: Int): List<Int> {
+    fun bandOfCell(i: Int): Int {
+        val f = (i + 0.5f) / grid
+        return when {
+            f < 1f / 3f -> 0
+            f < 2f / 3f -> 1
+            else -> 2
+        }
+    }
+    return (1 until grid).filter { bandOfCell(it - 1) != bandOfCell(it) }
+}
+
 /** row 0 = North, col 0 = West. Identical to the engine's PadaGrid.ZONE_MAP. */
 private val ZONE_MAP = arrayOf(
     arrayOf(Zone.NW, Zone.N, Zone.NE),
