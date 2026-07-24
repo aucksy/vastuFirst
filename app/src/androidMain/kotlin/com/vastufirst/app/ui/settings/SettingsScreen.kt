@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
@@ -144,10 +145,14 @@ private fun RowItem(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickableTap(onClick = onClick) else Modifier)
             .padding(VastuTheme.spacing.s4),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        VText(label, style = VastuTheme.type.body, color = labelColor)
-        VText(trailing, style = VastuTheme.type.body, color = trailingColor)
+        // Both weighted, so neither can crush the other to zero width at font scale 2.0. A long
+        // label ("Your plans stay on this device") was squeezing the trailing "On" to 0 dp, and a
+        // long value ("Traditional 8-zone") would squeeze the label the other way. Two weighted
+        // children always keep a non-zero share (UI-POLISH §3.D — the row-shatter class).
+        VText(label, style = VastuTheme.type.body, color = labelColor, modifier = Modifier.weight(1f))
+        VText(trailing, style = VastuTheme.type.body, color = trailingColor, align = TextAlign.End, modifier = Modifier.weight(1f))
     }
 }
