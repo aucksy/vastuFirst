@@ -90,6 +90,14 @@ android {
     }
 }
 
+// The render test writes screenshots and the L1 measurement manifests as side effects Gradle does
+// not track. If Gradle serves the test task from up-to-date/cache, those files are never produced
+// and the L1 gate fails with "MISSING manifest dir". Force the test to run every time — a ~1 min
+// cost that guarantees fresh goldens + manifests on every CI run.
+tasks.withType<Test>().configureEach {
+    outputs.upToDateWhen { false }
+}
+
 dependencies {
     // Merges the ComponentActivity manifest entry into the debug variant so runComposeUiTest (the
     // L1 semantics walk) can launch under Robolectric. Must be debugImplementation — the unit test

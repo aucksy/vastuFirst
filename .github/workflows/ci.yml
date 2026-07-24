@@ -116,10 +116,11 @@ jobs:
         if: steps.record_render.outcome == 'success'
         run: |
           set -e
-          git add app/src/androidUnitTest/roborazzi
+          # Goldens AND the ratchet baseline (the gate adopts new screens / tightens counts into it).
+          git add app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json
           # --porcelain sees UNTRACKED files too (git diff would miss brand-new goldens).
-          if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi)" ]; then
-            echo "No golden changes to commit."
+          if [ -z "$(git status --porcelain -- app/src/androidUnitTest/roborazzi app/src/androidUnitTest/render-baseline.json)" ]; then
+            echo "No golden or baseline changes to commit."
             exit 0
           fi
           git config user.name "VastuFirst CI"

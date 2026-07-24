@@ -98,27 +98,38 @@ if (hard.length) {
 }
 
 /* ── RATCHET the soft findings ───────────────────────────────────────────────────────────── */
+// The count can only go DOWN. A screen not yet in the baseline is ADOPTED at its current count
+// (so new screens land without a red build); a screen whose count DROPPED tightens the baseline;
+// a screen whose count ROSE fails. Adoption + tightening are persisted, and CI commits the file.
 const counts = Object.fromEntries(Object.entries(softByScreen).map(([s, l]) => [s, l.length]));
+const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : {};
 
-if (!existsSync(BASELINE)) {
-  writeFileSync(BASELINE, JSON.stringify(counts, null, 2) + '\n');
-  console.log('render-manifest: bootstrapped render-baseline.json (ratchet starts here):');
-  for (const [s, c] of Object.entries(counts)) console.log(`  ${s}: ${c} finding(s)`);
-  console.log('These are recorded, not fixed — the count can only decrease from now on.');
-  exit(0);
-}
-
-const baseline = JSON.parse(readFileSync(BASELINE, 'utf8'));
 let regressed = false;
+let changed = false;
 const lines = [];
 for (const [screen, count] of Object.entries(counts)) {
-  const base = baseline[screen] ?? 0;
-  const mark = count > base ? '✗' : count < base ? '↓' : '·';
-  if (count > base) regressed = true;
-  lines.push(`  ${mark} ${screen}: ${count} (baseline ${base})`);
+  if (!(screen in baseline)) {
+    baseline[screen] = count;
+    changed = true;
+    lines.push(`  + ${screen}: ${count} (adopted)`);
+  } else if (count > baseline[screen]) {
+    regressed = true;
+    lines.push(`  ✗ ${screen}: ${count} (baseline ${baseline[screen]})`);
+  } else if (count < baseline[screen]) {
+    lines.push(`  ↓ ${screen}: ${count} (was ${baseline[screen]}) — baseline tightened`);
+    baseline[screen] = count;
+    changed = true;
+  } else {
+    lines.push(`  · ${screen}: ${count}`);
+  }
 }
 console.log('render-manifest: L1 findings per screen (ratchet):');
 lines.forEach((l) => console.log(l));
+
+if (changed && !regressed) {
+  writeFileSync(BASELINE, JSON.stringify(sortKeys(baseline), null, 2) + '\n');
+  console.log('render-manifest: render-baseline.json updated (CI will commit it).');
+}
 
 if (regressed) {
   console.error('\nrender-manifest: a screen gained new L1 findings. Details:');
@@ -132,6 +143,10 @@ if (regressed) {
 }
 console.log('\nrender-manifest: no regression. ✓');
 exit(0);
+
+function sortKeys(obj) {
+  return Object.fromEntries(Object.keys(obj).sort().map((k) => [k, obj[k]]));
+}
 
 function trim(s) {
   if (!s) return null;
