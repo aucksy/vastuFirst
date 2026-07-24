@@ -136,6 +136,12 @@ jobs:
           echo "::error::Screen render verification failed. Pull the CI-committed goldens, or fix the screen."
           exit 1
 
+      # L1 geometry gate: reads the measurement manifests the render test just wrote and asserts on
+      # them (zero-size layout, clipping, tiny touch targets, missing labels). Ratchet — fails only
+      # on a NEW finding vs render-baseline.json — and fail-loud if no manifest was produced.
+      - name: L1 render-manifest check (measured geometry)
+        run: node scripts/check-render-manifest.mjs .
+
       - name: Upload rendered screenshots
         if: always()
         uses: actions/upload-artifact@v4

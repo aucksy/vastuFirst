@@ -52,6 +52,25 @@ jobs:
       - name: Unit tests (pure logic modules)
         run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
 
+      # Render gate (UI-POLISH §6): a release must VERIFY every screen against its committed golden
+      # and pass the L1 geometry check. Verify only (never record) — tagging must not silently
+      # re-baseline a screen. If a screen changed without its goldens being updated on main first,
+      # the release fails, which is the point.
+      - name: Render screens — verify goldens
+        run: gradle :app:verifyRoborazziDebug --stacktrace
+      - name: L1 render-manifest check (measured geometry)
+        run: node scripts/check-render-manifest.mjs .
+
+      - name: Upload rendered screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: vastufirst-screenshots
+          path: |
+            app/src/androidUnitTest/roborazzi/**
+            app/build/outputs/roborazzi/**
+            app/build/render-manifest/**
+          if-no-files-found: warn
+
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
 
