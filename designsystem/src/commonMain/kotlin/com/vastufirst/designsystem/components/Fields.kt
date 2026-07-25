@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -52,6 +53,9 @@ fun VastuTextField(
         else -> colors.borderDefault
     }
     val borderWidth = if (focused || error != null) VastuTheme.borders.focus else VastuTheme.borders.regular
+    // The field's accessible name — a screen reader announces this, and it stops the input node
+    // reading as an unlabeled control when it is empty. Falls back to the placeholder.
+    val a11yName = label ?: placeholder.takeIf { it.isNotEmpty() }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
         if (label != null) {
@@ -75,8 +79,13 @@ fun VastuTextField(
                 textStyle = VastuTheme.type.body.copy(color = colors.textPrimary),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.borderFocus),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                // Fill the whole 48dp field so the touch/focus target meets the a11y floor (the bare
+                // text line is only ~25dp), and carry the field's accessible name.
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (a11yName != null) Modifier.semantics { contentDescription = a11yName } else Modifier),
                 decorationBox = { inner ->
-                    Box(contentAlignment = Alignment.CenterStart) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
                         if (value.isEmpty() && placeholder.isNotEmpty()) {
                             VText(text = placeholder, style = VastuTheme.type.body, color = colors.textTertiary)
                         }
