@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 18
-        versionName = "0.3.6"   // QA Batch 1: door dead-end removed (S4) + door re-clamp on room edits (F4)
+        versionCode = 19
+        versionName = "0.3.7"   // On-device gesture+layout fixes: live plot size, grip alignment, blank strip, plot-size line, door highlight, tools reorder
     }
 
     buildTypes {
