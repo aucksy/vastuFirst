@@ -59,7 +59,12 @@ fun ZoneMap(
     showLabels: Boolean = true,
     contentDescription: String? = null,
 ) {
-    val measurer = rememberTextMeasurer()
+    // A generous measure cache (C14): this Canvas lays out 20+ distinct strings per frame — 8 wedge
+    // labels, each room's name + verdict, plus "N"/"Wg". The default cache holds only 8, so every
+    // frame every string missed the cache and was re-laid-out; while dragging North that re-layout
+    // ran on every degree and showed up as stutter. 64 comfortably holds all labels of a full plan,
+    // turning per-frame re-layout into cache hits. Purely a perf change — nothing drawn differs.
+    val measurer = rememberTextMeasurer(cacheSize = 64)
     val zoneStyle = VastuTheme.type.caption
     val ink = VastuTheme.colors.textSecondary
     val line = VastuTheme.colors.borderDefault

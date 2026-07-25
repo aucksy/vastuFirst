@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
 import kotlin.math.roundToInt
@@ -102,6 +103,13 @@ fun VastuSlider(
                     if (cd != null) Modifier.semantics {
                         this.contentDescription = cd
                         progressBarRangeInfo = ProgressBarRangeInfo(value, valueRange)
+                        // C13: without a setProgress action TalkBack reads the value but its
+                        // swipe-up/down "adjust" gesture does nothing — a blind user couldn't set
+                        // North with the slider at all. This makes it a proper adjustable control.
+                        setProgress { target ->
+                            onValueChange(target.coerceIn(start, end))
+                            true
+                        }
                     } else Modifier
                 )
                 .pointerInput(Unit) {

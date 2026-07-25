@@ -1,6 +1,7 @@
 package com.vastufirst.app.ui.common
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
@@ -99,38 +100,54 @@ fun buildZoneMapModel(
     cols: Int = GRID,
     rows: Int = GRID,
 ): ZoneMapModel {
-    val neutralStroke = VastuTheme.colors.borderStrong
-    val neutralFill = VastuTheme.colors.surface
-    val neutralInk = VastuTheme.colors.textTertiary
+    val c = VastuTheme.colors
 
-    val verdictById: Map<String, VastuVerdict> =
-        analysis?.roomResults?.associate { it.roomId to it.verdict.toVastu() } ?: emptyMap()
-    val zoneById: Map<String, Zone> =
-        analysis?.roomResults?.associate { it.roomId to it.zone } ?: emptyMap()
+    // The rooms + wedges are a pure function of the placed rooms, the analysis, the grid size and the
+    // theme — they do NOT depend on `north`. Memoize them so dragging the North dial (which changes
+    // only `north`, once per degree) reuses this list instead of re-mapping every room every degree
+    // (C14). `c` is a stable staticCompositionLocalOf singleton; `gridRooms` is a value-equal list of
+    // data-class rooms reassigned on every real edit — so an edit invalidates, a drag does not.
+    val roomsAndWedges = remember(gridRooms, analysis, cols, rows, c) {
+        val neutralStroke = c.borderStrong
+        val neutralFill = c.surface
+        val neutralInk = c.textTertiary
 
-    val rooms = gridRooms.map { r ->
-        val v = verdictById[r.id]
-        val stroke = v?.color() ?: neutralStroke
-        val fill = if (v != null) stroke.copy(alpha = 0.14f) else neutralFill
-        val zone = zoneById[r.id]
-        val zoneText = if (zone != null && v != null) "${zone.code()} ${v.glyph()}".trim() else ""
-        ZoneMapRoom(
-            x = r.col.toFloat() / cols * 100f,
-            y = r.row.toFloat() / rows * 100f,
-            w = r.w.toFloat() / cols * 100f,
-            h = r.h.toFloat() / rows * 100f,
-            label = r.type.label(),
-            zoneText = zoneText,
-            fill = fill,
-            stroke = stroke,
-            zoneTextColor = v?.color() ?: neutralInk,
+        val verdictById: Map<String, VastuVerdict> =
+            analysis?.roomResults?.associate { it.roomId to it.verdict.toVastu() } ?: emptyMap()
+        val zoneById: Map<String, Zone> =
+            analysis?.roomResults?.associate { it.roomId to it.zone } ?: emptyMap()
+
+        val rooms = gridRooms.map { r ->
+            val v = verdictById[r.id]
+            val stroke = v?.color() ?: neutralStroke
+            val fill = if (v != null) stroke.copy(alpha = 0.14f) else neutralFill
+            val zone = zoneById[r.id]
+            val zoneText = if (zone != null && v != null) "${zone.code()} ${v.glyph()}".trim() else ""
+            ZoneMapRoom(
+                x = r.col.toFloat() / cols * 100f,
+                y = r.row.toFloat() / rows * 100f,
+                w = r.w.toFloat() / cols * 100f,
+                h = r.h.toFloat() / rows * 100f,
+                label = r.type.label(),
+                zoneText = zoneText,
+                fill = fill,
+                stroke = stroke,
+                zoneTextColor = v?.color() ?: neutralInk,
+            )
+        }
+        val wedges = listOf(
+            ZoneWedge("N", c.zoneN), ZoneWedge("NE", c.zoneNE), ZoneWedge("E", c.zoneE), ZoneWedge("SE", c.zoneSE),
+            ZoneWedge("S", c.zoneS), ZoneWedge("SW", c.zoneSW), ZoneWedge("W", c.zoneW), ZoneWedge("NW", c.zoneNW),
         )
+        rooms to wedges
     }
 
-    val c = VastuTheme.colors
-    val wedges = listOf(
-        ZoneWedge("N", c.zoneN), ZoneWedge("NE", c.zoneNE), ZoneWedge("E", c.zoneE), ZoneWedge("SE", c.zoneSE),
-        ZoneWedge("S", c.zoneS), ZoneWedge("SW", c.zoneSW), ZoneWedge("W", c.zoneW), ZoneWedge("NW", c.zoneNW),
+    // Only `northDegrees` follows the dial — the cheap part, rebuilt per degree; the heavy part above
+    // is reused.
+    return ZoneMapModel(
+        rooms = roomsAndWedges.first,
+        wedges = roomsAndWedges.second,
+        northDegrees = north.toFloat(),
+        centreColor = c.zoneCentre,
     )
-    return ZoneMapModel(rooms = rooms, wedges = wedges, northDegrees = north.toFloat(), centreColor = c.zoneCentre)
 }

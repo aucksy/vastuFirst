@@ -141,8 +141,8 @@ fun ScoreContent(
 @Composable
 private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
-    // buildZoneMapModel is itself @Composable (it reads theme colours), so it can't be memoised in a
-    // plain remember{}. Score isn't dragged (unlike Mark North), so a per-recomposition build is fine.
+    // buildZoneMapModel memoises its own heavy part internally (C14), keyed on rooms/analysis/grid/
+    // theme, so repeated recompositions here reuse the room + wedge lists rather than rebuilding.
     val model = buildZoneMapModel(rooms, a, north, cols, rows)
 
     Column(

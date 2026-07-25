@@ -24,6 +24,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.IntSize
 import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -68,17 +73,30 @@ fun NorthDial(
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth().aspectRatio(1f)) {
         val dim = maxWidth
+        // The label + adjustable semantics live on the interactive overlay below, not here — one
+        // labelled node, no duplicate for TalkBack / the ATF a11y gate.
         ZoneMap(
             model = model,
             modifier = Modifier.matchParentSize(),
             showLabels = true,
-            contentDescription = contentDescription,
+            contentDescription = null,
         )
 
-        // Input layer — drag or tap sets North to the bearing of the touch from the centre.
+        // Input layer — drag or tap sets North to the bearing of the touch from the centre. It also
+        // carries the accessibility contract: the label, the current bearing as a range, and a
+        // setProgress action so TalkBack's adjust gesture can set North (C13 — the dial was
+        // label-only before, so a blind user could hear it but not turn it).
         Box(
             Modifier
                 .matchParentSize()
+                .semantics {
+                    if (contentDescription != null) this.contentDescription = contentDescription
+                    progressBarRangeInfo = ProgressBarRangeInfo(model.northDegrees, 0f..359f)
+                    setProgress { target ->
+                        onNorthChange(((target.roundToInt() % 360) + 360) % 360)
+                        true
+                    }
+                }
                 .pointerInput(Unit) {
                     detectDragGestures { change, _ -> emit(change.position, size); change.consume() }
                 }
