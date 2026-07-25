@@ -47,16 +47,18 @@ This was the first full build week, and a lot became real and testable. The app 
 - **Edits that could silently vanish.** Reopening a saved home, changing it, and going back could lose the change. Fixed — your edits are now kept automatically.
 - **An endless "reading your home…" screen** in a rare case. Fixed — it now offers a way out instead of spinning forever.
 - **The compass labels collided at large text sizes**, and a colour key word was cut in half. Fixed — everything stays readable however large you set your phone's text.
+- **A door placed past the edge of your rooms could shift position when you reopened the home.** Fixed — it now sits firmly on the edge of the house and stays there.
 
 ### Access for people with disabilities
 - A blind person using Android's screen reader can now set North using the dial or slider — before, they could hear it but not change it. This matters for a paid product that should work for everyone.
+- More screen-reader polish: the home list, the "what brings you here?" cards, and the not-yet-available languages now describe themselves properly out loud, and the floor-plan editor remembers what you were doing if the screen rotates.
 
 ### What we decided this week
 - **The look:** a calm sage-green-and-gold theme, applied throughout.
 - **Floor plans:** you choose your plot's size and proportions, with neat square cells (rather than stretched ones).
 
 ### What's next
-- A few smaller polish and accessibility items, and then the open decisions above (especially the odd-shaped-homes question and the eight expert rulings) so we land the 4 August delivery cleanly.
+- The build work planned for this stage is done. What remains before the 4 August delivery is the set of decisions above — they're the last things standing between here and delivery, and they need you rather than more building.
 
 ---
 
