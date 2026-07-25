@@ -424,3 +424,27 @@ nav-scoped draft VM isn't active on the Home list, and `load()` re-reads the sto
 
 **Wave 2 remaining:** C15 (minor a11y). **Group D** (L-shape footprint, ₹699, the 8 rulings, free-score
 label) still awaits owner decisions.
+
+---
+
+## Wave 2 · C15 — minor a11y + robustness (v0.3.5, 2026-07-25) — WAVE 2 COMPLETE
+
+Four small fixes, no visual change (goldens byte-identical, both ratchets "no regression"):
+
+- **Door no longer jumps on reopen.** A door tapped past the room extent was snapped to the footprint
+  (the bbox the engine scores) at save, then reconstructed there on reload → it appeared to move.
+  `placeDoor` now clamps the door cell onto the footprint at placement, matching `doorGeometry`'s
+  clamp, so displayed == stored == reloaded. (Within-footprint doors were always stable.)
+- **Editor survives rotation.** `selectedId` / `doorMode` / `armedType` are `rememberSaveable` now, so
+  a config change (or a brief process reclaim) doesn't drop the selection / door step / armed room.
+- **Clickable rows carry a Role.** Saved-home rows and the Welcome intent cards announce as buttons to
+  a screen reader (`clickableTap(role = Role.Button)`).
+- **"Coming soon" languages say so.** Each soon-pill carries a "<language> — coming soon"
+  contentDescription, instead of a screen reader reading only the language name.
+
+**Adversarial review:** no blockers. Door clamp range is always valid (`fMaxC-1 ≥ fMinC`) and identical
+to the engine clamp; `RoomType` is Serializable so the enum saver is safe; the rest is semantics-only.
+
+**Wave 2 is now complete** (B7 · C14 · C13 · B12 · C15). Remaining before the 4 Aug delivery is all
+**Group D owner decisions** (L-shape footprint, ₹699, the 8 expert rulings, free-score label) + the two
+device-glance checks — no more Wave 2 code.

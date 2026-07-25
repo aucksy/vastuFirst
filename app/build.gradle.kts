@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 16
-        versionName = "0.3.4"   // Wave 2 B12: distinct home names + rename + real "updated" time
+        versionCode = 17
+        versionName = "0.3.5"   // Wave 2 C15: minor a11y + door-reload + rotation-safe editor (Wave 2 complete)
     }
 
     buildTypes {
