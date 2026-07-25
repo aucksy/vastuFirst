@@ -320,3 +320,32 @@ applied — F1: the terminal `repo.save` (both autosave and the Mark-North `save
 drop an in-flight save; F2: `updateGrid` only recomputes/re-saves when a room actually moved or the
 door cleared, so a pure canvas *grow* no longer bumps the plan's `updatedAt`. F3 (autosave writes the
 constant "My home" name) is inert until naming ships — folded into Wave 2's B12.
+
+---
+
+## Wave 2 · B7 — Mark-North label collisions at large text (v0.3.2, 2026-07-25)
+
+The one clear visual defect left from the v0.3.0 assessment. On "Which way is North?" at the
+phone's 2× accessibility text size, two things broke — both now fixed, verified on the render
+harness (font2_0 golden), **no engine change and no effect on the score**:
+
+- **Room-name labels overran their tiles** ("PoojaBedroomToilet" mashed together). The compass is a
+  fixed-size Canvas, so the text is now clamped to its tile: one line, cut with "…" if too long
+  (`ZoneMap.drawCentered` measures with a width constraint + ellipsis), and it degrades by the
+  vertical room the current text size actually leaves — both name and verdict when they fit,
+  name-only when one line fits, nothing when even one line won't (the tile colour still carries the
+  verdict). No change at normal text size beyond long names now ellipsising like the editor already
+  does; the two-line placement is now symmetric and provably non-overlapping at any scale.
+- **The colour key chopped "Defect" mid-word** ("Defec/t"). `Legend` Row → FlowRow (the same fix
+  B9 applied to Score/Report), so the four keys wrap whole items instead of breaking a word.
+
+**Deliberate L1 ratchet bump — `marknorth` 17 → 18.** The taller (correctly wrapping) legend pushes
+the "Live score / 31·100" readout row 8 dp lower in the *top-of-scroll* screenshot at font2_0, so
+it reads as 8 dp more clipped (37.5 → 29.5 dp visible) and "31/100" crossed the clip threshold. This
+is a scroll-fold capture artifact on a `verticalScroll` screen — the row is fully reachable in the
+app — and is the same class already accepted in the baseline (the Back / Read-my-home buttons at the
+bottom of this screen are flagged across 6 configs). Confirmed by diffing the old vs new render
+manifests (the only delta), then updating render-baseline.json per the gate's own "if intentional"
+instruction — not a silent ratchet.
+
+Adversarial review before tagging: no blockers.
