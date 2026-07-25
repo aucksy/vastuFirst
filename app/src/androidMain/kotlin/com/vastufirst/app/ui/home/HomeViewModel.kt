@@ -15,4 +15,7 @@ class HomeViewModel(private val repo: PlanRepository) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun deleteAll() { viewModelScope.launch { repo.deleteAll() } }
+
+    /** Rename a saved home (blank is ignored by the repository). The list updates via its flow. */
+    fun rename(id: String, name: String) { viewModelScope.launch { repo.rename(id, name) } }
 }

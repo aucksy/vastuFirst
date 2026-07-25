@@ -3,6 +3,7 @@ package com.vastufirst.app.render
 import android.app.Application
 import androidx.compose.runtime.Composable
 import com.vastufirst.app.ui.home.HomeContent
+import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.settings.SettingsContent
 import com.vastufirst.app.ui.welcome.WelcomeContent
 import com.vastufirst.shared.Intent
@@ -42,7 +43,10 @@ class ViewModelScreensScreenshotTest {
     @Test
     fun home() {
         val content: @Composable () -> Unit = {
-            HomeContent(plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {})
+            HomeContent(
+                plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+            )
         }
         captureAcrossMatrix("home", content)
         writeManifestAcrossMatrix("home", content)
@@ -51,10 +55,24 @@ class ViewModelScreensScreenshotTest {
     @Test
     fun home_empty() {
         val content: @Composable () -> Unit = {
-            HomeContent(plans = emptyList(), onAddHome = {}, onOpenPlan = {}, onSettings = {})
+            HomeContent(
+                plans = emptyList(), onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+            )
         }
         captureAcrossMatrix("home-empty", content)
         writeManifestAcrossMatrix("home-empty", content)
+    }
+
+    @Test
+    fun home_rename() {
+        // The rename box (B12) rendered as its own screen so it is actually SEEN before shipping
+        // (UI-POLISH §6) — pre-filled with a home's current name.
+        val content: @Composable () -> Unit = {
+            RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {})
+        }
+        captureAcrossMatrix("home-rename", content)
+        writeManifestAcrossMatrix("home-rename", content)
     }
 
     @Test

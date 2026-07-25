@@ -27,12 +27,21 @@ SELECT * FROM planEntity ORDER BY updatedAt DESC;
 selectById:
 SELECT * FROM planEntity WHERE id = ?;
 
+-- Just the names, for auto-numbering the next "Home N" (parsed in the repository).
+selectNames:
+SELECT name FROM planEntity;
+
 upsert:
 INSERT OR REPLACE INTO planEntity(id, name, intent, propertyType, northOffset, planJson, score, ruleSetVersion, unlocked, createdAt, updatedAt)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 setUnlocked:
 UPDATE planEntity SET unlocked = ?, updatedAt = ? WHERE id = ?;
+
+-- Rename a home. Deliberately does NOT touch updatedAt: renaming is a label fix, not an edit
+-- to the home, so it must not reorder the (updatedAt DESC) list above a home just scored.
+setName:
+UPDATE planEntity SET name = ? WHERE id = ?;
 
 deleteById:
 DELETE FROM planEntity WHERE id = ?;

@@ -86,6 +86,11 @@ class NewPlanViewModel(
         private set
     var planId by mutableStateOf<String?>(null)
         private set
+    // The home's display name. Null until the draft is first saved, when it's assigned the next free
+    // "Home N" (see save()); a reopened home carries its stored name (see load()). Held here so
+    // autosave persists the REAL name, never a constant (E2E-ASSESSMENT review F3).
+    var name by mutableStateOf<String?>(null)
+        private set
     var unlocked by mutableStateOf(false)
         private set
 
@@ -105,8 +110,9 @@ class NewPlanViewModel(
                 // draft (planId == null) is still first persisted at Mark North's "Read my home", so
                 // this never creates junk rows while the user is still drawing (E2E-ASSESSMENT §A3).
                 planId?.let { id ->
+                    if (name == null) name = "Home ${repo.nextHomeNumber()}"
                     val saved = SavedPlan(
-                        id = id, name = defaultName(), intent = plan.intent, propertyType = plan.propertyType,
+                        id = id, name = name ?: FALLBACK_NAME, intent = plan.intent, propertyType = plan.propertyType,
                         plan = plan, score = result.score, ruleSetVersion = engine.ruleSetVersion(),
                         unlocked = unlocked, createdAt = now(), updatedAt = now(),
                     )
@@ -176,13 +182,17 @@ class NewPlanViewModel(
             // taps on to "See all my plans" (goHome pops this graph-scoped VM), the save must still
             // land — otherwise the home they just made is missing from the list (review F1).
             withContext(NonCancellable) {
+                // First save of a new draft: give it the next free "Home N" so no two homes share a
+                // name (defeats the compare feature — E2E-ASSESSMENT B12). A reopened home already
+                // has its name from load(), so this only fires once, at creation.
+                if (name == null) name = "Home ${repo.nextHomeNumber()}"
                 // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
                 // null): guarantees the stored list-view score equals what a reopen recomputes.
                 val a = withContext(Dispatchers.Default) { engine.analyze(plan) }
                 _analysis.value = a
                 val saved = SavedPlan(
                     id = id,
-                    name = defaultName(),
+                    name = name ?: FALLBACK_NAME,
                     intent = plan.intent,
                     propertyType = plan.propertyType,
                     plan = plan,
@@ -211,6 +221,7 @@ class NewPlanViewModel(
     /** Load an existing saved home into the flow (reopen from the saved-plans list). */
     fun load(saved: SavedPlan) {
         planId = saved.id
+        name = saved.name
         intent = saved.intent
         propertyType = saved.propertyType
         north = saved.plan.northOffsetDegrees
@@ -237,7 +248,11 @@ class NewPlanViewModel(
         }
     }
 
-    private fun defaultName(): String = "My home"
+    private companion object {
+        // Defensive only — every persistence path assigns a real "Home N" name before writing, so
+        // this should never actually reach the DB. Kept so a SavedPlan can never be built with null.
+        const val FALLBACK_NAME = "My home"
+    }
 
     /**
      * Convert the placed grid rooms + door into the engine's [Plan]. The maths lives in the pure

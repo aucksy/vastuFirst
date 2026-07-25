@@ -29,6 +29,21 @@ data class SavedPlan(
 )
 
 /**
+ * The next free "Home N" number, given the existing home names: one past the highest number that
+ * already appears as "Home <n>", or 1 when there are none. Using max+1 (not count+1) means deleting
+ * a home never makes the next new one collide with a surviving name. Pure, so it is unit-tested.
+ */
+fun nextHomeNumber(existingNames: List<String>): Int {
+    val highest = existingNames
+        .mapNotNull { name ->
+            val m = Regex("""^Home (\d+)$""").matchEntire(name.trim())
+            m?.groupValues?.get(1)?.toIntOrNull()
+        }
+        .maxOrNull() ?: 0
+    return highest + 1
+}
+
+/**
  * The one door to local persistence. Serialises the [Plan] input to JSON so a home can be
  * reopened and re-run fully offline; reads are exposed as cold [Flow]s so the saved-plans
  * screen updates itself. All DB work is pushed onto [io] off the main thread.
@@ -70,6 +85,18 @@ class PlanRepository(
 
     suspend fun setUnlocked(id: String, unlocked: Boolean, now: Long): Unit = withContext(io) {
         queries.setUnlocked(if (unlocked) 1L else 0L, now, id)
+    }
+
+    /** Rename a saved home. Trims; a blank name is ignored (the row keeps its current name). */
+    suspend fun rename(id: String, name: String): Unit = withContext(io) {
+        val clean = name.trim()
+        if (clean.isNotEmpty()) queries.setName(clean, id)
+    }
+
+    /** The number for the next auto-named "Home N" — one past the highest existing "Home N", so a
+     *  delete never causes a duplicate. Reads only the names (cheap). */
+    suspend fun nextHomeNumber(): Int = withContext(io) {
+        nextHomeNumber(queries.selectNames().executeAsList())
     }
 
     suspend fun delete(id: String): Unit = withContext(io) { queries.deleteById(id) }

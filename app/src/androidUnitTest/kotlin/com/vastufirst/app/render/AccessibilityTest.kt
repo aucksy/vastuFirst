@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.grid.GuidedGridContent
 import com.vastufirst.app.ui.home.HomeContent
+import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.legal.LegalScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.newplan.SamplePlans
@@ -37,8 +38,9 @@ class AccessibilityTest {
     fun accessibility() {
         val screens: List<Pair<String, @Composable () -> Unit>> = listOf(
             "welcome" to { WelcomeContent(intent = Intent.BUILDING, onIntentChange = {}, onContinue = {}) },
-            "home" to { HomeContent(RenderFixtures.savedPlans, {}, {}, {}) },
-            "home-empty" to { HomeContent(emptyList(), {}, {}, {}) },
+            "home" to { HomeContent(RenderFixtures.savedPlans, {}, {}, {}, { _, _ -> }, RenderFixtures.FIXED_NOW) },
+            "home-empty" to { HomeContent(emptyList(), {}, {}, {}, { _, _ -> }, RenderFixtures.FIXED_NOW) },
+            "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },
             "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
             "legal" to { LegalScreen(onBack = {}) },
             "unlock" to { UnlockScreen(onUnlocked = {}) },

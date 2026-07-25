@@ -24,7 +24,7 @@ import com.vastufirst.shared.PropertyType
  */
 object RenderFixtures {
 
-    private fun savedPlan(id: String, name: String, intent: Intent, score: Int) = SavedPlan(
+    private fun savedPlan(id: String, name: String, intent: Intent, score: Int, updatedAt: Long) = SavedPlan(
         id = id,
         name = name,
         intent = intent,
@@ -40,17 +40,26 @@ object RenderFixtures {
         ruleSetVersion = "fixture",
         unlocked = false,
         createdAt = 0L,
-        updatedAt = 0L,
+        updatedAt = updatedAt,
     )
 
     private fun squareOutline() = listOf(
         Point(0.0, 0.0), Point(8.0, 0.0), Point(8.0, 8.0), Point(0.0, 8.0),
     )
 
-    /** Two saved homes — enough to prove the row layout, the score pill and side-by-side spacing. */
+    /** A fixed "now" so the "updated …" line renders deterministically in the golden. Home timestamps
+     *  are exact whole-day offsets from it → the same relative text ("today" / "2 days ago") in any
+     *  test-host timezone. */
+    val FIXED_NOW: Long =
+        java.time.LocalDate.of(2026, 7, 15).atTime(12, 0).toInstant(java.time.ZoneOffset.UTC).toEpochMilli()
+
+    private const val ONE_DAY_MS: Long = 24L * 60 * 60 * 1000
+
+    /** Two saved homes — enough to prove the row layout, the score pill, the rename pencil and the
+     *  side-by-side spacing; distinct names + times so the compare reads as two different homes. */
     val savedPlans: List<SavedPlan> = listOf(
-        savedPlan("p1", "Builder's draft — 2BHK", Intent.BUILDING, 31),
-        savedPlan("p2", "Compact 2BHK flat", Intent.BUYING, 68),
+        savedPlan("p1", "Builder's draft — 2BHK", Intent.BUILDING, 31, updatedAt = FIXED_NOW),
+        savedPlan("p2", "Compact 2BHK flat", Intent.BUYING, 68, updatedAt = FIXED_NOW - 2 * ONE_DAY_MS),
     )
 
     // --- score-driven screens (Mark North, Score, Report) ---
