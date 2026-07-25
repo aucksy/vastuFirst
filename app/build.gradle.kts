@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 13
-        versionName = "0.3.1"   // Wave 1 end-to-end fixes: plot-resize overlap, dead-ends, autosave, press states, double-tap, Settings scroll
+        versionCode = 14
+        versionName = "0.3.2"   // Wave 2 B7: Mark-North room labels + colour key no longer collide at font 2.0
     }
 
     buildTypes {
