@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 17
-        versionName = "0.3.5"   // Wave 2 C15: minor a11y + door-reload + rotation-safe editor (Wave 2 complete)
+        versionCode = 18
+        versionName = "0.3.6"   // QA Batch 1: door dead-end removed (S4) + door re-clamp on room edits (F4)
     }
 
     buildTypes {

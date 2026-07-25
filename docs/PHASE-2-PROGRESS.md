@@ -448,3 +448,46 @@ to the engine clamp; `RoomType` is Serializable so the enum saver is safe; the r
 **Wave 2 is now complete** (B7 · C14 · C13 · B12 · C15). Remaining before the 4 Aug delivery is all
 **Group D owner decisions** (L-shape footprint, ₹699, the 8 expert rulings, free-score label) + the two
 device-glance checks — no more Wave 2 code.
+
+---
+
+## Guided-grid UAT — exhaustive QA pass (v0.3.6, 2026-07-25)
+
+An adversarial, not-happy-path QA of **everything a user can do on the guided grid**, because the
+owner was seeing too many issues in the plan builder. Full catalogue + verdicts + owner proposals:
+`docs/UAT-GRID-PLAN-BUILDING.md`.
+
+**Automated the testable cases (all green in CI):**
+- `shared/GridEditingRectTest` — move/resize/repack/zones on **non-square** plots and at MIN/MAX
+  bounds (the rectangular-plot risk area the old square-only suite missed).
+- `app/…/newplan/PlanConversionRoundTripTest` — the grid⇄engine flip proven both ways: rooms/door
+  round-trip byte-for-byte (incl. rows 8–9 where engine-Y goes negative), door-side classification on
+  1-cell-thin footprints, door-past-rooms snap, empty-polygon skip, and the headline **score
+  translation-invariance** proof (same home scores the same wherever it sits on the canvas).
+- `app/…/newplan/GridResizeTest` — the plot-resize decision + reopen grid derivation + door re-clamp.
+- `app/…/grid/GuidedGridInteractionTest` — the WCAG single-pointer BUTTON paths headless (move arrows,
+  size steppers, overlap-refusal, remove, plot bounds, door-mode entry).
+
+**Testable seam (no behaviour change):** moved `gridRoomsFromPlan`/`gridDoorFromPlan` out of the
+ViewModel into `PlanConversion.kt` (public, next to the forward flip); extracted
+`resolveGridResize`/`gridSizeForRooms`/`clampDoorToRooms` into `GridResize.kt`. `updateGrid`/`load`/
+`updateRooms` now bind to them.
+
+**Triage verdicts (7 suspects + F4):**
+- ✅ NOT bugs (proven): S1 translation-invariance, S5 stepper/drag asymmetry, S6 thin-footprint door side.
+- ✅ FIXED this build: **S4** (door "Set the front door" button was a dead end on the empty grid →
+  hidden until a room exists) and **F4** (door could be displayed in one place but scored/reloaded in
+  another after a room was removed/moved → now re-clamped to the footprint on every room edit).
+- ⚠ Documented, benign, left as-is: **S7** (plot-shrink clamps a lone oversized room to fit — no
+  overlap, score intact).
+- ⚠ CONFIRMED, owner decision (proposals in the UAT doc, NOT blockers for 4 Aug): **S2** (reopen loses
+  empty plot margin drawn beyond the rooms — needs a saved-data change) and **S3** (a brand-new,
+  not-yet-scored draft can be lost on a low-RAM process kill — needs SavedStateHandle).
+
+**Render/§7:** the S4 change re-recorded the empty-state goldens (`editor-empty` + `editor-wide`); I
+looked at baseline + font2.0 — grid visible, band lines, steppers readable, door button correctly gone,
+no clip/overlap. L1 + a11y ratchets adopted the drop. Adversarial review before tagging: no blockers.
+
+**Device-glance checklist still open** (raw gestures/haptics/true process-death — can't be faked
+headlessly): touch-and-slide move, corner-grip drag resize, drag-into-another refusal, haptics,
+rotation persistence, process-death of a saved vs unsaved home, a real TalkBack pass. Listed in the UAT doc.
