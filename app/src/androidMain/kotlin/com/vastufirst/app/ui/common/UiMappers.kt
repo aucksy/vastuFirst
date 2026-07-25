@@ -102,6 +102,15 @@ fun buildZoneMapModel(
 ): ZoneMapModel {
     val c = VastuTheme.colors
 
+    // Verdict colours are themselves @Composable (they read the theme), so they must be resolved HERE,
+    // in composable context — not inside the remember{} below. Capturing them is enough: the `c` key
+    // re-runs the memo on a theme change, and the re-run closes over these freshly-resolved values.
+    val colIdeal = VastuVerdict.IDEAL.color()
+    val colAcceptable = VastuVerdict.ACCEPTABLE.color()
+    val colSuboptimal = VastuVerdict.SUBOPTIMAL.color()
+    val colDefect = VastuVerdict.DEFECT.color()
+    val colNotAssessed = VastuVerdict.NOT_ASSESSED.color()
+
     // The rooms + wedges are a pure function of the placed rooms, the analysis, the grid size and the
     // theme — they do NOT depend on `north`. Memoize them so dragging the North dial (which changes
     // only `north`, once per degree) reuses this list instead of re-mapping every room every degree
@@ -111,6 +120,13 @@ fun buildZoneMapModel(
         val neutralStroke = c.borderStrong
         val neutralFill = c.surface
         val neutralInk = c.textTertiary
+        fun colorOf(v: VastuVerdict): Color = when (v) {
+            VastuVerdict.IDEAL -> colIdeal
+            VastuVerdict.ACCEPTABLE -> colAcceptable
+            VastuVerdict.SUBOPTIMAL -> colSuboptimal
+            VastuVerdict.DEFECT -> colDefect
+            VastuVerdict.NOT_ASSESSED -> colNotAssessed
+        }
 
         val verdictById: Map<String, VastuVerdict> =
             analysis?.roomResults?.associate { it.roomId to it.verdict.toVastu() } ?: emptyMap()
@@ -119,7 +135,7 @@ fun buildZoneMapModel(
 
         val rooms = gridRooms.map { r ->
             val v = verdictById[r.id]
-            val stroke = v?.color() ?: neutralStroke
+            val stroke = v?.let { colorOf(it) } ?: neutralStroke
             val fill = if (v != null) stroke.copy(alpha = 0.14f) else neutralFill
             val zone = zoneById[r.id]
             val zoneText = if (zone != null && v != null) "${zone.code()} ${v.glyph()}".trim() else ""
@@ -132,7 +148,7 @@ fun buildZoneMapModel(
                 zoneText = zoneText,
                 fill = fill,
                 stroke = stroke,
-                zoneTextColor = v?.color() ?: neutralInk,
+                zoneTextColor = v?.let { colorOf(it) } ?: neutralInk,
             )
         }
         val wedges = listOf(
