@@ -13,8 +13,6 @@ import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
-import com.vastufirst.shared.editor.CellRect
-import com.vastufirst.shared.editor.fitWithoutOverlap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
@@ -26,8 +24,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /** The DEFAULT guided grid is [GRID]×[GRID] cells; the plot can be resized to [MIN_GRID]..[MAX_GRID]
  *  cells per side (square cells, non-square plot) so a rectangular home is drawn true-to-life. The
@@ -130,39 +126,18 @@ class NewPlanViewModel(
     fun updateDoor(d: GridDoor?) { door = d; markDirty() }
     fun updateNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
 
-    /** Resize the drawing plot. Existing rooms are clamped to fit the new bounds (shrunk/moved, never
-     *  dropped); a door on a wall that no longer exists is cleared. */
+    /** Resize the drawing plot. Existing rooms are re-packed to fit the new bounds (shrunk/moved,
+     *  never dropped, never overlapped); an infeasible shrink is refused; a door on a wall that no
+     *  longer exists is cleared. All the arithmetic is the pure [resolveGridResize] so it is tested. */
     fun updateGrid(cols: Int, rows: Int) {
-        val c = cols.coerceIn(MIN_GRID, MAX_GRID)
-        val r = rows.coerceIn(MIN_GRID, MAX_GRID)
-        if (c == gridCols && r == gridRows) return
-        // RE-PACK the rooms into the requested size so none overlap. Clamping each room to the new
-        // bounds independently can push two onto the same cells (the editor never otherwise allows
-        // this), which makes the engine score the buried room twice — a silently wrong score. If the
-        // rooms can't all fit at the requested size (a plot smaller than they need), fitWithoutOverlap
-        // returns null and we REFUSE the resize — the stepper simply won't go below the size the
-        // current rooms require, rather than force an overlap (docs/E2E-ASSESSMENT §A1).
-        val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r) ?: return
-        gridCols = c
-        gridRows = r
-        var changed = false
-        val repacked = rooms.mapIndexed { i, room ->
-            val f = fitted[i]
-            room.copy(col = f.col, row = f.row, w = f.w, h = f.h)
-        }
-        if (repacked != rooms) { rooms = repacked; changed = true }
-        door?.let { d ->
-            val fits = when (d.side) {
-                DoorSide.N, DoorSide.S -> d.cell in 0 until c
-                DoorSide.E, DoorSide.W -> d.cell in 0 until r
-            }
-            if (!fits) { door = null; changed = true }
-        }
-        // Only a resize that moved a room or cleared the door changes the score — a pure grow that
-        // shifts nothing leaves the analysis identical (grid size doesn't enter the score), so don't
-        // recompute or bump the saved plan's updatedAt for it (review F2). The canvas still resizes:
-        // gridCols/gridRows are state, so the editor and zone map recompose regardless.
-        if (changed) markDirty()
+        val res = resolveGridResize(rooms, door, gridCols, gridRows, cols, rows) ?: return
+        gridCols = res.cols
+        gridRows = res.rows
+        // res.rooms / res.door are the SAME instances when nothing moved, so these are equality-skipped
+        // state writes (no spurious recompute) — a pure grow leaves the score untouched (review F2).
+        rooms = res.rooms
+        door = res.door
+        if (res.changed) markDirty()
     }
 
     private fun markDirty() { dirty.tryEmit(Unit) }
@@ -231,9 +206,11 @@ class NewPlanViewModel(
         rooms = gridRoomsFromPlan(saved.plan)
         door = gridDoorFromPlan(saved.plan, rooms)
         // The plot shape isn't stored on the Plan (the engine doesn't need it); re-derive the
-        // tightest grid that encloses the reopened rooms so a further edit keeps its proportions.
-        gridCols = (rooms.maxOfOrNull { it.col + it.w } ?: GRID).coerceIn(MIN_GRID, MAX_GRID)
-        gridRows = (rooms.maxOfOrNull { it.row + it.h } ?: GRID).coerceIn(MIN_GRID, MAX_GRID)
+        // tightest grid that encloses the reopened rooms so a further edit keeps its proportions
+        // (pure gridSizeForRooms — see its ⚠ KNOWN LIMITATION note about lost outer margin, UAT S2).
+        val (dc, dr) = gridSizeForRooms(rooms)
+        gridCols = dc
+        gridRows = dr
         viewModelScope.launch {
             val result = withContext(Dispatchers.Default) { engine.analyze(saved.plan) }
             _analysis.value = result
@@ -261,49 +238,4 @@ class NewPlanViewModel(
      */
     fun buildPlan(): Plan? =
         buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft")
-
-    /** Rebuild the placed grid rooms from a stored engine [Plan] — the exact inverse of the
-     *  buildPlan() flip (engine y = GRID − row), so a reopened home shows its rooms again. */
-    private fun gridRoomsFromPlan(plan: Plan): List<GridRoom> {
-        val level = plan.levels.firstOrNull() ?: return emptyList()
-        return level.rooms.mapNotNull { room ->
-            if (room.polygon.isEmpty()) return@mapNotNull null
-            val xs = room.polygon.map { it.x }
-            val ys = room.polygon.map { it.y }
-            val x0 = xs.min(); val x1 = xs.max()
-            val yTop = ys.max(); val yBottom = ys.min()
-            GridRoom(
-                id = room.id,
-                type = room.type,
-                col = x0.roundToInt(),
-                row = (GRID - yTop).roundToInt(),
-                w = (x1 - x0).roundToInt().coerceAtLeast(1),
-                h = (yTop - yBottom).roundToInt().coerceAtLeast(1),
-            )
-        }
-    }
-
-    /** Rebuild the placed door from a stored [Plan], classifying its wall from the footprint edges. */
-    private fun gridDoorFromPlan(plan: Plan, rooms: List<GridRoom>): GridDoor? {
-        val level = plan.levels.firstOrNull() ?: return null
-        val d = level.doors.firstOrNull { it.isMainEntrance } ?: return null
-        if (rooms.isEmpty()) return null
-        val minC = rooms.minOf { it.col }
-        val maxC = rooms.maxOf { it.col + it.w }
-        val minR = rooms.minOf { it.row }
-        val maxR = rooms.maxOf { it.row + it.h }
-        val yNorth = (GRID - minR).toDouble()   // ey(minR)
-        val ySouth = (GRID - maxR).toDouble()   // ey(maxR)
-        val xEast = maxC.toDouble()
-        val xWest = minC.toDouble()
-        val eps = 1e-6
-        val horizontal = abs(d.wallStart.y - d.wallEnd.y) < eps
-        return when {
-            horizontal && abs(d.centre.y - yNorth) < eps -> GridDoor(DoorSide.N, (d.centre.x - 0.5).roundToInt())
-            horizontal && abs(d.centre.y - ySouth) < eps -> GridDoor(DoorSide.S, (d.centre.x - 0.5).roundToInt())
-            abs(d.centre.x - xEast) < eps -> GridDoor(DoorSide.E, ((GRID - d.centre.y) - 0.5).roundToInt())
-            abs(d.centre.x - xWest) < eps -> GridDoor(DoorSide.W, ((GRID - d.centre.y) - 0.5).roundToInt())
-            else -> null
-        }
-    }
 }

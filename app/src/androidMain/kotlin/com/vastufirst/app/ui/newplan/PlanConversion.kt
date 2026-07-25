@@ -7,6 +7,8 @@ import com.vastufirst.shared.Plan
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.Room
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Grid → engine [Plan] conversion, as a PURE function (Product PRD §4.1).
@@ -67,6 +69,54 @@ fun buildEnginePlan(
         levels = listOf(Level(index = 0, outline = outline, rooms = engineRooms, doors = doors)),
         northOffsetDegrees = north,
     )
+}
+
+/**
+ * Rebuild the placed grid rooms from a stored engine [Plan] — the exact inverse of the [buildEnginePlan]
+ * flip (engine y = GRID − row), so a reopened home shows its rooms again. Lives here, next to the
+ * forward flip, so the two can never drift and the round-trip is unit-testable without a ViewModel.
+ */
+fun gridRoomsFromPlan(plan: Plan): List<GridRoom> {
+    val level = plan.levels.firstOrNull() ?: return emptyList()
+    return level.rooms.mapNotNull { room ->
+        if (room.polygon.isEmpty()) return@mapNotNull null
+        val xs = room.polygon.map { it.x }
+        val ys = room.polygon.map { it.y }
+        val x0 = xs.min(); val x1 = xs.max()
+        val yTop = ys.max(); val yBottom = ys.min()
+        GridRoom(
+            id = room.id,
+            type = room.type,
+            col = x0.roundToInt(),
+            row = (GRID - yTop).roundToInt(),
+            w = (x1 - x0).roundToInt().coerceAtLeast(1),
+            h = (yTop - yBottom).roundToInt().coerceAtLeast(1),
+        )
+    }
+}
+
+/** Rebuild the placed door from a stored [Plan], classifying its wall from the footprint edges. */
+fun gridDoorFromPlan(plan: Plan, rooms: List<GridRoom>): GridDoor? {
+    val level = plan.levels.firstOrNull() ?: return null
+    val d = level.doors.firstOrNull { it.isMainEntrance } ?: return null
+    if (rooms.isEmpty()) return null
+    val minC = rooms.minOf { it.col }
+    val maxC = rooms.maxOf { it.col + it.w }
+    val minR = rooms.minOf { it.row }
+    val maxR = rooms.maxOf { it.row + it.h }
+    val yNorth = (GRID - minR).toDouble()   // ey(minR)
+    val ySouth = (GRID - maxR).toDouble()   // ey(maxR)
+    val xEast = maxC.toDouble()
+    val xWest = minC.toDouble()
+    val eps = 1e-6
+    val horizontal = abs(d.wallStart.y - d.wallEnd.y) < eps
+    return when {
+        horizontal && abs(d.centre.y - yNorth) < eps -> GridDoor(DoorSide.N, (d.centre.x - 0.5).roundToInt())
+        horizontal && abs(d.centre.y - ySouth) < eps -> GridDoor(DoorSide.S, (d.centre.x - 0.5).roundToInt())
+        abs(d.centre.x - xEast) < eps -> GridDoor(DoorSide.E, ((GRID - d.centre.y) - 0.5).roundToInt())
+        abs(d.centre.x - xWest) < eps -> GridDoor(DoorSide.W, ((GRID - d.centre.y) - 0.5).roundToInt())
+        else -> null
+    }
 }
 
 /** The door centre + wall span on the footprint perimeter for the chosen side/cell. */
