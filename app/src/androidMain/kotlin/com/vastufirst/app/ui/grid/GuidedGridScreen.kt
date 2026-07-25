@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -125,8 +127,11 @@ private data class Hit(val roomId: String, val rect: CellRect, val handle: Handl
 
 /**
  * Where a grip is DRAWN, and therefore where it is hit-tested — one function so the two can never
- * disagree. Centres are clamped [clampPx] inside the plan: a room on the edge would otherwise have
- * half its grips outside the grid, where no finger can reach them.
+ * disagree. Centres are nudged [clampPx] inside the plan — just enough that the small drawn dot is
+ * not sliced by the grid's rounded-rect clip — and NOT the old ~24 dp inward shove, which pulled the
+ * dots visibly off the corners of any room hugging a wall and let the resize zones swallow the whole
+ * room so a move-tap resized instead (owner report #4/#7). A wall-hugging room's grip sits on the
+ * grid edge, which is fully on-screen and reachable.
  */
 private fun handleCentre(
     rect: CellRect, handle: Handle, cellPx: Float, gridWpx: Float, gridHpx: Float, clampPx: Float,
@@ -152,12 +157,16 @@ private fun hitTest(
     gridWpx: Float,
     gridHpx: Float,
     touchPx: Float,
+    gripClampPx: Float,
 ): Hit? {
-    val radius = touchPx / 2f
+    // The grab-zone is never bigger than half a cell, so the four corner zones can't meet in the
+    // middle of a small room and steal the move-tap — the room's centre always stays a move zone
+    // (owner report #7). On roomy cells the full 24 dp target still applies.
+    val radius = min(touchPx / 2f, cellPx * 0.5f)
     rooms.firstOrNull { it.id == selectedId }?.let { sel ->
         val r = sel.rect()
         for (h in handlesFor(r)) {
-            val centre = handleCentre(r, h, cellPx, gridWpx, gridHpx, radius)
+            val centre = handleCentre(r, h, cellPx, gridWpx, gridHpx, gripClampPx)
             val dx = pos.x - centre.x
             val dy = pos.y - centre.y
             if (dx * dx + dy * dy <= radius * radius) return Hit(sel.id, r, h)
@@ -231,6 +240,7 @@ fun GuidedGridScreen(
  * is unchanged from Build A; only the data source (was `vm.rooms`/`vm.door`) and the two sinks (were
  * `vm.updateRooms`/`vm.updateDoor`) are now parameters.
  */
+@OptIn(ExperimentalLayoutApi::class)   // FlowRow: plot-size + size steppers on one wrapping line
 @Composable
 fun GuidedGridContent(
     rooms: List<GridRoom>,
@@ -288,14 +298,17 @@ fun GuidedGridContent(
     val selected = rooms.firstOrNull { it.id == selectedId }
 
     fun placeDoor(col: Int, row: Int) {
-        if (rooms.isEmpty()) return
+        // Read the LIVE room list, not the one captured when this screen first composed — otherwise a
+        // door placed after adding rooms would clamp to a stale footprint.
+        val currentRooms = roomsState.value
+        if (currentRooms.isEmpty()) return
         // Nearest outer wall to the tapped cell decides the side; the parallel coord is the position.
         val distN = row; val distS = rows - 1 - row; val distW = col; val distE = cols - 1 - col
         // Clamp the position onto the ROOM FOOTPRINT (the house outline the engine actually scores is
         // the rooms' bounding box). A door tapped past the rooms is snapped to the footprint when the
         // plan is built, so without this it would appear to "jump" when the home is reopened (C15).
-        val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
-        val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
+        val fMinC = currentRooms.minOf { it.col }; val fMaxC = currentRooms.maxOf { it.col + it.w }
+        val fMinR = currentRooms.minOf { it.row }; val fMaxR = currentRooms.maxOf { it.row + it.h }
         val cCol = col.coerceIn(fMinC, fMaxC - 1)
         val cRow = row.coerceIn(fMinR, fMaxR - 1)
         val d = when (minOf(distN, distS, distW, distE)) {
@@ -341,8 +354,8 @@ fun GuidedGridContent(
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
-        // The live chip sits in a RESERVED row above the plan. Fixed, because the hand covers
-        // whatever it is touching — a chip that floats near the shape is a chip under a thumb (§4.4).
+        // The live size/zone readout. Drawn as an overlay pinned to the TOP of the plan (below), a
+        // fixed spot the hand never covers while dragging a room (§4.4) — not floating near the shape.
         // (Never name a local `drag` in this function: it would shadow the gestures `drag()` below.)
         val dragNow = activeDrag
         val chipText = when {
@@ -351,23 +364,11 @@ fun GuidedGridContent(
             selected != null -> describe(selected.type, selected.rect(), cols, rows)
             else -> null
         }
-        Box(
-            modifier = Modifier.fillMaxWidth().heightIn(min = VastuTheme.sizes.control),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (chipText != null) {
-                VText(
-                    text = chipText,
-                    style = VastuTheme.type.bodySm,
-                    color = colors.paper,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .clip(VastuTheme.shapes.full)
-                        .background(if (dragNow?.blocked == true) badColor else colors.textPrimary)
-                        .padding(horizontal = VastuTheme.spacing.s3, vertical = VastuTheme.spacing.s2),
-                )
-            }
-        }
+        // The size/zone chip is NOT a reserved row here any more — an always-on 48 dp band left a big
+        // blank strip above the grid at rest (owner report #1), and collapsing it made the grid lurch
+        // down the instant a move began. It is now drawn as an overlay pinned to the TOP of the plan
+        // (see `chipText` use inside the BoxWithConstraints below): zero layout cost, no idle blank, no
+        // shift, and still pinned where the hand never covers it.
 
         // ⭐ The compass is LOCKED to left-to-right, no matter the app's locale. North/East/South/
         // West are cardinal directions, not text — under an RTL locale (e.g. a future Urdu build) the
@@ -421,12 +422,19 @@ fun GuidedGridContent(
                         )
                     }
                 }
-                // ⚠ keyed on Unit and NEVER on the room list. pointerInput(rooms) rebuilds this node
-                // whenever the list changes, so the first edit a drag makes cancels the very gesture
-                // making it and the shape freezes with no release (§4.1; UI audit item 25).
+                // ⚠ Keyed on the PLOT SIZE (cols, rows), and NEVER on the room list. The grid size
+                // can only change via the plot-size steppers — never while a finger is on the plan —
+                // so re-arming the gesture detector when it changes is safe, and it is REQUIRED: the
+                // block below closes over cols/rows, and pointerInput(Unit) froze them at the first
+                // composition. After a plot resize the finger maths then used the OLD grid — rooms
+                // placed off the visible grid, taps landing beside the room, a room unable to move
+                // past the former bottom edge until the screen was left and re-entered (owner report
+                // #6/#8/#9). Re-keying on (cols, rows) is what keeps the finger and the drawing in the
+                // same coordinate space. The room list is still read LIVE via roomsState (below), so a
+                // room edit never cancels its own in-flight drag (§4.1; UI audit item 25).
                 // ⚠ Exactly ONE pointerInput on this node: two (one tap, one drag) each run their own
                 // touch-slop bookkeeping, and a tap with 4 px of finger roll gets eaten by the drag.
-                .pointerInput(Unit) {
+                .pointerInput(cols, rows) {
                     awaitEachGesture {
                         // ⚠ NOTHING may return from this block before the first down. awaitEachGesture
                         // re-runs the block as soon as it returns and only suspends while a pointer is
@@ -438,10 +446,10 @@ fun GuidedGridContent(
                         val cellPx = gridWpx / cols          // square cells: width/cols == height/rows
                         if (cellPx <= 0f) return@awaitEachGesture
 
-                        // ⚠ Read the list HERE, after the down. The `rooms` PARAM is captured BY
-                        // VALUE, and pointerInput(Unit) keeps this lambda from the FIRST composition —
-                        // using it would hit-test against an empty plan forever. roomsState is the
-                        // stable holder whose .value is always current (see rememberUpdatedState above).
+                        // ⚠ Read the list HERE, after the down. The `rooms` PARAM is captured BY VALUE,
+                        // and pointerInput is keyed on (cols, rows) — NOT the room list — so this lambda
+                        // survives room edits; using the captured `rooms` would hit-test a stale plan.
+                        // roomsState.value is always current (see rememberUpdatedState above).
                         val current = roomsState.value
 
                         // --- front door: unchanged, still a tap (rework §7 out of scope) ---
@@ -500,7 +508,7 @@ fun GuidedGridContent(
                         }
 
                         // --- move / resize ---
-                        val hit = hitTest(down.position, current, selectedId, cellPx, gridWpx, gridHpx, touchPx)
+                        val hit = hitTest(down.position, current, selectedId, cellPx, gridWpx, gridHpx, touchPx, gripRadiusPx)
                         if (hit == null) {
                             // Empty space. Deselect, and DON'T consume — a finger that starts here
                             // must still be able to scroll the page.
@@ -620,13 +628,33 @@ fun GuidedGridContent(
                 val sel = rooms.firstOrNull { it.id == selectedId } ?: return@Canvas
                 val shown = if (d?.roomId == sel.id) d.rect else sel.rect()
                 for (h in handlesFor(shown)) {
-                    val centre = handleCentre(shown, h, cp, size.width, size.height, touchPx / 2f)
+                    // SAME clamp the hit-test uses, so the dot is drawn exactly where a finger hits it.
+                    val centre = handleCentre(shown, h, cp, size.width, size.height, gripRadiusPx)
                     // A small SOLID dot with a thin cream halo — reads as a deliberate grip on any
                     // room tint. The old large hollow ring floated over the corner and looked clunky
                     // (owner feedback, v0.2.8). Halo first (slightly larger), solid core on top.
                     drawCircle(color = gripFill, radius = gripRadiusPx, center = centre)
                     drawCircle(color = gripStroke, radius = gripRadiusPx - strokePx, center = centre)
                 }
+            }
+
+            // Size/zone readout, pinned to the TOP of the plan as an overlay (owner report #1: no
+            // reserved band above the grid, no layout shift when it appears). It is not interactive, so
+            // it never steals a touch from the gesture arbiter on the parent; it sits at top-centre,
+            // the one place the hand is never resting while dragging a room (§4.4).
+            if (chipText != null) {
+                VText(
+                    text = chipText,
+                    style = VastuTheme.type.bodySm,
+                    color = colors.paper,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = VastuTheme.spacing.s2)
+                        .clip(VastuTheme.shapes.full)
+                        .background(if (dragNow?.blocked == true) badColor else colors.textPrimary)
+                        .padding(horizontal = VastuTheme.spacing.s3, vertical = VastuTheme.spacing.s2),
+                )
             }
         }
 
@@ -669,23 +697,30 @@ fun GuidedGridContent(
             else -> Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
                 // Plot size — draw your real proportions (a rectangular plot, square cells). The score
                 // is unaffected (the engine scores the rooms' footprint), so this only shapes the
-                // canvas. Two rows so six controls never overflow a 320 dp screen (§3.D).
+                // canvas. ONE wrapping row: wide + deep sit side by side where there's room (owner
+                // report #2) and drop to two lines only on a very narrow / large-font screen — a
+                // FlowRow wraps between the two groups, never inside one (§3.D preserved).
                 SectionLabel("Plot size")
-                Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                    EditorKey("−", "Narrower plot") { onGridChange(cols - 1, rows) }
-                    VText(
-                        "$cols wide", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                        maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
-                    )
-                    EditorKey("+", "Wider plot") { onGridChange(cols + 1, rows) }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                    EditorKey("−", "Shallower plot") { onGridChange(cols, rows - 1) }
-                    VText(
-                        "$rows deep", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                        maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
-                    )
-                    EditorKey("+", "Deeper plot") { onGridChange(cols, rows + 1) }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+                    verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                        EditorKey("−", "Narrower plot") { onGridChange(cols - 1, rows) }
+                        VText(
+                            "$cols wide", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+                        )
+                        EditorKey("+", "Wider plot") { onGridChange(cols + 1, rows) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                        EditorKey("−", "Shallower plot") { onGridChange(cols, rows - 1) }
+                        VText(
+                            "$rows deep", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+                        )
+                        EditorKey("+", "Deeper plot") { onGridChange(cols, rows + 1) }
+                    }
                 }
 
                 SectionLabel("Add a room")
@@ -703,12 +738,15 @@ fun GuidedGridContent(
                 }
                 // The door is placed by tapping a wall, and placeDoor does nothing until a room
                 // exists — so offering "Set the front door" on the empty grid is a dead end (UAT S4).
-                // Show it only once there's something to attach a wall to.
+                // Show it only once there's something to attach a wall to. HIGHLIGHTED (primary) — the
+                // front door is the highest-weighted thing the engine scores, and as a low-contrast
+                // secondary button it read as absent (owner report #3). Once a door is set it steps
+                // back to secondary, since "move it" is a lesser action than "you still need one".
                 if (rooms.isNotEmpty()) {
                     VastuButton(
                         text = if (door == null) "Set the front door" else "Move the front door",
                         onClick = { doorMode = true; selectedId = null; armedType = null },
-                        style = VastuButtonStyle.SECONDARY,
+                        style = if (door == null) VastuButtonStyle.PRIMARY else VastuButtonStyle.SECONDARY,
                         large = false,
                     )
                 }
@@ -853,6 +891,7 @@ private fun BoxScope.DoorMarker(door: GridDoor, cell: androidx.compose.ui.unit.D
  * integers — so dragging is not "essential" and the exemption does not apply. They are also the
  * path for the older and less phone-literate users who are a large part of this audience.
  */
+@OptIn(ExperimentalLayoutApi::class)   // FlowRow: W + H size steppers on one wrapping line
 @Composable
 private fun SelectedRoomTools(
     room: GridRoom,
@@ -879,6 +918,16 @@ private fun SelectedRoomTools(
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
 
+        // Remove / Done come FIRST, right under the room's name — the two decisions a user reaches
+        // for most sit closest to the top, and the fiddly nudge/size controls follow (owner report #5).
+        Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            VastuButton(
+                "Remove", onClick = onDelete, style = VastuButtonStyle.SECONDARY,
+                large = false, modifier = Modifier.weight(1f),
+            )
+            VastuButton("Done", onClick = onDone, large = false, modifier = Modifier.weight(1f))
+        }
+
         SectionLabel("Move")
         Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
             EditorKey("◀", "Move left") { onNudge(-1, 0) }
@@ -887,38 +936,36 @@ private fun SelectedRoomTools(
             EditorKey("▶", "Move right") { onNudge(1, 0) }
         }
 
-        // Two rows, not one: six controls in a single Row overflow a 320 dp screen at any font
-        // scale above 1.0, and a Row does not wrap — it clips (UI-POLISH §3.D).
+        // Both size controls on ONE line (owner report #5). A FlowRow wraps to two lines only on a
+        // very narrow / large-font screen, and only between the W and H groups — never mid-group, so
+        // a control is never clipped (the UI-POLISH §3.D guarantee, kept without forcing two rows).
         SectionLabel("Size")
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-            verticalAlignment = Alignment.CenterVertically,
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
-            EditorKey("−", "Narrower") { onResize(-1, 0) }
-            VText(
-                "W ${room.w}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
-            )
-            EditorKey("+", "Wider") { onResize(1, 0) }
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            EditorKey("−", "Shorter") { onResize(0, -1) }
-            VText(
-                "H ${room.h}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
-            )
-            EditorKey("+", "Taller") { onResize(0, 1) }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            VastuButton(
-                "Remove", onClick = onDelete, style = VastuButtonStyle.SECONDARY,
-                large = false, modifier = Modifier.weight(1f),
-            )
-            VastuButton("Done", onClick = onDone, large = false, modifier = Modifier.weight(1f))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                EditorKey("−", "Narrower") { onResize(-1, 0) }
+                VText(
+                    "W ${room.w}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                    maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
+                )
+                EditorKey("+", "Wider") { onResize(1, 0) }
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                EditorKey("−", "Shorter") { onResize(0, -1) }
+                VText(
+                    "H ${room.h}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                    maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
+                )
+                EditorKey("+", "Taller") { onResize(0, 1) }
+            }
         }
     }
 }
