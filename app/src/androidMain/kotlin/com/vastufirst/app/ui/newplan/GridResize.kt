@@ -80,3 +80,22 @@ fun gridSizeForRooms(rooms: List<GridRoom>): Pair<Int, Int> {
     val rows = (rooms.maxOfOrNull { it.row + it.h } ?: GRID).coerceIn(MIN_GRID, MAX_GRID)
     return cols to rows
 }
+
+/**
+ * Keep an existing door on the current rooms' FOOTPRINT (the bounding box the engine actually scores),
+ * or clear it when there are no rooms. UAT F4: removing or moving a room can shrink the footprint past
+ * where the door sits; without this the door would keep its displayed position but be SCORED (and
+ * reloaded) at the clamped position — it appears to jump when the home is reopened. This is the same
+ * clamp [placeDoor] applies at placement and [doorGeometry] applies when the plan is built, so
+ * displayed == scored == reloaded after any room edit too (the C15 guarantee, extended to edits).
+ */
+fun clampDoorToRooms(door: GridDoor?, rooms: List<GridRoom>): GridDoor? {
+    val d = door ?: return null
+    if (rooms.isEmpty()) return null
+    val minC = rooms.minOf { it.col }; val maxC = rooms.maxOf { it.col + it.w }
+    val minR = rooms.minOf { it.row }; val maxR = rooms.maxOf { it.row + it.h }
+    return when (d.side) {
+        DoorSide.N, DoorSide.S -> d.copy(cell = d.cell.coerceIn(minC, maxC - 1))
+        DoorSide.E, DoorSide.W -> d.copy(cell = d.cell.coerceIn(minR, maxR - 1))
+    }
+}

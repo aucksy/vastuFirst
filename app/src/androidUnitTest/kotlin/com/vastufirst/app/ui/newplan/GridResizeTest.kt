@@ -112,6 +112,30 @@ class GridResizeTest {
         )
     }
 
+    // ── door re-clamp on a room edit (F4) ────────────────────────────────────────────────────────
+
+    @Test
+    fun `a door past the shrunken footprint is pulled back onto it (F4)`() {
+        // Door on N at column 6; then the rooms shrink so the footprint only reaches column 4.
+        // The door must be pulled to the last footprint column (3), so displayed == scored == reloaded.
+        val shrunkRooms = listOf(room("a", 0, 0, 4, 3))   // footprint cols 0..4 → valid N cells 0..3
+        val clamped = clampDoorToRooms(GridDoor(DoorSide.N, 6), shrunkRooms)!!
+        assertEquals(DoorSide.N, clamped.side)
+        assertEquals(3, clamped.cell)
+    }
+
+    @Test
+    fun `a door already inside the footprint is left exactly where it is (F4)`() {
+        val rooms = listOf(room("a", 0, 0, 6, 6))
+        val door = GridDoor(DoorSide.E, 2)
+        assertEquals(door, clampDoorToRooms(door, rooms))   // unchanged → normal editing never nudges it
+    }
+
+    @Test
+    fun `removing the last room clears the door (F4)`() {
+        assertNull(clampDoorToRooms(GridDoor(DoorSide.S, 3), emptyList()))
+    }
+
     @Test
     fun `reopen does NOT restore plot margin beyond the rooms (documents S2)`() {
         // ⚠ FINDING S2/I5: the user drew a 10-wide plot but the rooms only reach column 6. On reopen

@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.grid
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -80,6 +81,8 @@ class GuidedGridInteractionTest {
         onNodeWithText("Pick a room below, then press the plan to place it.").assertExists()
         onNodeWithTag("editor.grid").assertExists()
         onNodeWithTag("editor.next").assertIsNotEnabled()
+        // S4: no dead-end door button on the empty grid (placeDoor is a no-op with no rooms).
+        onNodeWithText("Set the front door").assertDoesNotExist()
     }
 
     @Test

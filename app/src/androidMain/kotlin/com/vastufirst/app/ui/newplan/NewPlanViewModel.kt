@@ -122,7 +122,15 @@ class NewPlanViewModel(
 
     // --- mutations (each nudges a debounced recompute) ---
 
-    fun updateRooms(list: List<GridRoom>) { rooms = list; markDirty() }
+    fun updateRooms(list: List<GridRoom>) {
+        rooms = list
+        // Keep the door on the new footprint (or clear it if the last room went) so it can never be
+        // displayed in one place but scored/reloaded in another after a room edit (UAT F4). No-op when
+        // the door already sits inside the footprint, so normal editing doesn't nudge it.
+        val clampedDoor = clampDoorToRooms(door, list)
+        if (clampedDoor != door) door = clampedDoor
+        markDirty()
+    }
     fun updateDoor(d: GridDoor?) { door = d; markDirty() }
     fun updateNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
 

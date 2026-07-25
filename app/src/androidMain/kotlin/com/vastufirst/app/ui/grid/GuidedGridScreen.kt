@@ -701,12 +701,17 @@ fun GuidedGridContent(
                         )
                     }
                 }
-                VastuButton(
-                    text = if (door == null) "Set the front door" else "Move the front door",
-                    onClick = { doorMode = true; selectedId = null; armedType = null },
-                    style = VastuButtonStyle.SECONDARY,
-                    large = false,
-                )
+                // The door is placed by tapping a wall, and placeDoor does nothing until a room
+                // exists — so offering "Set the front door" on the empty grid is a dead end (UAT S4).
+                // Show it only once there's something to attach a wall to.
+                if (rooms.isNotEmpty()) {
+                    VastuButton(
+                        text = if (door == null) "Set the front door" else "Move the front door",
+                        onClick = { doorMode = true; selectedId = null; armedType = null },
+                        style = VastuButtonStyle.SECONDARY,
+                        large = false,
+                    )
+                }
             }
         }
 
