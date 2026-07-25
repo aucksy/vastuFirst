@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 15
-        versionName = "0.3.3"   // Wave 2 C14+C13: Mark-North smooth drag (memoized) + TalkBack can set North
+        versionCode = 16
+        versionName = "0.3.4"   // Wave 2 B12: distinct home names + rename + real "updated" time
     }
 
     buildTypes {

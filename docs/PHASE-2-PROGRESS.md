@@ -389,3 +389,38 @@ singleton → a stable, correct memo key.
 **Deferred to later in Wave 2:** C15 (minor a11y), B12 (all homes named "My home" + review-finding
 F3). **Group D** (L-shape footprint, score-is-a-ceiling labelling, the 8 rulings + ₹699) still awaits
 owner decisions.
+
+---
+
+## Wave 2 · B12 — distinct home names + rename + real "updated" time (v0.3.4, 2026-07-25)
+
+Every saved home was "My home" with a fixed "updated recently", which defeated the side-by-side
+compare. Now each home is its own thing:
+
+- **Auto-named "Home N".** A new home takes the next free number (highest existing + 1, so deleting
+  one never causes a duplicate — pure `nextHomeNumber`, unit-tested incl. the delete case). The
+  ViewModel holds the name; `save()` assigns it once at first save, `load()` restores it, and both
+  persistence paths (save + autosave) write the REAL name — which also closes review-finding **F3**
+  (autosave was clobbering the name with a constant).
+- **Rename on the list.** A labelled pencil per row opens a rename box (`RenameDialogContent`, reusing
+  the owned `VastuTextField` + the Settings `Dialog` pattern); Save is disabled while blank. New
+  `HomeViewModel.rename` → `PlanRepository.rename` → a `setName` query that deliberately does NOT bump
+  `updatedAt` (a rename must not reorder the updatedAt-DESC list above a just-scored home).
+- **Real "updated" time.** Plain-English `relativeUpdated` (pure, unit-tested): "Updated today /
+  yesterday / N days ago / on 3 Jul", replacing the hardcoded string. The home fixture uses a fixed
+  `now` so the golden is deterministic.
+
+**Proof / render:** the rename box is a new `home-rename` render+a11y screen (actually looked at,
+baseline + font2.0). ⚠**First CI caught a real latent a11y gap** in `VastuTextField` (never rendered
+before B12): its editable/touch node was ~25 dp tall (below the 48 dp floor) and unlabeled — 22 L1
+findings. Fixed at the component (fills its 48 dp box + carries its label as the accessible name),
+dropping home-rename to **0** L1 / 2 ATF (adopted). Also **home L1 baseline 1→3** (documented): the
+new pencil narrows each row, so long names ellipsise at font 2.0 / 320 dp — benign (full name shows
+at normal size + in the rename box; auto-names "Home N" are short).
+
+**Adversarial review before tagging:** no blockers. Name-assignment race is idempotent (both paths
+assign the same "Home N" since the draft isn't in the DB yet); rename of an open home is safe (the
+nav-scoped draft VM isn't active on the Home list, and `load()` re-reads the stored name).
+
+**Wave 2 remaining:** C15 (minor a11y). **Group D** (L-shape footprint, ₹699, the 8 rulings, free-score
+label) still awaits owner decisions.
