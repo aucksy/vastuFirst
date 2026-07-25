@@ -349,3 +349,43 @@ manifests (the only delta), then updating render-baseline.json per the gate's ow
 instruction — not a silent ratchet.
 
 Adversarial review before tagging: no blockers.
+
+---
+
+## Wave 2 · C14 + C13 — Mark-North drag perf + TalkBack can set North (v0.3.3, 2026-07-25)
+
+Two Mark-North-only fixes, one release. No engine change, no effect on the score, **no golden pixel
+change** (CI committed no new goldens; L1 `marknorth` stays 18, a11y `marknorth` stays 7 — both
+ratchets "no regression").
+
+- **C14 — the compass is smooth while dragging North.** Turning the dial recomputed the *entire*
+  plan picture — every room, colour and label — on every degree, even though only the needle moved;
+  on cheap phones that read as stutter. Two changes:
+  - `buildZoneMapModel` (`UiMappers.kt`) now **memoizes** its heavy room+wedge build in a `remember`
+    keyed on `(gridRooms, analysis, cols, rows, theme)` — deliberately **not** `north`. So a drag
+    (which changes only `north`) reuses the cached lists and rebuilds only the tiny `northDegrees`;
+    a real edit (new room-list instance / new analysis) invalidates and rebuilds. The verdict colours
+    are `@Composable` (they read the theme), so they're resolved just *outside* the memo and captured
+    — the theme key re-runs the block with fresh values on a theme switch. (First CI attempt caught
+    that I'd wrongly moved a `@Composable` call inside the memo — fixed before tagging.)
+  - `ZoneMap.kt` gives the `TextMeasurer` a real cache (`cacheSize = 64`, was the default 8). The
+    canvas lays out 20+ distinct strings per frame; the tiny default cache missed every frame and
+    re-laid-out all text on each degree. 64 holds a full plan's labels → cache hits.
+- **C13 — a TalkBack user can now *set* North with the dial or the slider.** Both exposed a value
+  (`progressBarRangeInfo`) but no *set-value* action, so the screen-reader "swipe to adjust" gesture
+  did nothing — a blind user was forced onto the ▲▼ / N-E-S-W fallback. Added a `setProgress` action
+  to `VastuSlider` and to `NorthDial` (the dial's label + range + action now live on the interactive
+  overlay, and the inner `ZoneMap` label is blanked, so TalkBack sees exactly **one** labelled,
+  adjustable node — no duplicate-label ATF flag). Google's ATF a11y gate does **not** check for a
+  set-value action, so a new headless test (`MarkNorthA11yTest`) invokes `setProgress` on each control
+  and asserts North actually moves — this is the "prove it", ran green in CI.
+
+**Adversarial review before tagging:** no blockers. Stale-cache risk (the C14 memo) checked: keys
+cover every input that changes room geometry/colour; `GridRoom` is a data class and `vm.rooms` is
+reassigned (never mutated) on every edit, so an edit produces a new value-unequal list → invalidates,
+while a drag keeps the same instance → cache holds. `VastuTheme.colors` is a `staticCompositionLocalOf`
+singleton → a stable, correct memo key.
+
+**Deferred to later in Wave 2:** C15 (minor a11y), B12 (all homes named "My home" + review-finding
+F3). **Group D** (L-shape footprint, score-is-a-ceiling labelling, the 8 rulings + ₹699) still awaits
+owner decisions.

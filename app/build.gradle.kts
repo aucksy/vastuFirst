@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 14
-        versionName = "0.3.2"   // Wave 2 B7: Mark-North room labels + colour key no longer collide at font 2.0
+        versionCode = 15
+        versionName = "0.3.3"   // Wave 2 C14+C13: Mark-North smooth drag (memoized) + TalkBack can set North
     }
 
     buildTypes {
