@@ -49,6 +49,18 @@ This was the first full build week, and a lot became real and testable. The app 
 - **The compass labels collided at large text sizes**, and a colour key word was cut in half. Fixed — everything stays readable however large you set your phone's text.
 - **A door placed past the edge of your rooms could shift position when you reopened the home.** Fixed — it now sits firmly on the edge of the house and stays there.
 
+### We stress-tested the plan builder, on purpose
+
+You mentioned seeing too many little issues when building a home on the grid, so we did a thorough, deliberately-harsh test of **everything a person can do there** — placing, moving, resizing, removing rooms, changing the plot size, and setting the door — trying the awkward combinations, not just the easy path. Most of it held up well, and we now have automatic checks that will catch it if any of these ever break again. Two real issues turned up, and both are fixed in this build:
+- **A dead-end button on the empty grid.** Before you'd placed any room, the app still offered "Set the front door" — but tapping the wall did nothing, because there's no house yet. It now appears only once you've placed a room.
+- **The door could drift after you deleted or moved a room.** If removing a room made the house smaller, the door stayed where it looked, but was actually counted somewhere else and jumped when you reopened. Now the door always stays glued to the edge of your actual house.
+
+We also confirmed some good news the hard way: **your score never changes just because of where on the grid you draw the home** — only the rooms, the door and the shape matter, exactly as intended.
+
+**Two small optional improvements** we can make if you'd like (neither is a problem for delivery, so they're your call, not a to-do):
+- When you reopen a home, if you'd left empty space around the rooms, the plot comes back trimmed to the rooms. Your rooms and score are unchanged — only the blank border shrinks. We can make it remember the exact plot size if you prefer.
+- A brand-new home you haven't scored yet lives only in memory until the first score; on a cheaper phone, if Android shuts the app to save memory, that half-drawn home could be lost. A home you've already scored is always safe. We can make the half-drawn one survive too.
+
 ### Access for people with disabilities
 - A blind person using Android's screen reader can now set North using the dial or slider — before, they could hear it but not change it. This matters for a paid product that should work for everyone.
 - More screen-reader polish: the home list, the "what brings you here?" cards, and the not-yet-available languages now describe themselves properly out loud, and the floor-plan editor remembers what you were doing if the screen rotates.
