@@ -29,26 +29,36 @@ round-trip test; `compose` = headless `runComposeUiTest` driving `GuidedGridCont
 
 ---
 
-## 0. Suspected-defect shortlist (test these first)
+## 0. Suspected-defect shortlist — with CI verdicts (2026-07-25)
 
-These are the cases where reading the code raised a real question. Everything else is confirmation.
+Read the code, wrote a test for each, ran it on CI. Verdicts:
 
-- **S1 (J3) — score translation-invariance on a tall plot.** On a 10-deep plot, rooms at rows 8–9
-  produce **negative** engine Y (`ey(row)=8−row`). If the engine isn't translation-invariant, the
-  *same* room shape scores differently high vs low on the grid. → `convert` + engine test.
-- **S2 (I5) — plot proportions lost on reopen.** `load()` re-derives the grid as the *tightest* box
-  around the rooms, so a wide/deep plot whose rooms don't reach the far edge reopens smaller. →
-  `compose`/`convert`. Likely **documented limitation**, but confirm it's not silently corrupting.
-- **S3 (K4) — unsaved draft lost on process death.** New draft (planId==null) isn't autosaved and the
-  VM holds rooms in plain state (no SavedStateHandle); `selectedId` is `rememberSaveable`. → code
-  inspection + `owner`. Real gap; decide whether to fix or document.
-- **S4 (H7) — door mode with zero rooms.** Entering door mode with no rooms placed, then tapping,
-  is a silent no-op with a misleading instruction. → `compose`. Minor UX.
-- **S5 (E9) — stepper vs drag resize asymmetry.** Steppers grow only toward bottom-right; drag pins
-  the opposite corner. Both intentional, but a "Wider" press on a room flush to the east wall is a
-  silent no-op. → `shared`/`compose`. Confirm it's intended and gives feedback where it should.
-- **S6 (H6) — door side re-classification on a 1-cell-thin footprint / ambiguous walls.** Confirm
-  `gridDoorFromPlan` never mis-labels N↔S or E↔W when the footprint is minimal. → `convert`.
+- **S1 (J3) — score translation-invariance on a tall plot.** ✅ **NOT A BUG (proven).** The engine
+  lays its pada grid on the rooms' bounding box, so position isn't a scoring term. The same home
+  scores identically wherever it sits, including rows 8–9 where engine-Y goes negative.
+  (`PlanConversionRoundTripTest` — passes.)
+- **S2 (I5) — plot proportions lost on reopen.** ⚠ **CONFIRMED, real but low-severity.** `load()`
+  re-derives the *tightest* grid around the rooms, so any empty plot margin the user drew beyond the
+  rooms is not restored. Rooms + score are exact; only the surrounding canvas shrinks. Pinned by
+  `GridResizeTest`. **Fix needs a saved-data change → owner proposal (below).**
+- **S3 (K4) — unsaved draft lost on process death.** ⚠ **CONFIRMED (code).** A brand-new draft isn't
+  autosaved and the VM holds it in plain state (no SavedStateHandle); a low-RAM OS kill loses the
+  rooms while `selectedId` restores dangling. **Owner proposal (below).**
+- **S4 (H7) — door mode / button with zero rooms.** ✅ **FIXED (Batch 1).** The door button is now
+  hidden on the empty grid (dead-end removed). `GuidedGridInteractionTest` asserts it's absent.
+- **S5 (E9) — stepper vs drag resize asymmetry.** ✅ **NOT A BUG (intended).** Steppers grow toward
+  bottom-right; a "Wider" press flush to the east wall is a clean no-op (clamped), never off-grid.
+  (`GridEditingRectTest` — passes.)
+- **S6 (H6) — door side re-classification on a thin footprint.** ✅ **NOT A BUG (proven).**
+  `gridDoorFromPlan` never mislabels N↔S or E↔W on 1-cell-deep/wide footprints.
+  (`PlanConversionRoundTripTest` — passes.)
+- **S7 (G4-family) — plot-shrink silently shrinks a lone oversized room.** ⚠ **CONFIRMED, benign.**
+  A room wider/taller than the shrunk plot is clamped to fit (no overlap, so the score isn't
+  corrupted) rather than the resize being refused. Pinned by `GridEditingRectTest`. Arguably correct
+  (a room can't exceed its plot); left as-is, documented.
+- **F4 — door not re-clamped when a room is removed/moved.** ✅ **FIXED (Batch 1).** The door now
+  follows the footprint on any room edit, so displayed == scored == reloaded (no jump). Pinned by
+  `GridResizeTest`.
 
 ---
 
@@ -223,6 +233,43 @@ Raw finger gestures, real haptics, and true process-death need a phone. Everythi
    should be announced and operable.
 
 ---
+
+## Open findings needing an owner decision
+
+Two confirmed findings aren't auto-fixed because the fix is a judgement call with a persistence/DI
+change I don't want to make unsupervised on a client build. Both are low-frequency; neither corrupts
+the score.
+
+### S2 — a reopened home can come back with a smaller plot outline
+
+**What happens.** The plot's width/depth isn't saved (only the rooms are). On reopen we re-draw the
+smallest plot that still contains the rooms. If you drew a big plot with empty space around the rooms,
+that empty margin isn't restored — the canvas comes back tighter. Your rooms and your score are exactly
+the same; only the blank border shrinks.
+
+**Options.**
+1. **Leave it.** Simplest, zero risk. The plot in this app is effectively "the rooms"; the score only
+   ever looks at the rooms, so the margin has no meaning. Most users draw rooms to the plot edge, so
+   they'd never notice.
+2. **Persist the plot shape** (recommended if the owner has seen this and dislikes it). Store two extra
+   numbers (plot width + depth) with each saved home. ~½ day: one small database column + migration,
+   save/load wiring, one test. Reversible.
+
+### S3 — a half-built new home can be lost if the phone kills the app mid-draft
+
+**What happens.** While you're still building a *brand-new* home (before the "Read my home" step), the
+draft lives only in memory. If Android force-kills the app to reclaim memory (more likely on cheap
+phones) and you come back, the rooms are gone. A home you've already scored once is safe (it auto-saves).
+
+**Options.**
+1. **Leave it, document it.** The window is small (only before the first score) and a returning user
+   just re-draws.
+2. **Keep the draft across a kill** (recommended for budget-phone testers). Save the in-progress draft
+   to Android's saved-instance state so it survives a kill. ~½–1 day; touches the draft's plumbing, so
+   it needs its own careful test pass. No new database rows.
+
+*My recommendation:* fold both into a small "Batch 2" only if the owner confirms they want them —
+otherwise they stay documented. They are **not** blockers for 4 Aug.
 
 ## Step 2 — automation plan (numbered)
 
