@@ -15,6 +15,8 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import com.vastufirst.designsystem.foundation.semanticsLabel
 import com.vastufirst.designsystem.theme.VastuTheme
 import kotlin.math.cos
@@ -121,8 +123,24 @@ fun ZoneMap(
             if (showLabels) {
                 val cx = tl.x + sz.width / 2f
                 val cy = tl.y + sz.height / 2f
-                drawCentered(measurer, r.label, Offset(cx, cy - 3f * s), zoneStyle.copy(color = roomLabelInk))
-                drawCentered(measurer, r.zoneText, Offset(cx, cy + 5f * s), zoneStyle.copy(color = r.zoneTextColor))
+                // Labels must never overrun their tile (B7): at font scale 2.0 the room name + verdict
+                // are ~2× taller and would spill over the neighbouring room. The tile is a fixed-size
+                // Canvas rect, so we clamp to it — cut the name to one ellipsised line no wider than the
+                // tile, and degrade by how much vertical room the current font scale actually leaves:
+                // both lines when they fit, name-only when only one line fits, nothing when even one
+                // line won't (the tile colour still carries the verdict).
+                val maxW = sz.width - 2f * s
+                val lineH = measurer.measure("Wg", zoneStyle).size.height.toFloat()
+                when {
+                    maxW <= 0f -> Unit
+                    sz.height >= lineH * 2.2f -> {
+                        val dy = lineH * 0.6f
+                        drawCentered(measurer, r.label, Offset(cx, cy - dy), zoneStyle.copy(color = roomLabelInk), maxW)
+                        drawCentered(measurer, r.zoneText, Offset(cx, cy + dy), zoneStyle.copy(color = r.zoneTextColor), maxW)
+                    }
+                    sz.height >= lineH -> drawCentered(measurer, r.label, Offset(cx, cy), zoneStyle.copy(color = roomLabelInk), maxW)
+                    else -> Unit
+                }
             }
         }
 
@@ -142,7 +160,24 @@ fun ZoneMap(
     }
 }
 
-private fun DrawScope.drawCentered(measurer: TextMeasurer, text: String, at: Offset, style: TextStyle) {
-    val res = measurer.measure(text, style)
+private fun DrawScope.drawCentered(
+    measurer: TextMeasurer,
+    text: String,
+    at: Offset,
+    style: TextStyle,
+    maxWidthPx: Float? = null,
+) {
+    val res = if (maxWidthPx != null) {
+        measurer.measure(
+            text = text,
+            style = style,
+            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
+            maxLines = 1,
+            constraints = Constraints(maxWidth = maxWidthPx.toInt().coerceAtLeast(0)),
+        )
+    } else {
+        measurer.measure(text, style)
+    }
     drawText(res, topLeft = Offset(at.x - res.size.width / 2f, at.y - res.size.height / 2f))
 }

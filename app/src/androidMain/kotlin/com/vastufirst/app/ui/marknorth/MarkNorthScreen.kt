@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -143,10 +145,17 @@ fun MarkNorthContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Legend() {
     val c = VastuTheme.colors
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+    // FlowRow, not Row (B7): at font scale 2.0 the four keys overrun the width and the last one
+    // ("Defect") snapped mid-word to a second line ("Defec/t"). FlowRow wraps whole items instead.
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+    ) {
         LegendItem("Ideal", c.verdictIdeal)
         LegendItem("Fine", c.verdictAcceptable)
         LegendItem("Not ideal", c.verdictSuboptimal)
