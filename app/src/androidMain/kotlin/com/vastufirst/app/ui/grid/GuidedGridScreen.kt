@@ -35,6 +35,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -266,9 +267,12 @@ fun GuidedGridContent(
     val bandLinesX = remember(cols) { bandBoundaries(cols).toSet() }
     val bandLinesY = remember(rows) { bandBoundaries(rows).toSet() }
 
-    var armedType by remember { mutableStateOf<RoomType?>(null) }
-    var selectedId by remember { mutableStateOf<String?>(null) }
-    var doorMode by remember { mutableStateOf(false) }
+    // rememberSaveable so a rotation (or the OS briefly reclaiming the app) doesn't drop what the user
+    // had selected / armed / the door step they were on (C15). RoomType is an enum → Serializable, so
+    // the default saver handles it.
+    var armedType by rememberSaveable { mutableStateOf<RoomType?>(null) }
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var doorMode by rememberSaveable { mutableStateOf(false) }
     // Replaced only when the SNAPPED cell changes, never per pointer event — so a drag recomposes
     // a handful of times, not sixty times a second (§4.7).
     var activeDrag by remember { mutableStateOf<ActiveDrag?>(null) }
@@ -284,13 +288,21 @@ fun GuidedGridContent(
     val selected = rooms.firstOrNull { it.id == selectedId }
 
     fun placeDoor(col: Int, row: Int) {
+        if (rooms.isEmpty()) return
         // Nearest outer wall to the tapped cell decides the side; the parallel coord is the position.
         val distN = row; val distS = rows - 1 - row; val distW = col; val distE = cols - 1 - col
+        // Clamp the position onto the ROOM FOOTPRINT (the house outline the engine actually scores is
+        // the rooms' bounding box). A door tapped past the rooms is snapped to the footprint when the
+        // plan is built, so without this it would appear to "jump" when the home is reopened (C15).
+        val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
+        val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
+        val cCol = col.coerceIn(fMinC, fMaxC - 1)
+        val cRow = row.coerceIn(fMinR, fMaxR - 1)
         val d = when (minOf(distN, distS, distW, distE)) {
-            distN -> GridDoor(DoorSide.N, col)
-            distS -> GridDoor(DoorSide.S, col)
-            distW -> GridDoor(DoorSide.W, row)
-            else -> GridDoor(DoorSide.E, row)
+            distN -> GridDoor(DoorSide.N, cCol)
+            distS -> GridDoor(DoorSide.S, cCol)
+            distW -> GridDoor(DoorSide.W, cRow)
+            else -> GridDoor(DoorSide.E, cRow)
         }
         onDoorChange(d)
     }

@@ -137,7 +137,7 @@ private fun PlanRow(plan: SavedPlan, now: Long, onOpen: (String) -> Unit, onRena
     VastuListRow(
         title = plan.name,
         subtitle = "$intentLabel · ${relativeUpdated(plan.updatedAt, now)}",
-        modifier = Modifier.clickableTap(onClick = { onOpen(plan.id) }),
+        modifier = Modifier.clickableTap(role = Role.Button, onClick = { onOpen(plan.id) }),
         trailing = {
             // The pencil is a child tap target: it consumes its own tap, so tapping it renames while
             // tapping the rest of the row still opens the home.

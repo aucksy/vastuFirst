@@ -23,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.SectionLabel
@@ -131,7 +134,9 @@ private fun SoonPill(text: String) {
         modifier = Modifier
             .clip(VastuTheme.shapes.full)
             .border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.full)
-            .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s3),
+            .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s3)
+            // A screen reader would otherwise read only the language name; say it's not selectable yet.
+            .semantics(mergeDescendants = true) { contentDescription = "$text — coming soon" },
     ) {
         VText(text = text, style = VastuTheme.type.bodySm, color = colors.textTertiary)
     }
@@ -150,7 +155,7 @@ private fun IntentCard(title: String, subtitle: String, selected: Boolean, onCli
                 if (selected) colors.primary else colors.borderDefault,
                 VastuTheme.shapes.md,
             )
-            .clickableTap(onClick = onClick)
+            .clickableTap(role = Role.Button, onClick = onClick)
             .padding(VastuTheme.spacing.s4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
