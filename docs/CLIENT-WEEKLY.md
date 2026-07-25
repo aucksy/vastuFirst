@@ -38,7 +38,7 @@ This was the first full build week, and a lot became real and testable. The app 
 - **Drawing your floor plan is finger-friendly.** Place rooms on a grid, then drag them around and resize them by their corners, one-handed.
 - **You can set your home's real proportions** — for example a plot that's wider than it is deep — so the drawing matches real life instead of always being a square.
 - **The compass screen is the centrepiece and now feels smooth.** Spin the dial to set North, and the score updates live as you turn it.
-- **Every home has its own name and shows when you last touched it.** New homes are named "Home 1", "Home 2"… and you can rename any of them to something meaningful like "Dwarka flat" — so comparing two homes actually makes sense. *(This is landing right now, at the end of the week.)*
+- **Every home has its own name and shows when you last touched it.** New homes are named "Home 1", "Home 2"… and you can rename any of them to something meaningful like "Dwarka flat" — so comparing two homes actually makes sense. Each home also shows when you last changed it ("Updated today", "Updated 2 days ago").
 - **The app is polished and honest.** It fits every screen size properly, has its own icon, gives gentle taps of feedback as you use it, and never shows a scary error — if a plan is too sparse to read, it gently asks for a bit more instead.
 
 ### Problems we found and fixed this week
