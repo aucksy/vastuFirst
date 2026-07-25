@@ -165,11 +165,19 @@ private fun hitTest(
     val radius = min(touchPx / 2f, cellPx * 0.5f)
     rooms.firstOrNull { it.id == selectedId }?.let { sel ->
         val r = sel.rect()
+        // A grip only wins when the finger is CLOSER to that corner than to the room's CENTRE — so
+        // the middle of a room always moves, at any room size or grid density. On a tiny (1×1) room
+        // the edge-clamp otherwise pulls the single grip far enough inward to swallow the room's own
+        // centre, and a move-tap resizes (owner #7). Confirmed by the fuzz harness (tools/…/sim.mjs).
+        val ccx = (r.col + r.w / 2f) * cellPx
+        val ccy = (r.row + r.h / 2f) * cellPx
+        val dToCentre = (pos.x - ccx) * (pos.x - ccx) + (pos.y - ccy) * (pos.y - ccy)
         for (h in handlesFor(r)) {
             val centre = handleCentre(r, h, cellPx, gridWpx, gridHpx, gripClampPx)
             val dx = pos.x - centre.x
             val dy = pos.y - centre.y
-            if (dx * dx + dy * dy <= radius * radius) return Hit(sel.id, r, h)
+            val dToGrip = dx * dx + dy * dy
+            if (dToGrip <= radius * radius && dToGrip < dToCentre) return Hit(sel.id, r, h)
         }
     }
     for (room in rooms.asReversed()) {

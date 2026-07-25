@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 19
-        versionName = "0.3.7"   // On-device gesture+layout fixes: live plot size, grip alignment, blank strip, plot-size line, door highlight, tools reorder
+        versionCode = 20
+        versionName = "0.3.8"   // Harness-found residuals: 1×1 centre-moves (not resize) + door re-clamp on plot resize
     }
 
     buildTypes {

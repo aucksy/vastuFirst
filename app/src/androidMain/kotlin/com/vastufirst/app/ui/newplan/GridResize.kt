@@ -62,6 +62,12 @@ fun resolveGridResize(
         }
         if (!fits) { newDoor = null; changed = true }
     }
+    // Re-clamp the surviving door onto the REPACKED footprint (the bbox the engine scores). A resize
+    // that repacks rooms can shrink/shift the footprint past the door — without this it would display
+    // in one place but be scored/reloaded in another (the F4 class of bug, on the plot-resize path
+    // that F4 missed). Same clamp updateRooms applies on a room edit. Found by the fuzz harness.
+    newDoor = clampDoorToRooms(newDoor, newRooms)
+    if (newDoor != door) changed = true
     return GridResizeResult(c, r, newRooms, newDoor, changed)
 }
 

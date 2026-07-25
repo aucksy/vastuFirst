@@ -137,6 +137,23 @@ class GridResizeTest {
     }
 
     @Test
+    fun `a plot resize that repacks rooms re-clamps the door onto the new footprint (harness finding)`() {
+        // Fuzz harness (tools/grid-prototype/sim.mjs) found this: a plot resize can repack a room to a
+        // lower column, shrinking the footprint PAST a door that still sits inside the grid — so the
+        // door survives the wall-check but ends up off the footprint (displayed ≠ scored/reloaded).
+        // This is the F4 class of bug on the plot-resize path, which the F4 fix (room edits) missed.
+        val rooms = listOf(room("a", 0, 0, 4, 2), room("b", 4, 0, 2, 2))   // footprint cols 0..6
+        val door = GridDoor(DoorSide.N, 4)                                  // valid on the 6-wide plot
+        // Shrink to 5 wide: b overlaps a after clamp → relocates to (0,2); footprint max col becomes 4.
+        val res = resolveGridResize(rooms, door, curCols = 6, curRows = 6, reqCols = 5, reqRows = 6)!!
+        assertEquals(5, res.cols)
+        assertNotNull("the door survives the wall-check (col 4 < 5)", res.door)
+        assertEquals(DoorSide.N, res.door!!.side)
+        assertEquals("door re-clamped from col 4 onto the repacked footprint (last col 3)", 3, res.door!!.cell)
+        assertTrue("moving the door is a change", res.changed)
+    }
+
+    @Test
     fun `reopen does NOT restore plot margin beyond the rooms (documents S2)`() {
         // ⚠ FINDING S2/I5: the user drew a 10-wide plot but the rooms only reach column 6. On reopen
         // the plot comes back ~6 wide, not 10 — the empty margin is lost because plot proportions are

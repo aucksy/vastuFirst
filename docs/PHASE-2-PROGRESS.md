@@ -491,3 +491,46 @@ no clip/overlap. L1 + a11y ratchets adopted the drop. Adversarial review before 
 **Device-glance checklist still open** (raw gestures/haptics/true process-death — can't be faked
 headlessly): touch-and-slide move, corner-grip drag resize, drag-into-another refusal, haptics,
 rotation persistence, process-death of a saved vs unsaved home, a real TalkBack pass. Listed in the UAT doc.
+
+---
+
+## On-device gesture + layout fixes — v0.3.7 then v0.3.8 (2026-07-25)
+
+Owner tried the guided grid on a real phone and reported ~9 issues the headless UAT missed —
+because they live in the finger/gesture/render code the pure tests and the unselected render
+harness never cross. Root-caused each in the real code (not more tests first).
+
+**v0.3.7 (commit c85ad59 / tag v0.3.7):**
+- ⭐**Gesture arbiter re-keyed on (cols, rows), not Unit.** It was frozen to the plot size from first
+  composition, so after ANY plot resize every finger calc used the OLD grid → rooms placed off-grid,
+  taps missing the room (selecting only from its edge), a room unable to move past the former bottom
+  until the screen was re-entered, order-of-operations mattering. ONE root cause behind owner #6.2 / #8
+  / #9 and much of #7. `size` was already live; only the captured cols/rows were stale.
+- **Corner grips:** removed the ~24 dp inward clamp (dots now sit ON the corners of wall-hugging rooms
+  — owner #4) and capped each grab-zone at half a cell; draw + hit share the clamp. placeDoor reads the
+  live room list.
+- **Layout:** chip is a top-of-plan overlay (no idle blank band, no move-lurch — owner #1); plot-size on
+  one wrapping FlowRow (#2); "Set the front door" is the primary highlighted button, secondary once set
+  (#3); selected-room tools reordered Remove/Done → Move → Size-on-one-line (#5).
+- Verified by looking at the re-recorded editor/editor-empty/editor-wide goldens (baseline + font2.0):
+  no blank strip, plot-size one line (wraps cleanly at font2.0), rectangular plot clean.
+
+**⭐NEW verification method (owner #11) — `tools/grid-prototype/sim.mjs`:** a headless behavioural mirror
+that ports the EXACT post-fix logic (pure maths + the finger/coordinate pipeline: handleCentre, hitTest,
+placementAt, the drag arbiter) WITH rectangular grids + plot resize (the dimension the old fixed-8×8
+prototype lacked), then fuzzes random ORDERS of operations, asserting invariants after every step —
+including **draw==hit at every room centre** and **a selected room's centre always moves** (the two
+checks that pinpoint #6.2/#7). Deterministic seeds → every failure reproduces.
+
+**v0.3.8 — two residual bugs the harness found (that v0.3.7 still had):**
+1. **1×1 room centre resized instead of moving** (owner #7 on tiny rooms): the edge-clamp pulls a 1×1's
+   single grip far enough inward to swallow its own centre. Fix = a grip only wins when the finger is
+   CLOSER to that corner than to the room centre → the middle always moves, at any size/density.
+2. **Door left off the footprint after a plot resize** (order-dependent, #9): `updateGrid`'s repack can
+   shrink/shift the footprint past the door, but only `updateRooms` re-clamped the door — the F4 fix
+   missed the plot-resize path. Fix = `resolveGridResize` now re-clamps the door onto the repacked
+   footprint (new `GridResizeTest` case pins it). Fuzz now clean over 120k random operation-orders.
+
+**Still on-device only (can't be faked headlessly):** raw drag feel/haptics/lag, true process-death,
+a real TalkBack pass. The grip-alignment + move-vs-resize + reordered-tools fixes aren't in the goldens
+(harness renders the editor unselected) — they're the owner's phone-test proofs.
