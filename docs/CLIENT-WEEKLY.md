@@ -57,6 +57,10 @@ You mentioned seeing too many little issues when building a home on the grid, so
 
 We also confirmed some good news the hard way: **your score never changes just because of where on the grid you draw the home** — only the rooms, the door and the shape matter, exactly as intended.
 
+### One more fix, from a practice version of the plan builder
+
+To keep testing the plan builder without needing a phone every time, we built a version of it that runs on a computer screen and behaves exactly like the phone — same drawing, dragging, resizing and door behaviour. Trying it and looking closely turned up one more thing worth fixing: **the front-door marker was sitting on the edge of the drawing area instead of on the wall of your actual house.** If you drew the plot a bit bigger than your rooms, the little door dot floated off in the empty space above or beside the house — even though it was always counted correctly on the house itself. Now the door dot sits right on the wall of your house, matching where it's counted and where it comes back when you reopen the home. It's in the latest build.
+
 **Two small optional improvements** we can make if you'd like (neither is a problem for delivery, so they're your call, not a to-do):
 - When you reopen a home, if you'd left empty space around the rooms, the plot comes back trimmed to the rooms. Your rooms and score are unchanged — only the blank border shrinks. We can make it remember the exact plot size if you prefer.
 - A brand-new home you haven't scored yet lives only in memory until the first score; on a cheaper phone, if Android shuts the app to save memory, that half-drawn home could be lost. A home you've already scored is always safe. We can make the half-drawn one survive too.

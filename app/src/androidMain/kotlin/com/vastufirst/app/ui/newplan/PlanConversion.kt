@@ -119,6 +119,28 @@ fun gridDoorFromPlan(plan: Plan, rooms: List<GridRoom>): GridDoor? {
     }
 }
 
+/**
+ * Where the door marker is DRAWN on the grid — on the rooms' FOOTPRINT edge (the house's outer wall),
+ * never the plot edge. Pure so the "displayed == scored == reloaded" guarantee is testable: this is the
+ * same footprint the engine scores ([doorGeometry] uses minR/maxR/minC/maxC), the same wall reopen lands
+ * on (the plot collapses to the footprint via [gridSizeForRooms]), and where [placeDoor] clamps the door.
+ * Drawing the perpendicular edge on the plot boundary instead left the door floating in the empty margin
+ * above/beside the house whenever the plot was drawn larger than the rooms. Found by rendering
+ * tools/grid-prototype/harness.html and looking. Returns the (col, row) cell the marker occupies.
+ */
+fun doorMarkerCell(door: GridDoor, rooms: List<GridRoom>, cols: Int, rows: Int): Pair<Int, Int> {
+    val minC = rooms.minOfOrNull { it.col } ?: 0
+    val maxC = rooms.maxOfOrNull { it.col + it.w } ?: cols
+    val minR = rooms.minOfOrNull { it.row } ?: 0
+    val maxR = rooms.maxOfOrNull { it.row + it.h } ?: rows
+    return when (door.side) {
+        DoorSide.N -> door.cell to minR
+        DoorSide.S -> door.cell to (maxR - 1)
+        DoorSide.W -> minC to door.cell
+        DoorSide.E -> (maxC - 1) to door.cell
+    }
+}
+
 /** The door centre + wall span on the footprint perimeter for the chosen side/cell. */
 private fun doorGeometry(d: GridDoor, minC: Int, maxC: Int, minR: Int, maxR: Int): Triple<Point, Point, Point> {
     fun ex(col: Double) = col

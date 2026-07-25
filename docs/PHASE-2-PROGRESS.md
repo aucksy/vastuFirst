@@ -534,3 +534,62 @@ checks that pinpoint #6.2/#7). Deterministic seeds → every failure reproduces.
 **Still on-device only (can't be faked headlessly):** raw drag feel/haptics/lag, true process-death,
 a real TalkBack pass. The grip-alignment + move-vs-resize + reordered-tools fixes aren't in the goldens
 (harness renders the editor unselected) — they're the owner's phone-test proofs.
+
+---
+
+## Autonomous harness deepening + door-marker fix — v0.3.9 (2026-07-25)
+
+Owner away; brief was to keep hunting gesture/geometry bugs with the fuzz harness, build an interactive
+owner-facing harness, LOOK at it, fix what it surfaces, and hand back a final on-device checklist.
+
+**Fuzz harness (`tools/grid-prototype/sim.mjs`) extended to close the coverage gaps** — still a byte-for-byte
+mirror of the Kotlin, now three suites:
+- **Suite A (editor gesture-order fuzz)** — drags are now genuinely **multi-step** (a path of 1–5
+  waypoints, not a single delta), so they exercise `snapWithHysteresis`'s path-dependent state and the
+  frozen-start-rect + blocked-carry machine that a single jump can never reach. Added a per-state
+  **reopen round-trip** invariant: every fuzzed editor state is pushed through `buildEnginePlan →
+  gridRoomsFromPlan/gridDoorFromPlan` and must come back byte-for-byte (rooms + door).
+- **Suite B (resizeBy invariants)** — the corner **opposite** the dragged handle stays pinned, the rect
+  never inverts below 1×1, never leaves the grid — for any delta, on rectangular grids.
+- **Suite C (round-trip / translation-invariance / thin-footprint door)** — over independent random
+  footprints: rooms + door survive save→reload byte-for-byte, the score is **translation-invariant**
+  (normalized engine geometry is identical after any shift — the portable half of "same home scores the
+  same"), and the door **side** is stable on 1-cell-thin footprints and recovers to exactly what
+  `clampDoorToRooms` stores (incl. deliberately off-footprint doors).
+- **All three bite** — proven by injecting deliberate faults (asymmetric row-flip, unpinned resize,
+  swapped E/W door test) and watching each go red — then **all pass on the real logic at 100 000
+  iterations each**. The expanded coverage found no residual gesture/geometry bug: v0.3.8's logic is
+  robust across these classes.
+
+**Interactive owner-facing harness (`tools/grid-prototype/harness.html`)** — supersedes the stale
+`index.html` (a fixed 8×8 with no resize; now a redirect stub). It drives the **exact** post-fix logic
+(the same ported maths + finger pipeline as the sim) with a **real pointer**, WITH rectangular plots and
+the plot-size steppers, in the app's Sage & Gold theme — so the owner can feel it, and I can render it
+headlessly and LOOK. It carries a **live self-check** that runs the same invariants on the on-screen
+plan after every change (goes red if anything ever breaks). Rendered and reviewed at six states
+(default, rectangular 10×5, a selected room with grips, a 1×1 room, a 1-cell-thin footprint, the
+side-by-side notes view).
+
+**⭐ Real bug found by LOOKING at the harness — the front-door marker drew on the PLOT edge, not the
+house.** The engine **scores** the door on the rooms' footprint, `placeDoor` **clamps** it to the
+footprint, and on **reopen** the plot collapses to the footprint — but the live `DoorMarker` drew the
+perpendicular wall on the plot boundary. So whenever the plot was drawn larger than the house (the
+default plan already does this), the door floated in the empty margin **above/beside** the rooms instead
+of sitting on the house's outer wall — displayed ≠ scored ≠ reloaded, the same class C15/F4 exist to
+close. **Fix:** extracted a pure `doorMarkerCell(door, rooms, cols, rows)` (PlanConversion.kt) that pins
+the marker to the footprint edge; `DoorMarker` now calls it; the harness mirrors it. Regression tests in
+`PlanConversionRoundTripTest` (marker lands on the footprint edge on every side incl. thin footprints,
+and agrees with where the built+reopened plan scores the door). **No golden change** — the screenshot
+fixture's sample home fills the 8×8 grid, so its door was already on the footprint edge; the fix only
+moves the marker on plots larger than the house (none of the goldens).
+
+**Adversarial review before tagging:** no blockers. `doorMarkerCell` is total (has `?:` fallbacks, never
+called with an empty room list since the door is cleared then); the door's parallel coordinate is always
+footprint-clamped upstream, so the marker sits fully on the footprint perimeter; the offset it feeds is
+always a valid in-grid cell. The change is strictly "draw where it is scored/reloaded".
+
+**Left parked (owner decisions, not touched):** the door-**side** selection still picks the nearest
+**plot** wall on tap (not the nearest footprint wall), so a tap in a large empty margin can choose a side
+that doesn't match the wall the user visually aimed at. It is self-consistent (drawn == scored on the
+chosen side) and only misfires when the plot is drawn much larger than the house — the same S2 empty-margin
+area the owner has parked. Noted as a candidate, not changed. Group D and S2/S3 remain owner calls.

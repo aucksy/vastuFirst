@@ -19,7 +19,9 @@
 // Ported pure maths — GridEditing.kt
 // ----------------------------------------------------------------------------------------------
 const MIN_GRID = 4, MAX_GRID = 10;
+const GRID = 8; // NewPlanViewModel.GRID — the row-flip origin (engine y = GRID − row). Must match Kotlin.
 const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const clampF = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // CellRect = {col,row,w,h}. right = col+w, bottom = row+h (exclusive).
 const right = (r) => r.col + r.w;
@@ -127,6 +129,72 @@ function clampDoorToRooms(door, rooms) {
 }
 
 // ----------------------------------------------------------------------------------------------
+// Ported grid⇄engine flip — PlanConversion.kt (buildEnginePlan / gridRoomsFromPlan / gridDoorFromPlan)
+// This is the reopen round-trip + the score's translation-invariance seam. A room's grid (col,row,w,h)
+// becomes an engine polygon with y = GRID − row (north grows as row decreases); the footprint is the
+// rooms' bounding box; the door becomes a point + wall span on that footprint perimeter. gridRoomsFromPlan
+// / gridDoorFromPlan are the exact inverses, used on reopen. We cannot run the Kotlin scoring engine in
+// JS, but the engine is PROVEN translation-invariant (Kotlin StressCorpusTest/rotation-invariance), so
+// "same normalized geometry ⇒ same score" — we assert the geometry, which is the portable half.
+// ----------------------------------------------------------------------------------------------
+const ex = (col) => col;          // east grows with column
+const ey = (row) => GRID - row;   // north grows as row decreases
+
+function doorGeometry(d, minC, maxC, minR, maxR) {
+  const alongCol = clampF(d.cell + 0.5, minC + 0.5, maxC - 0.5);
+  const alongRow = clampF(d.cell + 0.5, minR + 0.5, maxR - 0.5);
+  switch (d.side) {
+    case 'N': return { centre: { x: ex(alongCol), y: ey(minR) }, ws: { x: ex(minC), y: ey(minR) }, we: { x: ex(maxC), y: ey(minR) } };
+    case 'S': return { centre: { x: ex(alongCol), y: ey(maxR) }, ws: { x: ex(minC), y: ey(maxR) }, we: { x: ex(maxC), y: ey(maxR) } };
+    case 'E': return { centre: { x: ex(maxC), y: ey(alongRow) }, ws: { x: ex(maxC), y: ey(minR) }, we: { x: ex(maxC), y: ey(maxR) } };
+    case 'W': return { centre: { x: ex(minC), y: ey(alongRow) }, ws: { x: ex(minC), y: ey(minR) }, we: { x: ex(minC), y: ey(maxR) } };
+  }
+}
+
+function buildEnginePlan(rooms, door) {
+  if (rooms.length === 0) return null;
+  const engineRooms = rooms.map((r) => {
+    const x0 = ex(r.col), x1 = ex(r.col + r.w);
+    const yTop = ey(r.row), yBottom = ey(r.row + r.h);
+    return { id: r.id, type: r.type, polygon: [{ x: x0, y: yBottom }, { x: x1, y: yBottom }, { x: x1, y: yTop }, { x: x0, y: yTop }] };
+  });
+  const minC = Math.min(...rooms.map((r) => r.col)), maxC = Math.max(...rooms.map((r) => r.col + r.w));
+  const minR = Math.min(...rooms.map((r) => r.row)), maxR = Math.max(...rooms.map((r) => r.row + r.h));
+  const outline = [{ x: ex(minC), y: ey(maxR) }, { x: ex(maxC), y: ey(maxR) }, { x: ex(maxC), y: ey(minR) }, { x: ex(minC), y: ey(minR) }];
+  let doors = [];
+  if (door) { const g = doorGeometry(door, minC, maxC, minR, maxR); doors = [{ centre: g.centre, wallStart: g.ws, wallEnd: g.we, isMainEntrance: true }]; }
+  return { rooms: engineRooms, outline, doors };
+}
+
+function gridRoomsFromPlan(plan) {
+  return plan.rooms.map((room) => {
+    if (room.polygon.length === 0) return null;
+    const xs = room.polygon.map((p) => p.x), ys = room.polygon.map((p) => p.y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), yTop = Math.max(...ys), yBottom = Math.min(...ys);
+    return {
+      id: room.id, type: room.type,
+      col: Math.round(x0), row: Math.round(GRID - yTop),
+      w: Math.max(1, Math.round(x1 - x0)), h: Math.max(1, Math.round(yTop - yBottom)),
+    };
+  }).filter(Boolean);
+}
+
+function gridDoorFromPlan(plan, rooms) {
+  const d = plan.doors.find((x) => x.isMainEntrance);
+  if (!d) return null;
+  if (rooms.length === 0) return null;
+  const minC = Math.min(...rooms.map((r) => r.col)), maxC = Math.max(...rooms.map((r) => r.col + r.w));
+  const minR = Math.min(...rooms.map((r) => r.row)), maxR = Math.max(...rooms.map((r) => r.row + r.h));
+  const yNorth = GRID - minR, ySouth = GRID - maxR, xEast = maxC, xWest = minC, eps = 1e-6;
+  const horizontal = Math.abs(d.wallStart.y - d.wallEnd.y) < eps;
+  if (horizontal && Math.abs(d.centre.y - yNorth) < eps) return { side: 'N', cell: Math.round(d.centre.x - 0.5) };
+  if (horizontal && Math.abs(d.centre.y - ySouth) < eps) return { side: 'S', cell: Math.round(d.centre.x - 0.5) };
+  if (Math.abs(d.centre.x - xEast) < eps) return { side: 'E', cell: Math.round((GRID - d.centre.y) - 0.5) };
+  if (Math.abs(d.centre.x - xWest) < eps) return { side: 'W', cell: Math.round((GRID - d.centre.y) - 0.5) };
+  return null;
+}
+
+// ----------------------------------------------------------------------------------------------
 // Ported finger/coordinate pipeline — GuidedGridScreen.kt (POST-FIX)
 // ----------------------------------------------------------------------------------------------
 // Screen geometry the sim uses. The real screen picks a width; cellPx = gridWpx/cols == gridHpx/rows
@@ -212,27 +280,59 @@ function opPlace(ed, type, downPx, targetPx) {
   ed.door = clampDoorToRooms(ed.door, ed.rooms); // app: onRoomsChange → updateRooms → clampDoorToRooms
 }
 
-// Move or resize: finger down at downPx (hit decides), raw delta = targetPx-downPx, lift commits.
-function opDrag(ed, downPx, targetPx) {
+// Compose default touch slop, in the sim's dp-px units (the grid is drawn ~1dp:1px, cellPx = 312/cols).
+// A gesture must exceed this before it becomes a drag; below it, the finger-down's selection is the
+// whole effect (a tap). Mirrors awaitTouchSlopOrCancellation.
+const TOUCH_SLOP = 8;
+
+// Move or resize with a MULTI-STEP path — a sequence of absolute finger positions, not a single delta.
+// This is what actually exercises snapWithHysteresis (its `current` state carries between events, so the
+// final snapped cell is PATH-dependent) and the frozen-start-rect + blocked-carry state machine (rect
+// holds the last non-overlapping attempt while `attempted`/`steps` keep advancing). A single-delta drag
+// can never reach the intermediate hysteresis/blocked states, which is where a gesture bug hides.
+//
+// Mirrors GuidedGridScreen's arbiter exactly: down → hitTest (uses the CURRENT selectedId, so grips only
+// win on the already-selected room) → touch-slop gate → for each event, raw = (absolute pos − down),
+// advance(raw) derived ALWAYS from the frozen start rect. Lift commits `state.rect`.
+function opDrag(ed, downPx, pathPx) {
   const { cellPx, gridWpx, gridHpx } = geom(ed.cols, ed.rows);
   const hit = hitTest(downPx, ed.rooms, ed.selectedId, cellPx, gridWpx, gridHpx, HANDLE_TOUCH, HANDLE_GRIP / 2);
-  if (!hit) { ed.selectedId = null; return; }
+  if (!hit) { ed.selectedId = null; return; } // empty space → deselect, page could scroll
   if (hit.roomId !== ed.selectedId) ed.selectedId = hit.roomId;
+
+  // Touch-slop gate: the drag only begins once the finger has moved past TOUCH_SLOP from the down point.
+  // Before that a lift is a tap (the selection above was its whole effect). Find the first waypoint that
+  // crosses slop; if none do, it stays a tap.
+  const dist = (p) => Math.hypot(p[0] - downPx[0], p[1] - downPx[1]);
+  const startIdx = pathPx.findIndex((p) => dist(p) > TOUCH_SLOP);
+  if (startIdx === -1) return; // never exceeded slop → tap, selection only
+
   const handle = hit.handle;
-  const start = { ...hit.rect };
+  const start = { ...hit.rect }; // FROZEN — every attempt is derived from this, never from the preview
   const others = ed.rooms.filter((r) => r.id !== hit.roomId);
-  // Frozen start + RAW delta accumulator (never feed back the snapped value).
-  const rawX = targetPx[0] - downPx[0], rawY = targetPx[1] - downPx[1];
+
   let steps = [0, 0];
-  let rect = start;
-  const stepCol = snapWithHysteresis(rawX / cellPx, steps[0]);
-  const stepRow = snapWithHysteresis(rawY / cellPx, steps[1]);
-  if (stepCol !== steps[0] || stepRow !== steps[1]) {
+  let rect = start;      // last non-overlapping position (what a lift commits)
+  let attempted = start; // where the finger actually is (differs from rect only while blocked)
+  let blocked = false;
+  const advance = (raw) => {
+    const stepCol = snapWithHysteresis(raw[0] / cellPx, steps[0]);
+    const stepRow = snapWithHysteresis(raw[1] / cellPx, steps[1]);
+    if (stepCol === steps[0] && stepRow === steps[1]) return;
     const attempt = handle == null ? moveBy(start, stepCol, stepRow, ed.cols, ed.rows)
       : resizeBy(start, handle, stepCol, stepRow, ed.cols, ed.rows);
-    if (!anyOverlap(attempt, others)) rect = attempt;
+    const bad = anyOverlap(attempt, others);
     steps = [stepCol, stepRow];
+    attempted = attempt;
+    rect = bad ? rect : attempt;
+    blocked = bad;
+  };
+
+  // raw at each event = (absolute finger pos − down pos), exactly as the real accumulator sums to.
+  for (let i = startIdx; i < pathPx.length; i++) {
+    advance([pathPx[i][0] - downPx[0], pathPx[i][1] - downPx[1]]);
   }
+
   if (rect !== start && (rect.col !== start.col || rect.row !== start.row || rect.w !== start.w || rect.h !== start.h)) {
     const room = ed.rooms.find((r) => r.id === hit.roomId);
     Object.assign(room, rect);
@@ -309,6 +409,25 @@ function checkInvariants(ed) {
     if (hit && hit.roomId === r.id && hit.handle != null)
       problems.push(`CENTRE-RESIZES ${r.id} (${r.w}×${r.h}) handle=${hit.handle}`);
   }
+  // 6. REOPEN ROUND-TRIP: the whole live state must survive save→reload through the engine-plan flip.
+  // buildEnginePlan → gridRoomsFromPlan must return the rooms byte-for-byte (id/type/col/row/w/h), and
+  // gridDoorFromPlan must return the SAME door — every editor op keeps the door clamped onto the
+  // footprint, so the flip (which clamps identically) must recover it exactly. A mismatch means a home
+  // would reopen showing something different from what was scored (the F4/S2 class, proven per-state).
+  if (ed.rooms.length) {
+    const plan = buildEnginePlan(ed.rooms, ed.door);
+    const rr = gridRoomsFromPlan(plan);
+    if (rr.length !== ed.rooms.length) problems.push(`REOPEN-ROOM-COUNT ${rr.length}≠${ed.rooms.length}`);
+    else for (let i = 0; i < rr.length; i++) {
+      const a = rr[i], b = ed.rooms[i];
+      if (a.id !== b.id || a.type !== b.type || a.col !== b.col || a.row !== b.row || a.w !== b.w || a.h !== b.h)
+        problems.push(`REOPEN-ROOM ${b.id} ${b.col},${b.row},${b.w}x${b.h}→${a.col},${a.row},${a.w}x${a.h}`);
+    }
+    const rd = gridDoorFromPlan(plan, rr);
+    const want = ed.door;
+    const doorEq = (!rd && !want) || (rd && want && rd.side === want.side && rd.cell === want.cell);
+    if (!doorEq) problems.push(`REOPEN-DOOR ${want ? want.side + '@' + want.cell : 'null'}→${rd ? rd.side + '@' + rd.cell : 'null'}`);
+  }
   return problems;
 }
 
@@ -330,7 +449,23 @@ function randomOp(rng, ed) {
   const px = () => [rng() * ed.cols * cellPx, rng() * ed.rows * cellPx];
   const kind = rng();
   if (kind < 0.30 || ed.rooms.length === 0) return { op: 'place', type: TYPES[(rng() * TYPES.length) | 0], down: px(), target: px() };
-  if (kind < 0.55) return { op: 'drag', down: px(), target: px() };
+  if (kind < 0.55) {
+    // A MULTI-STEP path: 1–5 waypoints the finger slides through before lifting. This is what reaches
+    // the hysteresis/blocked intermediate states a single delta can't (task a). Bias the down point at
+    // a room or its grip so the drag actually grabs something a good fraction of the time.
+    const n = 1 + ((rng() * 5) | 0);
+    const path = [];
+    for (let i = 0; i < n; i++) path.push(px());
+    let down = px();
+    if (ed.rooms.length && rng() < 0.7) { // aim at a random room's centre or a corner
+      const r = ed.rooms[(rng() * ed.rooms.length) | 0];
+      const anchor = rng() < 0.5 ? drawnCentrePx(r, cellPx)
+        : [handleAnchor(r, handlesFor(r)[(rng() * handlesFor(r).length) | 0])[0] * cellPx,
+           handleAnchor(r, handlesFor(r)[(rng() * handlesFor(r).length) | 0])[1] * cellPx];
+      down = [anchor[0] + (rng() - 0.5) * cellPx, anchor[1] + (rng() - 0.5) * cellPx];
+    }
+    return { op: 'drag', down, path };
+  }
   if (kind < 0.75) return { op: 'plot', cols: 3 + ((rng() * 9) | 0), rows: 3 + ((rng() * 9) | 0) }; // deliberately over/under range to test clamp+refuse
   if (kind < 0.85) return { op: 'door', tap: px() };
   if (kind < 0.93) return { op: 'select', down: px() };
@@ -340,7 +475,7 @@ function randomOp(rng, ed) {
 function applyOp(ed, o) {
   switch (o.op) {
     case 'place': opPlace(ed, o.type, o.down, o.target); break;
-    case 'drag': opDrag(ed, o.down, o.target); break;
+    case 'drag': opDrag(ed, o.down, o.path); break;
     case 'plot': opPlotResize(ed, o.cols, o.rows); break;
     case 'door': opPlaceDoor(ed, o.tap); break;
     case 'select': { const { cellPx, gridWpx, gridHpx } = geom(ed.cols, ed.rows);
@@ -348,6 +483,130 @@ function applyOp(ed, o) {
       ed.selectedId = h ? h.roomId : null; break; }
     case 'remove': opRemove(ed); break;
   }
+}
+
+// ----------------------------------------------------------------------------------------------
+// Suite B — resizeBy invariants (pure, in isolation): the corner OPPOSITE the dragged handle stays
+// pinned, and the rect never inverts below 1×1 or leaves the grid, for ANY delta. The editor only ever
+// resizes with a handle from handlesFor(rect), so we test exactly those. (Task b.)
+// ----------------------------------------------------------------------------------------------
+function pinnedCorner(handle) {
+  // The corner that must NOT move, expressed as which of {col,row,right,bottom} of `start` is preserved.
+  switch (handle) {
+    case 'BR': return { col: true, row: true };        // TL pinned
+    case 'TL': return { right: true, bottom: true };    // BR pinned
+    case 'TR': return { col: true, bottom: true };      // BL pinned
+    case 'BL': return { right: true, row: true };       // TR pinned
+  }
+}
+function fuzzResize(iters) {
+  const fails = [];
+  for (let seed = 1; seed <= iters; seed++) {
+    const rng = mulberry32(seed * 2654435761);
+    const cols = MIN_GRID + ((rng() * (MAX_GRID - MIN_GRID + 1)) | 0);
+    const rows = MIN_GRID + ((rng() * (MAX_GRID - MIN_GRID + 1)) | 0);
+    const w = 1 + ((rng() * cols) | 0), h = 1 + ((rng() * rows) | 0);
+    const start = clampToGrid({ col: (rng() * cols) | 0, row: (rng() * rows) | 0, w, h }, cols, rows);
+    const hs = handlesFor(start);
+    const handle = hs[(rng() * hs.length) | 0];
+    const dCol = ((rng() * 41) | 0) - 20, dRow = ((rng() * 41) | 0) - 20;
+    const out = resizeBy(start, handle, dCol, dRow, cols, rows);
+    const problems = [];
+    if (out.w < 1 || out.h < 1) problems.push(`INVERT ${out.w}×${out.h}`);
+    if (out.col < 0 || out.row < 0 || right(out) > cols || bottom(out) > rows) problems.push(`OFFGRID ${out.col},${out.row},${out.w}x${out.h} in ${cols}×${rows}`);
+    const pin = pinnedCorner(handle);
+    if (pin.col && out.col !== start.col) problems.push(`UNPINNED-LEFT ${out.col}≠${start.col}`);
+    if (pin.row && out.row !== start.row) problems.push(`UNPINNED-TOP ${out.row}≠${start.row}`);
+    if (pin.right && right(out) !== right(start)) problems.push(`UNPINNED-RIGHT ${right(out)}≠${right(start)}`);
+    if (pin.bottom && bottom(out) !== bottom(start)) problems.push(`UNPINNED-BOTTOM ${bottom(out)}≠${bottom(start)}`);
+    if (problems.length) fails.push({ seed, start, handle, dCol, dRow, cols, rows, out, problems });
+  }
+  return fails;
+}
+
+// ----------------------------------------------------------------------------------------------
+// Suite C — reopen round-trip, score translation-invariance, and door-side stability on thin footprints
+// over independent random footprints (not just editor-reachable states). (Tasks c + d.)
+// ----------------------------------------------------------------------------------------------
+function randomRooms(rng, cols, rows, n) {
+  const placed = [];
+  for (let k = 0; k < n; k++) {
+    // Bias toward THIN rooms (w or h = 1) so the thin-footprint door classification is well exercised.
+    const w = Math.min(cols, rng() < 0.5 ? 1 : 1 + ((rng() * cols) | 0));
+    const h = Math.min(rows, rng() < 0.5 ? 1 : 1 + ((rng() * rows) | 0));
+    const slot = firstFreeSlot(w, h, cols, rows, placed);
+    if (!slot) continue;
+    placed.push({ id: `room-${k}`, type: TYPES[(rng() * TYPES.length) | 0], col: slot[0], row: slot[1], w, h });
+  }
+  return placed;
+}
+function normPlan(plan) {
+  // Subtract the footprint's min corner from every point: two configs that differ only by a rigid
+  // translation normalize to byte-identical geometry, which the (translation-invariant) engine scores
+  // identically. Comparing this is the portable proxy for "the score is translation-invariant".
+  const xs = plan.outline.map((p) => p.x), ys = plan.outline.map((p) => p.y);
+  const ox = Math.min(...xs), oy = Math.min(...ys);
+  const s = (p) => ({ x: p.x - ox, y: p.y - oy });
+  return JSON.stringify({
+    rooms: plan.rooms.map((r) => ({ id: r.id, type: r.type, polygon: r.polygon.map(s) })),
+    outline: plan.outline.map(s),
+    doors: plan.doors.map((d) => ({ centre: s(d.centre), wallStart: s(d.wallStart), wallEnd: s(d.wallEnd) })),
+  });
+}
+function translateConfig(rooms, door, dc, dr) {
+  const r2 = rooms.map((r) => ({ ...r, col: r.col + dc, row: r.row + dr }));
+  let d2 = door;
+  if (door) d2 = (door.side === 'N' || door.side === 'S') ? { ...door, cell: door.cell + dc } : { ...door, cell: door.cell + dr };
+  return [r2, d2];
+}
+function fuzzRoundTrip(iters) {
+  const fails = [];
+  for (let seed = 1; seed <= iters; seed++) {
+    const rng = mulberry32(seed * 40503 + 7);
+    const cols = MIN_GRID + ((rng() * (MAX_GRID - MIN_GRID + 1)) | 0);
+    const rows = MIN_GRID + ((rng() * (MAX_GRID - MIN_GRID + 1)) | 0);
+    const rooms = randomRooms(rng, cols, rows, 1 + ((rng() * 4) | 0));
+    if (rooms.length === 0) continue;
+    const minC = Math.min(...rooms.map((r) => r.col)), maxC = Math.max(...rooms.map((r) => r.col + r.w));
+    const minR = Math.min(...rooms.map((r) => r.row)), maxR = Math.max(...rooms.map((r) => r.row + r.h));
+    // A door, sometimes deliberately OFF the footprint so we prove recovery == clampDoorToRooms.
+    let door = null;
+    if (rng() < 0.85) {
+      const side = ['N', 'S', 'E', 'W'][(rng() * 4) | 0];
+      const off = rng() < 0.3; // stray beyond the footprint on purpose
+      const cell = (side === 'N' || side === 'S')
+        ? (off ? minC - 2 + ((rng() * (maxC - minC + 4)) | 0) : minC + ((rng() * (maxC - minC)) | 0))
+        : (off ? minR - 2 + ((rng() * (maxR - minR + 4)) | 0) : minR + ((rng() * (maxR - minR)) | 0));
+      door = { side, cell };
+    }
+    const problems = [];
+
+    // (c1) Rooms survive the flip byte-for-byte.
+    const plan = buildEnginePlan(rooms, door);
+    const rr = gridRoomsFromPlan(plan);
+    if (rr.length !== rooms.length) problems.push(`ROOM-COUNT ${rr.length}≠${rooms.length}`);
+    else for (let i = 0; i < rr.length; i++) {
+      const a = rr[i], b = rooms[i];
+      if (a.col !== b.col || a.row !== b.row || a.w !== b.w || a.h !== b.h) problems.push(`ROOM ${b.id} ${b.col},${b.row},${b.w}x${b.h}→${a.col},${a.row},${a.w}x${a.h}`);
+    }
+
+    // (c2/d) Door recovers to exactly what clampDoorToRooms would store — side AND cell, incl. thin/off.
+    const rd = gridDoorFromPlan(plan, rr);
+    const want = clampDoorToRooms(door, rooms);
+    const doorEq = (!rd && !want) || (rd && want && rd.side === want.side && rd.cell === want.cell);
+    if (!doorEq) problems.push(`DOOR ${door ? door.side + '@' + door.cell : 'null'} want ${want ? want.side + '@' + want.cell : 'null'} got ${rd ? rd.side + '@' + rd.cell : 'null'}`);
+
+    // (c3) Score translation-invariance: shift the whole config; normalized engine geometry is identical.
+    const dc = ((rng() * 13) | 0) - 6, dr = ((rng() * 13) | 0) - 6;
+    if (dc !== 0 || dr !== 0) {
+      const [r2, d2] = translateConfig(rooms, door, dc, dr);
+      const p2 = buildEnginePlan(r2, d2);
+      if (normPlan(plan) !== normPlan(p2)) problems.push(`TRANSLATION-VARIANT by (${dc},${dr})`);
+    }
+
+    if (problems.length) fails.push({ seed, cols, rows, rooms, door, problems });
+  }
+  return fails;
 }
 
 function run(iterations) {
@@ -390,4 +649,36 @@ function run(iterations) {
 }
 
 const iters = parseInt(process.argv[2] || '20000', 10);
+
+// Suite B + C run at a fixed, generous count independent of the editor-fuzz count — they're cheap.
+const resizeIters = Math.max(iters, 50000);
+const roundTripIters = Math.max(iters, 50000);
+
+console.log(`\n── Suite B: resizeBy invariants (opposite corner pinned, never inverts, stays in grid) ──`);
+const resizeFails = fuzzResize(resizeIters);
+if (resizeFails.length === 0) {
+  console.log(`✅ ${resizeIters} random resizes — opposite corner always pinned, w,h ≥ 1, never off-grid.`);
+} else {
+  const f = resizeFails[0];
+  console.log(`❌ ${resizeFails.length}/${resizeIters} resizes broke an invariant.`);
+  console.log(`   first: seed=${f.seed} start=${JSON.stringify(f.start)} handle=${f.handle} d=(${f.dCol},${f.dRow}) grid ${f.cols}×${f.rows}`);
+  console.log(`   out=${JSON.stringify(f.out)}  problems: ${f.problems.join(' | ')}`);
+  process.exitCode = 1;
+}
+
+console.log(`\n── Suite C: reopen round-trip · score translation-invariance · door side on thin footprints ──`);
+const rtFails = fuzzRoundTrip(roundTripIters);
+if (rtFails.length === 0) {
+  console.log(`✅ ${roundTripIters} random footprints — rooms + door survive save→reload byte-for-byte,`);
+  console.log(`   score is translation-invariant, and the door side is stable on thin (1-cell) footprints.`);
+} else {
+  const f = rtFails[0];
+  console.log(`❌ ${rtFails.length}/${roundTripIters} footprints broke an invariant.`);
+  console.log(`   first: seed=${f.seed} grid ${f.cols}×${f.rows} door=${f.door ? f.door.side + '@' + f.door.cell : 'null'}`);
+  console.log(`   rooms:`, f.rooms.map((r) => `${r.id}:${r.col},${r.row},${r.w}x${r.h}`).join('  '));
+  console.log(`   problems: ${f.problems.join(' | ')}`);
+  process.exitCode = 1;
+}
+
+console.log(`\n── Suite A: editor gesture-order fuzz (multi-step drags, hysteresis, blocked-carry) ──`);
 run(iters);

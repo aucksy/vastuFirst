@@ -70,6 +70,7 @@ import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
+import com.vastufirst.app.ui.newplan.doorMarkerCell
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -607,7 +608,7 @@ fun GuidedGridContent(
                     )
                 }
             }
-            door?.let { DoorMarker(it, cell, cols, rows) }
+            door?.let { DoorMarker(it, rooms, cell, cols, rows) }
 
             // Ghost + grips are DRAWN, not composed: they are pointer-only affordances (so they
             // carry no semantics — TalkBack reaches every one of these actions through the buttons
@@ -868,14 +869,15 @@ private fun PlacingBar(type: RoomType, onCancel: () -> Unit) {
 }
 
 @Composable
-private fun BoxScope.DoorMarker(door: GridDoor, cell: androidx.compose.ui.unit.Dp, cols: Int, rows: Int) {
+private fun BoxScope.DoorMarker(door: GridDoor, rooms: List<GridRoom>, cell: androidx.compose.ui.unit.Dp, cols: Int, rows: Int) {
     val colors = VastuTheme.colors
-    val (col, row) = when (door.side) {
-        DoorSide.N -> door.cell to 0
-        DoorSide.S -> door.cell to (rows - 1)
-        DoorSide.W -> 0 to door.cell
-        DoorSide.E -> (cols - 1) to door.cell
-    }
+    // The door sits on the HOUSE'S outer wall — the rooms' footprint (bounding box) — NOT the plot's
+    // outer edge. That is where the engine scores it (buildEnginePlan/doorGeometry use the footprint
+    // edges), where placeDoor clamps it, and where it lands on reopen (the plot collapses to the
+    // footprint). Drawing it on the plot edge instead left the door floating in the empty margin above/
+    // beside the rooms whenever the plot was drawn larger than the house — displayed ≠ scored ≠ reloaded.
+    // Found by rendering tools/grid-prototype/harness.html and looking (thin + default plans).
+    val (col, row) = doorMarkerCell(door, rooms, cols, rows)
     Box(
         modifier = Modifier
             .offset(x = cell * col, y = cell * row)

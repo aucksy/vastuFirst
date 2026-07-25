@@ -188,4 +188,52 @@ class PlanConversionRoundTripTest {
             assertTrue("score out of range for $type: ${a.score}", a.score in 0..100)
         }
     }
+
+    // ── door marker draws on the house's footprint edge, not the plot edge ────────────────────────
+    // Regression for the harness-found bug: when the plot is drawn larger than the rooms, the door
+    // marker floated in the empty margin (plot edge) instead of sitting on the house's outer wall —
+    // the wall the engine scores and reopen restores. `doorMarkerCell` pins it to the footprint.
+
+    @Test
+    fun `the door marker sits on the footprint edge when the plot is larger than the house`() {
+        // Rooms occupy a block that does NOT reach the 8x8 plot edges, so plot edges (0 and 7) differ
+        // from the footprint edges (minC=1, maxC=7, minR=1, maxR=6).
+        val rooms = listOf(
+            GridRoom("a", RoomType.LIVING, 1, 1, 3, 2),
+            GridRoom("b", RoomType.KITCHEN, 5, 4, 2, 2),
+        )
+        assertEquals(3 to 1, doorMarkerCell(GridDoor(DoorSide.N, 3), rooms, 8, 8)) // north edge = minR=1, not 0
+        assertEquals(3 to 5, doorMarkerCell(GridDoor(DoorSide.S, 3), rooms, 8, 8)) // south edge = maxR-1=5, not 7
+        assertEquals(1 to 2, doorMarkerCell(GridDoor(DoorSide.W, 2), rooms, 8, 8)) // west edge = minC=1, not 0
+        assertEquals(6 to 2, doorMarkerCell(GridDoor(DoorSide.E, 2), rooms, 8, 8)) // east edge = maxC-1=6, not 7
+    }
+
+    @Test
+    fun `the door marker cell matches the wall the plan actually scores, on every side`() {
+        // The marker's perpendicular coordinate must equal the wall the built plan puts the door on, so
+        // what the user sees == what is scored/reopened. Prove it against gridDoorFromPlan (the reopen
+        // classifier) for footprints that do NOT reach the plot edges, including 1-cell-thin ones.
+        val cases = listOf(
+            listOf(GridRoom("a", RoomType.LIVING, 2, 2, 3, 2)),          // small block inside an 8x8
+            listOf(GridRoom("a", RoomType.LIVING, 1, 3, 6, 1)),          // 1-cell-deep (thin) footprint
+            listOf(GridRoom("a", RoomType.LIVING, 3, 1, 1, 5)),          // 1-cell-wide (thin) footprint
+        )
+        for (rooms in cases) {
+            val minC = rooms.minOf { it.col }; val maxC = rooms.maxOf { it.col + it.w }
+            val minR = rooms.minOf { it.row }; val maxR = rooms.maxOf { it.row + it.h }
+            for (side in DoorSide.values()) {
+                val cellRange = if (side == DoorSide.N || side == DoorSide.S) minC until maxC else minR until maxR
+                val door = GridDoor(side, cellRange.first)
+                val (col, row) = doorMarkerCell(door, rooms, 8, 8)
+                when (side) {
+                    DoorSide.N -> assertEquals("N row", minR, row)
+                    DoorSide.S -> assertEquals("S row", maxR - 1, row)
+                    DoorSide.W -> assertEquals("W col", minC, col)
+                    DoorSide.E -> assertEquals("E col", maxC - 1, col)
+                }
+                val recovered = gridDoorFromPlan(plan(rooms, door), rooms)
+                assertEquals("reopened side for $side on $rooms", side, recovered?.side)
+            }
+        }
+    }
 }

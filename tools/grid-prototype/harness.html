@@ -1,0 +1,578 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VastuFirst — guided-grid harness (rectangular plots + resize)</title>
+<!--
+  harness.html — the INTERACTIVE, owner-facing twin of the guided-grid editor.
+
+  WHY THIS SUPERSEDES index.html: the old prototype was a fixed 8×8 with NO plot resize, so the whole
+  rectangular-grid + resize class of behaviour (the class the v0.3.7/0.3.8 on-device bugs lived in) was
+  invisible to it. This page drives the EXACT post-fix logic — the pure maths (GridEditing.kt /
+  GridResize.kt) and the finger/coordinate pipeline (GuidedGridScreen.kt: handleCentre, hitTest,
+  placementAt, the drag arbiter) — with a real pointer, rectangular plots, and the plot-size steppers.
+
+  It is a MIRROR of the Kotlin, kept byte-for-byte in lock-step with tools/grid-prototype/sim.mjs. The
+  owner can feel the real editor; I can render it headlessly and LOOK to catch visual issues.
+-->
+<style>
+  :root{
+    --paper:#F8F6F0; --surface:#F2EEE4; --raised:#FFFFFF;
+    --primary:#7A9E7E; --primary-dark:#5F8465; --secondary:#C9A227;
+    --ink:#232A22; --ink2:#4B5347; --ink3:#6B7064;
+    --line:#DDDED3; --line-strong:#B6BBA8; --focus:#4C7355; --bad:#C43F35;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:#e9e7e1;font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:var(--ink);
+       display:flex;gap:34px;padding:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .phone{width:376px;background:var(--paper);border-radius:30px;border:1px solid var(--line);
+         box-shadow:0 26px 64px -30px rgba(35,42,34,.5);overflow:hidden;flex:0 0 auto}
+  .bar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+       font:12px 'DM Mono',ui-monospace,monospace;color:#98A08C}
+  .body{padding:14px 26px 24px}
+  h2{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:22px;margin:0 0 5px}
+  p.sub{font-size:13.5px;line-height:1.45;color:var(--ink2);margin:0 0 12px;min-height:38px}
+  .compass{text-align:center;font:10px 'DM Mono',monospace;letter-spacing:.16em;color:var(--ink3)}
+  .we{display:flex;justify-content:space-between;font:10px 'DM Mono',monospace;letter-spacing:.16em;color:var(--ink3);margin-top:4px}
+
+  .stagewrap{position:relative;margin:6px auto 0;width:312px}
+  .stage{position:relative;width:312px;background:var(--surface);border:1px solid var(--line);
+         border-radius:12px;overflow:hidden;touch-action:none;user-select:none;cursor:pointer}
+  canvas.grid{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .tile{position:absolute;border-radius:8px;display:flex;align-items:center;justify-content:center;
+        font-size:12px;color:var(--ink);pointer-events:none;transition:none}
+  .tile.sel{box-shadow:0 0 0 2px var(--focus) inset}
+  .tile.lift{box-shadow:0 6px 14px -4px rgba(35,42,34,.5)}
+  .door{position:absolute;pointer-events:none;display:flex;align-items:center;justify-content:center}
+  .door b{width:16px;height:16px;border-radius:50%;background:var(--secondary);color:var(--paper);
+          font:10px 'DM Mono',monospace;display:flex;align-items:center;justify-content:center}
+  .chip{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);
+        font:11px 'DM Mono',monospace;padding:5px 11px;border-radius:999px;white-space:nowrap;pointer-events:none;
+        z-index:5;max-width:90%;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .1s}
+  .chip.on{opacity:1}
+  .chip.bad{background:var(--bad)}
+
+  .sect{font:600 11px/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:14px 0 8px}
+  .palette{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+  .chipbtn{flex:0 0 auto;padding:9px 14px;border-radius:999px;border:1px solid var(--line-strong);
+           background:var(--raised);font-size:13px;color:var(--ink);cursor:pointer}
+  .chipbtn.arm{background:var(--primary);border-color:var(--primary);color:#fff}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{flex:1;min-width:0;height:46px;border-radius:12px;border:none;background:var(--primary);color:#fff;
+       font-size:14px;font-weight:600;cursor:pointer}
+  .btn.sec{background:var(--raised);color:var(--ink);border:1px solid var(--line-strong)}
+  .btn.wide{width:100%;flex:none;margin-top:16px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .key{width:46px;height:46px;border-radius:999px;border:none;background:rgba(122,158,126,.16);
+       color:var(--primary-dark);font-size:17px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .stepgrp{display:flex;gap:8px;align-items:center}
+  .stepval{min-width:58px;text-align:center;font-size:13px;color:var(--ink2)}
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px}
+  .panel h3{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:18px;margin:0 0 2px}
+  .panel .meta{font-size:12px;color:var(--ink3);margin-bottom:12px}
+  .placing{display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:var(--paper);
+           border-radius:999px;padding:8px 8px 8px 18px;font-size:14px}
+  .placing button{width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:#fff;font-size:16px;cursor:pointer}
+
+  /* side panel — notes for the human reviewer, not part of the app */
+  .notes{width:330px;flex:0 0 auto;font-size:13.5px;line-height:1.5;color:var(--ink2)}
+  .notes h1{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:22px;color:var(--ink);margin:2px 0 10px}
+  .notes code{background:#dcdccf;padding:1px 5px;border-radius:5px;font-size:12px}
+  .notes ul{padding-left:18px;margin:8px 0}
+  .notes li{margin:5px 0}
+  .pill{display:inline-block;background:var(--primary);color:#fff;font-size:11px;padding:2px 9px;border-radius:999px;margin-bottom:10px}
+  .selftest{margin-top:14px;padding:12px 14px;border-radius:10px;background:#eef3ee;border:1px solid #cfe0cf;font-size:12.5px}
+  .selftest.fail{background:#fae9e7;border-color:#e6b6b0}
+  .selftest b{font-family:'DM Mono',monospace}
+</style>
+
+<div class="phone">
+  <div class="bar"><span>9:41</span><span>VastuFirst</span></div>
+  <div class="body">
+    <h2 id="title">Place your rooms</h2>
+    <p class="sub" id="sub"></p>
+    <div class="compass">NORTH</div>
+    <div class="stagewrap">
+      <div class="stage" id="stage">
+        <canvas class="grid" id="grid"></canvas>
+        <div class="chip" id="chip"></div>
+      </div>
+    </div>
+    <div class="we"><span>WEST</span><span>SOUTH</span><span>EAST</span></div>
+    <div id="toolbar"></div>
+    <button class="btn wide" id="next" disabled>Next — mark North</button>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="pill">exact app logic · rectangular plots + resize</div>
+  <h1>Guided-grid harness</h1>
+  <p>This is the real floor-plan builder from the app, running here so you can <b>feel it with your
+     finger/mouse</b> before it ships. It uses the identical placement, drag, resize, plot-size and
+     door maths as the phone.</p>
+  <ul>
+    <li>Pick a room, then press-and-slide on the plan — <b>lift to place</b>.</li>
+    <li>Touch a room and slide to <b>move</b> it; pull a <b>corner dot</b> to resize.</li>
+    <li>A room's <b>middle always moves</b>, at any size (even 1×1).</li>
+    <li>Rooms <b>can't overlap</b> — the preview turns red and the move is refused.</li>
+    <li><b>Plot size</b> changes the shape; rooms re-pack to fit, never overlap, never dropped.</li>
+    <li>The <b>front door</b> snaps to the nearest outer wall of your rooms.</li>
+  </ul>
+  <div class="selftest" id="selftest">running self-checks…</div>
+  <p style="margin-top:14px;color:var(--ink3);font-size:12px">The self-checks above run the same
+     invariants as the fuzz harness on the current on-screen state after every change — if anything
+     ever goes red here, that is a real bug.</p>
+</div>
+
+<script>
+// ==================================================================================================
+// PORTED — kept byte-for-byte in lock-step with tools/grid-prototype/sim.mjs (which mirrors the Kotlin).
+// ==================================================================================================
+const MIN_GRID = 4, MAX_GRID = 10, GRID = 8;
+const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const clampF   = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const right = (r) => r.col + r.w;
+const bottom = (r) => r.row + r.h;
+const overlaps = (a, b) => a.col < right(b) && b.col < right(a) && a.row < bottom(b) && b.row < bottom(a);
+const anyOverlap = (cand, others) => others.some((o) => overlaps(cand, o));
+
+function clampToGrid(r, cols, rows){
+  const w = clampInt(r.w, 1, cols), h = clampInt(r.h, 1, rows);
+  return { col: clampInt(r.col, 0, cols - w), row: clampInt(r.row, 0, rows - h), w, h };
+}
+function firstFreeSlot(w, h, cols, rows, placed){
+  if (w > cols || h > rows) return null;
+  for (let row = 0; row <= rows - h; row++)
+    for (let col = 0; col <= cols - w; col++)
+      if (!anyOverlap({ col, row, w, h }, placed)) return [col, row];
+  return null;
+}
+function fitWithoutOverlap(rects, cols, rows){
+  const placed = [];
+  for (const r of rects){
+    const clamped = clampToGrid(r, cols, rows);
+    if (!anyOverlap(clamped, placed)){ placed.push(clamped); continue; }
+    const slot = firstFreeSlot(clamped.w, clamped.h, cols, rows, placed);
+    if (!slot) return null;
+    placed.push({ col: slot[0], row: slot[1], w: clamped.w, h: clamped.h });
+  }
+  return placed;
+}
+const handlesFor = (r) => (r.w === 1 && r.h === 1) ? ['BR'] : ['TL','TR','BL','BR'];
+function handleAnchor(r, h){
+  switch(h){ case 'TL': return [r.col, r.row]; case 'TR': return [right(r), r.row];
+             case 'BL': return [r.col, bottom(r)]; case 'BR': return [right(r), bottom(r)]; }
+}
+function moveBy(start, dCol, dRow, cols, rows){
+  return { col: clampInt(start.col + dCol, 0, cols - start.w), row: clampInt(start.row + dRow, 0, rows - start.h), w: start.w, h: start.h };
+}
+function resizeBy(start, handle, dCol, dRow, cols, rows, minCells = 1){
+  const pullsRight = handle === 'TR' || handle === 'BR';
+  const pullsDown  = handle === 'BL' || handle === 'BR';
+  let col, w;
+  if (pullsRight){ col = start.col; w = clampInt(start.w + dCol, minCells, cols - start.col); }
+  else { col = clampInt(start.col + dCol, 0, right(start) - minCells); w = right(start) - col; }
+  let row, h;
+  if (pullsDown){ row = start.row; h = clampInt(start.h + dRow, minCells, rows - start.row); }
+  else { row = clampInt(start.row + dRow, 0, bottom(start) - minCells); h = bottom(start) - row; }
+  return { col, row, w, h };
+}
+function snapWithHysteresis(exact, current, stick = 0.15){
+  const target = Math.round(exact);
+  if (target === current) return current;
+  return Math.abs(exact - current) > 0.5 + stick ? target : current;
+}
+function cellIndex(coordPx, cellPx, grid){
+  if (cellPx <= 0) return 0;
+  return clampInt(Math.floor(coordPx / cellPx), 0, grid - 1);
+}
+function bandBoundaries(grid){
+  const bandOfCell = (i) => { const f = (i + 0.5) / grid; return f < 1/3 ? 0 : f < 2/3 ? 1 : 2; };
+  const out = [];
+  for (let i = 1; i < grid; i++) if (bandOfCell(i-1) !== bandOfCell(i)) out.push(i);
+  return out;
+}
+const ZONE_MAP = [['North-West','North','North-East'],['West','centre','East'],['South-West','South','South-East']];
+function zoneOfRect(rect, cols, rows){
+  const band = (c, n) => { const f = c / n; return f < 1/3 ? 0 : f < 2/3 ? 1 : 2; };
+  return ZONE_MAP[band(rect.row + rect.h/2, rows)][band(rect.col + rect.w/2, cols)];
+}
+
+// --- plot resize (GridResize.kt) ---
+function resolveGridResize(rooms, door, curCols, curRows, reqCols, reqRows){
+  const c = clampInt(reqCols, MIN_GRID, MAX_GRID), r = clampInt(reqRows, MIN_GRID, MAX_GRID);
+  if (c === curCols && r === curRows) return { cols: curCols, rows: curRows, rooms, door, changed: false };
+  const fitted = fitWithoutOverlap(rooms.map((x) => ({ col:x.col, row:x.row, w:x.w, h:x.h })), c, r);
+  if (!fitted) return null;
+  const repacked = rooms.map((room, i) => ({ ...room, col: fitted[i].col, row: fitted[i].row, w: fitted[i].w, h: fitted[i].h }));
+  let newDoor = door;
+  if (door){
+    const fits = (door.side === 'N' || door.side === 'S') ? (door.cell >= 0 && door.cell < c) : (door.cell >= 0 && door.cell < r);
+    if (!fits) newDoor = null;
+  }
+  newDoor = clampDoorToRooms(newDoor, repacked);
+  return { cols: c, rows: r, rooms: repacked, door: newDoor, changed: true };
+}
+function clampDoorToRooms(door, rooms){
+  if (!door) return null;
+  if (rooms.length === 0) return null;
+  const minC = Math.min(...rooms.map(r=>r.col)), maxC = Math.max(...rooms.map(r=>r.col+r.w));
+  const minR = Math.min(...rooms.map(r=>r.row)), maxR = Math.max(...rooms.map(r=>r.row+r.h));
+  if (door.side === 'N' || door.side === 'S') return { ...door, cell: clampInt(door.cell, minC, maxC-1) };
+  return { ...door, cell: clampInt(door.cell, minR, maxR-1) };
+}
+
+// --- grid⇄engine flip (PlanConversion.kt) — used only by the live self-check ---
+const ex = (col) => col, ey = (row) => GRID - row;
+function doorGeometry(d, minC, maxC, minR, maxR){
+  const alongCol = clampF(d.cell+0.5, minC+0.5, maxC-0.5), alongRow = clampF(d.cell+0.5, minR+0.5, maxR-0.5);
+  switch(d.side){
+    case 'N': return { centre:{x:ex(alongCol),y:ey(minR)}, ws:{x:ex(minC),y:ey(minR)}, we:{x:ex(maxC),y:ey(minR)} };
+    case 'S': return { centre:{x:ex(alongCol),y:ey(maxR)}, ws:{x:ex(minC),y:ey(maxR)}, we:{x:ex(maxC),y:ey(maxR)} };
+    case 'E': return { centre:{x:ex(maxC),y:ey(alongRow)}, ws:{x:ex(maxC),y:ey(minR)}, we:{x:ex(maxC),y:ey(maxR)} };
+    case 'W': return { centre:{x:ex(minC),y:ey(alongRow)}, ws:{x:ex(minC),y:ey(minR)}, we:{x:ex(minC),y:ey(maxR)} };
+  }
+}
+function buildEnginePlan(rooms, door){
+  if (rooms.length === 0) return null;
+  const er = rooms.map(r=>{ const x0=ex(r.col),x1=ex(r.col+r.w),yT=ey(r.row),yB=ey(r.row+r.h);
+    return { id:r.id, type:r.type, polygon:[{x:x0,y:yB},{x:x1,y:yB},{x:x1,y:yT},{x:x0,y:yT}] }; });
+  const minC=Math.min(...rooms.map(r=>r.col)),maxC=Math.max(...rooms.map(r=>r.col+r.w));
+  const minR=Math.min(...rooms.map(r=>r.row)),maxR=Math.max(...rooms.map(r=>r.row+r.h));
+  const outline=[{x:ex(minC),y:ey(maxR)},{x:ex(maxC),y:ey(maxR)},{x:ex(maxC),y:ey(minR)},{x:ex(minC),y:ey(minR)}];
+  let doors=[]; if(door){ const g=doorGeometry(door,minC,maxC,minR,maxR); doors=[{centre:g.centre,wallStart:g.ws,wallEnd:g.we,isMainEntrance:true}]; }
+  return { rooms:er, outline, doors };
+}
+function gridRoomsFromPlan(plan){
+  return plan.rooms.map(room=>{ if(!room.polygon.length) return null;
+    const xs=room.polygon.map(p=>p.x),ys=room.polygon.map(p=>p.y);
+    const x0=Math.min(...xs),x1=Math.max(...xs),yT=Math.max(...ys),yB=Math.min(...ys);
+    return { id:room.id, type:room.type, col:Math.round(x0), row:Math.round(GRID-yT), w:Math.max(1,Math.round(x1-x0)), h:Math.max(1,Math.round(yT-yB)) };
+  }).filter(Boolean);
+}
+function gridDoorFromPlan(plan, rooms){
+  const d = plan.doors.find(x=>x.isMainEntrance); if(!d||!rooms.length) return null;
+  const minC=Math.min(...rooms.map(r=>r.col)),maxC=Math.max(...rooms.map(r=>r.col+r.w));
+  const minR=Math.min(...rooms.map(r=>r.row)),maxR=Math.max(...rooms.map(r=>r.row+r.h));
+  const yN=GRID-minR,yS=GRID-maxR,xE=maxC,xW=minC,eps=1e-6, horiz=Math.abs(d.wallStart.y-d.wallEnd.y)<eps;
+  if(horiz&&Math.abs(d.centre.y-yN)<eps) return {side:'N',cell:Math.round(d.centre.x-0.5)};
+  if(horiz&&Math.abs(d.centre.y-yS)<eps) return {side:'S',cell:Math.round(d.centre.x-0.5)};
+  if(Math.abs(d.centre.x-xE)<eps) return {side:'E',cell:Math.round((GRID-d.centre.y)-0.5)};
+  if(Math.abs(d.centre.x-xW)<eps) return {side:'W',cell:Math.round((GRID-d.centre.y)-0.5)};
+  return null;
+}
+
+// --- finger pipeline (GuidedGridScreen.kt) ---
+const HANDLE_TOUCH = 48, HANDLE_GRIP = 12, TOUCH_SLOP = 8;
+function handleCentre(rect, handle, cellPx, gridWpx, gridHpx, clampPx){
+  const [c, r] = handleAnchor(rect, handle);
+  const clamp = (v, extent) => { const lo = Math.min(clampPx, extent/2), hi = Math.max(extent-clampPx, extent/2); return clampInt(v, lo, hi); };
+  return [clamp(c*cellPx, gridWpx), clamp(r*cellPx, gridHpx)];
+}
+function hitTest(pos, rooms, selectedId, cellPx, gridWpx, gridHpx, touchPx, gripClampPx){
+  const radius = Math.min(touchPx/2, cellPx*0.5);
+  const sel = rooms.find(r=>r.id===selectedId);
+  if (sel){
+    const ccx=(sel.col+sel.w/2)*cellPx, ccy=(sel.row+sel.h/2)*cellPx;
+    const dToCentre=(pos[0]-ccx)**2+(pos[1]-ccy)**2;
+    for (const h of handlesFor(sel)){
+      const [cx,cy]=handleCentre(sel,h,cellPx,gridWpx,gridHpx,gripClampPx);
+      const dToGrip=(pos[0]-cx)**2+(pos[1]-cy)**2;
+      if (dToGrip<=radius*radius && dToGrip<dToCentre) return { roomId:sel.id, rect:sel, handle:h };
+    }
+  }
+  for (let i=rooms.length-1;i>=0;i--){ const r=rooms[i];
+    if (pos[0]>=r.col*cellPx && pos[0]<right(r)*cellPx && pos[1]>=r.row*cellPx && pos[1]<bottom(r)*cellPx)
+      return { roomId:r.id, rect:r, handle:null };
+  }
+  return null;
+}
+function placementAt(pos, cellPx, rooms, cols, rows){
+  const col=cellIndex(pos[0],cellPx,cols), row=cellIndex(pos[1],cellPx,rows);
+  const rect={ col, row, w:Math.min(2,cols-col), h:Math.min(2,rows-row) };
+  return { rect, blocked: anyOverlap(rect, rooms) };
+}
+
+// ==================================================================================================
+// Live editor state + a real pointer bound to the same arbiter.
+// ==================================================================================================
+const ROOM_TYPES = [
+  { key:'Living',  color:'#2E8B8B' }, { key:'Kitchen', color:'#E0662F' },
+  { key:'Master',  color:'#8A6A45' }, { key:'Bedroom', color:'#6A5FB0' },
+  { key:'Pooja',   color:'#4E9A55' }, { key:'Toilet',  color:'#C43F35' },
+  { key:'Stairs',  color:'#C83B32' }, { key:'Study',   color:'#E0A21E' },
+  { key:'Dining',  color:'#2F6FBF' }, { key:'Store',   color:'#6B7064' },
+  { key:'Balcony', color:'#9A57B0' },
+];
+const colorOf = (t) => (ROOM_TYPES.find(x=>x.key===t) || ROOM_TYPES[9]).color;
+
+const ed = { rooms:[], door:null, cols:8, rows:8, selectedId:null, armedType:null, doorMode:false };
+let activeDrag = null;
+
+function newRoomId(){ let n=ed.rooms.length; while(ed.rooms.some(r=>r.id===`room-${n}`)) n++; return `room-${n}`; }
+const STAGE_W = 312;
+function geom(){ const cellPx = STAGE_W / ed.cols; return { cellPx, gridWpx: cellPx*ed.cols, gridHpx: cellPx*ed.rows }; }
+
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+const chip = document.getElementById('chip');
+
+function localPos(e){ const b = stage.getBoundingClientRect(); return [ (e.clientX-b.left)*(STAGE_W/b.width), (e.clientY-b.top)*(STAGE_W/b.width) ]; }
+
+function placeDoor(col, row){
+  if (ed.rooms.length===0) return;
+  const distN=row, distS=ed.rows-1-row, distW=col, distE=ed.cols-1-col;
+  const fMinC=Math.min(...ed.rooms.map(r=>r.col)),fMaxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
+  const fMinR=Math.min(...ed.rooms.map(r=>r.row)),fMaxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
+  const cCol=clampInt(col,fMinC,fMaxC-1), cRow=clampInt(row,fMinR,fMaxR-1);
+  const m=Math.min(distN,distS,distW,distE);
+  ed.door = m===distN?{side:'N',cell:cCol}:m===distS?{side:'S',cell:cCol}:m===distW?{side:'W',cell:cRow}:{side:'E',cell:cRow};
+}
+function commitRooms(list){ ed.rooms = list; ed.door = clampDoorToRooms(ed.door, list); }
+
+// The pointer arbiter — mirrors awaitEachGesture in GuidedGridScreen.
+stage.addEventListener('pointerdown', (e) => {
+  const { cellPx, gridWpx, gridHpx } = geom();
+  if (cellPx<=0) return;
+  const down = localPos(e);
+  stage.setPointerCapture(e.pointerId);
+
+  // door mode — a tap; place on up
+  if (ed.doorMode){
+    const onUp = (ev)=>{ const p=localPos(ev); placeDoor(cellIndex(p[0],cellPx,ed.cols), cellIndex(p[1],cellPx,ed.rows)); cleanup(); render(); };
+    const cleanup=()=>{ stage.removeEventListener('pointerup',onUp); };
+    stage.addEventListener('pointerup', onUp, { once:true });
+    return;
+  }
+
+  // take-off placement — ghost follows the finger, lift commits
+  if (ed.armedType){
+    let ghost = placementAt(down, cellPx, ed.rooms, ed.cols, ed.rows);
+    activeDrag = { roomId:null, type:ed.armedType, blocked:ghost.blocked, attempted:ghost.rect, rect:ghost.rect };
+    render();
+    const onMove=(ev)=>{ const p=localPos(ev); const n=placementAt(p,cellPx,ed.rooms,ed.cols,ed.rows);
+      if (n.rect.col!==ghost.rect.col||n.rect.row!==ghost.rect.row||n.rect.w!==ghost.rect.w||n.rect.h!==ghost.rect.h||n.blocked!==ghost.blocked){ ghost=n; activeDrag={roomId:null,type:ed.armedType,blocked:n.blocked,attempted:n.rect,rect:n.rect}; render(); } };
+    const onUp=()=>{ stage.removeEventListener('pointermove',onMove); activeDrag=null;
+      if (!ghost.blocked){ const id=newRoomId(); const r=ghost.rect; commitRooms(ed.rooms.concat([{id,type:ed.armedType,col:r.col,row:r.row,w:r.w,h:r.h}])); ed.selectedId=id; ed.armedType=null; }
+      render(); };
+    stage.addEventListener('pointermove', onMove);
+    stage.addEventListener('pointerup', onUp, { once:true });
+    return;
+  }
+
+  // move / resize
+  const hit = hitTest(down, ed.rooms, ed.selectedId, cellPx, gridWpx, gridHpx, HANDLE_TOUCH, HANDLE_GRIP/2);
+  if (!hit){ ed.selectedId=null; render(); return; }
+  if (hit.roomId!==ed.selectedId) ed.selectedId=hit.roomId;
+  render();
+
+  const handle=hit.handle, start={...hit.rect};
+  const others=ed.rooms.filter(r=>r.id!==hit.roomId);
+  let steps=[0,0], rect=start, attempted=start, blocked=false, slopPassed=false;
+  const advance=(raw)=>{
+    const stepCol=snapWithHysteresis(raw[0]/cellPx, steps[0]);
+    const stepRow=snapWithHysteresis(raw[1]/cellPx, steps[1]);
+    if (stepCol===steps[0] && stepRow===steps[1]) return;
+    const attempt = handle==null ? moveBy(start,stepCol,stepRow,ed.cols,ed.rows) : resizeBy(start,handle,stepCol,stepRow,ed.cols,ed.rows);
+    const bad=anyOverlap(attempt,others);
+    steps=[stepCol,stepRow]; attempted=attempt; rect=bad?rect:attempt; blocked=bad;
+    activeDrag={ roomId:hit.roomId, type:ed.rooms.find(r=>r.id===hit.roomId).type, blocked, attempted, rect };
+    render();
+  };
+  const onMove=(ev)=>{ const p=localPos(ev); const raw=[p[0]-down[0], p[1]-down[1]];
+    if (!slopPassed){ if (Math.hypot(raw[0],raw[1])<=TOUCH_SLOP) return; slopPassed=true;
+      activeDrag={ roomId:hit.roomId, type:ed.rooms.find(r=>r.id===hit.roomId).type, blocked:false, attempted:start, rect:start }; }
+    advance(raw); };
+  const onUp=()=>{ stage.removeEventListener('pointermove',onMove); activeDrag=null;
+    if (slopPassed && (rect.col!==start.col||rect.row!==start.row||rect.w!==start.w||rect.h!==start.h))
+      commitRooms(ed.rooms.map(r=>r.id===hit.roomId?{...r,col:rect.col,row:rect.row,w:rect.w,h:rect.h}:r));
+    render(); };
+  stage.addEventListener('pointermove', onMove);
+  stage.addEventListener('pointerup', onUp, { once:true });
+});
+
+// ==================================================================================================
+// Render — grid + bands + ghost + grips on canvas; tiles + door as DOM.
+// ==================================================================================================
+function render(){
+  const { cellPx, gridWpx, gridHpx } = geom();
+  const stageH = gridHpx;
+  stage.style.height = stageH + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = STAGE_W*dpr; canvas.height = stageH*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,STAGE_W,stageH);
+
+  const bandsX = new Set(bandBoundaries(ed.cols)), bandsY = new Set(bandBoundaries(ed.rows));
+  for (let i=1;i<ed.cols;i++){ const band=bandsX.has(i); ctx.strokeStyle=band?'#B6BBA8':'#DDDED3'; ctx.lineWidth=band?1.6:1;
+    ctx.beginPath(); ctx.moveTo(cellPx*i,0); ctx.lineTo(cellPx*i,stageH); ctx.stroke(); }
+  for (let i=1;i<ed.rows;i++){ const band=bandsY.has(i); ctx.strokeStyle=band?'#B6BBA8':'#DDDED3'; ctx.lineWidth=band?1.6:1;
+    ctx.beginPath(); ctx.moveTo(0,cellPx*i); ctx.lineTo(STAGE_W,cellPx*i); ctx.stroke(); }
+
+  // ghost (placing a new room, or a blocked move)
+  const d = activeDrag;
+  if (d && (d.roomId===null || d.blocked)){
+    const r=d.attempted, tint=d.blocked?'#C43F35':'#7A9E7E';
+    ctx.fillStyle=tint+'29'; roundRect(r.col*cellPx,r.row*cellPx,r.w*cellPx,r.h*cellPx,8); ctx.fill();
+    ctx.strokeStyle=tint; ctx.lineWidth=2; ctx.setLineDash([8,4]); roundRect(r.col*cellPx,r.row*cellPx,r.w*cellPx,r.h*cellPx,8); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // tiles
+  [...stage.querySelectorAll('.tile,.door')].forEach(n=>n.remove());
+  ed.rooms.forEach(room=>{
+    const r = (d && d.roomId===room.id) ? d.rect : room;
+    const el=document.createElement('div'); el.className='tile'+(room.id===ed.selectedId?' sel':'')+((d&&d.roomId===room.id)?' lift':'');
+    const c=colorOf(room.type);
+    el.style.left=(r.col*cellPx+3)+'px'; el.style.top=(r.row*cellPx+3)+'px';
+    el.style.width=(r.w*cellPx-6)+'px'; el.style.height=(r.h*cellPx-6)+'px';
+    el.style.background=c+'2E'; el.style.border='1px solid '+c;
+    if (r.w*r.h>=2){ el.textContent=room.type; }
+    stage.appendChild(el);
+  });
+  // door — drawn on the HOUSE's outer wall (the rooms' footprint edge), where it is scored/reloaded,
+  // NOT the plot edge (mirrors GuidedGridScreen.DoorMarker; the fix the harness surfaced).
+  if (ed.door && ed.rooms.length){
+    let col,row; const dd=ed.door;
+    const fMinC=Math.min(...ed.rooms.map(r=>r.col)),fMaxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
+    const fMinR=Math.min(...ed.rooms.map(r=>r.row)),fMaxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
+    if (dd.side==='N'){col=dd.cell;row=fMinR;} else if(dd.side==='S'){col=dd.cell;row=fMaxR-1;}
+    else if(dd.side==='W'){col=fMinC;row=dd.cell;} else {col=fMaxC-1;row=dd.cell;}
+    const el=document.createElement('div'); el.className='door';
+    el.style.left=(col*cellPx)+'px'; el.style.top=(row*cellPx)+'px'; el.style.width=cellPx+'px'; el.style.height=cellPx+'px';
+    el.innerHTML='<b>D</b>'; stage.appendChild(el);
+  }
+  // grips on selected room
+  const sel = ed.rooms.find(r=>r.id===ed.selectedId);
+  if (sel){ const shown=(d&&d.roomId===sel.id)?d.rect:sel;
+    for (const h of handlesFor(shown)){ const [cx,cy]=handleCentre(shown,h,cellPx,gridWpx,gridHpx,HANDLE_GRIP/2);
+      ctx.fillStyle='#FFFFFF'; ctx.beginPath(); ctx.arc(cx,cy,HANDLE_GRIP/2,0,7); ctx.fill();
+      ctx.fillStyle='#5F8465'; ctx.beginPath(); ctx.arc(cx,cy,HANDLE_GRIP/2-2,0,7); ctx.fill(); }
+  }
+
+  // chip
+  let chipText=null, chipBad=false;
+  if (d && d.blocked){ chipText="Rooms can’t overlap"; chipBad=true; }
+  else if (d){ chipText=describe(d.type, d.rect); }
+  else if (sel){ chipText=describe(sel.type, sel); }
+  chip.className='chip'+(chipText?' on':'')+(chipBad?' bad':''); chip.textContent=chipText||'';
+
+  // titles / subtitle
+  document.getElementById('title').textContent = ed.doorMode ? 'Mark your front door' : 'Place your rooms';
+  document.getElementById('sub').textContent =
+    ed.doorMode ? 'Tap the outer wall where your main entrance is.' :
+    sel ? 'Drag the room to move it, or pull a corner to resize.' :
+    ed.armedType ? 'Press the plan where this room goes. Slide to adjust, lift to place.' :
+    ed.rooms.length===0 ? 'Pick a room below, then press the plan to place it.' :
+    'Touch a room and slide to move it, or add another below.';
+
+  document.getElementById('next').disabled = ed.rooms.length===0;
+  renderToolbar();
+  selfCheck();
+}
+function describe(type, rect){ return `${type} · ${rect.w}×${rect.h} · ${zoneOfRect(rect, ed.cols, ed.rows)}`; }
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// ==================================================================================================
+// Toolbar — context-sensitive, mirrors the app's `when` block.
+// ==================================================================================================
+function renderToolbar(){
+  const tb = document.getElementById('toolbar');
+  const sel = ed.rooms.find(r=>r.id===ed.selectedId);
+  tb.innerHTML='';
+  if (sel){
+    const p=document.createElement('div'); p.className='panel';
+    p.innerHTML = `<h3>${sel.type}</h3><div class="meta">${sel.w} × ${sel.h} · ${zoneOfRect(sel,ed.cols,ed.rows)}</div>`;
+    p.appendChild(rowOf([ btn('Remove','sec',()=>{ commitRooms(ed.rooms.filter(r=>r.id!==sel.id)); ed.selectedId=null; render(); }),
+                          btn('Done','',()=>{ ed.selectedId=null; render(); }) ]));
+    p.appendChild(sect('Move'));
+    p.appendChild(rowOf([ key('◀',()=>nudge(sel,-1,0)), key('▲',()=>nudge(sel,0,-1)), key('▼',()=>nudge(sel,0,1)), key('▶',()=>nudge(sel,1,0)) ]));
+    p.appendChild(sect('Size'));
+    const sz=document.createElement('div'); sz.className='row';
+    sz.appendChild(stepper(`W ${sel.w}`, ()=>resize(sel,-1,0), ()=>resize(sel,1,0)));
+    sz.appendChild(stepper(`H ${sel.h}`, ()=>resize(sel,0,-1), ()=>resize(sel,0,1)));
+    p.appendChild(sz);
+    tb.appendChild(p);
+  } else if (ed.doorMode){
+    tb.appendChild(btnWide('Done placing door', ()=>{ ed.doorMode=false; render(); }));
+  } else if (ed.armedType){
+    const b=document.createElement('div'); b.className='placing';
+    b.innerHTML=`<span>Placing: ${ed.armedType}</span>`; const x=document.createElement('button'); x.textContent='✕';
+    x.onclick=()=>{ ed.armedType=null; render(); }; b.appendChild(x); tb.appendChild(b);
+  } else {
+    tb.appendChild(sect('Plot size'));
+    const ps=document.createElement('div'); ps.className='row';
+    ps.appendChild(stepper(`${ed.cols} wide`, ()=>grid(ed.cols-1,ed.rows), ()=>grid(ed.cols+1,ed.rows)));
+    ps.appendChild(stepper(`${ed.rows} deep`, ()=>grid(ed.cols,ed.rows-1), ()=>grid(ed.cols,ed.rows+1)));
+    tb.appendChild(ps);
+    tb.appendChild(sect('Add a room'));
+    const pal=document.createElement('div'); pal.className='palette';
+    ROOM_TYPES.forEach(t=>{ const c=document.createElement('button'); c.className='chipbtn'; c.textContent=t.key;
+      c.onclick=()=>{ ed.armedType=t.key; ed.selectedId=null; render(); }; pal.appendChild(c); });
+    tb.appendChild(pal);
+    if (ed.rooms.length){
+      tb.appendChild(btnWide(ed.door==null?'Set the front door':'Move the front door',
+        ()=>{ ed.doorMode=true; ed.selectedId=null; ed.armedType=null; render(); }, ed.door!=null));
+    }
+  }
+}
+function nudge(sel,dc,dr){ const next=moveBy(sel,dc,dr,ed.cols,ed.rows); apply(sel,next); }
+function resize(sel,dw,dh){ const next={col:sel.col,row:sel.row,w:clampInt(sel.w+dw,1,ed.cols-sel.col),h:clampInt(sel.h+dh,1,ed.rows-sel.row)}; apply(sel,next); }
+function apply(sel,next){ if (anyOverlap(next, ed.rooms.filter(r=>r.id!==sel.id))) return;
+  commitRooms(ed.rooms.map(r=>r.id===sel.id?{...r,...next}:r)); render(); }
+function grid(c,r){ const res=resolveGridResize(ed.rooms,ed.door,ed.cols,ed.rows,c,r); if(!res) return;
+  ed.cols=res.cols; ed.rows=res.rows; ed.rooms=res.rooms; ed.door=res.door; render(); }
+
+function sect(t){ const d=document.createElement('div'); d.className='sect'; d.textContent=t; return d; }
+function rowOf(kids){ const d=document.createElement('div'); d.className='row'; kids.forEach(k=>d.appendChild(k)); return d; }
+function btn(t,cls,fn){ const b=document.createElement('button'); b.className='btn'+(cls?' '+cls:''); b.textContent=t; b.onclick=fn; return b; }
+function btnWide(t,fn,sec){ const b=document.createElement('button'); b.className='btn wide'+(sec?' sec':''); b.style.marginTop='14px'; b.textContent=t; b.onclick=fn; return b; }
+function key(g,fn){ const b=document.createElement('button'); b.className='key'; b.textContent=g; b.onclick=fn; return b; }
+function stepper(label,minus,plus){ const g=document.createElement('div'); g.className='stepgrp';
+  g.appendChild(key('−',minus)); const v=document.createElement('div'); v.className='stepval'; v.textContent=label; g.appendChild(v); g.appendChild(key('+',plus)); return g; }
+
+// ==================================================================================================
+// Live self-check — the SAME invariants the fuzz harness asserts, run on the on-screen state.
+// ==================================================================================================
+function selfCheck(){
+  const el=document.getElementById('selftest'); const problems=[];
+  for (let i=0;i<ed.rooms.length;i++) for (let j=i+1;j<ed.rooms.length;j++) if (overlaps(ed.rooms[i],ed.rooms[j])) problems.push('overlap');
+  for (const r of ed.rooms) if (r.col<0||r.row<0||right(r)>ed.cols||bottom(r)>ed.rows||r.w<1||r.h<1) problems.push('off-grid');
+  const { cellPx, gridWpx, gridHpx } = geom();
+  for (const r of ed.rooms){ const c=[(r.col+r.w/2)*cellPx,(r.row+r.h/2)*cellPx];
+    const h=hitTest(c,ed.rooms,null,cellPx,gridWpx,gridHpx,HANDLE_TOUCH,HANDLE_GRIP/2); if(!h||h.roomId!==r.id) problems.push('draw≠hit'); }
+  for (const r of ed.rooms){ const c=[(r.col+r.w/2)*cellPx,(r.row+r.h/2)*cellPx];
+    const h=hitTest(c,ed.rooms,r.id,cellPx,gridWpx,gridHpx,HANDLE_TOUCH,HANDLE_GRIP/2); if(h&&h.roomId===r.id&&h.handle!=null) problems.push('centre-resizes'); }
+  if (ed.rooms.length){ const plan=buildEnginePlan(ed.rooms,ed.door); const rr=gridRoomsFromPlan(plan);
+    let ok = rr.length===ed.rooms.length && rr.every((a,i)=>{const b=ed.rooms[i];return a.col===b.col&&a.row===b.row&&a.w===b.w&&a.h===b.h;});
+    if(!ok) problems.push('reopen-rooms');
+    const rd=gridDoorFromPlan(plan,rr); const want=ed.door;
+    const de=(!rd&&!want)||(rd&&want&&rd.side===want.side&&rd.cell===want.cell); if(!de) problems.push('reopen-door'); }
+  if (problems.length){ el.className='selftest fail'; el.innerHTML='✕ <b>'+[...new Set(problems)].join(', ')+'</b> — this is a real bug.'; }
+  else { el.className='selftest'; el.innerHTML='✓ all invariants hold on the current plan (no overlap, in-grid, draw==hit, centre moves, reopen round-trips).'; }
+}
+
+// seed with a small starter plan so the harness opens on something to touch. A ?scenario= param sets
+// up specific states so I can render each headlessly and LOOK (rectangular plot, a selected room with
+// grips, an overlap, a thin footprint, the min/max grid) — the same LOOK-before-shipping gate the app has.
+function seed(scenario){
+  switch(scenario){
+    case 'rect': // a wide rectangular plot 10×5, rooms re-packed to fit
+      ed.cols=10; ed.rows=5;
+      commitRooms([{id:'room-0',type:'Living',col:0,row:0,w:4,h:3},{id:'room-1',type:'Kitchen',col:5,row:2,w:3,h:2},{id:'room-2',type:'Pooja',col:8,row:0,w:2,h:2}]);
+      ed.door={side:'E',cell:2}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break;
+    case 'selected': // a selected room shows its four corner grips
+      commitRooms([{id:'room-0',type:'Master',col:2,row:2,w:3,h:3},{id:'room-1',type:'Toilet',col:6,row:1,w:1,h:1}]);
+      ed.selectedId='room-0'; break;
+    case 'tiny': // a 1×1 room selected — single grip, centre still moves
+      ed.cols=6; ed.rows=6; commitRooms([{id:'room-0',type:'Pooja',col:2,row:2,w:1,h:1}]); ed.selectedId='room-0'; break;
+    case 'thin': // a 1-cell-deep footprint (thin-footprint door classification)
+      ed.cols=8; ed.rows=8; commitRooms([{id:'room-0',type:'Living',col:1,row:3,w:6,h:1}]); ed.door={side:'S',cell:3}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break;
+    case 'min': ed.cols=4; ed.rows=4; commitRooms([{id:'room-0',type:'Living',col:0,row:0,w:2,h:2},{id:'room-1',type:'Kitchen',col:2,row:2,w:2,h:2}]); break;
+    case 'max': ed.cols=10; ed.rows=10; commitRooms([{id:'room-0',type:'Living',col:0,row:0,w:5,h:4},{id:'room-1',type:'Bedroom',col:6,row:6,w:3,h:3}]); ed.door={side:'W',cell:1}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break;
+    default:
+      commitRooms([{id:'room-0',type:'Living',col:1,row:1,w:3,h:2},{id:'room-1',type:'Kitchen',col:5,row:4,w:2,h:2}]);
+      ed.door={side:'N',cell:2}; ed.door=clampDoorToRooms(ed.door,ed.rooms);
+  }
+}
+seed(new URLSearchParams(location.search).get('scenario') || '');
+render();
+</script>

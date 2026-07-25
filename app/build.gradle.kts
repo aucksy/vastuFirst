@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 20
-        versionName = "0.3.8"   // Harness-found residuals: 1×1 centre-moves (not resize) + door re-clamp on plot resize
+        versionCode = 21
+        versionName = "0.3.9"   // Harness-found: door marker draws on the house's footprint edge (not the plot edge)
     }
 
     buildTypes {
