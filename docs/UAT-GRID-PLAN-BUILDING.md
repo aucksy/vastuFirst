@@ -220,6 +220,12 @@ Read the code, wrote a test for each, ran it on CI. Verdicts:
 
 ## Owner device-test checklist (can't be faked headlessly)
 
+⭐ **MOVED — the canonical running list is now `docs/DEVICE-TEST-CHECKLIST.md`.** It is the single
+place manual tests accumulate (appending to it is part of "done" for any fix a machine can't prove),
+it is written for the owner's phone, and it carries every item below plus the ones added since.
+**Add new manual tests there, not here**, so there is never a second, staler list. The items below are
+kept only as the UAT catalogue's own record of which cases route to a device.
+
 Raw finger gestures, real haptics, and true process-death need a phone. Everything else is CI-proven.
 
 1. **Touch-and-slide to move** (D7): touch an unselected room and keep sliding — it should select on

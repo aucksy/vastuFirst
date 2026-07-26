@@ -683,3 +683,21 @@ legitimately succeeds).
 - **A second finger resting on the plan mid-drag** is not consumed by the arbiter, so the page could
   scroll under an in-flight drag. Compose's own `detectDragGestures` behaves the same way and it can't
   be reproduced headlessly — added to the owner's device checklist rather than blind-fixed.
+
+---
+
+## ⭐ Manual-test list — `docs/DEVICE-TEST-CHECKLIST.md` (2026-07-26)
+
+Every test that needs a real finger, a real phone or a real pair of eyes now lives in **one running
+list**: `docs/DEVICE-TEST-CHECKLIST.md`. It replaces the copies that had accumulated in the UAT doc
+and in these progress notes (both now point at it).
+
+**Appending to it is part of "done".** Any fix whose proof is a haptic, a raw gesture, true
+process-death, a screen-reader phrase, or "look at it" gets a row there, tagged with the build it
+arrived in — so the owner can keep building a test pass at their own pace instead of the work
+blocking on a device round-trip. Reported results move to its "Settled" section with a date, so a
+verdict is never lost and nothing is tested twice.
+
+It also deliberately probes the three known gaps (S2 plot margin, S3 draft lost on process kill,
+S8 undrawn house outline in the door step) — the point being to learn whether they matter enough to
+fix before 4 August, rather than guessing on the owner's behalf.
