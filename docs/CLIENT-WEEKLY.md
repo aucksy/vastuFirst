@@ -61,6 +61,18 @@ We also confirmed some good news the hard way: **your score never changes just b
 
 To keep testing the plan builder without needing a phone every time, we built a version of it that runs on a computer screen and behaves exactly like the phone — same drawing, dragging, resizing and door behaviour. Trying it and looking closely turned up one more thing worth fixing: **the front-door marker was sitting on the edge of the drawing area instead of on the wall of your actual house.** If you drew the plot a bit bigger than your rooms, the little door dot floated off in the empty space above or beside the house — even though it was always counted correctly on the house itself. Now the door dot sits right on the wall of your house, matching where it's counted and where it comes back when you reopen the home. It's in the latest build.
 
+### Two buttons that were quietly not working, and a screen-reader slip
+
+We kept testing the plan builder on the computer version and fixed three more things:
+
+- **The plot-size buttons sometimes did nothing, with no explanation.** If your rooms already filled the plot, or you'd reached the smallest or largest plot the app allows, pressing "−" or "+" simply had no effect — no message, no buzz, nothing. It looked like a broken button. Now the phone gives a short "no" buzz, the same one you already get when you try to drag a room on top of another, so you can tell the difference between "that didn't work" and "the app is stuck".
+- **The front door didn't say which wall it was on properly.** For someone using Android's screen reader, the door was announced as "front door on the N wall" — just the letter. Everywhere else in the app we say "North-East", "South" and so on, so this now reads "front door on the **north** wall".
+- **We added a picture test for the door fix from last time.** The door-on-the-house fix had no automatic picture check behind it, because the sample home we photograph fills the whole grid — so a photo couldn't tell the fixed and broken versions apart. There's now a second picture, of a house drawn smaller than the plot, so if that fix ever breaks we'll see it immediately instead of you finding it on your phone.
+
+We also ran the harshest automated testing yet — every way of building a home, done four hundred thousand times in random orders, including the button-only route a blind user relies on. Nothing else came up, which is genuine good news about the parts we've already fixed.
+
+**One thing we noticed and left for you to decide:** on the "mark your front door" step we say "tap the outer wall", but if you've drawn the plot bigger than your rooms, the outline of your actual house isn't drawn on screen — so it's a bit of a guess which line is "the outer wall". Everything still lands and counts correctly wherever you tap. We can draw a faint outline of your house on that step if you'd like; it's a small piece of work but it changes how the screen looks, so we'd rather you saw it first.
+
 **Two small optional improvements** we can make if you'd like (neither is a problem for delivery, so they're your call, not a to-do):
 - When you reopen a home, if you'd left empty space around the rooms, the plot comes back trimmed to the rooms. Your rooms and score are unchanged — only the blank border shrinks. We can make it remember the exact plot size if you prefer.
 - A brand-new home you haven't scored yet lives only in memory until the first score; on a cheaper phone, if Android shuts the app to save memory, that half-drawn home could be lost. A home you've already scored is always safe. We can make the half-drawn one survive too.

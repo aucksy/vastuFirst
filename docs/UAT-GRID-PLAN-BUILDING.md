@@ -54,8 +54,14 @@ Read the code, wrote a test for each, ran it on CI. Verdicts:
   (`PlanConversionRoundTripTest` — passes.)
 - **S7 (G4-family) — plot-shrink silently shrinks a lone oversized room.** ⚠ **CONFIRMED, benign.**
   A room wider/taller than the shrunk plot is clamped to fit (no overlap, so the score isn't
-  corrupted) rather than the resize being refused. Pinned by `GridEditingRectTest`. Arguably correct
+  *corrupted*) rather than the resize being refused. Pinned by `GridEditingRectTest`. Arguably correct
   (a room can't exceed its plot); left as-is, documented.
+  ⚠ **Correction (v0.3.10):** an earlier note here said "score intact". That is wrong — a room that is
+  clamped smaller *does* move the score, because the engine scores the rooms. Nothing is corrupted and
+  no rooms overlap, but the user's number changes with no notice. The behaviour is unchanged (it is a
+  judgement call: shrink the room, or refuse the plot change as an infeasible pack already does), and
+  the **silent** half is now partly closed — a plot key that outright refuses buzzes (see below).
+  Worth an owner decision alongside S2 if they'd rather the plot key refused than resized the room.
 - **F4 — door not re-clamped when a room is removed/moved.** ✅ **FIXED (Batch 1).** The door now
   follows the footprint on any room edit, so displayed == scored == reloaded (no jump). Pinned by
   `GridResizeTest`.
@@ -270,6 +276,25 @@ phones) and you come back, the rooms are gone. A home you've already scored once
 
 *My recommendation:* fold both into a small "Batch 2" only if the owner confirms they want them —
 otherwise they stay documented. They are **not** blockers for 4 Aug.
+
+### S8 — "Tap the outer wall" but the outer wall isn't drawn (v0.3.10, observed, NOT changed)
+
+**What happens.** In the door step the instruction reads *"Tap the outer wall where your main
+entrance is."* The house's outline — the bounding box of the placed rooms, which is the wall the
+engine actually scores the door against — is **never drawn**. When the plot is bigger than the house
+the user sees separate room tiles floating on a grid and has to guess where "the outer wall" is.
+
+**Why it's parked, not fixed.** It is the visual half of the already-parked door-side nuance (the
+side is chosen from the nearest **plot** wall, not the nearest footprint wall) and of S2 (the empty
+plot margin). Drawing a house outline is a new visual element on a screen the owner has been
+reviewing, so it is a design call, not a bug fix — and the two parked items above decide what the
+outline should even mean. Found by rendering the door step from `harness.html` and looking (it had
+never been rendered before). Self-consistent today: wherever the door lands, drawn == scored ==
+reloaded.
+
+**Options.** (1) Leave it. (2) Draw a faint outline of the house during the door step only (~half a
+day, no geometry change). (3) Do it together with the footprint-wall side selection, so the tap picks
+the wall the user visually aimed at — the fuller fix, and the one that makes the instruction true.
 
 ## Step 2 — automation plan (numbered)
 

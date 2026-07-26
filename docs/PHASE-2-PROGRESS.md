@@ -588,8 +588,98 @@ called with an empty room list since the door is cleared then); the door's paral
 footprint-clamped upstream, so the marker sits fully on the footprint perimeter; the offset it feeds is
 always a valid in-grid cell. The change is strictly "draw where it is scored/reloaded".
 
-**Left parked (owner decisions, not touched):** the door-**side** selection still picks the nearest
+**Left parked at v0.3.9 (owner decisions, not touched):** the door-**side** selection still picks the nearest
 **plot** wall on tap (not the nearest footprint wall), so a tap in a large empty margin can choose a side
 that doesn't match the wall the user visually aimed at. It is self-consistent (drawn == scored on the
 chosen side) and only misfires when the plot is drawn much larger than the house — the same S2 empty-margin
 area the owner has parked. Noted as a candidate, not changed. Group D and S2/S3 remain owner calls.
+
+---
+
+## Autonomous pass 2 — button-path fuzz + two silent-failure fixes — v0.3.10 (2026-07-26)
+
+No owner bug reports pending, so this continued the autonomous hunt. The four suites now run at
+100 000 iterations each and are all clean; the two fixes below were found by **looking**, not by the
+fuzz — the same way v0.3.9's door-marker bug was.
+
+### New coverage — `sim.mjs` Suite D (the WCAG button paths)
+
+The fuzz mirrored the **finger** pipeline but never the **button** pipeline, and that arithmetic is
+hand-written inside the Composable rather than in the tested `shared` module:
+
+- `SelectedRoomTools.onResize` clamps with `(w+dw).coerceIn(1, cols-col)` — a *different code path*
+  from `resizeBy`, which is the only resize the gesture fuzz ever reaches.
+- `RoomTile`'s semantics `onClick` is a *different selection path* from `hitTest` — no pointer maths
+  at all. It is the only way a TalkBack user selects a room.
+- The plot-size keys go straight to `onGridChange`.
+
+Suite D fuzzes the move arrows, size steppers, plot keys and tile-select **interleaved with real
+drags** (a user mixes both constantly; a screen-reader user uses nothing else). Three invariants were
+added that *every* suite now carries:
+
+1. **Door marker** — `doorMarkerCell` must land on the footprint wall matching the door's side, and be
+   a real in-grid cell. The v0.3.9 fix had **no automated pin at all**; this is it.
+2. **Plot range** — the plot never leaves `MIN_GRID..MAX_GRID`.
+3. **Reopen plot** — the grid `load()` re-derives (`gridSizeForRooms`) must *contain* the reopened
+   rooms. It clamps to `MAX_GRID`, so a stored room reaching past that would reopen hanging outside
+   the plot, putting the finger and the drawing in different coordinate spaces — the exact v0.3.7
+   class of bug, arriving through the database instead of a stepper. Unreachable today (both bundled
+   samples fit 8×8 and rooms can only be drawn inside a ≤10 grid); pinned so it stays that way.
+
+**All five checks proven to bite by fault injection** — reverting `doorMarkerCell` to the plot edge
+reproduces the v0.3.9 bug and fires in ~23 % of sequences; a stepper clamped to the plot width, a
+missing overlap refusal, a `cols`-for-`rows` slip in the move arrow, and an origin-only
+`gridSizeForRooms` all go red. Then **all four suites pass at 100 000 iterations each**. Suite D found
+no residual geometry bug: the button paths were already correct.
+
+### Fix 1 — the plot-size keys failed silently
+
+A plot key can decline for two reasons the user cannot see: the **rooms don't fit** at that size
+(`resolveGridResize` refuses rather than overlap them, because an overlap makes the engine score the
+buried room twice) or the plot is at its **4/10 limit**. In both cases the key did *nothing at all* —
+the same light tap as a key that worked. Every other refusal on this screen already says "no" (an
+overlapping move or resize fires `haptics.reject()`), so these were the one control here that failed
+silently, and a key that cannot act reads as a broken button.
+
+`GridResizeResult` gains **`honoured`** (false when the request was clamped to a bound and nothing
+moved); `updateGrid` returns it, `null` still means "rooms won't fit", and the keys turn either into
+the same "no" buzz the arrows give. The decision stays in the pure, tested layer.
+
+### Fix 2 — the door announced "N" to a screen reader
+
+`"Front door on the ${door.side.name} wall"` spoke a bare enum letter — the one place a raw enum
+reached a user, in an app whose entire vocabulary is directions and whose audience skews older and
+less phone-literate. `Zone.short()` already spells zones out ("North-East"); new `DoorSide.spoken()`
+does the same, so it now reads **"Front door on the north wall"**.
+
+### Fix 3 — the v0.3.9 door fix finally has a rendered proof
+
+New golden **`editor-margin`**: a house drawn *smaller* than the plot with its door on the house's
+north wall. No golden rendered this state before — the sample home fills the 8×8 grid, so its door was
+already on the footprint edge and the screenshots could not tell the fixed and broken versions apart.
+The v0.3.9 fix therefore shipped with no rendered proof in the app itself, which CLAUDE.md §2b does
+not allow. A regression now puts the "D" back in the empty margin above the rooms, where it is caught
+by looking.
+
+### Tests
+
+`GridResizeTest` pins the `honoured` contract at both bounds and on every honoured path. Two new
+`GuidedGridInteractionTest` cases prove a plot key **at the limit** and an **infeasible shrink** both
+report a refusal and leave the rooms untouched (the infeasible case needs two 4-wide full-depth rooms
+filling the plot — with anything less, `fitWithoutOverlap` simply relocates a room and the resize
+legitimately succeeds).
+
+### Also looked at, and deliberately NOT changed
+
+- **The zone chip can name a different zone from the report.** Already a considered decision —
+  `SCORE-ACCURACY-CAVEATS.md` §2b — tied to the parked outline-capture item. Left alone.
+- **"Tap the outer wall" with no outer wall drawn** (new finding **S8** in the UAT doc). The door step
+  had never been rendered; doing so shows the house's outline is invisible, so the wall the
+  instruction names has to be guessed whenever the plot is bigger than the house. It is the visual
+  half of the parked door-side nuance and S2, and drawing a house outline is a design call on a screen
+  the owner is reviewing. Documented with options, not changed.
+- **S7's "score intact" note corrected** in the UAT doc: a plot shrink that clamps an oversized room
+  smaller *does* move the score. Nothing is corrupted, but the wording was wrong.
+- **A second finger resting on the plan mid-drag** is not consumed by the arbiter, so the page could
+  scroll under an in-flight drag. Compose's own `detectDragGestures` behaves the same way and it can't
+  be reproduced headlessly — added to the owner's device checklist rather than blind-fixed.
