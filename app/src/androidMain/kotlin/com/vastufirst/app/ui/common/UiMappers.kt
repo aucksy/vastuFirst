@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.common
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.designsystem.components.VastuProvenance
@@ -43,6 +44,18 @@ fun Zone.short(): String = when (this) {
 
 fun Zone.code(): String = when (this) {
     Zone.BRAHMASTHAN -> "C"; else -> name
+}
+
+/**
+ * The front door's wall, spoken as a word.
+ *
+ * ⚠ The door marker's screen-reader label was built from the enum name, so TalkBack announced
+ * "Front door on the N wall" — a bare letter, in an app whose entire vocabulary is directions and
+ * whose audience skews older and less phone-literate. Everything else already spells them out
+ * ([Zone.short] gives "North-East"), so the door was the one place a raw enum reached a user.
+ */
+fun DoorSide.spoken(): String = when (this) {
+    DoorSide.N -> "north"; DoorSide.E -> "east"; DoorSide.S -> "south"; DoorSide.W -> "west"
 }
 
 fun RoomType.label(): String = when (this) {

@@ -49,6 +49,34 @@ class GridResizeTest {
         assertEquals(MAX_GRID, resolveGridResize(rooms, null, 8, 8, 99, 99)!!.rows)
     }
 
+    // ── `honoured`: a plot key that cannot act must SAY so (it used to fail silently) ─────────────
+
+    @Test
+    fun `a request clamped to a bound is reported as not honoured`() {
+        val rooms = listOf(room("a", 0, 0, 2, 2))
+        // At MIN_GRID, pressing "narrower" asks for 3 → clamped back to 4 → nothing moves. The key
+        // cannot act, so the screen must be told, and buzzes instead of looking broken.
+        val atMin = resolveGridResize(rooms, null, curCols = MIN_GRID, curRows = 8, reqCols = MIN_GRID - 1, reqRows = 8)!!
+        assertEquals(MIN_GRID, atMin.cols)
+        assertTrue("nothing moved", !atMin.changed)
+        assertTrue("a clamped-to-the-bound request is NOT honoured", !atMin.honoured)
+
+        val atMax = resolveGridResize(rooms, null, curCols = 8, curRows = MAX_GRID, reqCols = 8, reqRows = MAX_GRID + 1)!!
+        assertEquals(MAX_GRID, atMax.rows)
+        assertTrue(!atMax.honoured)
+    }
+
+    @Test
+    fun `a request that actually resizes the plot is honoured`() {
+        val rooms = listOf(room("a", 0, 0, 2, 2))
+        assertTrue(resolveGridResize(rooms, null, 8, 8, 7, 8)!!.honoured)
+        assertTrue(resolveGridResize(rooms, null, 8, 8, 9, 8)!!.honoured)
+        // Overshooting the range still MOVES the plot (8 → 10), so the user sees it act: honoured.
+        assertTrue(resolveGridResize(rooms, null, 8, 8, 99, 8)!!.honoured)
+        // Asking for the size already showing is a harmless no-op, not a refusal.
+        assertTrue(resolveGridResize(rooms, null, 8, 8, 8, 8)!!.honoured)
+    }
+
     @Test
     fun `a feasible shrink re-packs and flags a change (G3)`() {
         // Two 2×2 rooms at cols 6-7 and 8-9 on a 10-wide plot; shrink to 8 wide → the later one moves.

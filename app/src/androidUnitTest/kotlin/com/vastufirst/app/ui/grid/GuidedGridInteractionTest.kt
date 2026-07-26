@@ -45,6 +45,8 @@ class GuidedGridInteractionTest {
         val door = mutableStateOf(initialDoor)
         val cols = mutableStateOf(8)
         val rows = mutableStateOf(8)
+        /** How many plot-key presses came back refused — the screen turns each into a "no" buzz. */
+        val refusals = mutableStateOf(0)
     }
 
     @androidx.compose.runtime.Composable
@@ -58,10 +60,19 @@ class GuidedGridInteractionTest {
                 onNext = {},
                 cols = h.cols.value,
                 rows = h.rows.value,
+                // Mirrors NewPlanViewModel.updateGrid, including its Boolean "was this honoured?"
+                // contract — a refused key (rooms won't fit, or at the 4/10 limit) returns false so
+                // the screen can buzz instead of doing nothing.
                 onGridChange = { c, r ->
-                    resolveGridResize(h.rooms.value, h.door.value, h.cols.value, h.rows.value, c, r)?.let { res ->
+                    val res = resolveGridResize(h.rooms.value, h.door.value, h.cols.value, h.rows.value, c, r)
+                    if (res == null) {
+                        h.refusals.value++
+                        false
+                    } else {
                         h.cols.value = res.cols; h.rows.value = res.rows
                         h.rooms.value = res.rooms; h.door.value = res.door
+                        if (!res.honoured) h.refusals.value++
+                        res.honoured
                     }
                 },
             )
@@ -177,6 +188,41 @@ class GuidedGridInteractionTest {
         setContent { Editor(h) }
         repeat(20) { tapDesc("Narrower plot") }
         assertEquals("plot width clamps at MIN_GRID", 4, h.cols.value)
+    }
+
+    // ── plot keys report a refusal instead of failing silently ───────────────────────────────────
+
+    @Test
+    fun `a plot key at the limit reports a refusal`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 2, 2)))
+        setContent { Editor(h) }
+        repeat(4) { tapDesc("Narrower plot") }          // 8 → 7 → 6 → 5 → 4, all honoured
+        assertEquals("reached the minimum without a refusal", 4, h.cols.value)
+        assertEquals("no refusal on the way down", 0, h.refusals.value)
+
+        tapDesc("Narrower plot")                        // the 5th press cannot act
+        assertEquals("still at the minimum", 4, h.cols.value)
+        assertEquals("the key that cannot act says so", 1, h.refusals.value)
+    }
+
+    @Test
+    fun `a plot shrink the rooms cannot fit is refused, not forced`() = runComposeUiTest {
+        // Two 4-wide, full-depth rooms fill the 8×8 plot exactly, so a 7-wide plot cannot hold them
+        // at any arrangement — fitWithoutOverlap returns null and the whole resize is refused rather
+        // than overlapping them (an overlap would make the engine score the buried room twice).
+        val h = Harness(
+            listOf(
+                room("a", RoomType.LIVING, 0, 0, 4, 8),
+                room("b", RoomType.BEDROOM, 4, 0, 4, 8),
+            ),
+        )
+        setContent { Editor(h) }
+        tapDesc("Narrower plot")
+        assertEquals("the plot must not shrink past what the rooms need", 8, h.cols.value)
+        assertEquals("and the refusal is reported so the key can buzz", 1, h.refusals.value)
+        // The refusal must leave the rooms exactly as they were — never overlapped, never shrunk.
+        assertEquals(listOf(0, 4), h.rooms.value.map { it.col })
+        assertEquals(listOf(4, 4), h.rooms.value.map { it.w })
     }
 
     // ── door mode entry (H) ──────────────────────────────────────────────────────────────────────

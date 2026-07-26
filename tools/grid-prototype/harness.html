@@ -566,6 +566,15 @@ function seed(scenario){
       ed.cols=6; ed.rows=6; commitRooms([{id:'room-0',type:'Pooja',col:2,row:2,w:1,h:1}]); ed.selectedId='room-0'; break;
     case 'thin': // a 1-cell-deep footprint (thin-footprint door classification)
       ed.cols=8; ed.rows=8; commitRooms([{id:'room-0',type:'Living',col:1,row:3,w:6,h:1}]); ed.door={side:'S',cell:3}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break;
+    case 'margin': { // ⭐ a house drawn SMALLER than the plot — the state the v0.3.9 door-marker fix
+      // exists for (the door must sit on the HOUSE's wall, not the plot's). ?side=N|E|S|W picks the wall.
+      ed.cols=10; ed.rows=10;
+      commitRooms([{id:'room-0',type:'Living',col:3,row:3,w:3,h:2},{id:'room-1',type:'Kitchen',col:6,row:3,w:2,h:2}]);
+      const side = new URLSearchParams(location.search).get('side') || 'N';
+      ed.door={side, cell:4}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break; }
+    case 'doormode': // the "Mark your front door" step itself — never rendered before
+      commitRooms([{id:'room-0',type:'Living',col:1,row:1,w:3,h:2},{id:'room-1',type:'Kitchen',col:5,row:4,w:2,h:2}]);
+      ed.doorMode=true; break;
     case 'min': ed.cols=4; ed.rows=4; commitRooms([{id:'room-0',type:'Living',col:0,row:0,w:2,h:2},{id:'room-1',type:'Kitchen',col:2,row:2,w:2,h:2}]); break;
     case 'max': ed.cols=10; ed.rows=10; commitRooms([{id:'room-0',type:'Living',col:0,row:0,w:5,h:4},{id:'room-1',type:'Bedroom',col:6,row:6,w:3,h:3}]); ed.door={side:'W',cell:1}; ed.door=clampDoorToRooms(ed.door,ed.rooms); break;
     default:

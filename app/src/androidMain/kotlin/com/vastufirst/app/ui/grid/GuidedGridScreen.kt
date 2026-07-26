@@ -68,6 +68,7 @@ import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
+import com.vastufirst.app.ui.common.spoken
 import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.doorMarkerCell
@@ -259,7 +260,9 @@ fun GuidedGridContent(
     onNext: () -> Unit,
     cols: Int = GRID,
     rows: Int = GRID,
-    onGridChange: (Int, Int) -> Unit = { _, _ -> },
+    /** Returns false when the plot could not become the requested size (rooms won't fit, or the
+     *  MIN_GRID/MAX_GRID limit) — the plot keys turn that into a "no" buzz instead of doing nothing. */
+    onGridChange: (Int, Int) -> Boolean = { _, _ -> true },
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -328,6 +331,18 @@ fun GuidedGridContent(
         }
         onDoorChange(d)
     }
+
+    /**
+     * A plot-size key press. It BUZZES when the plot could not become the requested size.
+     *
+     * ⚠ A plot key can decline for two invisible reasons — the rooms don't fit at that size
+     * (`resolveGridResize` refuses rather than overlap them, which would make the engine score the
+     * buried room twice), or the plot is already at its 4/10 limit — and it used to do nothing at all
+     * in both cases, giving the same light tap as a key that worked. Every other refusal on this
+     * screen already says "no" (an overlapping move or resize fires `haptics.reject()` below), so
+     * these were the one control here that failed silently and read as a broken button.
+     */
+    fun stepPlot(c: Int, r: Int) { if (!onGridChange(c, r)) haptics.reject() }
 
     /** The button path for every drag action (WCAG 2.2 SC 2.5.7) — refused the same way a drag is. */
     fun applyToSelected(next: CellRect) {
@@ -715,20 +730,20 @@ fun GuidedGridContent(
                     verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                        EditorKey("−", "Narrower plot") { onGridChange(cols - 1, rows) }
+                        EditorKey("−", "Narrower plot") { stepPlot(cols - 1, rows) }
                         VText(
                             "$cols wide", style = VastuTheme.type.bodySm, color = colors.textSecondary,
                             maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
                         )
-                        EditorKey("+", "Wider plot") { onGridChange(cols + 1, rows) }
+                        EditorKey("+", "Wider plot") { stepPlot(cols + 1, rows) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                        EditorKey("−", "Shallower plot") { onGridChange(cols, rows - 1) }
+                        EditorKey("−", "Shallower plot") { stepPlot(cols, rows - 1) }
                         VText(
                             "$rows deep", style = VastuTheme.type.bodySm, color = colors.textSecondary,
                             maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
                         )
-                        EditorKey("+", "Deeper plot") { onGridChange(cols, rows + 1) }
+                        EditorKey("+", "Deeper plot") { stepPlot(cols, rows + 1) }
                     }
                 }
 
@@ -883,7 +898,7 @@ private fun BoxScope.DoorMarker(door: GridDoor, rooms: List<GridRoom>, cell: and
             .offset(x = cell * col, y = cell * row)
             .size(cell)
             .padding(VastuTheme.spacing.s1)
-            .semantics { contentDescription = "Front door on the ${door.side.name} wall" },
+            .semantics { contentDescription = "Front door on the ${door.side.spoken()} wall" },
         contentAlignment = Alignment.Center,
     ) {
         Box(

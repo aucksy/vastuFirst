@@ -20,6 +20,17 @@ data class GridResizeResult(
     val rooms: List<GridRoom>,
     val door: GridDoor?,
     val changed: Boolean,
+    /**
+     * False when the plot could **not** become what was asked for because the request was clamped to
+     * the [MIN_GRID]/[MAX_GRID] bound and nothing moved — i.e. the key the user pressed cannot act.
+     *
+     * ⚠ This exists so the plot-size keys stop failing SILENTLY. Every other refusal in this editor
+     * says "no" (a move or resize that would overlap fires `haptics.reject()`), but the plot keys did
+     * nothing at all — same light tap whether they worked or not — so a key at its limit, or one
+     * refused because the rooms can't fit, reads as a broken button. The screen turns `false` (and a
+     * `null` return) into the same "no" buzz the arrows already give.
+     */
+    val honoured: Boolean,
 )
 
 /**
@@ -44,7 +55,14 @@ fun resolveGridResize(
 ): GridResizeResult? {
     val c = reqCols.coerceIn(MIN_GRID, MAX_GRID)
     val r = reqRows.coerceIn(MIN_GRID, MAX_GRID)
-    if (c == curCols && r == curRows) return GridResizeResult(curCols, curRows, rooms, door, changed = false)
+    // Nothing to do. `honoured` is false when that is because the request was CLAMPED to a bound
+    // (pressing "narrower" at MIN_GRID) rather than because it asked for the size already showing.
+    if (c == curCols && r == curRows) {
+        return GridResizeResult(
+            curCols, curRows, rooms, door,
+            changed = false, honoured = reqCols == c && reqRows == r,
+        )
+    }
 
     val fitted = fitWithoutOverlap(rooms.map { CellRect(it.col, it.row, it.w, it.h) }, c, r) ?: return null
     var changed = false
@@ -68,7 +86,9 @@ fun resolveGridResize(
     // that F4 missed). Same clamp updateRooms applies on a room edit. Found by the fuzz harness.
     newDoor = clampDoorToRooms(newDoor, newRooms)
     if (newDoor != door) changed = true
-    return GridResizeResult(c, r, newRooms, newDoor, changed)
+    // The plot did move to (a clamped version of) what was asked for, so the key acted — even if the
+    // request overshot the range, the user sees the plot change and needs no "no".
+    return GridResizeResult(c, r, newRooms, newDoor, changed, honoured = true)
 }
 
 /**

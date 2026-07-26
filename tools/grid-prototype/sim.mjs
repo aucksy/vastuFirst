@@ -119,6 +119,13 @@ function resolveGridResize(rooms, door, curCols, curRows, reqCols, reqRows) {
   return { cols: c, rows: r, rooms: newRooms, door: newDoor, changed };
 }
 
+/** GridResize.gridSizeForRooms — the plot shape a reopened home is drawn on (tightest enclosing grid). */
+function gridSizeForRooms(rooms) {
+  const cols = clampInt(rooms.length ? Math.max(...rooms.map((r) => r.col + r.w)) : GRID, MIN_GRID, MAX_GRID);
+  const rows = clampInt(rooms.length ? Math.max(...rooms.map((r) => r.row + r.h)) : GRID, MIN_GRID, MAX_GRID);
+  return [cols, rows];
+}
+
 function clampDoorToRooms(door, rooms) {
   if (!door) return null;
   if (rooms.length === 0) return null;
@@ -192,6 +199,24 @@ function gridDoorFromPlan(plan, rooms) {
   if (Math.abs(d.centre.x - xEast) < eps) return { side: 'E', cell: Math.round((GRID - d.centre.y) - 0.5) };
   if (Math.abs(d.centre.x - xWest) < eps) return { side: 'W', cell: Math.round((GRID - d.centre.y) - 0.5) };
   return null;
+}
+
+/**
+ * Where the door marker is DRAWN — PlanConversion.doorMarkerCell (the v0.3.9 fix). It pins the marker
+ * to the rooms' FOOTPRINT edge (the house's outer wall), never the plot edge: that is where the engine
+ * scores it, where placeDoor clamps it, and where reopen lands it. Returns the [col,row] cell.
+ */
+function doorMarkerCell(door, rooms, cols, rows) {
+  const minC = rooms.length ? Math.min(...rooms.map((r) => r.col)) : 0;
+  const maxC = rooms.length ? Math.max(...rooms.map((r) => r.col + r.w)) : cols;
+  const minR = rooms.length ? Math.min(...rooms.map((r) => r.row)) : 0;
+  const maxR = rooms.length ? Math.max(...rooms.map((r) => r.row + r.h)) : rows;
+  switch (door.side) {
+    case 'N': return [door.cell, minR];
+    case 'S': return [door.cell, maxR - 1];
+    case 'W': return [minC, door.cell];
+    case 'E': return [maxC - 1, door.cell];
+  }
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -372,6 +397,61 @@ function opRemove(ed) {
 }
 
 // ----------------------------------------------------------------------------------------------
+// The WCAG 2.2 SC 2.5.7 BUTTON paths — GuidedGridScreen.applyToSelected / SelectedRoomTools /
+// the plot-size EditorKeys / RoomTile's semantics onClick.
+//
+// ⚠ WHY THESE ARE MIRRORED SEPARATELY: this arithmetic lives HAND-WRITTEN INSIDE THE COMPOSABLE, not
+// in the pure `shared` module — `onResize`'s clamp in particular (`(w+dw).coerceIn(1, cols-col)`) is a
+// different code path from `resizeBy`, which is the only resize the gesture fuzz ever reaches. These
+// are also the paths an older / less phone-literate user (a large part of this audience) and every
+// TalkBack user actually uses, so they carry the same score-corrupting risk as a drag and deserve the
+// same invariant pressure. RoomTile's `onSelect` is likewise a DIFFERENT selection path from hitTest
+// (a semantics click, no pointer maths at all).
+// ----------------------------------------------------------------------------------------------
+
+/** GuidedGridScreen.applyToSelected — refused on overlap, no-op when nothing changes. */
+function applyToSelected(ed, next) {
+  const sel = ed.rooms.find((r) => r.id === ed.selectedId);
+  if (!sel) return;
+  if (anyOverlap(next, ed.rooms.filter((r) => r.id !== sel.id))) return;   // refused (haptics.reject)
+  if (next.col === sel.col && next.row === sel.row && next.w === sel.w && next.h === sel.h) return;
+  ed.rooms = ed.rooms.map((r) => (r.id === sel.id ? { ...r, ...next } : r));
+  ed.door = clampDoorToRooms(ed.door, ed.rooms);   // onRoomsChange → vm.updateRooms
+}
+
+/** SelectedRoomTools onNudge — the ◀▲▼▶ move arrows. */
+function opNudge(ed, dCol, dRow) {
+  const sel = ed.rooms.find((r) => r.id === ed.selectedId);
+  if (!sel) return;
+  applyToSelected(ed, moveBy(sel, dCol, dRow, ed.cols, ed.rows));
+}
+
+/** SelectedRoomTools onResize — the W/H −/+ steppers. Grows east/south only, clamped to the plot. */
+function opStepResize(ed, dw, dh) {
+  const sel = ed.rooms.find((r) => r.id === ed.selectedId);
+  if (!sel) return;
+  applyToSelected(ed, {
+    col: sel.col, row: sel.row,
+    w: clampInt(sel.w + dw, 1, ed.cols - sel.col),
+    h: clampInt(sel.h + dh, 1, ed.rows - sel.row),
+  });
+}
+
+/** The "Plot size" −/+ keys: onGridChange(cols ± 1, rows) → updateGrid → resolveGridResize. */
+function opPlotStep(ed, dCols, dRows) {
+  opPlotResize(ed, ed.cols + dCols, ed.rows + dRows);
+}
+
+/** RoomTile's semantics onClick (`onSelect`) — the TalkBack selection path: no pointer maths. */
+function opSelectTile(ed, index) {
+  if (ed.rooms.length === 0) return;
+  ed.selectedId = ed.rooms[index % ed.rooms.length].id;
+}
+
+/** SelectedRoomTools "Done" — clears the selection without touching geometry. */
+function opDone(ed) { ed.selectedId = null; }
+
+// ----------------------------------------------------------------------------------------------
 // Invariants — checked after EVERY operation
 // ----------------------------------------------------------------------------------------------
 function checkInvariants(ed) {
@@ -427,7 +507,35 @@ function checkInvariants(ed) {
     const want = ed.door;
     const doorEq = (!rd && !want) || (rd && want && rd.side === want.side && rd.cell === want.cell);
     if (!doorEq) problems.push(`REOPEN-DOOR ${want ? want.side + '@' + want.cell : 'null'}→${rd ? rd.side + '@' + rd.cell : 'null'}`);
+    // 6b. The plot `load()` re-derives for the reopened rooms must CONTAIN them. gridSizeForRooms
+    // clamps to MAX_GRID, so a stored room reaching past that would reopen hanging outside the plot —
+    // and every finger calculation would then be in a different coordinate space from the drawing
+    // (the exact v0.3.7 class of bug, arriving through the database instead of a stepper).
+    const [dc, dr] = gridSizeForRooms(rr);
+    for (const r of rr)
+      if (r.col < 0 || r.row < 0 || right(r) > dc || bottom(r) > dr)
+        problems.push(`REOPEN-PLOT ${r.id} ${r.col},${r.row},${r.w}x${r.h} outside re-derived ${dc}×${dr}`);
   }
+  // 7. DOOR MARKER: where the door is DRAWN (doorMarkerCell — the v0.3.9 fix) must sit ON the
+  // footprint wall that matches its side, and be a real in-grid cell. This is the "displayed ==
+  // scored == reloaded" guarantee at the DRAWING end: invariant 3 proves the door's stored cell is on
+  // the footprint, this proves the marker the user actually sees is on the same wall.
+  if (ed.door && ed.rooms.length) {
+    const minC = Math.min(...ed.rooms.map((r) => r.col)), maxC = Math.max(...ed.rooms.map((r) => r.col + r.w));
+    const minR = Math.min(...ed.rooms.map((r) => r.row)), maxR = Math.max(...ed.rooms.map((r) => r.row + r.h));
+    const [mc, mr] = doorMarkerCell(ed.door, ed.rooms, ed.cols, ed.rows);
+    if (mc < 0 || mr < 0 || mc >= ed.cols || mr >= ed.rows) problems.push(`MARKER-OFFGRID ${mc},${mr} in ${ed.cols}×${ed.rows}`);
+    // On the named wall, and within the footprint's span along that wall.
+    const onWall =
+      ed.door.side === 'N' ? (mr === minR && mc >= minC && mc < maxC) :
+      ed.door.side === 'S' ? (mr === maxR - 1 && mc >= minC && mc < maxC) :
+      ed.door.side === 'W' ? (mc === minC && mr >= minR && mr < maxR) :
+                             (mc === maxC - 1 && mr >= minR && mr < maxR);
+    if (!onWall) problems.push(`MARKER-OFF-WALL ${ed.door.side}@${ed.door.cell} drawn ${mc},${mr} footprint ${minC}..${maxC},${minR}..${maxR}`);
+  }
+  // 8. The plot itself never leaves its allowed range (the steppers clamp to MIN_GRID..MAX_GRID).
+  if (ed.cols < MIN_GRID || ed.cols > MAX_GRID || ed.rows < MIN_GRID || ed.rows > MAX_GRID)
+    problems.push(`PLOT-OUT-OF-RANGE ${ed.cols}×${ed.rows}`);
   return problems;
 }
 
@@ -482,7 +590,52 @@ function applyOp(ed, o) {
       const h = hitTest(o.down, ed.rooms, ed.selectedId, cellPx, gridWpx, gridHpx, HANDLE_TOUCH, HANDLE_GRIP / 2);
       ed.selectedId = h ? h.roomId : null; break; }
     case 'remove': opRemove(ed); break;
+    // --- button (WCAG) paths, Suite D ---
+    case 'nudge': opNudge(ed, o.dc, o.dr); break;
+    case 'step': opStepResize(ed, o.dw, o.dh); break;
+    case 'plotkey': opPlotStep(ed, o.dc, o.dr); break;
+    case 'tile': opSelectTile(ed, o.index); break;
+    case 'done': opDone(ed); break;
   }
+}
+
+// ----------------------------------------------------------------------------------------------
+// Suite D — the WCAG BUTTON paths, fuzzed and INTERLEAVED with finger gestures.
+//
+// A real user mixes the two constantly (drag a room roughly into place, then nudge it one cell with
+// an arrow, then resize the plot), and a TalkBack user uses nothing BUT the buttons. The button
+// arithmetic is hand-written inside the Composable rather than in the tested `shared` module, so it
+// is the least-proven geometry in the editor. Same invariants as Suite A — plus the new door-marker
+// and plot-range checks, which every suite now carries.
+// ----------------------------------------------------------------------------------------------
+function randomButtonOp(rng, ed) {
+  const { cellPx } = geom(ed.cols, ed.rows);
+  const px = () => [rng() * ed.cols * cellPx, rng() * ed.rows * cellPx];
+  const kind = rng();
+  // Always keep a room supply, and keep a selection alive so the arrows/steppers actually do work.
+  if (ed.rooms.length === 0) return { op: 'place', type: TYPES[(rng() * TYPES.length) | 0], down: px(), target: px() };
+  if (!ed.selectedId && kind < 0.5) return { op: 'tile', index: (rng() * ed.rooms.length) | 0 };
+  if (kind < 0.14) return { op: 'place', type: TYPES[(rng() * TYPES.length) | 0], down: px(), target: px() };
+  if (kind < 0.22) return { op: 'tile', index: (rng() * ed.rooms.length) | 0 };
+  if (kind < 0.44) { // a move arrow
+    const d = [[-1, 0], [1, 0], [0, -1], [0, 1]][(rng() * 4) | 0];
+    return { op: 'nudge', dc: d[0], dr: d[1] };
+  }
+  if (kind < 0.66) { // a size stepper
+    const d = [[-1, 0], [1, 0], [0, -1], [0, 1]][(rng() * 4) | 0];
+    return { op: 'step', dw: d[0], dh: d[1] };
+  }
+  if (kind < 0.84) { // a plot-size key (one step at a time, exactly as the UI does)
+    const d = [[-1, 0], [1, 0], [0, -1], [0, 1]][(rng() * 4) | 0];
+    return { op: 'plotkey', dc: d[0], dr: d[1] };
+  }
+  if (kind < 0.89) return { op: 'door', tap: px() };
+  if (kind < 0.94) return { op: 'done' };
+  if (kind < 0.97) return { op: 'remove' };
+  // Occasionally a real finger drag, so the two paths are proven to compose.
+  const n = 1 + ((rng() * 3) | 0);
+  const path = []; for (let i = 0; i < n; i++) path.push(px());
+  return { op: 'drag', down: px(), path };
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -609,16 +762,16 @@ function fuzzRoundTrip(iters) {
   return fails;
 }
 
-function run(iterations) {
+function run(iterations, gen = randomOp, seedSalt = 0) {
   let failures = 0, firstFail = null;
   const tally = {}; // category → count of failing seeds
   for (let seed = 1; seed <= iterations; seed++) {
-    const rng = mulberry32(seed);
+    const rng = mulberry32(seed + seedSalt);
     const ed = makeEditor();
     const seq = [];
     const steps = 6 + ((rng() * 20) | 0);
     for (let s = 0; s < steps; s++) {
-      const o = randomOp(rng, ed);
+      const o = gen(rng, ed);
       seq.push(o);
       applyOp(ed, o);
       const problems = checkInvariants(ed);
@@ -634,7 +787,8 @@ function run(iterations) {
   console.log(`\nFuzzed ${iterations} random operation-orders (up to ~26 ops each).`);
   if (failures === 0) {
     console.log('✅ NO invariant violations — no overlap, no off-grid room, door always on footprint,');
-    console.log('   draw==hit at every room centre, and a selected room\'s centre always moves (never resizes).');
+    console.log('   draw==hit at every room centre, a selected room\'s centre always moves (never resizes),');
+    console.log('   the door marker is drawn on the matching footprint wall, and the plot stays in range.');
   } else {
     console.log(`❌ ${failures} of ${iterations} sequences violated an invariant.`);
     console.log(`   by category:`, tally);
@@ -682,3 +836,6 @@ if (rtFails.length === 0) {
 
 console.log(`\n── Suite A: editor gesture-order fuzz (multi-step drags, hysteresis, blocked-carry) ──`);
 run(iters);
+
+console.log(`\n── Suite D: WCAG button paths (move arrows · size steppers · plot keys · tile select) ──`);
+run(iters, randomButtonOp, 0x5EED);

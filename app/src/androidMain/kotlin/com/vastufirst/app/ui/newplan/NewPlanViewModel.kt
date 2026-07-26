@@ -136,9 +136,13 @@ class NewPlanViewModel(
 
     /** Resize the drawing plot. Existing rooms are re-packed to fit the new bounds (shrunk/moved,
      *  never dropped, never overlapped); an infeasible shrink is refused; a door on a wall that no
-     *  longer exists is cleared. All the arithmetic is the pure [resolveGridResize] so it is tested. */
-    fun updateGrid(cols: Int, rows: Int) {
-        val res = resolveGridResize(rooms, door, gridCols, gridRows, cols, rows) ?: return
+     *  longer exists is cleared. All the arithmetic is the pure [resolveGridResize] so it is tested.
+     *
+     *  Returns **false when the request could not be honoured** — the rooms can't fit at that size, or
+     *  the plot is already at its MIN_GRID/MAX_GRID limit. The editor turns that into the same "no"
+     *  buzz an overlapping move gets, so a plot key that cannot act never just looks broken. */
+    fun updateGrid(cols: Int, rows: Int): Boolean {
+        val res = resolveGridResize(rooms, door, gridCols, gridRows, cols, rows) ?: return false
         gridCols = res.cols
         gridRows = res.rows
         // res.rooms / res.door are the SAME instances when nothing moved, so these are equality-skipped
@@ -146,6 +150,7 @@ class NewPlanViewModel(
         rooms = res.rooms
         door = res.door
         if (res.changed) markDirty()
+        return res.honoured
     }
 
     private fun markDirty() { dirty.tryEmit(Unit) }

@@ -1,9 +1,14 @@
 package com.vastufirst.app.ui.grid
 
 import android.app.Application
+import androidx.compose.runtime.Composable
 import com.vastufirst.app.render.captureAcrossMatrix
 import com.vastufirst.app.render.writeManifestAcrossMatrix
+import com.vastufirst.app.ui.newplan.DoorSide
+import com.vastufirst.app.ui.newplan.GridDoor
+import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.SamplePlans
+import com.vastufirst.shared.RoomType
 import org.junit.runner.RunWith
 import org.junit.Test
 import org.robolectric.RobolectricTestRunner
@@ -77,6 +82,37 @@ class EditorScreenshotTest {
         writeManifestAcrossMatrix("editor-wide") {
             GuidedGridContent(emptyList(), null, {}, {}, {}, cols = 8, rows = 5)
         }
+    }
+
+    /**
+     * ⭐ A house drawn SMALLER than the plot, with its front door on the house's north wall.
+     *
+     * This is the state the v0.3.9 door-marker fix exists for, and until now **no golden rendered
+     * it**: the sample home fills the 8×8 grid, so its door already sat on the footprint edge and the
+     * screenshots could not tell the fixed and broken versions apart. The bug it pins is visible —
+     * the "D" floating in the empty margin above the rooms instead of sitting on the house's own
+     * outer wall — so a regression here is caught by looking, which is how it was found.
+     */
+    @Test
+    fun editor_margin() {
+        captureAcrossMatrix("editor-margin") { MarginHouse() }
+        writeManifestAcrossMatrix("editor-margin") { MarginHouse() }
+    }
+
+    @Composable
+    private fun MarginHouse() {
+        GuidedGridContent(
+            rooms = listOf(
+                GridRoom("m1", RoomType.LIVING, 3, 3, 3, 2),
+                GridRoom("m2", RoomType.KITCHEN, 6, 3, 2, 2),
+            ),
+            door = GridDoor(DoorSide.N, 4),
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = 10,
+            rows = 10,
+        )
     }
 
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
