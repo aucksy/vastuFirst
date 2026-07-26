@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 21
-        versionName = "0.3.9"   // Harness-found: door marker draws on the house's footprint edge (not the plot edge)
+        versionCode = 22
+        versionName = "0.3.10"  // Plot keys report a refusal (buzz) instead of failing silently; door spoken as "north"
     }
 
     buildTypes {
