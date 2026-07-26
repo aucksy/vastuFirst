@@ -236,7 +236,17 @@ Raw finger gestures, real haptics, and true process-death need a phone. Everythi
    Settings and reopen — note whether the rooms are still there (expected: currently **lost** — S3).
    Repeat with a **saved** home (expected: restored).
 7. **Real TalkBack pass**: swipe through the editor with the screen reader actually on; every control
-   should be announced and operable.
+   should be announced and operable. The front door should now say **"front door on the north wall"**,
+   not "on the N wall" (v0.3.10).
+8. **A plot key that cannot act should BUZZ** (v0.3.10): press "−" on Plot size until it stops at 4,
+   then press once more — you should feel the same short "no" buzz you get when you drag a room onto
+   another. Same when the rooms already fill the plot and it refuses to shrink. The *decision* is
+   unit-tested; only the buzz itself needs a finger, because haptics are silent in the test harness
+   by design.
+9. **Rest a second finger on the plan while dragging a room.** The in-flight drag only tracks the
+   first finger, so a second one sliding vertically is not consumed and the page may scroll under the
+   drag. This is how Compose's own drag detector behaves and it can't be reproduced headlessly — worth
+   one try to see whether it is noticeable in practice before deciding to special-case it.
 
 ---
 
