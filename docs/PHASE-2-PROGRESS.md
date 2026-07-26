@@ -764,3 +764,30 @@ screen** instead of living only in the report text. Flagged for the owner's eye 
 `doorForTap` and the outline are in `sim.mjs` and `harness.html` too, so the three stay in lock-step.
 One harness-hygiene fix while there: the tap sweep now reports only the first offending tap per
 footprint — a real regression trips hundreds and buried the useful line in a wall of text.
+
+### ⚠ Release gotcha — never tag the CI goldens commit (`[skip ci]`)
+
+**v0.3.11 was tagged and no release was ever built.** The tag landed on `2ec014f`, which is CI's own
+auto-commit *"ci: record screen render goldens **[skip ci]**"*. GitHub honours `[skip ci]` for **tag
+pushes too**, so `release.yml` was silently skipped — no run, no release, no error anywhere.
+
+It bites specifically when a build adds or changes a golden: CI records the PNGs, commits them with
+`[skip ci]` (correct — it stops CI re-triggering itself forever), you pull, and `HEAD` is now that
+commit. Tagging `HEAD` at that moment tags an un-runnable commit. Earlier tags escaped it only because
+`HEAD` happened to be a normal commit.
+
+**Rule: before tagging, check `git log -1 --format=%s` for `[skip ci]`.** If it's there, put a real
+commit on top and tag that. Re-dispatching `release.yml` by hand is the other option, but it needs an
+Actions API write.
+
+v0.3.11 is left as a dangling, never-built tag (deleting a pushed tag is a rewrite for no benefit);
+**v0.3.12 is the same content, shipped from a normal commit.**
+
+### ⚠ And a process fix on my side: no unbounded poll loops
+
+The wait-for-release loop was `while true … sleep 30` with no iteration cap, so when the run it was
+waiting for never appeared it spun for over an hour instead of failing loudly. **Every poll loop gets a
+bounded iteration count and prints a TIMED-OUT line**, so "the thing never happened" is reported rather
+than waited on forever. (Related: the earlier CI poll used `grep -m1 '"status"'` on raw Actions JSON,
+which matches a *nested* status field and reported "completed" while the run was still going — parse
+the JSON and filter by `head_sha` + workflow `name` instead.)

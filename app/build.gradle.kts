@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 23
-        versionName = "0.3.11"  // Front door: the wall a tap means is measured from the HOUSE, and the house is outlined (S8)
+        versionCode = 24
+        versionName = "0.3.12"  // Same content as the skipped v0.3.11 tag (see PHASE-2-PROGRESS: [skip ci] gotcha)
     }
 
     buildTypes {
