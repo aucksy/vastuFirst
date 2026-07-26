@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 24
-        versionName = "0.3.12"  // Same content as the skipped v0.3.11 tag (see PHASE-2-PROGRESS: [skip ci] gotcha)
+        versionCode = 25
+        versionName = "0.3.13"  // v0.3.11+12 tags both hit commits carrying the CI-skip directive
     }
 
     buildTypes {

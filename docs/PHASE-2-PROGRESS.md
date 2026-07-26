@@ -765,7 +765,7 @@ screen** instead of living only in the report text. Flagged for the owner's eye 
 One harness-hygiene fix while there: the tap sweep now reports only the first offending tap per
 footprint — a real regression trips hundreds and buried the useful line in a wall of text.
 
-### ⚠ Release gotcha — never tag the CI goldens commit (`[skip ci]`)
+### ⚠ Release gotcha — never tag the CI goldens commit (it carries the CI-skip directive)
 
 **v0.3.11 was tagged and no release was ever built.** The tag landed on `2ec014f`, which is CI's own
 auto-commit *"ci: record screen render goldens **[skip ci]**"*. GitHub honours `[skip ci]` for **tag
@@ -791,3 +791,13 @@ bounded iteration count and prints a TIMED-OUT line**, so "the thing never happe
 than waited on forever. (Related: the earlier CI poll used `grep -m1 '"status"'` on raw Actions JSON,
 which matches a *nested* status field and reported "completed" while the run was still going — parse
 the JSON and filter by `head_sha` + workflow `name` instead.)
+
+**Postscript — I then reproduced the bug while documenting it.** The commit that wrote up the rule
+quoted the directive verbatim in its own subject line, so GitHub skipped that commit's CI *and* the
+v0.3.13-predecessor tag pointing at it. Two tags (v0.3.11, v0.3.12) are dangling and never built.
+**The directive is matched anywhere in the commit message, including a quotation of it.** Never write
+it in a commit message — refer to it as "the CI-skip directive". Pre-tag guard, now mandatory:
+
+```
+git log -1 --format=%B | grep -Ei '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]' && echo REFUSE
+```
