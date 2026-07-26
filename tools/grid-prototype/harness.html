@@ -261,6 +261,19 @@ function gridDoorFromPlan(plan, rooms){
   return null;
 }
 
+// doorMarkerCell (PlanConversion.kt) — the marker sits on the HOUSE's outer wall (the rooms'
+// footprint edge), never the plot edge: that is where it is scored, clamped and reloaded.
+function doorMarkerCell(door, rooms, cols, rows){
+  const minC = rooms.length?Math.min(...rooms.map(r=>r.col)):0, maxC = rooms.length?Math.max(...rooms.map(r=>r.col+r.w)):cols;
+  const minR = rooms.length?Math.min(...rooms.map(r=>r.row)):0, maxR = rooms.length?Math.max(...rooms.map(r=>r.row+r.h)):rows;
+  switch(door.side){
+    case 'N': return [door.cell, minR];
+    case 'S': return [door.cell, maxR-1];
+    case 'W': return [minC, door.cell];
+    case 'E': return [maxC-1, door.cell];
+  }
+}
+
 // --- finger pipeline (GuidedGridScreen.kt) ---
 const HANDLE_TOUCH = 48, HANDLE_GRIP = 12, TOUCH_SLOP = 8;
 function handleCentre(rect, handle, cellPx, gridWpx, gridHpx, clampPx){
@@ -431,11 +444,7 @@ function render(){
   // door — drawn on the HOUSE's outer wall (the rooms' footprint edge), where it is scored/reloaded,
   // NOT the plot edge (mirrors GuidedGridScreen.DoorMarker; the fix the harness surfaced).
   if (ed.door && ed.rooms.length){
-    let col,row; const dd=ed.door;
-    const fMinC=Math.min(...ed.rooms.map(r=>r.col)),fMaxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
-    const fMinR=Math.min(...ed.rooms.map(r=>r.row)),fMaxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
-    if (dd.side==='N'){col=dd.cell;row=fMinR;} else if(dd.side==='S'){col=dd.cell;row=fMaxR-1;}
-    else if(dd.side==='W'){col=fMinC;row=dd.cell;} else {col=fMaxC-1;row=dd.cell;}
+    const [col,row] = doorMarkerCell(ed.door, ed.rooms, ed.cols, ed.rows);
     const el=document.createElement('div'); el.className='door';
     el.style.left=(col*cellPx)+'px'; el.style.top=(row*cellPx)+'px'; el.style.width=cellPx+'px'; el.style.height=cellPx+'px';
     el.innerHTML='<b>D</b>'; stage.appendChild(el);
@@ -546,6 +555,18 @@ function selfCheck(){
     if(!ok) problems.push('reopen-rooms');
     const rd=gridDoorFromPlan(plan,rr); const want=ed.door;
     const de=(!rd&&!want)||(rd&&want&&rd.side===want.side&&rd.cell===want.cell); if(!de) problems.push('reopen-door'); }
+  // The door MARKER is drawn on the footprint wall matching its side (the v0.3.9 fix) — same
+  // invariant sim.mjs asserts, so what you see here can never disagree with what is scored.
+  if (ed.door && ed.rooms.length){
+    const minC=Math.min(...ed.rooms.map(r=>r.col)),maxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
+    const minR=Math.min(...ed.rooms.map(r=>r.row)),maxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
+    const [mc,mr]=doorMarkerCell(ed.door,ed.rooms,ed.cols,ed.rows);
+    const onWall = ed.door.side==='N' ? (mr===minR&&mc>=minC&&mc<maxC)
+                 : ed.door.side==='S' ? (mr===maxR-1&&mc>=minC&&mc<maxC)
+                 : ed.door.side==='W' ? (mc===minC&&mr>=minR&&mr<maxR)
+                 :                      (mc===maxC-1&&mr>=minR&&mr<maxR);
+    if(!onWall||mc<0||mr<0||mc>=ed.cols||mr>=ed.rows) problems.push('door-marker-off-wall');
+  }
   if (problems.length){ el.className='selftest fail'; el.innerHTML='✕ <b>'+[...new Set(problems)].join(', ')+'</b> — this is a real bug.'; }
   else { el.className='selftest'; el.innerHTML='✓ all invariants hold on the current plan (no overlap, in-grid, draw==hit, centre moves, reopen round-trips).'; }
 }
