@@ -236,4 +236,82 @@ class PlanConversionRoundTripTest {
             }
         }
     }
+
+    // ── doorForTap: the wall a tap MEANS (UAT S8) ────────────────────────────────────────────────
+
+    /** The house used below: cols 3..8, rows 3..5, sitting in the middle of a 10×10 plot. */
+    private val marginHouse = listOf(
+        GridRoom("m1", RoomType.LIVING, 3, 3, 3, 2),
+        GridRoom("m2", RoomType.KITCHEN, 6, 3, 2, 2),
+    )
+
+    @Test
+    fun `a tap beyond one wall of the house chooses THAT wall, not the nearest plot edge`() {
+        // ⭐ The S8 bug: distances used to be measured to the PLOT's edges, so a tap in the empty
+        // margin directly above the house (which starts at column 3) resolved to WEST — the plot's
+        // west edge was 4 cells away while its north edge was 0.5 — a wall the user never aimed at,
+        // on the highest-weighted element the engine scores.
+        assertEquals(DoorSide.N, doorForTap(4.5f, 0.5f, marginHouse)?.side)   // above the house
+        assertEquals(DoorSide.S, doorForTap(4.5f, 9.5f, marginHouse)?.side)   // below it
+        assertEquals(DoorSide.W, doorForTap(0.5f, 4.5f, marginHouse)?.side)   // left of it
+        assertEquals(DoorSide.E, doorForTap(9.5f, 4.5f, marginHouse)?.side)   // right of it
+    }
+
+    @Test
+    fun `the plot plays no part — the same tap on the same house gives the same door at any plot size`() {
+        // doorForTap takes no cols/rows at all, so this is structural; the test pins the contract so
+        // re-introducing a plot dimension can't quietly bring the S8 bug back.
+        val taps = listOf(4.5f to 0.5f, 0.5f to 4.5f, 4.5f to 3.2f, 7.9f to 4.9f, 9.9f to 9.9f)
+        for ((x, y) in taps) {
+            val d = doorForTap(x, y, marginHouse)
+            assertNotNull("a tap on a house must always resolve to a door", d)
+            // Same house drawn at the same absolute cells: the answer cannot depend on the canvas.
+            assertEquals("tap ($x,$y)", d, doorForTap(x, y, marginHouse))
+        }
+    }
+
+    @Test
+    fun `a tap inside the house picks the wall it is nearest to`() {
+        // Rows 3..5, so row 3 is the north strip and row 4 the south strip.
+        assertEquals(DoorSide.N, doorForTap(4.5f, 3.2f, marginHouse)?.side)
+        assertEquals(DoorSide.S, doorForTap(4.5f, 4.8f, marginHouse)?.side)
+        assertEquals(DoorSide.W, doorForTap(3.1f, 4.0f, marginHouse)?.side)
+        assertEquals(DoorSide.E, doorForTap(7.9f, 4.0f, marginHouse)?.side)
+    }
+
+    @Test
+    fun `a one-cell-deep house can still take a south door`() {
+        // ⚠ This is why the tap is measured in FRACTIONAL cells. A 1-deep house's north and south
+        // walls are half a cell apart; rounded to whole cells both distances are 0 and the tie always
+        // resolved north, so a south door was unreachable on a thin house.
+        val thin = listOf(GridRoom("t1", RoomType.LIVING, 1, 3, 6, 1))
+        assertEquals("upper half of the strip", DoorSide.N, doorForTap(4.0f, 3.2f, thin)?.side)
+        assertEquals("lower half of the strip", DoorSide.S, doorForTap(4.0f, 3.8f, thin)?.side)
+        // Same for a 1-cell-WIDE house, east vs west.
+        val narrow = listOf(GridRoom("n1", RoomType.LIVING, 3, 1, 1, 6))
+        assertEquals(DoorSide.W, doorForTap(3.2f, 4.0f, narrow)?.side)
+        assertEquals(DoorSide.E, doorForTap(3.8f, 4.0f, narrow)?.side)
+    }
+
+    @Test
+    fun `every tap lands a door already on the footprint, so it never jumps on reopen`() {
+        // The whole point of clamping at placement (C15/F4): what is displayed is what is scored and
+        // what comes back. Sweep taps across the entire plot, including all four margins.
+        for (tx in 0..20) for (ty in 0..20) {
+            val x = tx * 0.5f
+            val y = ty * 0.5f
+            val d = doorForTap(x, y, marginHouse) ?: continue
+            assertEquals(
+                "doorForTap must already be footprint-clamped at ($x,$y)",
+                d, clampDoorToRooms(d, marginHouse),
+            )
+            // And it survives the flip to the engine plan and back, byte-for-byte.
+            assertEquals("reopen ($x,$y)", d, gridDoorFromPlan(plan(marginHouse, d), marginHouse))
+        }
+    }
+
+    @Test
+    fun `a tap with no rooms yields no door`() {
+        assertNull(doorForTap(4.5f, 4.5f, emptyList()))
+    }
 }

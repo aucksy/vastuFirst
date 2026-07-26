@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.10 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.10/vastufirst-v0.3.10.apk)
+**Latest build to test:** v0.3.11 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.11/vastufirst-v0.3.11.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -74,9 +74,18 @@ buttons and never actually slide a finger.
       sit on the wall of your *house*, not out in the empty space around it. *(v0.3.9)*
 - [ ] **B4 · Move a room so the house gets smaller, with the door already set.** The D should stay
       stuck to the house's edge, and still be there when you reopen the home. *(v0.3.6)*
-- [ ] **B5 · Tap different walls in the door step.** Note whether the wall it picks is the one you
-      *meant*. With a plot much bigger than the house this can pick a side you didn't aim at — a
-      known gap (see "S8" below), so this is information-gathering, not a bug hunt. *(v0.3.10)*
+- [ ] **B5 · Tap each of the four walls in the door step, on a plot bigger than your house.** The
+      wall it picks should be the one you aimed at, every time — including when you tap out in the
+      empty space *beyond* a wall. This used to measure to the edges of the drawing area, so a tap
+      just above your house could come back as a *West* door. **This is the important one to try.**
+      *(v0.3.11 — was gap S8)*
+- [ ] **B6 · Your house should be outlined during the door step.** A sage line hugging your rooms, so
+      "tap the wall" points at something you can see. It's the box the app actually scores, so on a
+      home with a gap between rooms it will look larger than the rooms themselves — that's honest, not
+      a glitch, but tell me if it reads oddly. *(v0.3.11)*
+- [ ] **B7 · A one-room-deep home.** Draw a single wide room, one cell tall, then tap just above it
+      and just below it. You should get a north door and a south door respectively — a thin house used
+      to only ever accept a north door. *(v0.3.11)*
 
 ## C · How it feels (haptics)
 
@@ -140,7 +149,7 @@ before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-P
 |---|---|---|
 | **S2** | Reopening a home trims the plot to the rooms; the empty margin you drew isn't remembered. Score unaffected. | D4 |
 | **S3** | A brand-new, never-scored home lives only in memory and can be lost if Android reclaims the app. | D2 |
-| **S8** | The door step says "tap the outer wall", but your house's outline is never drawn — so with a big plot you're guessing which line to tap. | B5 |
+| ~~**S8**~~ | ~~The door step says "tap the outer wall", but your house's outline is never drawn.~~ **FIXED in v0.3.11** — the house is outlined, and the wall a tap means is now measured from your house, not the drawing area. Please confirm with B5–B7. | B5–B7 |
 
 ## Settled
 

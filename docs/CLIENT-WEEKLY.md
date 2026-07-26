@@ -61,6 +61,19 @@ We also confirmed some good news the hard way: **your score never changes just b
 
 To keep testing the plan builder without needing a phone every time, we built a version of it that runs on a computer screen and behaves exactly like the phone — same drawing, dragging, resizing and door behaviour. Trying it and looking closely turned up one more thing worth fixing: **the front-door marker was sitting on the edge of the drawing area instead of on the wall of your actual house.** If you drew the plot a bit bigger than your rooms, the little door dot floated off in the empty space above or beside the house — even though it was always counted correctly on the house itself. Now the door dot sits right on the wall of your house, matching where it's counted and where it comes back when you reopen the home. It's in the latest build.
 
+### The front door now goes on the wall you actually tapped
+
+This was the most worthwhile fix of the week, because the front door counts for more in the Vastu score than anything else in the app.
+
+**What was wrong.** When you tapped a wall to place your front door, the app worked out which wall you meant by measuring to the edges of the *drawing area* — not to your actual house. So if you'd drawn the plot bigger than your rooms (which the app does by default), tapping just above your house could give you a **west** door, because the drawing area's left edge happened to be closer than its top edge. The door then counted on that wall. You'd have had no way of knowing.
+
+**What's fixed.**
+- **The wall is now worked out from your house**, never the drawing area. Tap above your house, you get a north door. Tap out in the empty space beyond a wall, you get that wall. The part of the app that makes this decision no longer even knows how big the plot is, so this can't come back.
+- **Your house is now outlined during the door step**, and the instruction says so: *"Your home is outlined below. Tap the wall where your main entrance is."* Before, you saw a few separate rooms floating on a grid and had to guess where "the outer wall" was.
+- **A one-room-deep home can now take a south door.** Previously a house only one cell tall always ended up with a north door, because the two walls were too close together for the app to tell them apart.
+
+**One thing worth knowing:** the outline is drawn as a rectangle around all your rooms, because that rectangle is exactly what the app scores. If your rooms have a gap between them, the outline will look bigger than the rooms do. That's not a glitch — it's showing you honestly how the app is reading your home, which is the same "we treat every home as a rectangle" point that's still awaiting your decision at the top of this page.
+
 ### Two buttons that were quietly not working, and a screen-reader slip
 
 We kept testing the plan builder on the computer version and fixed three more things:

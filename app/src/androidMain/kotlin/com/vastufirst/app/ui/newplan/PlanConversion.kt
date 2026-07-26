@@ -8,6 +8,7 @@ import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.Room
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -138,6 +139,51 @@ fun doorMarkerCell(door: GridDoor, rooms: List<GridRoom>, cols: Int, rows: Int):
         DoorSide.S -> door.cell to (maxR - 1)
         DoorSide.W -> minC to door.cell
         DoorSide.E -> (maxC - 1) to door.cell
+    }
+}
+
+/**
+ * Which front door a tap means. Pure, because this decides the **most heavily weighted input in the
+ * whole score** and it used to be a lambda buried inside the Composable that no test could reach.
+ *
+ * [xCells]/[yCells] are the tap in fractional cell units (pixel ÷ cell size), not whole cells — see
+ * the thin-house note below.
+ *
+ * ⭐ The side is chosen by distance to the **HOUSE's** walls (the rooms' footprint), never the plot's
+ * edges. Measuring to the plot meant that with a plot drawn larger than the house, a tap just above
+ * the rooms could resolve to *West* purely because the plot's west edge happened to be nearer than
+ * its north edge — a wall the user never aimed at (UAT S8). The plot does not appear in this function
+ * at all, which is the fix stated structurally: the same tap on the same house gives the same door at
+ * any plot size.
+ *
+ * Distances are **signed**, so a tap out in the empty margin is negative for the wall it lies beyond
+ * and that wall wins — exactly what "I tapped above the house" should mean.
+ *
+ * ⚠ Fractional cells, not whole ones, because a **1-cell-deep house** has its north and south walls
+ * half a cell apart: rounded to whole cells both distances are 0 and the tie would always resolve
+ * north, so the user could never place a south door on a thin house. Comparing the continuous tap
+ * position against the wall lines resolves it the way the finger meant.
+ *
+ * The position ALONG the wall is clamped onto the footprint, as it always was: that is where the
+ * engine scores it ([doorGeometry]), where it is drawn ([doorMarkerCell]) and where reopen puts it,
+ * so displayed == scored == reloaded. Returns null when there is no house to attach a wall to.
+ */
+fun doorForTap(xCells: Float, yCells: Float, rooms: List<GridRoom>): GridDoor? {
+    if (rooms.isEmpty()) return null
+    val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
+    val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
+    // Distance from the tap to each of the house's four wall LINES. Negative = beyond that wall.
+    val distN = yCells - fMinR
+    val distS = fMaxR - yCells
+    val distW = xCells - fMinC
+    val distE = fMaxC - xCells
+    val cCol = floor(xCells).toInt().coerceIn(fMinC, fMaxC - 1)
+    val cRow = floor(yCells).toInt().coerceIn(fMinR, fMaxR - 1)
+    return when (minOf(distN, distS, distW, distE)) {
+        distN -> GridDoor(DoorSide.N, cCol)
+        distS -> GridDoor(DoorSide.S, cCol)
+        distW -> GridDoor(DoorSide.W, cRow)
+        else -> GridDoor(DoorSide.E, cRow)
     }
 }
 

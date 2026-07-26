@@ -375,18 +375,27 @@ function opPlotResize(ed, reqCols, reqRows) {
   ed.door = clampDoorToRooms(ed.door, ed.rooms);
 }
 
+// doorForTap (PlanConversion.kt) — which wall a tap MEANS. Distances are to the HOUSE's wall lines,
+// never the plot's edges (UAT S8), signed so a tap out in the margin picks the wall it lies beyond,
+// and in FRACTIONAL cells so a 1-cell-deep house can still tell north from south. The plot is not a
+// parameter at all: that is the fix stated structurally.
+function doorForTap(xCells, yCells, rooms) {
+  if (rooms.length === 0) return null;
+  const fMinC = Math.min(...rooms.map((r) => r.col)), fMaxC = Math.max(...rooms.map((r) => r.col + r.w));
+  const fMinR = Math.min(...rooms.map((r) => r.row)), fMaxR = Math.max(...rooms.map((r) => r.row + r.h));
+  const distN = yCells - fMinR, distS = fMaxR - yCells, distW = xCells - fMinC, distE = fMaxC - xCells;
+  const cCol = clampInt(Math.floor(xCells), fMinC, fMaxC - 1);
+  const cRow = clampInt(Math.floor(yCells), fMinR, fMaxR - 1);
+  const m = Math.min(distN, distS, distW, distE);
+  return m === distN ? { side: 'N', cell: cCol } : m === distS ? { side: 'S', cell: cCol }
+    : m === distW ? { side: 'W', cell: cRow } : { side: 'E', cell: cRow };
+}
+
 function opPlaceDoor(ed, tapPx) {
   if (ed.rooms.length === 0) return;
   const { cellPx } = geom(ed.cols, ed.rows);
-  const col = cellIndex(tapPx[0], cellPx, ed.cols);
-  const row = cellIndex(tapPx[1], cellPx, ed.rows);
-  const distN = row, distS = ed.rows - 1 - row, distW = col, distE = ed.cols - 1 - col;
-  const fMinC = Math.min(...ed.rooms.map((r) => r.col)), fMaxC = Math.max(...ed.rooms.map((r) => r.col + r.w));
-  const fMinR = Math.min(...ed.rooms.map((r) => r.row)), fMaxR = Math.max(...ed.rooms.map((r) => r.row + r.h));
-  const cCol = clampInt(col, fMinC, fMaxC - 1), cRow = clampInt(row, fMinR, fMaxR - 1);
-  const m = Math.min(distN, distS, distW, distE);
-  ed.door = m === distN ? { side: 'N', cell: cCol } : m === distS ? { side: 'S', cell: cCol }
-    : m === distW ? { side: 'W', cell: cRow } : { side: 'E', cell: cRow };
+  const d = doorForTap(tapPx[0] / cellPx, tapPx[1] / cellPx, ed.rooms);
+  if (d) ed.door = d;
 }
 
 function opRemove(ed) {
@@ -748,6 +757,37 @@ function fuzzRoundTrip(iters) {
     const want = clampDoorToRooms(door, rooms);
     const doorEq = (!rd && !want) || (rd && want && rd.side === want.side && rd.cell === want.cell);
     if (!doorEq) problems.push(`DOOR ${door ? door.side + '@' + door.cell : 'null'} want ${want ? want.side + '@' + want.cell : 'null'} got ${rd ? rd.side + '@' + rd.cell : 'null'}`);
+
+    // (c4) ⭐ doorForTap picks the wall the finger MEANT (UAT S8). Two properties, over taps swept
+    // across the whole plot including all four margins:
+    //   - a tap strictly BEYOND exactly one of the house's walls must choose that wall (the S8 bug:
+    //     distances were measured to the PLOT's edges, so a tap right above the house could come back
+    //     West because the plot's west edge happened to be nearer);
+    //   - every tap must already be footprint-clamped, so displayed == scored == reloaded.
+    // Only the FIRST offending tap per footprint is reported: the sweep is ~hundreds of taps and a
+    // real regression trips most of them, which would bury the useful line in a wall of text.
+    let tapReported = false;
+    for (let tx = 0; tx <= cols * 2 && !tapReported; tx++) {
+      for (let ty = 0; ty <= rows * 2 && !tapReported; ty++) {
+        const x = tx * 0.5, y = ty * 0.5;
+        const d = doorForTap(x, y, rooms);
+        if (!d) continue;
+        const beyond = [];
+        if (y < minR) beyond.push('N');
+        if (y > maxR) beyond.push('S');
+        if (x < minC) beyond.push('W');
+        if (x > maxC) beyond.push('E');
+        if (beyond.length === 1 && d.side !== beyond[0]) {
+          problems.push(`TAP-WRONG-WALL (${x},${y}) beyond ${beyond[0]} but chose ${d.side} · footprint ${minC}..${maxC},${minR}..${maxR}`);
+          tapReported = true;
+        }
+        const clamped = clampDoorToRooms(d, rooms);
+        if (!clamped || clamped.side !== d.side || clamped.cell !== d.cell) {
+          problems.push(`TAP-UNCLAMPED (${x},${y}) ${d.side}@${d.cell} → ${clamped ? clamped.side + '@' + clamped.cell : 'null'}`);
+          tapReported = true;
+        }
+      }
+    }
 
     // (c3) Score translation-invariance: shift the whole config; normalized engine geometry is identical.
     const dc = ((rng() * 13) | 0) - 6, dr = ((rng() * 13) | 0) - 6;

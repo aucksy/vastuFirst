@@ -701,3 +701,66 @@ verdict is never lost and nothing is tested twice.
 It also deliberately probes the three known gaps (S2 plot margin, S3 draft lost on process kill,
 S8 undrawn house outline in the door step) — the point being to learn whether they matter enough to
 fix before 4 August, rather than guessing on the owner's behalf.
+
+---
+
+## The front-door step — S8 fixed both halves — v0.3.11 (2026-07-26)
+
+Owner picked this over the alternatives (L-shapes, the two robustness items, more hunting) because the
+front door is the **highest-weighted single input the engine scores**, and the tap that sets it could
+land on a wall the user never aimed at.
+
+### 1 · The wall a tap means is measured from the HOUSE, not the plot
+
+The old code compared the tap against the **plot's** four edges. With a plot drawn bigger than the
+house, a tap directly above the rooms could resolve to *West* — the plot's west edge happened to be
+nearer than its north edge — so the door was set on a wall the user never touched, and the score moved
+accordingly.
+
+The decision moved out of the Composable (where nothing could test it) into pure
+**`doorForTap(xCells, yCells, rooms)`** in `PlanConversion.kt`. Three properties:
+
+- **No plot parameter at all.** The fix stated structurally rather than by comment: the canvas cannot
+  influence which wall a tap means, because the function can't see it.
+- **Signed distances**, so a tap out in the empty margin is negative for the wall it lies beyond and
+  that wall wins — exactly what "I tapped above the house" should mean.
+- **Fractional cells**, not whole ones. A 1-cell-deep house has its north and south walls half a cell
+  apart; rounded to whole cells both distances are 0, the tie always resolved north, and **a south door
+  was unreachable on a thin house**. Comparing the continuous tap against the wall lines fixes it.
+
+`placeDoor` is now a three-line binding, and `cellIndex` is gone from the door path.
+
+### 2 · The house is outlined during the door step
+
+The step says "tap the wall of your home" — and that wall (the rooms' footprint) was never drawn, so
+with a plot bigger than the house the user had to imagine it. The Canvas now strokes the footprint in
+`primaryDark` at focus width, with the rooms' corner radius, **only in door mode**: the rooms' own
+borders carry the boundary while placing, and a second always-on frame would compete with them. Copy
+updated to name it — *"Your home is outlined below. Tap the wall where your main entrance is."*
+
+⚠ The outline is the footprint **bounding box**, so a home with a gap between rooms reads larger than
+the rooms do. That is honest — it is precisely the rectangle the engine scores — and it has a useful
+side effect: the Group D "L-shapes are scored as a filled rectangle" caveat is now **visible on
+screen** instead of living only in the report text. Flagged for the owner's eye (checklist B6).
+
+### Proof
+
+- **5 new `PlanConversionRoundTripTest` cases**: a tap beyond each wall picks that wall; the plot plays
+  no part; taps inside pick the nearest wall; a thin house accepts a south door; and every tap in a
+  441-point sweep across the plot (all four margins included) is *already* footprint-clamped and
+  survives the reopen flip byte-for-byte.
+- **New fuzz invariant** (`sim.mjs` Suite C): sweeps taps over the whole plot for every random
+  footprint and asserts a tap strictly beyond one wall chooses that wall, and that every tap is
+  footprint-clamped. **Both halves proven to bite** — re-measuring to the plot edges fails ~89 % of
+  footprints (first failure reads *"beyond S but chose W"*, literally the bug), and rounding the tap to
+  whole cells fails ~66 %. All four suites then clean at 100 000 iterations each.
+- **New golden `editor-door`** — the door step had never been rendered in the app. It needed a small
+  seam: `startInDoorMode` on `GuidedGridContent` (a golden can't press a button to get into the mode,
+  and it's the entry point a future "move the front door" shortcut would use anyway).
+- Rendered and **looked at** in the interactive harness first: outline hugs the rooms, copy names it.
+
+### Mirrors
+
+`doorForTap` and the outline are in `sim.mjs` and `harness.html` too, so the three stay in lock-step.
+One harness-hygiene fix while there: the tap sweep now reports only the first offending tap per
+footprint — a real regression trips hundreds and buried the useful line in a wall of text.

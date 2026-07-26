@@ -69,8 +69,8 @@ import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.spoken
-import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
+import com.vastufirst.app.ui.newplan.doorForTap
 import com.vastufirst.app.ui.newplan.doorMarkerCell
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
@@ -263,6 +263,10 @@ fun GuidedGridContent(
     /** Returns false when the plot could not become the requested size (rooms won't fit, or the
      *  MIN_GRID/MAX_GRID limit) — the plot keys turn that into a "no" buzz instead of doing nothing. */
     onGridChange: (Int, Int) -> Boolean = { _, _ -> true },
+    /** Open straight on the door step. The screenshot harness needs it (the door step's house outline
+     *  is drawn only in that mode, and a golden cannot press a button to get there), and it is the
+     *  entry point a future "move the front door" shortcut would use. */
+    startInDoorMode: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -275,6 +279,10 @@ fun GuidedGridContent(
     val badColor = colors.error
     val gripFill = colors.surfaceRaised
     val gripStroke = colors.primaryDark
+    // The house's outline during the door step: solid (the dashed treatment already means "preview"
+    // for the placement ghost) and in the deeper primary, so it reads as the wall rather than as
+    // another room border, and contrasts with the gold door marker sitting on it.
+    val outlineColor = colors.primaryDark
     val density = LocalDensity.current
     val linePx = with(density) { VastuTheme.borders.regular.toPx() }
     val bandPx = with(density) { VastuTheme.borders.strong.toPx() }
@@ -294,7 +302,7 @@ fun GuidedGridContent(
     // the default saver handles it.
     var armedType by rememberSaveable { mutableStateOf<RoomType?>(null) }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
-    var doorMode by rememberSaveable { mutableStateOf(false) }
+    var doorMode by rememberSaveable { mutableStateOf(startInDoorMode) }
     // Replaced only when the SNAPPED cell changes, never per pointer event — so a drag recomposes
     // a handful of times, not sixty times a second (§4.7).
     var activeDrag by remember { mutableStateOf<ActiveDrag?>(null) }
@@ -309,27 +317,18 @@ fun GuidedGridContent(
     val roomsState = rememberUpdatedState(rooms)
     val selected = rooms.firstOrNull { it.id == selectedId }
 
-    fun placeDoor(col: Int, row: Int) {
-        // Read the LIVE room list, not the one captured when this screen first composed — otherwise a
-        // door placed after adding rooms would clamp to a stale footprint.
-        val currentRooms = roomsState.value
-        if (currentRooms.isEmpty()) return
-        // Nearest outer wall to the tapped cell decides the side; the parallel coord is the position.
-        val distN = row; val distS = rows - 1 - row; val distW = col; val distE = cols - 1 - col
-        // Clamp the position onto the ROOM FOOTPRINT (the house outline the engine actually scores is
-        // the rooms' bounding box). A door tapped past the rooms is snapped to the footprint when the
-        // plan is built, so without this it would appear to "jump" when the home is reopened (C15).
-        val fMinC = currentRooms.minOf { it.col }; val fMaxC = currentRooms.maxOf { it.col + it.w }
-        val fMinR = currentRooms.minOf { it.row }; val fMaxR = currentRooms.maxOf { it.row + it.h }
-        val cCol = col.coerceIn(fMinC, fMaxC - 1)
-        val cRow = row.coerceIn(fMinR, fMaxR - 1)
-        val d = when (minOf(distN, distS, distW, distE)) {
-            distN -> GridDoor(DoorSide.N, cCol)
-            distS -> GridDoor(DoorSide.S, cCol)
-            distW -> GridDoor(DoorSide.W, cRow)
-            else -> GridDoor(DoorSide.E, cRow)
-        }
-        onDoorChange(d)
+    /**
+     * A tap in door mode. All the arithmetic is the pure, tested [doorForTap]; this is only the
+     * binding to the live room list — read from [roomsState], never the captured `rooms` param, so a
+     * door placed after adding rooms can't clamp to a stale footprint.
+     *
+     * [xCells]/[yCells] are FRACTIONAL cells, deliberately: the wall is chosen by comparing the tap
+     * against the house's wall lines, and a 1-cell-deep house's north and south walls are only half a
+     * cell apart (see doorForTap). The plot size is not passed at all any more — it plays no part in
+     * which wall a tap means (UAT S8).
+     */
+    fun placeDoor(xCells: Float, yCells: Float) {
+        doorForTap(xCells, yCells, roomsState.value)?.let(onDoorChange)
     }
 
     /**
@@ -368,7 +367,9 @@ fun GuidedGridContent(
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
             when {
-                doorMode -> "Tap the outer wall where your main entrance is."
+                // Names the outline the Canvas now draws, so "the wall" points at something visible
+                // instead of an outline the user had to imagine around their rooms (UAT S8).
+                doorMode -> "Your home is outlined below. Tap the wall where your main entrance is."
                 selected != null -> "Drag the room to move it, or pull a corner to resize."
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
@@ -482,10 +483,10 @@ fun GuidedGridContent(
                             val up = waitForUpOrCancellation()
                             if (up != null) {
                                 up.consume()
-                                placeDoor(
-                                    cellIndex(up.position.x, cellPx, cols),
-                                    cellIndex(up.position.y, cellPx, rows),
-                                )
+                                // Fractional cells, NOT cellIndex: doorForTap compares the tap against
+                                // the house's wall lines, and rounding to a whole cell first would make
+                                // a 1-cell-deep house's north and south walls indistinguishable.
+                                placeDoor(up.position.x / cellPx, up.position.y / cellPx)
                                 haptics.confirm()
                             }
                             return@awaitEachGesture
@@ -631,6 +632,23 @@ fun GuidedGridContent(
             Canvas(Modifier.matchParentSize()) {
                 val cp = size.width / cols
                 val d = activeDrag
+                // ⭐ THE HOUSE'S OUTLINE, shown only during the door step. The step says "tap the wall
+                // of your home", and the wall the engine scores the door against is the rooms'
+                // footprint — which was never drawn, so with a plot bigger than the house the user had
+                // to guess which line was "the outer wall" (UAT S8). Drawn only here: the rooms' own
+                // borders carry the boundary well enough while placing rooms, and an always-on outline
+                // would add a second frame competing with them.
+                if (doorMode && rooms.isNotEmpty()) {
+                    val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
+                    val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
+                    drawRoundRect(
+                        color = outlineColor,
+                        topLeft = Offset(fMinC * cp, fMinR * cp),
+                        size = Size((fMaxC - fMinC) * cp, (fMaxR - fMinR) * cp),
+                        cornerRadius = CornerRadius(cornerPx),
+                        style = Stroke(width = strokePx),
+                    )
+                }
                 if (d != null && (d.roomId == null || d.blocked)) {
                     val r = d.attempted
                     val topLeft = Offset(r.col * cp, r.row * cp)

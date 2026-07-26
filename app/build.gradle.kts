@@ -69,8 +69,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 22
-        versionName = "0.3.10"  // Plot keys report a refusal (buzz) instead of failing silently; door spoken as "north"
+        versionCode = 23
+        versionName = "0.3.11"  // Front door: the wall a tap means is measured from the HOUSE, and the house is outlined (S8)
     }
 
     buildTypes {

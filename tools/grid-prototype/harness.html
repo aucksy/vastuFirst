@@ -332,14 +332,21 @@ const chip = document.getElementById('chip');
 
 function localPos(e){ const b = stage.getBoundingClientRect(); return [ (e.clientX-b.left)*(STAGE_W/b.width), (e.clientY-b.top)*(STAGE_W/b.width) ]; }
 
-function placeDoor(col, row){
-  if (ed.rooms.length===0) return;
-  const distN=row, distS=ed.rows-1-row, distW=col, distE=ed.cols-1-col;
-  const fMinC=Math.min(...ed.rooms.map(r=>r.col)),fMaxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
-  const fMinR=Math.min(...ed.rooms.map(r=>r.row)),fMaxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
-  const cCol=clampInt(col,fMinC,fMaxC-1), cRow=clampInt(row,fMinR,fMaxR-1);
+// doorForTap (PlanConversion.kt) — the wall a tap MEANS. Distances are to the HOUSE's wall lines,
+// never the plot's edges (UAT S8); signed, so a tap out in the margin picks the wall it lies beyond;
+// in FRACTIONAL cells, so a 1-cell-deep house can still tell north from south. No plot parameter.
+function doorForTap(xCells, yCells, rooms){
+  if (rooms.length===0) return null;
+  const fMinC=Math.min(...rooms.map(r=>r.col)),fMaxC=Math.max(...rooms.map(r=>r.col+r.w));
+  const fMinR=Math.min(...rooms.map(r=>r.row)),fMaxR=Math.max(...rooms.map(r=>r.row+r.h));
+  const distN=yCells-fMinR, distS=fMaxR-yCells, distW=xCells-fMinC, distE=fMaxC-xCells;
+  const cCol=clampInt(Math.floor(xCells),fMinC,fMaxC-1), cRow=clampInt(Math.floor(yCells),fMinR,fMaxR-1);
   const m=Math.min(distN,distS,distW,distE);
-  ed.door = m===distN?{side:'N',cell:cCol}:m===distS?{side:'S',cell:cCol}:m===distW?{side:'W',cell:cRow}:{side:'E',cell:cRow};
+  return m===distN?{side:'N',cell:cCol}:m===distS?{side:'S',cell:cCol}:m===distW?{side:'W',cell:cRow}:{side:'E',cell:cRow};
+}
+function placeDoor(xCells, yCells){
+  const d = doorForTap(xCells, yCells, ed.rooms);
+  if (d) ed.door = d;
 }
 function commitRooms(list){ ed.rooms = list; ed.door = clampDoorToRooms(ed.door, list); }
 
@@ -352,7 +359,8 @@ stage.addEventListener('pointerdown', (e) => {
 
   // door mode — a tap; place on up
   if (ed.doorMode){
-    const onUp = (ev)=>{ const p=localPos(ev); placeDoor(cellIndex(p[0],cellPx,ed.cols), cellIndex(p[1],cellPx,ed.rows)); cleanup(); render(); };
+    // FRACTIONAL cells, not cellIndex — doorForTap compares the tap against the house's wall lines.
+    const onUp = (ev)=>{ const p=localPos(ev); placeDoor(p[0]/cellPx, p[1]/cellPx); cleanup(); render(); };
     const cleanup=()=>{ stage.removeEventListener('pointerup',onUp); };
     stage.addEventListener('pointerup', onUp, { once:true });
     return;
@@ -422,6 +430,16 @@ function render(){
   for (let i=1;i<ed.rows;i++){ const band=bandsY.has(i); ctx.strokeStyle=band?'#B6BBA8':'#DDDED3'; ctx.lineWidth=band?1.6:1;
     ctx.beginPath(); ctx.moveTo(0,cellPx*i); ctx.lineTo(STAGE_W,cellPx*i); ctx.stroke(); }
 
+  // The HOUSE's outline, shown only during the door step (mirrors GuidedGridScreen): the step says
+  // "tap the wall of your home", and that wall is the rooms' footprint — which was never drawn, so
+  // with a plot bigger than the house the user had to guess which line it was (UAT S8).
+  if (ed.doorMode && ed.rooms.length){
+    const fMinC=Math.min(...ed.rooms.map(r=>r.col)),fMaxC=Math.max(...ed.rooms.map(r=>r.col+r.w));
+    const fMinR=Math.min(...ed.rooms.map(r=>r.row)),fMaxR=Math.max(...ed.rooms.map(r=>r.row+r.h));
+    ctx.strokeStyle='#5F8465'; ctx.lineWidth=2;
+    roundRect(fMinC*cellPx, fMinR*cellPx, (fMaxC-fMinC)*cellPx, (fMaxR-fMinR)*cellPx, 8); ctx.stroke();
+  }
+
   // ghost (placing a new room, or a blocked move)
   const d = activeDrag;
   if (d && (d.roomId===null || d.blocked)){
@@ -467,7 +485,7 @@ function render(){
   // titles / subtitle
   document.getElementById('title').textContent = ed.doorMode ? 'Mark your front door' : 'Place your rooms';
   document.getElementById('sub').textContent =
-    ed.doorMode ? 'Tap the outer wall where your main entrance is.' :
+    ed.doorMode ? 'Your home is outlined below. Tap the wall where your main entrance is.' :
     sel ? 'Drag the room to move it, or pull a corner to resize.' :
     ed.armedType ? 'Press the plan where this room goes. Slide to adjust, lift to place.' :
     ed.rooms.length===0 ? 'Pick a room below, then press the plan to place it.' :

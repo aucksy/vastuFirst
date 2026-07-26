@@ -100,7 +100,7 @@ class EditorScreenshotTest {
     }
 
     @Composable
-    private fun MarginHouse() {
+    private fun MarginHouse(doorStep: Boolean = false) {
         GuidedGridContent(
             rooms = listOf(
                 GridRoom("m1", RoomType.LIVING, 3, 3, 3, 2),
@@ -112,7 +112,22 @@ class EditorScreenshotTest {
             onNext = {},
             cols = 10,
             rows = 10,
+            startInDoorMode = doorStep,
         )
+    }
+
+    /**
+     * ⭐ The DOOR STEP, with the house drawn smaller than the plot — never rendered before this build.
+     *
+     * The step tells the user "your home is outlined below, tap the wall where your main entrance is",
+     * and the outline it refers to is drawn only in this mode. Rendering the door step is exactly how
+     * UAT S8 was found (the outline did not exist, so "the outer wall" had to be guessed), so it gets
+     * a golden: if the outline ever stops being drawn, or stops hugging the rooms, it shows up here.
+     */
+    @Test
+    fun editor_door() {
+        captureAcrossMatrix("editor-door") { MarginHouse(doorStep = true) }
+        writeManifestAcrossMatrix("editor-door") { MarginHouse(doorStep = true) }
     }
 
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size

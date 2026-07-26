@@ -232,7 +232,7 @@ class GuidedGridInteractionTest {
         val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)))
         setContent { Editor(h) }
         tapText("Set the front door")
-        onNodeWithText("Tap the outer wall where your main entrance is.").assertExists()
+        onNodeWithText("Your home is outlined below. Tap the wall where your main entrance is.").assertExists()
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
