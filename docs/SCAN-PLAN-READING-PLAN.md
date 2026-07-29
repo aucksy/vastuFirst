@@ -163,6 +163,67 @@ Gemini 3 Pro), scored on rooms-found and label accuracy against a hand-made answ
 wrong often enough that correcting it is slower than drawing from scratch — that is the real bar this
 feature has to clear.
 
+## 3e. ⭐ Measured on the real API — 2026-07-29
+
+The Groq key arrived, so this stopped being a paper exercise. Harness: `tools/scan-eval/`
+(`run-eval.py` scores a model against a fixture with exact ground truth; `make-photo.py` degrades a
+clean render into a realistic desk photo; `rectify.py` tests a two-pass corner-finding approach).
+Fixture `plan-01` is a synthetic Indian 2BHK, 8 labelled rooms tiling a 30′×40′ footprint —
+**synthetic on purpose, so answers can be scored rather than admired**.
+
+Model: `qwen/qwen3.6-27b` — confirmed by API listing to be the **only** image-capable model this
+Groq account can reach (15 models visible; one accepts `image`).
+
+| Input | rooms IoU≥0.5 | mean IoU | coverage | self-reported confidence |
+|---|---|---|---|---|
+| Clean digital render | **8/8 (100 %)** | 0.79 | 100 % | 0.95 |
+| Downscaled + JPEG q72, no skew | 6/8 (75 %) | 0.73 | — | 0.95 |
+| Simulated phone photo | **2/8 (25 %)** | 0.37 | **57 %** | 0.95 |
+
+**Cost measured, not estimated:** 2 061 prompt + ~570 completion tokens = **₹0.15 per scan**, below
+the ₹0.21 projected in §3b. The estimate holds.
+
+### Four findings, each of which changes a design decision
+
+1. ⭐ **Labels survive photography; geometry does not.** Even on the bad photo the model found all 8
+   rooms and named **every one correctly**. What collapsed was *where* they are (IoU 0.79 → 0.37).
+   This is the published benchmark reproduced exactly: OCR ~95 %, spatial reasoning ~70 %.
+   **Use the model for identification, not for measurement.**
+2. ⭐ **The model's confidence is worthless as a gate.** `planConfidence` was **0.95 on both** the
+   100 % read and the 25 % read. Gating on it would have shipped bad plans as confident ones.
+   **Coverage** discriminates cleanly (100 % vs 57 %) and needs no ground truth — it runs on the
+   user's phone, on their plan.
+3. ⭐ **Skew is the killer, not compression.** Isolating the variables: JPEG + downscale alone costs
+   little (0.79 → 0.73); adding perspective and tilt is what destroys it (→ 0.37). So a **PDF or
+   screenshot is the good path** and a **photograph is the hard one**.
+4. ⭐ **The model cannot rectify its own input.** Asked for the outer wall's four corners so we could
+   de-skew mathematically, it returned a perfect axis-aligned square — `(0.11,0.11)–(0.65,0.65)` —
+   for a visibly skewed quadrilateral. A guess, not a measurement, and the rectified image was
+   garbage (verified by looking at it). **Corner-finding is the same weak spatial skill.** De-skew
+   must be deterministic code, never a second model call.
+
+### The design these findings force
+
+**Two outcomes, chosen by the coverage gate — and both are honest:**
+
+- **Placed** (coverage ≥ ~85 %, typical of a PDF/screenshot): rooms arrive positioned on the grid.
+  The user confirms and corrects, per §6.2b.
+- **Assisted** (coverage below the gate, typical of a photo): we say *"we found these 8 rooms but
+  couldn't place them reliably — here they are, drop them in"*, and pre-load the palette with the
+  right rooms. **This is still a real saving** — the model got every room name right even on the bad
+  photo — and it never pretends to a precision it does not have.
+
+This satisfies §6.2b's "fall back without an error state" with something better than a bare fallback:
+the degraded path still carries the model's genuine strength.
+
+**Steer users to the good input.** The upload copy should ask for *"the PDF your architect sent"*
+first and offer the camera second, because the format difference is worth more than any model choice.
+
+**Deferred, not chosen:** classical CV page-detection (find the plan quadrilateral by edge/contour,
+rectify, then extract) would likely move photos into the Placed path. It is the natural upgrade, but
+OpenCV is a heavy dependency against a 30 MB APK budget (NFR §10) and it is not needed to ship a
+useful v1. Revisit once real user plans show how many arrive as photos.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
@@ -186,7 +247,11 @@ This is the hard part and it is entirely testable. Ordered concerns:
 4. **Map labels → `RoomType`** across the 19 enum values, with Indian-English synonyms the model will
    emit: *pooja/puja/prayer*, *drawing room → LIVING*, *WC/wash → TOILET*, *servant → BEDROOM*,
    *utility/wash area → UTILITY*, *lobby/passage → CORRIDOR*. Unknown label ⇒ flagged, not guessed.
-5. **Confidence gate.** Below threshold ⇒ `ScanOutcome.Unreadable` ⇒ guided grid, no error state.
+5. ⭐ **Coverage gate — NOT the model's confidence.** See §3e: the model reported
+   `planConfidence: 0.95` on both a 100 %-correct read and a 25 %-correct one, so its self-report
+   is worthless as a gate. Use the **objective** signal instead: do the returned rooms *tile* the
+   footprint? Coverage of the unit square was **100 % on a good read and 57 % on a bad one**, with
+   no ground truth needed. Gate on measured coverage, overlap area and out-of-bounds count.
 
 ### 4.3 Proof obligations
 

@@ -1,0 +1,16 @@
+{
+  "id": "plan-01",
+  "note": "Synthetic Indian 2BHK. Coordinates are normalised 0..1 against the PLAN BODY (the 30'x40' outer wall), origin top-left, north up. Rooms tile the footprint exactly with no gaps and no overlaps.",
+  "plotFeet": { "w": 30, "d": 40 },
+  "rooms": [
+    { "label": "LIVING ROOM",    "type": "LIVING",         "x": 0.0,    "y": 0.0,  "w": 0.6,    "h": 0.4  },
+    { "label": "POOJA",          "type": "POOJA",          "x": 0.6,    "y": 0.0,  "w": 0.4,    "h": 0.2  },
+    { "label": "KITCHEN",        "type": "KITCHEN",        "x": 0.6,    "y": 0.2,  "w": 0.4,    "h": 0.2  },
+    { "label": "MASTER BEDROOM", "type": "MASTER_BEDROOM", "x": 0.0,    "y": 0.4,  "w": 0.5,    "h": 0.45 },
+    { "label": "BEDROOM 2",      "type": "BEDROOM",        "x": 0.5,    "y": 0.4,  "w": 0.5,    "h": 0.3  },
+    { "label": "TOILET",         "type": "TOILET",         "x": 0.5,    "y": 0.7,  "w": 0.2333, "h": 0.15 },
+    { "label": "BATH",           "type": "BATHROOM",       "x": 0.7333, "y": 0.7,  "w": 0.2667, "h": 0.15 },
+    { "label": "BALCONY",        "type": "BALCONY",        "x": 0.0,    "y": 0.85, "w": 1.0,    "h": 0.15 }
+  ],
+  "door": { "wall": "S", "note": "main entrance on the south wall — recorded for reference only; scan must NOT infer doors (door detection benchmarks at 39%)" }
+}

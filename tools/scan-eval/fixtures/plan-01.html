@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+  Scan-eval fixture 01 — synthetic Indian 2BHK, 30'-0" x 40'-0", north up.
+  Synthetic on purpose: the ground truth is exact, so a model's answer can be SCORED,
+  not admired. Ground truth (feet, origin top-left, north up) is in plan-01.json.
+-->
+<meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#fff}
+  svg{display:block}
+  .wall{fill:none;stroke:#111;stroke-width:6}
+  .part{fill:none;stroke:#111;stroke-width:3}
+  .nm{font:600 15px "Arial",sans-serif;fill:#111;text-anchor:middle;letter-spacing:.5px}
+  .dim{font:400 12px "Arial",sans-serif;fill:#444;text-anchor:middle}
+  .ttl{font:700 20px "Arial",sans-serif;fill:#111}
+  .sub{font:400 13px "Arial",sans-serif;fill:#555}
+</style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+  <rect width="1000" height="1400" fill="#fff"/>
+  <text class="ttl" x="50" y="46">GROUND FLOOR PLAN</text>
+  <text class="sub" x="50" y="70">PLOT 30'-0" x 40'-0"  ·  SCALE 1:100</text>
+
+  <!-- north arrow -->
+  <g transform="translate(915,60)">
+    <line x1="0" y1="34" x2="0" y2="-14" stroke="#111" stroke-width="3"/>
+    <path d="M0,-22 L8,-4 L0,-9 L-8,-4 Z" fill="#111"/>
+    <text class="nm" x="0" y="52">N</text>
+  </g>
+
+  <!-- plan body: 30ft x 40ft at 30px/ft = 900 x 1200, offset (50,120) -->
+  <g transform="translate(50,120)">
+    <rect class="wall" x="0" y="0" width="900" height="1200"/>
+
+    <!-- y 0-16: LIVING (x0-18) | POOJA (x18-30,y0-8) | KITCHEN (x18-30,y8-16) -->
+    <line class="part" x1="540" y1="0"   x2="540" y2="480"/>
+    <line class="part" x1="540" y1="240" x2="900" y2="240"/>
+    <line class="part" x1="0"   y1="480" x2="900" y2="480"/>
+
+    <!-- y 16-34: MASTER (x0-15) | BEDROOM 2 (x15-30,y16-28) | TOILET (x15-22,y28-34) | BATH (x22-30,y28-34) -->
+    <line class="part" x1="450" y1="480" x2="450" y2="1020"/>
+    <line class="part" x1="450" y1="840" x2="900" y2="840"/>
+    <line class="part" x1="660" y1="840" x2="660" y2="1020"/>
+    <line class="part" x1="0"   y1="1020" x2="900" y2="1020"/>
+
+    <!-- labels -->
+    <text class="nm"  x="270" y="232">LIVING ROOM</text>
+    <text class="dim" x="270" y="254">18'-0" x 16'-0"</text>
+
+    <text class="nm"  x="720" y="112">POOJA</text>
+    <text class="dim" x="720" y="134">12'-0" x 8'-0"</text>
+
+    <text class="nm"  x="720" y="352">KITCHEN</text>
+    <text class="dim" x="720" y="374">12'-0" x 8'-0"</text>
+
+    <text class="nm"  x="225" y="742">MASTER BEDROOM</text>
+    <text class="dim" x="225" y="764">15'-0" x 18'-0"</text>
+
+    <text class="nm"  x="675" y="652">BEDROOM 2</text>
+    <text class="dim" x="675" y="674">15'-0" x 12'-0"</text>
+
+    <text class="nm"  x="555" y="922">TOILET</text>
+    <text class="dim" x="555" y="944">7'-0" x 6'-0"</text>
+
+    <text class="nm"  x="780" y="922">BATH</text>
+    <text class="dim" x="780" y="944">8'-0" x 6'-0"</text>
+
+    <text class="nm"  x="450" y="1102">BALCONY</text>
+    <text class="dim" x="450" y="1124">30'-0" x 6'-0"</text>
+
+    <!-- main entrance, south wall (door swing) -->
+    <g transform="translate(300,1200)">
+      <line x1="0" y1="0" x2="90" y2="0" stroke="#fff" stroke-width="8"/>
+      <path d="M0,0 A90,90 0 0,0 90,-90" class="part"/>
+      <line x1="0" y1="0" x2="0" y2="-90" class="part"/>
+    </g>
+    <text class="dim" x="345" y="1252">MAIN ENTRANCE</text>
+  </g>
+</svg>
