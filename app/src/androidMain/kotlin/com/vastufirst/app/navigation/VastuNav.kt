@@ -120,10 +120,18 @@ fun VastuNavHost() {
                     vm = scanVm,
                     onUseRooms = { outcome ->
                         // The scan's rooms land in the guided grid — the confirmation surface §6.2b
-                        // requires. Grid FIRST, then rooms: resolveGridResize re-packs whatever is
-                        // already placed, so setting the plot while it is still empty is a plain
-                        // resize and can never disturb the rooms we are about to add.
+                        // requires.
+                        //
+                        // ⚠ CLEAR FIRST, then resize, then add. `updateGrid` re-packs whatever is
+                        // already placed and REFUSES a size the existing rooms cannot fit — so if the
+                        // user had drawn rooms earlier in this session (grid → back → upload), the
+                        // resize could silently decline while the scanned rooms, sized for the grid we
+                        // asked for, went in anyway and landed outside the plot. That is the v0.3.7
+                        // coordinate-space bug arriving by a new road. An empty plot always resizes.
+                        // Clearing is also correct on its own terms: a scan replaces the home, so the
+                        // previous rooms and their front door do not belong to it.
                         val (cols, rows) = gridForOutcome(outcome)
+                        planVm.updateRooms(emptyList())
                         planVm.updateGrid(cols, rows)
                         planVm.updateRooms(toGridRooms(outcome.scannedRooms(), cols, rows))
                         nav.go(Routes.GUIDED_GRID)

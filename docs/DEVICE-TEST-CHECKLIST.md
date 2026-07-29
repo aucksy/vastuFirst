@@ -155,3 +155,33 @@ before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-P
 
 Nothing yet — this section fills up as you report results, so we never re-test something twice or
 lose a verdict.
+
+## G · Scan your plan (arrived in v0.3.14)
+
+The scan reader is still the **fake** one: it replays three plan readings we recorded from the real
+service on 29 July. Nothing leaves your phone yet, so this is about whether the *flow* and the
+*wording* are right, not about accuracy.
+
+Tap **Add your home → Upload a plan**. Choosing any picture or PDF will show you one of the three
+recorded readings; choose three times to see all three.
+
+- [ ] **G1 — Picking a file.** "Choose a PDF or picture" opens the file browser; "Take a photo
+      instead" opens the photo picker. Neither should ask permission for your gallery.
+- [ ] **G2 — A real PDF opens.** Pick an actual PDF of a floor plan. It should get as far as
+      "Reading your plan…" rather than "We couldn't open that file". ⚠ This is the one thing here
+      that exercises real code — the PDF page is genuinely rendered on your phone.
+- [ ] **G3 — "We read 8 rooms" (rooms placed).** Tap through to the grid: eight rooms should be
+      sitting there, roughly in the shape of a home.
+- [ ] **G4 — ⭐ "We found 8 rooms" (rooms NOT placed).** This is the one to judge hardest, because
+      it is what most real plans will do. The rooms arrive as a row of small single squares in the
+      corner, and you drag each into place. **Is that genuinely easier than starting from an empty
+      grid, or would you rather it just showed you the list and let you draw?** Your call — it is
+      the main open question in this feature.
+- [ ] **G5 — The refusal wording.** (Not reachable by tapping yet; look at the screenshots instead
+      if you'd like.) Does "That looks like a 3D picture — please upload the flat, top-down plan"
+      say enough for someone to know what to do?
+- [ ] **G6 — Is the promise honest?** The whole screen deliberately promises only that we read the
+      room *names*, never that we know where the rooms are. Does that read as useful, or as
+      underselling? We can say more only if we can back it up.
+- [ ] **G7 — Leaving mid-scan.** Start a scan, switch to another app, come back. It's expected to
+      return to the beginning rather than resume; tell me if that's annoying in practice.

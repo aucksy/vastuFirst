@@ -927,3 +927,70 @@ grep -rn '[^ /]/\*' <changed .kt files>
 last expression evaluates to — and `assertIs<T>(…)` returns the cast value — so the test is silently
 rejected at runtime with "Method should be void". Use `runBlocking<Unit> { … }` when a suspending test
 ends on an assertion that returns something.
+
+---
+
+## Scan your plan — the screen (2026-07-29, v0.3.14)
+
+Build-order step 3. "Upload a plan" is live on Add home and leads all three method cards, because it
+is the shortcut — with a subtitle that promises only the measured strength: *"we read the room names,
+you place them"*.
+
+### Six states, and the guided grid offered on every one
+
+| State | What it says | Why |
+|---|---|---|
+| Idle | the ask + "what works best" | steers to a **PDF**: skew is what ruins a read, and a PDF has none |
+| Reading | progress | |
+| Done · Placed | "We read N rooms" | coverage cleared the gate; geometry is trusted |
+| Done · Assisted | "We found N rooms" | **the expected outcome**; claims the list, claims nothing about placement |
+| Done · Refused | one message per reason | each names the single thing the user can change |
+| Busy / Unavailable / BadImage | a wait, not an error | |
+
+The grid is on every state because it is both §6.2b's "fall back without an error state" and the
+offline alternative DPDP consent has to have.
+
+### Decisions worth recording
+
+- **`PlanReader` now returns `ScanResult`, not `ScanOutcome`.** "What the plan says" and "whether we
+  could ask at all" are different things, and only one is worth retrying. Rate limiting is therefore a
+  state in the domain rather than an exception caught in a Composable.
+- **Unplaced rooms arrive as a strip of single cells.** Uniform, obviously provisional, visibly not a
+  floor plan, and non-overlapping by construction. It buys the user the room list and the types — the
+  two slowest steps — while placement stays with the person who knows the answer. ⚠ **This is the main
+  open product question**, and it is checklist row G4 for the owner to judge on a real phone: is a row
+  of squares to drag genuinely better than an empty grid?
+- **`PickVisualMedia` asks for no runtime permission**, which matters for a feature whose whole problem
+  is asking someone to trust us with their home's layout. PDFs come through `OpenDocument`, because the
+  photo picker will not offer them and a PDF is the input we most want.
+- **1400 px / JPEG 88** are exactly what `tools/scan-eval/batch-real.py` fed the model when the 30 real
+  plans were measured. Changing either invalidates the accuracy figures the feature is designed around,
+  so they are named constants with that written next to them.
+- **The reader in the graph is still `FakePlanReader`.** The whole flow is tappable and reviewable on a
+  device before a paid call is made — and before §6.2's key-location question has to be answered.
+
+### ⚠ A bug found in my own wiring during the pre-tag review
+
+`updateGrid` re-packs whatever is already placed and **refuses** a size the existing rooms cannot fit.
+So on the path *grid → draw some rooms → back → Upload*, the resize could silently decline while the
+scanned rooms — sized for the grid we asked for — went in anyway and landed **outside the plot**. That
+is the v0.3.7 coordinate-space bug arriving by a new road. Fixed by clearing the rooms first: an empty
+plot always resizes, and clearing is right on its own terms since a scan replaces the home.
+
+### Proof
+
+- **160 tests, 0 failed** across the pure modules — the CI log now prints the per-class breakdown, so
+  the scan figure (8 + 13 + 32 in `:shared`, plus 2 in `:app`) is checkable rather than claimed.
+- **7 new render goldens × 11 configurations.** The Placed and Assisted ones are driven by the **real
+  recorded replies through the real mapper**, so they show what a user actually sees and they move if
+  the mapper's behaviour moves.
+- **Looked at** (CLAUDE.md §2b): `scan-idle`, `scan-placed` and `scan-assisted` at baseline, and
+  `scan-busy` at 200 % font. Copy holds, buttons wrap instead of shattering, nothing clipped.
+- **The editor is untouched.**
+
+### ⚠ Not yet done, and load-bearing
+
+**DPDP consent (§6.3) is not built.** It is harmless today *because the reader is fake and nothing
+leaves the phone* — but it must land **before** `GroqPlanReader` is wired, not after. That ordering is
+the next step's first requirement, not a nice-to-have: a floor plan is personal data under the DPDP
+Act, and scan is the first feature that would send one off the device.

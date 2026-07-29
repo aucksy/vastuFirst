@@ -71,6 +71,22 @@ A scan costs about **15 paise**. Against a ₹699 report that is negligible. One
 free tier we're testing on only allows about **three scans a minute across all users**, which is fine
 for your testing but must be upgraded before public launch.
 
+### ⭐ You can try it on your phone now
+
+"Upload a plan" is live on the **Add your home** screen — it's the first option, above drawing by
+hand. Pick any picture or PDF and you'll see one of three plan readings we recorded from the real
+service, so the whole journey works end to end.
+
+**One thing to be clear about:** it isn't reading *your* picture yet. Connecting it to the real
+service needs two things settled first — a privacy consent step (a floor plan counts as personal
+information under India's data protection law, and this is the first feature that would send one off
+your phone), and a decision about where the service key lives. Both are next.
+
+**The question I'd most like your opinion on** is on the checklist as G4. When we can't tell where
+the rooms are — which will be most plans — we drop them onto the grid as a row of small squares for
+you to drag into place. Is that genuinely easier than starting from an empty grid, or would you
+rather just see the list of rooms and draw it yourself? Your call.
+
 ### Built and proven this week
 - The whole "AI reading → rooms on your grid" conversion, with **55 automated tests** plus a stress
   test that throws **100,000 randomly broken AI replies** at it and checks nothing illegal ever reaches
