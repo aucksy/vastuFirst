@@ -56,6 +56,15 @@ jobs:
       - name: Design-fidelity check (theme matches handoff/tokens.json + the design type ramp)
         run: node scripts/check-design-fidelity.mjs .
 
+      # The behavioural fuzz harness. Suites A–D mirror the guided-grid editor (they found the stale
+      # plot-size coordinate bug, the 1×1 grip swallowing a room's centre, and the door left off the
+      # footprint after a plot resize); Suite E mirrors the scan mapper and asserts that everything it
+      # emits is a plan the editor could legally hold.
+      # ⚠ Until now these only ran when I remembered to run them — four suites that have each caught a
+      # real bug, gating nothing. 20 s of CI is a cheap price for that not being true any more.
+      - name: Behavioural fuzz (editor gestures · WCAG button paths · scan mapper)
+        run: node tools/grid-prototype/sim.mjs 2000
+
       # --- Compile + test ---
       - name: Unit tests (pure logic modules)
         run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace

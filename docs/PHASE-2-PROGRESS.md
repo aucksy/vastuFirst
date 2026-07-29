@@ -801,3 +801,111 @@ it in a commit message — refer to it as "the CI-skip directive". Pre-tag guard
 ```
 git log -1 --format=%B | grep -Ei '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]' && echo REFUSE
 ```
+
+---
+
+## Scan your plan — the pure layer (2026-07-29)
+
+Build-order steps 1 and 2 of `docs/SCAN-PLAN-READING-PLAN.md`. **No key, no network, no Android** —
+all of it runs in `:shared:test` and in the fuzz harness, which is the point: this is where
+essentially all of scan's correctness risk lives, and it is provable at zero cost before an account
+exists.
+
+### What landed
+
+| File | What it is |
+|---|---|
+| `shared/…/scan/ScanTypes.kt` | `ScanDraft`/`ScanBox` (the wire format, field-identical to the recorded replies) · `ScanOutcome` = **Placed · Assisted · Refused** · `PlanReader` |
+| `shared/…/scan/RoomLabels.kt` | printed captions → the existing 19 `RoomType` values. **No new types.** |
+| `shared/…/scan/ScanMapper.kt` | the whole normalised-boxes → cell-rects pipeline, pure |
+| `shared/…/scan/FakePlanReader.kt` | replays the three **real** Groq replies from `tools/scan-eval/out/` |
+| `shared/src/main/resources/scan/*.json` | those replies, copied verbatim (token usage and all) |
+| `tools/grid-prototype/sim.mjs` | **Suite E** — random model output in, editor-legal rooms out |
+
+### The two decisions that needed real numbers
+
+**1. The coverage threshold is `0.577`, and it came from the corpus.**
+The 23 labelled 2D plans in `tools/scan-eval/out/real-plans.json` read
+**min 0.204 · p25 0.388 · median 0.440 · p75 0.577 · max 0.760**. 0.577 is that upper quartile: the
+top ~26 % of real reads get their geometry trusted, the rest hand their rooms over unplaced. That is
+the measured product conclusion (§3h) expressed as a constant — **Assisted is the primary mode, not
+the fallback.** A test pins the number so the ~0.85 figure from the early drafts (calibrated on a
+synthetic fixture, would have rejected all 30 real plans) cannot come back by accident.
+
+It also classifies both cases that *have* ground truth correctly, and the threshold was derived from a
+different corpus before those were looked at, so this is a check rather than a fit:
+
+| Recorded reply | Coverage | Measured accuracy | Outcome |
+|---|---|---|---|
+| clean render | 1.000 | 8/8 rooms, IoU 0.79 | **Placed** |
+| downscaled + JPEG | 1.000 | 6/8, IoU 0.73 | **Placed** |
+| simulated phone photo | 0.569 | 2/8, IoU 0.37 | **Assisted** |
+
+⚠ The photo lands 0.008 below the gate. Narrow, and stated rather than hidden — coverage separates
+good reads from bad ones *within* a corpus, and the synthetic and real corpora sit on different
+scales. Experiment E3 (judging the 24 real 2D plans by eye) is what would tighten it.
+
+**2. ⭐ §7's worry is answered: `MAX_GRID = 10` is enough, so the editor needs no change.**
+The plan doc flagged that a scanned 3BHK might not fit in 10×10 — which would have meant touching the
+editor the owner put on hold. Measured instead of assumed: **a scan draws on 10×10, not the editor's
+hand-drawing default of 8.** At 8×8 the recorded `plan-01` read loses its toilet *and* its bath — both
+0.1 of the plan deep, so 0.8 of a cell, and both round to nothing. Two rooms weighing 2.5 + 0.8
+vanishing from a paid score. At 10×10 all eight survive, and so do all twelve rooms of a dense 4BHK
+fixture. `ScanGridConstantsTest` in `:app` fails the build if the mirrored bounds ever drift.
+
+### Things that are deliberately not what they look like
+
+- **`fitWithoutOverlap` is NOT reused.** It *relocates* a room to the nearest free slot — right when a
+  finger is on it, wrong for a scan, because it would silently move a kitchen the user has never seen
+  and the kitchen's zone is a scored input. Scan **trims** the lower-confidence room along whichever
+  single edge costs it least, and flags it. Suite E's `TRIMMED-MOVED` invariant exists purely to stop
+  a future edit from "simplifying" this back.
+- **Per-room confidence is used, plan confidence is not.** Deciding which of two overlapping rooms
+  gives way is a *relative* comparison inside one reply. Gating quality on a self-report is what S2
+  forbids, and `planConfidence` was 0.95 on a 100 % read, a 25 % read and on fabricated geometry.
+- **Sub-areas are dropped by geometry, not by name** (owner decision D1) — but every drop is recorded
+  with its reason and shown to the user. ⚠ Accepted cost: an *attached* toilet drawn slightly inside
+  its bedroom will be dropped as a sub-area. It appears in the "we also saw…" list rather than
+  vanishing, and the user confirms every room before anything is scored.
+- **A missing `planType` means "not stated", never "reject".** The §3e fixtures predate the triage
+  prompt; only a *positive* 3D/not-a-plan classification refuses.
+
+### Proof
+
+- **55 unit tests** across `RoomLabelsTest` (real captions off the corpus), `ScanMapperTest`
+  (adversarial: NaN, inverted rects, off-page boxes, 40 rooms, everything stacked, unknown captions,
+  duplicate labels, one room filling the plan) and `RecordedScanTest` (the three real replies).
+- **Suite E, clean at 100 000 random replies** — mix 38 105 placed · 43 438 assisted · 18 457 refused.
+  Asserts: no overlap · nothing off-grid · nothing under a cell · a trimmed room never moves from
+  where it was read · reopening keeps every room inside the plot · every tap anywhere lands a door on
+  the house's own wall (the v0.3.11 S8 guarantee, now reached through a plan nobody drew) · mapping is
+  deterministic.
+- ⭐ **Every invariant proven to bite, 7 of 7**, via `--inject=`:
+
+  | Injection | Fires |
+  |---|---|
+  | `repack` (use the editor's relocating packer) | `TRIMMED-MOVED` |
+  | `no-trim` | `OVERLAP` |
+  | `keep-degenerate` | `SUB-CELL` |
+  | `no-clamp` | `OFF-GRID` + `REOPEN-OUTSIDE` |
+  | `grid-unclamped` | `PLOT-RANGE` |
+  | `no-uniform-gate` | the fabricated-geometry pinned case |
+  | `no-coverage-gate` | **the real phone-photo reply passes as Placed** |
+
+  The last one is the strongest evidence the gate is load-bearing: remove it and a read that got 2 of
+  8 rooms right ships as a trusted layout.
+
+### ⭐ And a gap closed on the way: the fuzz harness now runs in CI
+
+Suites A–D have each caught a real bug (the stale plot-size coordinate bug, the 1×1 grip swallowing a
+room's centre, the door left off the footprint after a plot resize) — and **none of them gated
+anything**. They ran when I remembered to run them. `ci.yml` now runs the whole harness on every push;
+it costs ~20 s.
+
+### Verified numerically before pushing, not in CI
+
+Every one of the 25 mapper cases was run through the JS mirror first and its outcome, coverage, area
+variance and resulting cell rectangles checked by hand. That caught three wrong expectations (a
+sub-area drop I had written as a degenerate drop, an "everything overlaps" case that actually trips
+the fabrication detector, and the 8×8 rounding above) **before** a CI round-trip rather than after
+three of them.

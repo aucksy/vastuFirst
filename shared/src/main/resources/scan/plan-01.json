@@ -1,0 +1,83 @@
+{
+  "fixture": "plan-01",
+  "model": "qwen/qwen3.6-27b",
+  "usage": {
+    "queue_time": 0.197515299,
+    "prompt_tokens": 2061,
+    "prompt_time": 0.152565861,
+    "completion_tokens": 564,
+    "completion_time": 1.072957864,
+    "total_tokens": 2625,
+    "total_time": 1.225523725
+  },
+  "reply": {
+    "rooms": [
+      {
+        "label": "LIVING ROOM",
+        "x": 0.0,
+        "y": 0.0,
+        "w": 0.5,
+        "h": 0.4,
+        "confidence": 0.95
+      },
+      {
+        "label": "POOJA",
+        "x": 0.5,
+        "y": 0.0,
+        "w": 0.5,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "KITCHEN",
+        "x": 0.5,
+        "y": 0.2,
+        "w": 0.5,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "MASTER BEDROOM",
+        "x": 0.0,
+        "y": 0.4,
+        "w": 0.5,
+        "h": 0.4,
+        "confidence": 0.95
+      },
+      {
+        "label": "BEDROOM 2",
+        "x": 0.5,
+        "y": 0.4,
+        "w": 0.5,
+        "h": 0.3,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET",
+        "x": 0.5,
+        "y": 0.7,
+        "w": 0.25,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "BATH",
+        "x": 0.75,
+        "y": 0.7,
+        "w": 0.25,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "BALCONY",
+        "x": 0.0,
+        "y": 0.8,
+        "w": 1.0,
+        "h": 0.2,
+        "confidence": 0.95
+      }
+    ],
+    "planConfidence": 0.95,
+    "unreadable": false
+  }
+}

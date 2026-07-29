@@ -29,6 +29,63 @@ These are the things only you can decide, and they need to be settled before the
 
 ---
 
+## Week of 28 July – 3 August 2026
+
+Work started on **"scan your plan"** — upload a photo or PDF of your floor plan and have the app read
+the rooms for you, instead of drawing them all by hand. This week built and tested the part that
+turns what the AI sees into rooms on your grid. It is not yet something you can tap in the app; that
+comes next.
+
+### What we learned by testing it on 30 real plans
+
+We tested the AI against 30 genuine Indian floor plans rather than trusting the sales pitch, and the
+result shapes the whole feature:
+
+- **The AI is very good at reading room *names*.** It correctly read things like "BEDROOM 6750X4350",
+  "ATT. TOILET", "SER ROOM" and "PUJA" — including the abbreviations Indian plans use.
+- **It is not reliable at knowing *where* those rooms are.** On the same plans it named perfectly, its
+  idea of the layout was often well off. We measured this three separate ways and got the same answer
+  each time.
+
+**So the app will do the honest thing:** it reads your plan, tells you which rooms it found, and asks
+*you* to place them. That still removes the two slowest parts of the job — working out the room list,
+and hunting each room type out of a list — and it never pretends to a precision it doesn't have. When
+a plan is clear enough (typically an architect's PDF rather than a phone photo), it will place the
+rooms for you too, and you just check them.
+
+**Three things it will politely refuse, with a clear reason:**
+
+- a **3D picture** of the home instead of a flat top-down plan — one upload in five turned out to be
+  this, and it would have produced a confident but wrong answer
+- a plan with **no room names** on it
+- a sheet with **several different homes** on it — we'll ask you to crop to one
+
+**The front door stays yours to place.** We tested this specifically: AI door-detection is right well
+under half the time, and the front door is the single biggest influence on the Vastu score. Letting the
+computer guess it would quietly corrupt the number people pay for. You'll keep tapping the wall
+yourself, exactly as you do today.
+
+### What we did about cost
+
+A scan costs about **15 paise**. Against a ₹699 report that is negligible. One caution for later: the
+free tier we're testing on only allows about **three scans a minute across all users**, which is fine
+for your testing but must be upgraded before public launch.
+
+### Built and proven this week
+- The whole "AI reading → rooms on your grid" conversion, with **55 automated tests** plus a stress
+  test that throws **100,000 randomly broken AI replies** at it and checks nothing illegal ever reaches
+  your screen.
+- We deliberately broke each safety check one at a time to confirm it actually catches what it claims
+  to — seven of seven did.
+- **Your existing drawing tool is untouched.** It's the screen the scan hands its rooms to, and it stays
+  the fully offline option for anyone who doesn't want to upload anything.
+
+⚠ **Note on timing:** scanning was originally scheduled for the 10–28 August stage, and was pulled
+forward at your request. The 4 August delivery (the app plus the Vastu engine) is already built and
+shipped.
+
+---
+
 ## Week of 21–27 July 2026
 
 This was the first full build week, and a lot became real and testable. The app now runs end to end: you can add a home, draw its rooms, say which way North is, see a free score, and open a paid-style report — and your homes are saved so you can reopen and compare them.

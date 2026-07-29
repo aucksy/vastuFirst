@@ -682,14 +682,33 @@ decision.
 
 ## 8. Build order
 
-| # | Step | Blocked? |
-|---|---|---|
-| 1 | `ScanDraft`/`ScanOutcome` types + `PlanReader` seam + `FakePlanReader` with recorded fixtures | No |
-| 2 | `ScanMapper` + full `:shared` test suite + fuzz Suite E, all proven to bite | No |
-| 3 | Scan UI: pick/capture → progress → "we read N rooms, check them" → editor with flagged rooms | No (fake reader) |
-| 4 | Consent screen + legal copy | Needs §6.3 wording sign-off |
-| 5 | `GroqPlanReader` — real call, model id in config, retry/timeout/refusal → fallback | **Needs key** |
-| 6 | Prompt engineering against real plans, measured on a fixture set | **Needs key** |
-| 7 | Render goldens for every new screen, adversarial review, tag, device checklist rows | No |
+| # | Step | Blocked? | Status |
+|---|---|---|---|
+| 1 | `ScanDraft`/`ScanOutcome` types + `PlanReader` seam + `FakePlanReader` with recorded fixtures | No | ✅ **done 2026-07-29** |
+| 2 | `ScanMapper` + full `:shared` test suite + fuzz Suite E, all proven to bite | No | ✅ **done 2026-07-29** |
+| 3 | Scan UI: pick/capture → progress → "we read N rooms, check them" → editor with flagged rooms | No (fake reader) | in progress |
+| 4 | Consent screen + legal copy | Needs §6.3 wording sign-off | |
+| 5 | `GroqPlanReader` — real call, model id in config, retry/timeout/refusal → fallback | **Needs key** | |
+| 6 | Prompt engineering against real plans, measured on a fixture set | **Needs key** | |
+| 7 | Render goldens for every new screen, adversarial review, tag, device checklist rows | No | |
 
 Steps 1–3 are the bulk of the risk and are **unblocked today**.
+
+### ✅ Steps 1–2 — what got decided by measurement (see `docs/PHASE-2-PROGRESS.md` for the full record)
+
+- **The coverage gate is `0.577`** — the upper quartile of the 23 labelled 2D plans in
+  `out/real-plans.json` (min 0.204 · median 0.440 · max 0.760). ~26 % of real reads go to Placed and
+  the rest to Assisted, which is §3h's product conclusion as a constant. It classifies both
+  ground-truth cases right: the clean render (coverage 1.00, 8/8 rooms) → Placed, the phone photo
+  (0.569, 2/8) → Assisted. ⚠ Only 0.008 of margin on the photo — E3 is what would tighten it.
+- ⭐ **§7 is closed and the answer is "no editor change".** A scan draws on **10×10**, not the editor's
+  hand-drawing default of 8. At 8×8 the recorded `plan-01` read loses its toilet *and* its bath (both
+  0.8 of a cell deep, both round to nothing) — two scored rooms silently gone. At 10×10 all eight
+  survive, and so do all twelve rooms of a dense 4BHK. `MAX_GRID` stays 10; the editor is untouched.
+- **Overlaps trim, they never relocate.** Suite E's `TRIMMED-MOVED` invariant is what enforces it:
+  injecting `fitWithoutOverlap` in its place reproduces exactly the silent-kitchen-move this section
+  warned about, and the invariant catches it immediately (4 259 moved rooms over 3 000 seeds).
+- **`unreadable` / `hasRoomLabels` / `planType` are triage inputs; `planConfidence` is not an input at
+  all.** It is recorded for diagnostics and never read by a gate.
+- **All three refusal reasons are implemented and separately tested**: 3D render, no labels (which is
+  also where an unresolved numbered legend lands), multi-unit sheet.

@@ -13,7 +13,11 @@
 // after every single step. A violation prints the seed + the exact operation sequence to reproduce.
 //
 // Run:  node tools/grid-prototype/sim.mjs [iterations]
-// Zero dependencies. Keep it in lock-step with the Kotlin — this is a mirror, not a second design.
+// Node built-ins only, no packages. Keep it in lock-step with the Kotlin — this is a mirror, not a
+// second design.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 // ----------------------------------------------------------------------------------------------
 // Ported pure maths — GridEditing.kt
@@ -842,12 +846,439 @@ function run(iterations, gen = randomOp, seedSalt = 0) {
   }
 }
 
+// ----------------------------------------------------------------------------------------------
+// Suite E — ScanMapper: random MODEL OUTPUT in, editor-legal rooms out.
+//
+// WHY: scan hands the guided grid a plan the user has never touched. Everything the editor's four
+// existing suites prove about a hand-built plan has to hold for a scanned one too — because
+// downstream it IS one. So this fuzzes what a vision model can emit (NaN, inverted rects, boxes off
+// the page, forty rooms, everything stacked, captions we don't know) and asserts the mapper's output
+// is indistinguishable from something a finger drew.
+//
+// This is a MIRROR of shared/.../scan/ScanMapper.kt — the geometry half. The synonym table is not
+// ported (it is data, tested exhaustively in RoomLabelsTest against real captions); a handful of
+// representative captions is enough to exercise the map/drop/unknown branches.
+//
+// ⭐ THE INVARIANT THAT MATTERS MOST: `TRIMMED-MOVED`. A room the mapper emits must still overlap the
+// cells it was READ at. Trimming shrinks, so it always does; `fitWithoutOverlap` RELOCATES, so it
+// would not. That single assertion is what stops a future edit from quietly reusing the editor's
+// packer and silently moving a kitchen the user has not seen — and the kitchen's zone is scored.
+// ----------------------------------------------------------------------------------------------
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FIXTURES = join(HERE, '..', '..', 'shared', 'src', 'main', 'resources', 'scan');
+
+const PLACED_COVERAGE = 0.577;
+const UNIFORM_AREA_VARIATION = 0.15;
+const UNIFORM_MIN_ROOMS = 4;
+const CONTAINMENT_FRACTION = 0.90;
+const MIN_PLACED_ROOMS = 2;
+const MIN_PLACED_FRACTION = 0.6;
+const COVERAGE_SAMPLES = 140;
+
+/** A trimmed-down RoomLabels: enough captions to reach every branch. */
+const LABEL_TABLE = {
+  'LIVING ROOM': 'LIVING', KITCHEN: 'KITCHEN', 'MASTER BEDROOM': 'MASTER_BEDROOM',
+  BEDROOM: 'BEDROOM', TOILET: 'TOILET', BATH: 'BATHROOM', POOJA: 'POOJA', BALCONY: 'BALCONY',
+  DINING: 'DINING', STUDY: 'STUDY', STORE: 'STORE', UTILITY: 'UTILITY',
+};
+const LABEL_DROP = new Set(['DRESS', 'DRESSING', 'DUCT', 'LIFT', 'SHAFT', 'WARDROBE']);
+function resolveLabel(raw) {
+  const c = String(raw).toUpperCase().replace(/[^0-9A-Z]/g, ' ').split(' ')
+    .filter((t) => t && !/^[0-9]+$/.test(t)).join(' ');
+  if (!c) return { kind: 'unknown' };
+  if (LABEL_TABLE[c]) return { kind: 'room', type: LABEL_TABLE[c] };
+  if (LABEL_DROP.has(c)) return { kind: 'drop' };
+  return { kind: 'unknown' };
+}
+
+function scanSanitise(b, inject) {
+  const fin = (v) => typeof v === 'number' && Number.isFinite(v);
+  if (!fin(b.x) || !fin(b.y) || !fin(b.w) || !fin(b.h)) return null;
+  if (b.w <= 0 || b.h <= 0) return null;
+  // FAULT INJECTION 'no-clamp': trust the model's coordinates instead of clamping them into the
+  // unit square. A box at x = 1.4 then snaps to cells beyond the grid's east edge.
+  if (inject === 'no-clamp') {
+    const conf = fin(b.confidence) ? b.confidence : 0;
+    return { label: b.label, x: b.x, y: b.y, w: b.w, h: b.h, confidence: conf };
+  }
+  const x0 = clampF(b.x, 0, 1), y0 = clampF(b.y, 0, 1);
+  const x1 = clampF(b.x + b.w, 0, 1), y1 = clampF(b.y + b.h, 0, 1);
+  if (x1 <= x0 || y1 <= y0) return null;
+  const conf = fin(b.confidence) ? clampF(b.confidence, 0, 1) : 0;
+  return { label: b.label, x: x0, y: y0, w: x1 - x0, h: y1 - y0, confidence: conf };
+}
+
+/** Identical lattice to tools/scan-eval/batch-real.py, which is what the threshold is calibrated on. */
+function coverageOf(boxes, n = COVERAGE_SAMPLES) {
+  if (!boxes.length) return 0;
+  let hit = 0;
+  for (let gy = 0; gy < n; gy++) {
+    const py = (gy + 0.5) / n;
+    for (let gx = 0; gx < n; gx++) {
+      const px = (gx + 0.5) / n;
+      for (const b of boxes) {
+        if (b.x <= px && px < b.x + b.w && b.y <= py && py < b.y + b.h) { hit++; break; }
+      }
+    }
+  }
+  return hit / (n * n);
+}
+
+function areaVariationOf(boxes) {
+  if (!boxes.length) return 0;
+  const areas = boxes.map((b) => b.w * b.h);
+  const mean = areas.reduce((a, v) => a + v, 0) / areas.length;
+  if (mean <= 0) return 0;
+  const variance = areas.reduce((a, v) => a + (v - mean) * (v - mean), 0) / areas.length;
+  return Math.sqrt(variance) / mean;
+}
+
+function containedIn(inner, outer) {
+  const ia = inner.w * inner.h, oa = outer.w * outer.h;
+  if (ia <= 0 || ia >= oa) return false;
+  const ix = Math.max(0, Math.min(inner.x + inner.w, outer.x + outer.w) - Math.max(inner.x, outer.x));
+  const iy = Math.max(0, Math.min(inner.y + inner.h, outer.y + outer.h) - Math.max(inner.y, outer.y));
+  return (ix * iy) / ia >= CONTAINMENT_FRACTION;
+}
+
+function scanGridFor(aspect, inject) {
+  if (aspect == null || !Number.isFinite(aspect) || aspect <= 0) return [MAX_GRID, MAX_GRID];
+  // FAULT INJECTION 'grid-unclamped': take the aspect ratio at face value without holding the grid
+  // inside the editor's MIN_GRID..MAX_GRID range.
+  const fit = (v) => (inject === 'grid-unclamped' ? Math.round(v) : clampInt(Math.round(v), MIN_GRID, MAX_GRID));
+  return aspect >= 1 ? [MAX_GRID, fit(MAX_GRID / aspect)] : [fit(MAX_GRID * aspect), MAX_GRID];
+}
+
+/** Each EDGE rounded independently, so rooms flush on the plan stay flush on the grid. */
+function scanSnap(b, cols, rows, inject) {
+  // FAULT INJECTION 'no-clamp' also removes the grid clamp, so an off-page box lands off-grid.
+  const fit = (v, hi) => (inject === 'no-clamp' ? Math.round(v) : clampInt(Math.round(v), 0, hi));
+  const left = fit(b.x * cols, cols);
+  const rightE = fit((b.x + b.w) * cols, cols);
+  const top = fit(b.y * rows, rows);
+  const bottomE = fit((b.y + b.h) * rows, rows);
+  // FAULT INJECTION 'keep-degenerate': keep a room that rounded away rather than dropping it, the
+  // well-meaning "don't lose the user's toilet" fix. It emits a zero- or negative-size rectangle,
+  // which renders as nothing at all.
+  if (rightE <= left || bottomE <= top) {
+    return inject === 'keep-degenerate' ? { col: left, row: top, w: rightE - left, h: bottomE - top } : null;
+  }
+  return { col: left, row: top, w: rightE - left, h: bottomE - top };
+}
+
+function scanRetract(r, o) {
+  const options = [];
+  if (right(o) > r.col && right(o) < right(r)) options.push({ col: right(o), row: r.row, w: right(r) - right(o), h: r.h });
+  if (o.col > r.col && o.col < right(r)) options.push({ col: r.col, row: r.row, w: o.col - r.col, h: r.h });
+  if (bottom(o) > r.row && bottom(o) < bottom(r)) options.push({ col: r.col, row: bottom(o), w: r.w, h: bottom(r) - bottom(o) });
+  if (o.row > r.row && o.row < bottom(r)) options.push({ col: r.col, row: r.row, w: r.w, h: o.row - r.row });
+  if (!options.length) return null;
+  return options.reduce((best, c) => (c.w * c.h > best.w * best.h ? c : best));
+}
+
+function scanTrimAgainst(cand, blockers) {
+  let r = cand, guard = cand.w * cand.h + 4;
+  while (guard-- > 0) {
+    const hit = blockers.find((b) => overlaps(b, r));
+    if (!hit) return r;
+    r = scanRetract(r, hit);
+    if (!r) return null;
+  }
+  return null;
+}
+
+/** The whole mapper. Returns {kind:'placed'|'assisted'|'refused', ...}. */
+function scanMap(draft, imageAspect, opts = {}) {
+  const dropped = [];
+  const clean = [];
+  const inject = opts.inject || null;
+  for (const b of draft.rooms || []) {
+    const c = scanSanitise(b, inject);
+    if (!c) dropped.push({ label: b.label, reason: 'INVALID_GEOMETRY' });
+    else clean.push(c);
+  }
+  const coverage = coverageOf(clean);
+  const variation = areaVariationOf(clean);
+  const notes = () => ({ coverage, variation, dropped: dropped.slice() });
+
+  const planType = draft.planType || 'UNKNOWN';
+  if (planType === '3D_RENDER') return { kind: 'refused', reason: 'NOT_2D', notes: notes() };
+  if (planType === 'NOT_A_PLAN') return { kind: 'refused', reason: 'NOT_A_PLAN', notes: notes() };
+  if (clean.filter((b) => /^(UNIT|FLAT|TYPE|APARTMENT|APT|BLOCK|TOWER|PLOT)$/
+    .test(String(b.label).toUpperCase().replace(/[^0-9A-Z]/g, ' ').split(' ').filter((t) => t && !/^[0-9]+$/.test(t))[0] || '')
+    && String(b.label).toUpperCase().replace(/[^0-9A-Z]/g, ' ').split(' ').filter((t) => t && !/^[0-9]+$/.test(t)).length <= 1).length >= 2) {
+    return { kind: 'refused', reason: 'MULTI_UNIT', notes: notes() };
+  }
+  if (draft.unreadable || draft.hasRoomLabels === false) return { kind: 'refused', reason: 'NO_LABELS', notes: notes() };
+  if (!clean.length) return { kind: 'refused', reason: 'NO_ROOMS', notes: notes() };
+
+  const typed = [];
+  let unknown = 0;
+  for (const b of clean) {
+    const m = resolveLabel(b.label);
+    if (m.kind === 'room') typed.push({ box: b, type: m.type, flags: new Set() });
+    else if (m.kind === 'drop') dropped.push({ label: b.label, reason: 'NOT_HABITABLE' });
+    else { unknown++; dropped.push({ label: b.label, reason: 'UNKNOWN_LABEL' }); }
+  }
+
+  const rooms = [];
+  for (const c of typed) {
+    if (typed.some((o) => o !== c && containedIn(c.box, o.box))) dropped.push({ label: c.box.label, reason: 'SUB_AREA' });
+    else rooms.push(c);
+  }
+  if (!rooms.length) return { kind: 'refused', reason: unknown > 0 ? 'NO_LABELS' : 'NO_ROOMS', notes: notes() };
+
+  const identified = rooms.slice().sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)
+    .map((c) => ({ type: c.type, label: c.box.label, rect: null }));
+
+  // FAULT INJECTION 'no-uniform-gate' / 'no-coverage-gate': trust the model's rectangles. Each is
+  // the shape of a plausible "why are we throwing away geometry?" change.
+  if (inject !== 'no-uniform-gate' && rooms.length >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
+    return { kind: 'assisted', reason: 'UNIFORM_BOXES', rooms: identified, notes: notes() };
+  }
+  if (inject !== 'no-coverage-gate' && coverage < PLACED_COVERAGE) {
+    return { kind: 'assisted', reason: 'LOW_COVERAGE', rooms: identified, notes: notes() };
+  }
+
+  const [cols, rows] = scanGridFor(imageAspect, inject);
+  const snapped = [];
+  for (const c of rooms) {
+    const rect = scanSnap(c.box, cols, rows, inject);
+    if (!rect) dropped.push({ label: c.box.label, reason: 'DEGENERATE' });
+    else snapped.push({ c, rect, asRead: rect });
+  }
+
+  const order = snapped.slice().sort((a, b) =>
+    b.c.box.confidence - a.c.box.confidence || (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h)
+    || String(a.c.box.label).localeCompare(String(b.c.box.label)));
+  const placed = [];
+  for (const s of order) {
+    // ⚠ FAULT INJECTION 'repack' reuses the editor's relocating packer here — the thing this suite
+    // exists to forbid. It produces a legal-looking layout that TRIMMED-MOVED catches.
+    // 'no-trim' is the cruder version: just take what the model said.
+    const trimmed = inject === 'repack'
+      ? (fitWithoutOverlap([...placed.map((p) => p.rect), s.rect], cols, rows) || []).slice(-1)[0] || null
+      : inject === 'no-trim'
+        ? s.rect
+        : scanTrimAgainst(s.rect, placed.map((p) => p.rect));
+    if (!trimmed) { dropped.push({ label: s.c.box.label, reason: 'OVERLAP_UNRESOLVABLE' }); continue; }
+    placed.push({ c: s.c, rect: trimmed, asRead: s.asRead });
+  }
+
+  if (placed.length < MIN_PLACED_ROOMS || placed.length < rooms.length * MIN_PLACED_FRACTION) {
+    return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
+  }
+  const out = placed.slice().sort((a, b) => a.rect.row - b.rect.row || a.rect.col - b.rect.col)
+    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead }));
+  return { kind: 'placed', cols, rows, rooms: out, notes: notes() };
+}
+
+/** Every invariant the editor guarantees, asserted on what the mapper emits. */
+function scanInvariants(out) {
+  const problems = [];
+  if (out.kind !== 'placed') {
+    for (const r of out.rooms || []) if (r.rect) problems.push('ASSISTED-HAS-GEOMETRY');
+    return problems;
+  }
+  const { cols, rows, rooms } = out;
+  if (!(cols >= MIN_GRID && cols <= MAX_GRID && rows >= MIN_GRID && rows <= MAX_GRID)) {
+    problems.push(`PLOT-RANGE ${cols}x${rows}`);
+  }
+  if (rooms.length < MIN_PLACED_ROOMS) problems.push(`TOO-FEW ${rooms.length}`);
+  for (const r of rooms) {
+    const q = r.rect;
+    if (q.w < 1 || q.h < 1) problems.push(`SUB-CELL ${JSON.stringify(q)}`);
+    if (q.col < 0 || q.row < 0 || right(q) > cols || bottom(q) > rows) problems.push(`OFF-GRID ${JSON.stringify(q)}`);
+    // ⭐ the anti-relocation invariant — see the header.
+    if (!overlaps(q, r.asRead)) problems.push(`TRIMMED-MOVED ${JSON.stringify(q)} vs read ${JSON.stringify(r.asRead)}`);
+  }
+  for (let i = 0; i < rooms.length; i++) {
+    for (let j = i + 1; j < rooms.length; j++) {
+      if (overlaps(rooms[i].rect, rooms[j].rect)) problems.push(`OVERLAP ${i}/${j}`);
+    }
+  }
+  // The scanned plan must behave like a hand-drawn one for everything downstream: reopening it must
+  // re-derive a plot that still contains every room, and every tap anywhere on it must yield a door
+  // that sits on the house's own wall (the v0.3.11 S8 guarantee, now via a plan nobody drew).
+  const grid = rooms.map((r) => ({ id: r.label, col: r.rect.col, row: r.rect.row, w: r.rect.w, h: r.rect.h }));
+  const [rc, rr] = gridSizeForRooms(grid);
+  for (const g of grid) {
+    if (g.col + g.w > rc || g.row + g.h > rr) problems.push(`REOPEN-OUTSIDE ${g.id}`);
+  }
+  const minC = Math.min(...grid.map((g) => g.col)), maxC = Math.max(...grid.map((g) => g.col + g.w));
+  const minR = Math.min(...grid.map((g) => g.row)), maxR = Math.max(...grid.map((g) => g.row + g.h));
+  for (let i = 0; i <= cols * 2; i++) {
+    for (let j = 0; j <= rows * 2; j++) {
+      const d = doorForTap(i / 2, j / 2, grid);
+      if (!d) { problems.push('DOOR-NULL'); continue; }
+      const [dc, dr] = doorMarkerCell(d, grid, cols, rows);
+      const onWall = (d.side === 'N' && dr === minR) || (d.side === 'S' && dr === maxR - 1)
+        || (d.side === 'W' && dc === minC) || (d.side === 'E' && dc === maxC - 1);
+      if (!onWall) problems.push(`DOOR-OFF-FOOTPRINT ${d.side}@${d.cell} -> ${dc},${dr}`);
+    }
+  }
+  return problems;
+}
+
+const SCAN_LABELS = [
+  'LIVING ROOM', 'KITCHEN', 'MASTER BEDROOM', 'BEDROOM 2', 'TOILET', 'BATH', 'POOJA', 'BALCONY',
+  'DINING', 'STUDY', 'STORE', 'UTILITY', 'DRESS', 'DUCT', 'LIFT', 'ZORBING PIT', '7', 'UNIT-1',
+];
+
+function randomDraft(rnd) {
+  const n = Math.floor(rnd() * 26);
+  const rooms = [];
+  for (let i = 0; i < n; i++) {
+    const roll = rnd();
+    let x = rnd(), y = rnd(), w = rnd() * 0.6, h = rnd() * 0.6;
+    if (roll < 0.04) x = NaN;                        // the model emitted junk
+    else if (roll < 0.08) w = -w;                    // inverted
+    else if (roll < 0.12) { x = 1 + rnd(); }         // off the page entirely
+    else if (roll < 0.18) { w = rnd() * 0.01; h = rnd() * 0.01; } // sub-cell
+    else if (roll < 0.24) { x = 0; y = 0; w = 1; h = 1; }         // swallows the plan
+    rooms.push({ label: SCAN_LABELS[Math.floor(rnd() * SCAN_LABELS.length)], x, y, w, h, confidence: rnd() });
+  }
+  const t = rnd();
+  return {
+    planType: t < 0.08 ? '3D_RENDER' : t < 0.12 ? 'NOT_A_PLAN' : t < 0.2 ? 'UNKNOWN' : '2D_PLAN',
+    hasRoomLabels: rnd() > 0.05,
+    unreadable: rnd() < 0.05,
+    rooms,
+    planConfidence: 0.95,
+  };
+}
+
+/** A plan that TILES cleanly — the Placed path, which the purely-random drafts rarely reach. */
+function randomTiledDraft(rnd) {
+  const cols = 2 + Math.floor(rnd() * 3), rows = 2 + Math.floor(rnd() * 3);
+  const xs = [0], ys = [0];
+  for (let i = 1; i < cols; i++) xs.push(Number((i / cols + (rnd() - 0.5) * 0.08).toFixed(4)));
+  for (let i = 1; i < rows; i++) ys.push(Number((i / rows + (rnd() - 0.5) * 0.08).toFixed(4)));
+  xs.push(1); ys.push(1);
+  xs.sort((a, b) => a - b); ys.sort((a, b) => a - b);
+  const rooms = [];
+  let k = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      rooms.push({
+        label: SCAN_LABELS[k++ % 12],
+        x: xs[c], y: ys[r], w: xs[c + 1] - xs[c], h: ys[r + 1] - ys[r],
+        confidence: 0.3 + rnd() * 0.7,
+      });
+    }
+  }
+  // …then a few strays on top, which is exactly how a real reply goes wrong.
+  const strays = Math.floor(rnd() * 3);
+  for (let i = 0; i < strays; i++) {
+    rooms.push({
+      label: SCAN_LABELS[Math.floor(rnd() * SCAN_LABELS.length)],
+      x: rnd() * 0.8, y: rnd() * 0.8, w: 0.05 + rnd() * 0.3, h: 0.05 + rnd() * 0.3,
+      confidence: rnd(),
+    });
+  }
+  return { planType: '2D_PLAN', hasRoomLabels: true, unreadable: false, rooms, planConfidence: 0.95 };
+}
+
+function fuzzScan(iterations, inject) {
+  const fails = [];
+  const tally = {};
+  let placed = 0, assisted = 0, refused = 0;
+  for (let seed = 1; seed <= iterations; seed++) {
+    const rnd = mulberry32(seed ^ 0x5CA9);
+    const draft = seed % 2 === 0 ? randomTiledDraft(rnd) : randomDraft(rnd);
+    // Includes proportions well outside what the grid can express (a 4:1 letterbox site plan, a
+    // narrow 1:5 strip): the clamp into MIN_GRID..MAX_GRID is what has to hold, so it must be reached.
+    const aspect = [null, 0.18, 0.5, 1.0, 1.4, 2.5, 4.0, 7.5][Math.floor(rnd() * 8)];
+    let out;
+    try {
+      out = scanMap(draft, aspect, { inject });
+    } catch (e) {
+      fails.push({ seed, problems: [`THREW ${e.message}`], draft });
+      continue;
+    }
+    if (out.kind === 'placed') placed++; else if (out.kind === 'assisted') assisted++; else refused++;
+    const problems = scanInvariants(out);
+    // Determinism: the same reply must always map to the same plan.
+    const again = scanMap(draft, aspect, { inject });
+    if (JSON.stringify(again) !== JSON.stringify(out)) problems.push('NON-DETERMINISTIC');
+    if (problems.length) {
+      for (const p of problems) { const cat = p.split(' ')[0]; tally[cat] = (tally[cat] || 0) + 1; }
+      if (fails.length < 3) fails.push({ seed, problems, draft, out });
+    }
+  }
+  return { fails, tally, mix: { placed, assisted, refused } };
+}
+
+/**
+ * The cases with known answers: the three replies the real Groq API actually returned, plus the two
+ * fabrications the measurement work caught. Each gate has a case here that ONLY it can catch, so
+ * removing a gate has to show up as a failure rather than as a slightly different number.
+ */
+function scanPinnedCases(inject) {
+  const problems = [];
+  const opts = { inject };
+  const expect = [
+    ['plan-01', 'placed', 1.0],
+    ['plan-01-jpeg', 'placed', 1.0],
+    ['plan-01-photo', 'assisted', 0.569],
+  ];
+  for (const [id, kind, cov] of expect) {
+    let rec;
+    try {
+      rec = JSON.parse(readFileSync(join(FIXTURES, `${id}.json`), 'utf8'));
+    } catch {
+      problems.push(`${id}: fixture missing from shared/src/main/resources/scan/`);
+      continue;
+    }
+    const out = scanMap(rec.reply, null, opts);
+    if (out.kind !== kind) problems.push(`${id}: expected ${kind}, got ${out.kind} (${out.reason || ''})`);
+    if (Math.abs(out.notes.coverage - cov) > 0.005) {
+      problems.push(`${id}: coverage ${out.notes.coverage.toFixed(3)}, measured ${cov}`);
+    }
+    const n = (out.rooms || []).length;
+    if (n !== 8) problems.push(`${id}: ${n} rooms, all 8 were named correctly on the real API`);
+  }
+
+  // §3j D2 — a numbered-legend plan came back as rooms of IDENTICAL size at confidence 0.95. Here
+  // the fabrication also TILES the plan, so coverage waves it through and only the area-variance
+  // detector can catch it.
+  const names = ['LIVING ROOM', 'KITCHEN', 'MASTER BEDROOM', 'BEDROOM', 'TOILET', 'BATH',
+    'POOJA', 'DINING', 'STUDY', 'STORE', 'BALCONY', 'UTILITY'];
+  const fabricated = names.map((label, i) => ({
+    label, x: (i % 4) * 0.25, y: Math.floor(i / 4) * (1 / 3), w: 0.25, h: 1 / 3, confidence: 0.95,
+  }));
+  const fab = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: fabricated, planConfidence: 0.95 }, null, opts);
+  if (fab.kind !== 'assisted' || fab.reason !== 'UNIFORM_BOXES') {
+    problems.push(`fabricated-uniform: expected assisted/UNIFORM_BOXES, got ${fab.kind}/${fab.reason || ''}`);
+  }
+
+  // §3e — the scattered read a skewed photo produces. Names right, rectangles nowhere near tiling.
+  const scattered = [
+    { label: 'LIVING ROOM', x: 0.02, y: 0.02, w: 0.30, h: 0.20, confidence: 0.95 },
+    { label: 'KITCHEN', x: 0.40, y: 0.05, w: 0.18, h: 0.12, confidence: 0.95 },
+    { label: 'MASTER BEDROOM', x: 0.05, y: 0.40, w: 0.28, h: 0.22, confidence: 0.95 },
+    { label: 'TOILET', x: 0.55, y: 0.55, w: 0.10, h: 0.08, confidence: 0.95 },
+    { label: 'POOJA', x: 0.75, y: 0.20, w: 0.09, h: 0.09, confidence: 0.95 },
+  ];
+  const sc = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: scattered, planConfidence: 0.95 }, null, opts);
+  if (sc.kind !== 'assisted' || sc.reason !== 'LOW_COVERAGE') {
+    problems.push(`scattered-read: expected assisted/LOW_COVERAGE, got ${sc.kind}/${sc.reason || ''}`);
+  }
+  return problems;
+}
+
 const iters = parseInt(process.argv[2] || '20000', 10);
+
+// `--only=E` runs a single suite. Fault-injection runs use it: proving one invariant bites should
+// not mean waiting for 200 000 unrelated iterations.
+const onlyArg = (process.argv.find((a) => a.startsWith('--only=')) || '').split('=')[1] || null;
+const only = (s) => onlyArg == null || onlyArg.toUpperCase().includes(s);
 
 // Suite B + C run at a fixed, generous count independent of the editor-fuzz count — they're cheap.
 const resizeIters = Math.max(iters, 50000);
 const roundTripIters = Math.max(iters, 50000);
 
+if (only('B')) {
 console.log(`\n── Suite B: resizeBy invariants (opposite corner pinned, never inverts, stays in grid) ──`);
 const resizeFails = fuzzResize(resizeIters);
 if (resizeFails.length === 0) {
@@ -859,7 +1290,9 @@ if (resizeFails.length === 0) {
   console.log(`   out=${JSON.stringify(f.out)}  problems: ${f.problems.join(' | ')}`);
   process.exitCode = 1;
 }
+}
 
+if (only('C')) {
 console.log(`\n── Suite C: reopen round-trip · score translation-invariance · door side on thin footprints ──`);
 const rtFails = fuzzRoundTrip(roundTripIters);
 if (rtFails.length === 0) {
@@ -873,9 +1306,49 @@ if (rtFails.length === 0) {
   console.log(`   problems: ${f.problems.join(' | ')}`);
   process.exitCode = 1;
 }
+}
 
-console.log(`\n── Suite A: editor gesture-order fuzz (multi-step drags, hysteresis, blocked-carry) ──`);
-run(iters);
+if (only('A')) {
+  console.log(`\n── Suite A: editor gesture-order fuzz (multi-step drags, hysteresis, blocked-carry) ──`);
+  run(iters);
+}
 
-console.log(`\n── Suite D: WCAG button paths (move arrows · size steppers · plot keys · tile select) ──`);
-run(iters, randomButtonOp, 0x5EED);
+if (only('D')) {
+  console.log(`\n── Suite D: WCAG button paths (move arrows · size steppers · plot keys · tile select) ──`);
+  run(iters, randomButtonOp, 0x5EED);
+}
+
+// ---- Suite E: ScanMapper ------------------------------------------------------------------------
+if (only('E')) {
+console.log(`\n── Suite E: ScanMapper (random model output → editor-legal rooms) ──`);
+const inject = (process.argv.find((a) => a.startsWith('--inject=')) || '').split('=')[1] || null;
+if (inject) console.log(`   ⚠ FAULT INJECTED: ${inject}`);
+
+const pinned = scanPinnedCases(inject);
+if (pinned.length === 0) {
+  console.log('✅ the 3 recorded Groq replies map exactly as measured on the real API');
+  console.log('   (clean render → Placed · JPEG → Placed · phone photo → Assisted, geometry discarded)');
+} else {
+  console.log('❌ a recorded reply no longer maps as it was measured:');
+  for (const p of pinned) console.log(`     ${p}`);
+  process.exitCode = 1;
+}
+
+const scanIters = Math.max(iters, 20000);
+const scan = fuzzScan(scanIters, inject);
+console.log(`   outcome mix over ${scanIters} random replies:`,
+  `${scan.mix.placed} placed · ${scan.mix.assisted} assisted · ${scan.mix.refused} refused`);
+if (scan.fails.length === 0) {
+  console.log('✅ every mapped plan is editor-legal — no overlap, nothing off-grid, nothing under a cell,');
+  console.log('   a trimmed room never MOVES from where it was read, reopening keeps every room inside');
+  console.log('   the plot, every tap lands a door on the house\'s own wall, and mapping is deterministic.');
+} else {
+  console.log(`❌ ${scan.fails.length} replies produced an illegal plan.`);
+  console.log('   by category:', scan.tally);
+  const f = scan.fails[0];
+  console.log(`   first failure: seed=${f.seed}`);
+  console.log(`   problems: ${f.problems.join(' | ')}`);
+  console.log(`   draft: ${JSON.stringify(f.draft).slice(0, 900)}`);
+  process.exitCode = 1;
+}
+}

@@ -1,0 +1,233 @@
+// ScanTypes.kt — the data contract for "scan your plan" (Product PRD §6.2b).
+//
+// WHY THESE TYPES LOOK LIKE THIS — docs/SCAN-PLAN-READING-PLAN.md §3i, measured not assumed:
+//
+//   the model reads TEXT · OUR code does GEOMETRY and everything Vastu · the USER confirms
+//
+// Three safety rules are baked into the shape of this file, each bought with a measurement:
+//
+//   S1  The model is never asked a Vastu-shaped question and no Vastu vocabulary reaches it.
+//       Asked for a room's *sector* it returned byte-identical answers for a clean render and a
+//       badly skewed photo (it wasn't looking), and its errors moved toward doctrine
+//       (MASTER BEDROOM→SW, KITCHEN→E — the textbook positions, not the drawing's). A reader that
+//       nudges homes toward canonical placement inflates every score. So there is no Zone, no
+//       direction and no verdict anywhere in [ScanDraft]: only labels and rectangles.
+//   S2  [ScanDraft.planConfidence] is RECORDED AND NEVER GATED ON. It was 0.95 on a 100 % read,
+//       on a 25 % read, and on fifteen entirely fabricated rectangles. The gates are objective
+//       (coverage, area variance) and live in ScanMapper.
+//   S3  There is no door in this file. Door detection benchmarks at 39 % and the front door is the
+//       highest-weighted single input the engine scores; the user taps it via `doorForTap`.
+//
+// Zero Android, zero network — `scripts/check-boundaries.sh` enforces the first and the
+// [PlanReader] seam keeps the second on the far side of an interface.
+package com.vastufirst.shared.scan
+
+import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.CellRect
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/**
+ * L0 triage: what kind of image this actually is. **One upload in five is not a usable plan** —
+ * of 30 real plans the owner curated, 24 were 2D plans, 5 were 3D marketing renders and 1 was not a
+ * plan at all (§3h). A 3D render does not fail loudly; it yields plausible-looking rectangles that
+ * are simply wrong, which is the worst failure mode for a paid score. So it is refused, not read.
+ */
+@Serializable
+enum class PlanImageType {
+    @SerialName("2D_PLAN") TWO_D_PLAN,
+    @SerialName("3D_RENDER") THREE_D_RENDER,
+    @SerialName("NOT_A_PLAN") NOT_A_PLAN,
+
+    /** The reply predates the triage prompt (the §3e fixtures). Treated as "not stated", never as 3D. */
+    @SerialName("UNKNOWN") UNKNOWN,
+}
+
+/**
+ * One rectangle as the model returned it: **normalised** `0..1` against the building's outer wall,
+ * origin top-left, y growing downward (image convention, matching the grid editor's rows).
+ *
+ * Normalised because it means the model never has to know the app's grid — and it makes everything
+ * downstream a pure function of numbers in a unit square.
+ *
+ * [confidence] is the model's per-room self-report. It is used ONLY to decide which of two
+ * overlapping rooms gives way (a relative comparison inside one reply), never as a quality gate — see
+ * S2 above.
+ */
+@Serializable
+data class ScanBox(
+    val label: String = "",
+    val x: Double = 0.0,
+    val y: Double = 0.0,
+    val w: Double = 0.0,
+    val h: Double = 0.0,
+    val confidence: Double = 0.0,
+)
+
+/**
+ * A whole model reply, normalised. Field names match the recorded JSON in `tools/scan-eval/out/`
+ * verbatim so the fixtures are the actual measured replies rather than a re-typing of them.
+ *
+ * Every field has a default: a reply that omits one is a real, observed case (the §3e fixtures
+ * predate the triage prompt), and a missing field must degrade rather than throw.
+ */
+@Serializable
+data class ScanDraft(
+    val planType: PlanImageType = PlanImageType.UNKNOWN,
+    val hasRoomLabels: Boolean = true,
+    val northMarked: Boolean = false,
+    val rooms: List<ScanBox> = emptyList(),
+    /** ⚠ RECORDED FOR DIAGNOSTICS ONLY. Never gate on this — S2. */
+    val planConfidence: Double = 0.0,
+    val unreadable: Boolean = false,
+)
+
+/** Why a space the model reported did not become a room. Always surfaced, never silent. */
+@Serializable
+enum class DropReason {
+    /** A rectangle wholly inside another room — a dressing area, a walk-in closet. §3j D1. */
+    SUB_AREA,
+
+    /** Named on the drop list: dressing areas, ducts, shafts, lifts. Not habitable, not scored. */
+    NOT_HABITABLE,
+
+    /** No synonym matched. Not guessed — a wrong room type moves a paid score. */
+    UNKNOWN_LABEL,
+
+    /** Rounded to zero cells on the grid. */
+    DEGENERATE,
+
+    /** NaN / inverted / entirely outside the unit square. */
+    INVALID_GEOMETRY,
+
+    /** Overlapped a higher-confidence room and no trim left it at least one cell. */
+    OVERLAP_UNRESOLVABLE,
+}
+
+/** A space the model read that did not survive to the grid, with the reason, for the UI to show. */
+data class DroppedSpace(val label: String, val reason: DropReason)
+
+/** Per-room caveats the user should see on the confirmation screen. */
+enum class RoomFlag {
+    /** Overlapped a more-confident room and was cut back. The user should check its size. */
+    OVERLAP_TRIMMED,
+
+    /** Stuck out of the unit square and was clamped back in. */
+    OUT_OF_BOUNDS_CLAMPED,
+
+    /** The label matched a synonym only loosely (a substring, not the whole name). */
+    LOOSE_LABEL_MATCH,
+
+    /** The model's own per-room confidence was low. Advisory only — never a gate (S2). */
+    LOW_MODEL_CONFIDENCE,
+}
+
+/**
+ * One room that survived to the user. [rect] is `null` in [ScanOutcome.Assisted] — the room was
+ * identified but not placed, which is the **primary real-world path** (§3h): across 30 real plans the
+ * model named rooms excellently and positioned them badly, three independent ways.
+ *
+ * [label] is kept verbatim as printed on the plan so the confirmation screen can say
+ * *"we read 'ATT. TOILET 1350X2250' as a Toilet"* — the user checks our reading, not just our answer.
+ */
+data class ScannedRoom(
+    val type: RoomType,
+    val label: String,
+    val rect: CellRect?,
+    val flags: Set<RoomFlag> = emptySet(),
+)
+
+/** Why the geometry was thrown away and the rooms handed over unplaced. */
+enum class AssistReason {
+    /** The rooms covered too little of the footprint to be a layout. */
+    LOW_COVERAGE,
+
+    /** Every rectangle came back the same size — invented, not measured (§3j D2). */
+    UNIFORM_BOXES,
+
+    /** Too few rooms survived snapping to be worth placing for the user. */
+    TOO_FEW_PLACED,
+}
+
+/** Why nothing could be read at all. Each maps to a message that tells the user what to fix. */
+enum class RefusalReason {
+    /** A 3D marketing render. 5 of the 30 real plans (§3h). */
+    NOT_2D,
+
+    /** An elevation, a brochure page, a photo of something else. */
+    NOT_A_PLAN,
+
+    /** No readable room names. The owner made a labelled plan a precondition (§3g). */
+    NO_LABELS,
+
+    /** A sheet with several homes on it (UNIT-1 … UNIT-4). Seen in the corpus. */
+    MULTI_UNIT,
+
+    /** It is a labelled 2D plan, but nothing came back that maps to a room. */
+    NO_ROOMS,
+}
+
+/**
+ * The objective measurements behind the decision — kept on every outcome so a support question
+ * ("why did it do that?") is answerable from the data rather than from a guess.
+ */
+data class ScanNotes(
+    /** Fraction of the unit square covered by the union of the model's rectangles. §3h's gate. */
+    val coverage: Double,
+    /** stdev(area) ÷ mean(area) over those rectangles. Near zero means the geometry was invented. */
+    val areaVariation: Double,
+    /** The model's own self-report. Diagnostics only — S2. */
+    val modelConfidence: Double,
+    val dropped: List<DroppedSpace> = emptyList(),
+)
+
+/**
+ * What a scan produced. Three outcomes, and **every branch ends somewhere useful** — nothing
+ * dead-ends and nothing lies. The worst case is the guided grid that already exists and has been
+ * fuzzed across 400 000 sequences.
+ */
+sealed interface ScanOutcome {
+    val notes: ScanNotes
+
+    /**
+     * Rooms identified **and** positioned. The user confirms and corrects them on the guided grid,
+     * exactly as §6.2b requires — there is no automatic path to a score.
+     */
+    data class Placed(
+        val cols: Int,
+        val rows: Int,
+        val rooms: List<ScannedRoom>,
+        override val notes: ScanNotes,
+    ) : ScanOutcome
+
+    /**
+     * Rooms identified, geometry discarded. **This is the expected outcome for most real plans**, and
+     * it is a real saving rather than a failure: it removes the two slowest parts of the current flow
+     * — working out the room list, and hunting each type out of the palette — and keeps the part the
+     * model cannot do with the person who knows the answer.
+     */
+    data class Assisted(
+        val rooms: List<ScannedRoom>,
+        val reason: AssistReason,
+        override val notes: ScanNotes,
+    ) : ScanOutcome
+
+    /** The image cannot be used. [reason] tells the user precisely what to change. */
+    data class Refused(
+        val reason: RefusalReason,
+        override val notes: ScanNotes,
+    ) : ScanOutcome
+}
+
+/**
+ * The one seam between "read the picture" and everything else.
+ *
+ * Implementations: `FakePlanReader` (recorded replies — needs no key, no network, and is what CI
+ * runs) and, later, `GroqPlanReader` (one HTTP POST, model id from config). Everything to the right
+ * of this interface is pure Kotlin with no Android and no network, which is where essentially all
+ * the correctness risk lives — so it is built and proven green in CI before any account exists.
+ */
+interface PlanReader {
+    /** [image] is the encoded bytes of a downscaled JPEG. Never throws; failures are [ScanOutcome]s. */
+    suspend fun read(image: ByteArray, imageAspect: Double?): ScanOutcome
+}
