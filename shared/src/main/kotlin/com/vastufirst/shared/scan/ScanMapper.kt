@@ -49,29 +49,45 @@ object ScanMapper {
     const val DEFAULT_GRID = MAX_GRID
 
     /**
-     * ⭐ The Placed/Assisted threshold, **derived from `tools/scan-eval/out/real-plans.json`** — the
-     * 23 labelled 2D plans out of the 30 real ones the owner curated.
+     * ⭐⭐ The Placed/Assisted gate: **how many rooms the plan has**. Above this, the geometry is not
+     * trusted and the rooms are handed over unplaced.
      *
-     * Their coverage runs **min 0.204 · p25 0.388 · median 0.440 · p75 0.577 · max 0.760**. Real
-     * homes are mostly walls, corridors, ducts and shafts, so their rooms can never sum to the whole
-     * footprint — the ~0.85 figure in early drafts of the plan was calibrated on a synthetic fixture
-     * I drew myself and **would have rejected all 30 real plans**.
+     * **This replaced a coverage threshold, and the replacement was forced by looking at pictures.**
+     * (E3, `tools/scan-eval/exp-place.py`; overlays in `out/overlay/`.) Until then, no one had ever
+     * checked a single real placement — `batch-real.py` recorded room counts, names and a coverage
+     * number but threw the rectangles away. Drawing the model's rectangles back over the plans and
+     * judging them by eye said this:
      *
-     * 0.577 is the upper quartile of that distribution: the top ~26 % of real reads get their
-     * geometry trusted, the rest hand their rooms over unplaced. That matches the measured product
-     * conclusion (§3h) that **Assisted is the primary mode, not the fallback** — and it classifies
-     * both cases that have ground truth correctly: the clean synthetic render (coverage 1.00, 8/8
-     * rooms right) is Placed, the simulated phone photo (0.57, 2/8 rooms right) is Assisted.
+     * | plan | rooms | coverage | placement, by eye |
+     * |---|---|---|---|
+     * | plan-008 | 11 | 0.390 | **all 11 boxes on the right room** |
+     * | plan-006 | 10 | 0.421 | good — 7 of 10 |
+     * | plan-018 | 15 | 0.204 | bad — boxes over a 3D render and a legend |
+     * | plan-003 | 17 | 0.574 | bad — one "balcony" landed on the title block |
+     * | plan-005 | 21 | **0.760** | mixed — dining, kitchen and puja all wrong |
+     * | plan-002 | 24 | 0.421 | bad — scattered |
      *
-     * ⚠ Honest limit: this separates good reads from bad ones *within* a corpus, and the synthetic
-     * and real corpora sit on different scales. Experiment E3 in the plan doc — judging the 24 real
-     * 2D plans by eye — is what would refine it. It is not re-derived here.
+     * ⚠ **Coverage is not merely mis-calibrated, it is non-monotonic with quality.** Two plans with
+     * *identical* coverage (0.421) placed well and badly; the corpus's *highest* coverage placed
+     * worse than its lowest-but-one. A simple house with a garden and a porch legitimately has a lot
+     * of area that is not a labelled room, so a good read of a real home scores LOW. The old 0.577
+     * gate — the upper quartile of that distribution — was therefore wrong in both directions: it
+     * threw away plan-008's flawless read and trusted plan-005's wrong one.
      *
-     * ⚠ Coverage NEVER refuses a plan; it only chooses Placed vs Assisted. Every one of the 23 real
-     * plans clears the lowest observed value (0.204) by construction, so no genuine input is ever
-     * turned away on this number.
+     * Room count separates cleanly where nothing else does (good 10–11 · bad 15–24, no overlap), and
+     * it matches what the published benchmarks say: these models degrade as the number of separate
+     * items to count grows. It is also the difference between a **single-family house plan** (10–12
+     * named spaces) and an **apartment floor plate** (17–25, thick with ducts, shafts, lobbies and
+     * lifts) — which is the real distinction the eye is picking up.
+     *
+     * ⚠ Honest limits, stated rather than buried: this rests on **6 plans judged by eye**, 2 of them
+     * good. 13 and 14 rooms were never observed, so the exact cut between 11 and 15 is a judgement,
+     * not a measurement. And it does **not** catch a badly skewed photograph of a simple plan — that
+     * read had 8 rooms and would be trusted here. Nothing available catches it: the measured photo
+     * read's coverage (0.569) sits *above* both good real plans. The mandatory confirmation step is
+     * what catches it, which is exactly what §6.2b requires the confirmation step to be for.
      */
-    const val PLACED_COVERAGE = 0.577
+    const val MAX_TRUSTED_ROOMS = 12
 
     /**
      * stdev(area) ÷ mean(area) below this means the rectangles were invented rather than measured.
@@ -177,11 +193,14 @@ object ScanMapper {
             .map { ScannedRoom(it.type, it.box.label, rect = null, flags = it.flags.toSet()) }
 
         // ---- 6. the two objective gates (L2 is a bonus, never a promise) -----------------------
+        // ⚠ Coverage is deliberately NOT a gate — see [MAX_TRUSTED_ROOMS]. It is still measured and
+        // carried in the notes, because it is worth being able to answer "why did it do that?", but
+        // it decides nothing.
         if (rooms.size >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
             return ScanOutcome.Assisted(identified, AssistReason.UNIFORM_BOXES, notes())
         }
-        if (coverage < PLACED_COVERAGE) {
-            return ScanOutcome.Assisted(identified, AssistReason.LOW_COVERAGE, notes())
+        if (rooms.size > MAX_TRUSTED_ROOMS) {
+            return ScanOutcome.Assisted(identified, AssistReason.TOO_MANY_ROOMS, notes())
         }
 
         // ---- 7. snap to the grid ---------------------------------------------------------------

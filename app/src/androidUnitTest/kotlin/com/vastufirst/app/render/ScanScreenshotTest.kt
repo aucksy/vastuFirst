@@ -37,13 +37,17 @@ class ScanScreenshotTest {
         )
     }
 
-    /** The clean render: measured 8/8 rooms, coverage 1.00 — the read that gets its geometry trusted. */
+    /** The clean render: measured 8/8 rooms right — the read that gets its geometry trusted. */
     private fun placed(): ScanOutcome =
         ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
 
-    /** The phone photo: measured 2/8 rooms, coverage 0.569 — geometry discarded, room list kept. */
+    /**
+     * A REAL 24-space floor plate: names read perfectly, rectangles scattered nowhere near the rooms
+     * they name (verified by drawing them back over the plan). Too many rooms to trust the geometry,
+     * so the room list is kept and the layout is thrown away. This is the path most real plans take.
+     */
     private fun assisted(): ScanOutcome =
-        ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)
+        ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
 
     @Test
     fun scanIdle() {

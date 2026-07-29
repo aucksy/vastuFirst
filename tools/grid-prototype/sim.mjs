@@ -867,7 +867,11 @@ function run(iterations, gen = randomOp, seedSalt = 0) {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', '..', 'shared', 'src', 'main', 'resources', 'scan');
 
-const PLACED_COVERAGE = 0.577;
+// ⭐ The gate is ROOM COUNT, not coverage. Coverage was demoted after the model's rectangles were
+// drawn back over real plans and judged by eye: two plans with identical coverage placed well and
+// badly, and the corpus's highest coverage placed worse than its lowest-but-one. See
+// ScanMapper.MAX_TRUSTED_ROOMS for the table.
+const MAX_TRUSTED_ROOMS = 12;
 const UNIFORM_AREA_VARIATION = 0.15;
 const UNIFORM_MIN_ROOMS = 4;
 const CONTAINMENT_FRACTION = 0.90;
@@ -882,12 +886,26 @@ const LABEL_TABLE = {
   DINING: 'DINING', STUDY: 'STUDY', STORE: 'STORE', UTILITY: 'UTILITY',
 };
 const LABEL_DROP = new Set(['DRESS', 'DRESSING', 'DUCT', 'LIFT', 'SHAFT', 'WARDROBE']);
+/** Mirrors RoomLabels.clean: the parenthetical, the feet/inch marks, the printed dimensions, the
+ *  index suffix. ⚠ The `X` between two numbers is a dimension separator (`BEDROOM 6750X4350`), not a
+ *  letter — without that step a real caption never resolves, which is how this mirror first drifted. */
+function cleanLabel(raw) {
+  return String(raw).toUpperCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/['"‘’“”′″]/g, ' ')
+    .replace(/(?<=[0-9])[ ]*X[ ]*(?=[0-9])/g, ' ')
+    .replace(/[^0-9A-Z]/g, ' ')
+    .split(' ').filter((t) => t && !/^[0-9]+$/.test(t)).join(' ');
+}
+const LOOSE_KEYS = Object.keys(LABEL_TABLE).sort((a, b) => b.length - a.length || a.localeCompare(b));
 function resolveLabel(raw) {
-  const c = String(raw).toUpperCase().replace(/[^0-9A-Z]/g, ' ').split(' ')
-    .filter((t) => t && !/^[0-9]+$/.test(t)).join(' ');
+  const c = cleanLabel(raw);
   if (!c) return { kind: 'unknown' };
   if (LABEL_TABLE[c]) return { kind: 'room', type: LABEL_TABLE[c] };
   if (LABEL_DROP.has(c)) return { kind: 'drop' };
+  for (const d of LABEL_DROP) if (c.includes(d)) return { kind: 'drop' };
+  const hit = LOOSE_KEYS.find((k) => c.includes(k));
+  if (hit) return { kind: 'room', type: LABEL_TABLE[hit] };
   return { kind: 'unknown' };
 }
 
@@ -1036,8 +1054,8 @@ function scanMap(draft, imageAspect, opts = {}) {
   if (inject !== 'no-uniform-gate' && rooms.length >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
     return { kind: 'assisted', reason: 'UNIFORM_BOXES', rooms: identified, notes: notes() };
   }
-  if (inject !== 'no-coverage-gate' && coverage < PLACED_COVERAGE) {
-    return { kind: 'assisted', reason: 'LOW_COVERAGE', rooms: identified, notes: notes() };
+  if (inject !== 'no-roomcount-gate' && rooms.length > MAX_TRUSTED_ROOMS) {
+    return { kind: 'assisted', reason: 'TOO_MANY_ROOMS', rooms: identified, notes: notes() };
   }
 
   const [cols, rows] = scanGridFor(imageAspect, inject);
@@ -1217,12 +1235,22 @@ function fuzzScan(iterations, inject) {
 function scanPinnedCases(inject) {
   const problems = [];
   const opts = { inject };
+  // ⚠ plan-01-photo now PLACES: it has 8 rooms, which is under the gate, and its geometry is known
+  // to be wrong (2/8 right). Nothing available catches it — its coverage, 0.569, sits ABOVE both
+  // real plans that placed perfectly. That is stated in ScanMapper and it is what the mandatory
+  // confirmation step exists for. Pinned so the trade-off stays deliberate rather than forgotten.
+  //
+  // ⚠ Only the plan-01 family is pinned HERE. `real-dense` is a 24-space floor plate whose captions
+  // (LOBBY, SIT-OUT, C.TOILET, LOUNGE, STUDY-ROOM…) need the FULL synonym table to resolve, and this
+  // mirror deliberately carries a cut-down one. Since the gate is now the room COUNT, a smaller table
+  // changes the answer — so the real-reply expectations live in Kotlin's RecordedScanTest, where the
+  // real table runs. This file keeps what it can check honestly: geometry.
   const expect = [
-    ['plan-01', 'placed', 1.0],
-    ['plan-01-jpeg', 'placed', 1.0],
-    ['plan-01-photo', 'assisted', 0.569],
+    ['plan-01', 'placed', 1.0, 8],
+    ['plan-01-jpeg', 'placed', 1.0, 8],
+    ['plan-01-photo', 'placed', 0.569, 8],
   ];
-  for (const [id, kind, cov] of expect) {
+  for (const [id, kind, cov, nrooms] of expect) {
     let rec;
     try {
       rec = JSON.parse(readFileSync(join(FIXTURES, `${id}.json`), 'utf8'));
@@ -1236,7 +1264,7 @@ function scanPinnedCases(inject) {
       problems.push(`${id}: coverage ${out.notes.coverage.toFixed(3)}, measured ${cov}`);
     }
     const n = (out.rooms || []).length;
-    if (n !== 8) problems.push(`${id}: ${n} rooms, all 8 were named correctly on the real API`);
+    if (n !== nrooms) problems.push(`${id}: ${n} rooms, expected ${nrooms} from the real reply`);
   }
 
   // §3j D2 — a numbered-legend plan came back as rooms of IDENTICAL size at confidence 0.95. Here
@@ -1252,17 +1280,15 @@ function scanPinnedCases(inject) {
     problems.push(`fabricated-uniform: expected assisted/UNIFORM_BOXES, got ${fab.kind}/${fab.reason || ''}`);
   }
 
-  // §3e — the scattered read a skewed photo produces. Names right, rectangles nowhere near tiling.
-  const scattered = [
-    { label: 'LIVING ROOM', x: 0.02, y: 0.02, w: 0.30, h: 0.20, confidence: 0.95 },
-    { label: 'KITCHEN', x: 0.40, y: 0.05, w: 0.18, h: 0.12, confidence: 0.95 },
-    { label: 'MASTER BEDROOM', x: 0.05, y: 0.40, w: 0.28, h: 0.22, confidence: 0.95 },
-    { label: 'TOILET', x: 0.55, y: 0.55, w: 0.10, h: 0.08, confidence: 0.95 },
-    { label: 'POOJA', x: 0.75, y: 0.20, w: 0.09, h: 0.09, confidence: 0.95 },
-  ];
-  const sc = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: scattered, planConfidence: 0.95 }, null, opts);
-  if (sc.kind !== 'assisted' || sc.reason !== 'LOW_COVERAGE') {
-    problems.push(`scattered-read: expected assisted/LOW_COVERAGE, got ${sc.kind}/${sc.reason || ''}`);
+  // A dense floor plate: names read fine, geometry not trusted. The gate that catches it is the
+  // room count, so build one with more rooms than a single home has.
+  const dense = Array.from({ length: 18 }, (_, i) => ({
+    label: SCAN_LABELS[i % 12], x: (i % 6) * 0.16, y: Math.floor(i / 6) * 0.33,
+    w: 0.10 + (i % 3) * 0.03, h: 0.20 + (i % 2) * 0.06, confidence: 0.9,
+  }));
+  const dn = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: dense, planConfidence: 0.95 }, null, opts);
+  if (dn.kind !== 'assisted' || dn.reason !== 'TOO_MANY_ROOMS') {
+    problems.push(`dense-plate: expected assisted/TOO_MANY_ROOMS, got ${dn.kind}/${dn.reason || ''}`);
   }
   return problems;
 }
@@ -1326,8 +1352,9 @@ if (inject) console.log(`   ⚠ FAULT INJECTED: ${inject}`);
 
 const pinned = scanPinnedCases(inject);
 if (pinned.length === 0) {
-  console.log('✅ the 3 recorded Groq replies map exactly as measured on the real API');
-  console.log('   (clean render → Placed · JPEG → Placed · phone photo → Assisted, geometry discarded)');
+  console.log('✅ the recorded Groq replies map exactly as pinned, and both fabrication detectors fire');
+  console.log('   (clean render + JPEG + phone photo all Placed — the photo is a known, documented');
+  console.log('    miss that only the user\'s confirmation catches; a dense floor plate → Assisted)');
 } else {
   console.log('❌ a recorded reply no longer maps as it was measured:');
   for (const p of pinned) console.log(`     ${p}`);

@@ -52,7 +52,19 @@ object RecordedScans {
      */
     const val PHOTO = "plan-01-photo"
 
-    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO)
+    /**
+     * ⭐ A **real** reply, from a mirrored two-flat floor plate with 24 named spaces. Its room names
+     * are read perfectly — `BEDROOM 6750X4350`, `ATT. TOILET 1350X2250`, `LIFT 1850X1850 (8 PERSON)`
+     * — and its rectangles are scattered nowhere near the rooms they name, which was verified by
+     * drawing them back over the plan and looking (`tools/scan-eval/out/overlay/plan-002.png`).
+     *
+     * This is the Assisted path's evidence rather than an invented example, and it is what the
+     * Assisted render golden is driven from. Only the model's reply is stored here; the plan image
+     * itself stays out of the repo.
+     */
+    const val DENSE = "real-dense"
+
+    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE)
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {

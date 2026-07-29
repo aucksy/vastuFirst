@@ -1,0 +1,214 @@
+{
+ "fixture": "real-dense",
+ "model": "qwen/qwen3.6-27b",
+ "note": "A REAL reply, captured 2026-07-30 from a mirrored two-flat floor plate (24 spaces). Room names read perfectly; the rectangles were scattered nowhere near the rooms they name - verified by drawing them back over the plan. This is the Assisted path's evidence, not an invention. Only the model's reply is stored; the plan image itself stays out of the repo.",
+ "usage": {
+  "queue_time": 0.182984164,
+  "prompt_tokens": 2143,
+  "prompt_time": 0.160732342,
+  "completion_tokens": 1980,
+  "completion_time": 3.75362885,
+  "total_tokens": 4123,
+  "total_time": 3.914361192
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "rooms": [
+   {
+    "label": "BEDROOM 6750X4350",
+    "x": 0.05,
+    "y": 0.05,
+    "w": 0.25,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "DRESSING 1800X2250",
+    "x": 0.05,
+    "y": 0.05,
+    "w": 0.08,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "ATT. TOILET 1350X2250",
+    "x": 0.15,
+    "y": 0.05,
+    "w": 0.08,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "BALCONY 3300X2000",
+    "x": 0.25,
+    "y": 0.05,
+    "w": 0.15,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "BEDROOM 3300X3650",
+    "x": 0.05,
+    "y": 0.35,
+    "w": 0.15,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET 3300X1500",
+    "x": 0.05,
+    "y": 0.3,
+    "w": 0.1,
+    "h": 0.08,
+    "confidence": 0.9
+   },
+   {
+    "label": "LOUNGE 3300X3200",
+    "x": 0.2,
+    "y": 0.35,
+    "w": 0.15,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "LIFT 1850X1850 (8 PERSON)",
+    "x": 0.45,
+    "y": 0.15,
+    "w": 0.1,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "LOBBY 5100X1800",
+    "x": 0.45,
+    "y": 0.3,
+    "w": 0.2,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "STORE 1650X1500",
+    "x": 0.4,
+    "y": 0.35,
+    "w": 0.08,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "ELECTRICAL DUCT 1500X1500",
+    "x": 0.5,
+    "y": 0.35,
+    "w": 0.08,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "ENT. LOBBY 1650X1500",
+    "x": 0.6,
+    "y": 0.35,
+    "w": 0.08,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "KITCHEN 2950X4200",
+    "x": 0.4,
+    "y": 0.5,
+    "w": 0.15,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "DINING 4175X2975",
+    "x": 0.6,
+    "y": 0.5,
+    "w": 0.2,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "UTILITY 4175X1200",
+    "x": 0.6,
+    "y": 0.65,
+    "w": 0.2,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "LIVING 3925X5000",
+    "x": 0.65,
+    "y": 0.15,
+    "w": 0.2,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "STUDY-ROOM 2425X2000",
+    "x": 0.65,
+    "y": 0.05,
+    "w": 0.15,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "BEDROOM 3000X3650",
+    "x": 0.8,
+    "y": 0.05,
+    "w": 0.15,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "ATT. TOILET 1350X2000",
+    "x": 0.8,
+    "y": 0.05,
+    "w": 0.08,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "DUCT 1350X900",
+    "x": 0.8,
+    "y": 0.05,
+    "w": 0.08,
+    "h": 0.05,
+    "confidence": 0.9
+   },
+   {
+    "label": "SIT-OUT 3275X3200",
+    "x": 0.8,
+    "y": 0.3,
+    "w": 0.15,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "BEDROOM 3300X4200",
+    "x": 0.8,
+    "y": 0.5,
+    "w": 0.15,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "C. TOILET 1450X1800",
+    "x": 0.7,
+    "y": 0.5,
+    "w": 0.08,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "DUCT 1450X900",
+    "x": 0.7,
+    "y": 0.6,
+    "w": 0.08,
+    "h": 0.05,
+    "confidence": 0.9
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

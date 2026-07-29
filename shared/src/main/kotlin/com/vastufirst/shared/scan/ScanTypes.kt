@@ -139,8 +139,12 @@ data class ScannedRoom(
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */
 enum class AssistReason {
-    /** The rooms covered too little of the footprint to be a layout. */
-    LOW_COVERAGE,
+    /**
+     * ⭐ Too many rooms for the model to keep track of — in practice an apartment floor plate rather
+     * than a single home. Measured by drawing its rectangles back over real plans and looking:
+     * 10–11 rooms placed well, 15–24 placed badly, with no overlap between the two.
+     */
+    TOO_MANY_ROOMS,
 
     /** Every rectangle came back the same size — invented, not measured (§3j D2). */
     UNIFORM_BOXES,
@@ -172,7 +176,14 @@ enum class RefusalReason {
  * ("why did it do that?") is answerable from the data rather than from a guess.
  */
 data class ScanNotes(
-    /** Fraction of the unit square covered by the union of the model's rectangles. §3h's gate. */
+    /**
+     * Fraction of the unit square covered by the union of the model's rectangles.
+     *
+     * ⚠ **Diagnostic only — this decides nothing.** It was the Placed/Assisted gate until the
+     * rectangles were drawn back over real plans and looked at, which showed it is non-monotonic
+     * with placement quality. Kept because it is useful when answering "why did it do that?".
+     * See [ScanMapper.MAX_TRUSTED_ROOMS].
+     */
     val coverage: Double,
     /** stdev(area) ÷ mean(area) over those rectangles. Near zero means the geometry was invented. */
     val areaVariation: Double,

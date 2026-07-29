@@ -54,7 +54,7 @@ class AccessibilityTest {
             },
             "scan-assisted" to {
                 ScanScreen(
-                    ScanUiState.Done(ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)),
+                    ScanUiState.Done(ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)),
                     {}, {}, {}, {}, {}, {},
                 )
             },

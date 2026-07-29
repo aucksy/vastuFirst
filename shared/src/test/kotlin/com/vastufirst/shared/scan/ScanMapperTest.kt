@@ -309,28 +309,40 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ low coverage hands the rooms over unplaced rather than inventing a layout`() {
-        val boxes = listOf(
-            box("LIVING ROOM", 0.02, 0.02, 0.30, 0.20),
-            box("KITCHEN", 0.40, 0.05, 0.18, 0.12),
-            box("MASTER BEDROOM", 0.05, 0.40, 0.28, 0.22),
-            box("TOILET", 0.55, 0.55, 0.10, 0.08),
-            box("POOJA", 0.75, 0.20, 0.09, 0.09),
+    fun `⭐ a plan with too many rooms hands them over unplaced rather than inventing a layout`() {
+        // A floor plate's worth of spaces. The names still come through — that is the product.
+        val names = listOf(
+            "LIVING ROOM", "KITCHEN", "MASTER BEDROOM", "BEDROOM", "TOILET", "BATH", "POOJA",
+            "DINING", "STUDY", "STORE", "BALCONY", "UTILITY", "CORRIDOR", "GUEST ROOM",
         )
+        val boxes = names.mapIndexed { i, n ->
+            box(n, (i % 5) * 0.2, (i / 5) * 0.33, 0.10 + (i % 4) * 0.03, 0.15 + (i % 3) * 0.08)
+        }
         val out = ScanMapper.map(draft(*boxes.toTypedArray()))
-        assertTrue(ScanMapper.coverageOf(boxes) < ScanMapper.PLACED_COVERAGE)
         val assisted = assertIs<ScanOutcome.Assisted>(out)
-        assertEquals(AssistReason.LOW_COVERAGE, assisted.reason)
-        assertEquals(5, assisted.rooms.size, "L1 survives — the room list is the product")
+        assertEquals(AssistReason.TOO_MANY_ROOMS, assisted.reason)
+        assertEquals(14, assisted.rooms.size, "L1 survives — the room list is the product")
         assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
     }
 
     @Test
-    fun `the coverage threshold is the one derived from the 24 real plans`() {
-        // Guards against a well-meaning edit re-introducing the ~0.85 figure that was calibrated on a
-        // synthetic fixture and would have rejected all 30 real plans (§3h).
-        assertEquals(0.577, ScanMapper.PLACED_COVERAGE, 1e-9)
-        assertTrue(ScanMapper.PLACED_COVERAGE < 0.76, "must accept the best real plan measured")
+    fun `⭐ the gate is room count, and coverage decides nothing`() {
+        // Guards the correction that cost this feature a wrong answer in BOTH directions. Coverage
+        // was the gate until the model's rectangles were drawn back over real plans and looked at:
+        // two plans with IDENTICAL coverage (0.421) placed well and badly, and the corpus's highest
+        // coverage (0.760) placed worse than its lowest-but-one. So the same rooms must map the same
+        // way whatever their coverage.
+        assertEquals(12, ScanMapper.MAX_TRUSTED_ROOMS)
+
+        val tiling = goodDraft().rooms                                        // coverage 1.0
+        // The same five rooms in the same arrangement, shrunk into a quarter of the plan — so
+        // coverage collapses to ~0.25 while nothing about the reading changes.
+        val sparse = tiling.map { it.copy(x = it.x / 2, y = it.y / 2, w = it.w / 2, h = it.h / 2) }
+        assertTrue(ScanMapper.coverageOf(sparse) < 0.3 && ScanMapper.coverageOf(tiling) > 0.99)
+
+        val a = assertIs<ScanOutcome.Placed>(ScanMapper.map(draft(*tiling.toTypedArray())))
+        val b = assertIs<ScanOutcome.Placed>(ScanMapper.map(draft(*sparse.toTypedArray())))
+        assertEquals(a.rooms.map { it.type }, b.rooms.map { it.type })
     }
 
     // ---- overlaps: TRIM, never relocate ----------------------------------------------------------

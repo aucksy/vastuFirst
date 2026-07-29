@@ -994,3 +994,75 @@ plot always resizes, and clearing is right on its own terms since a scan replace
 leaves the phone* — but it must land **before** `GroqPlanReader` is wired, not after. That ordering is
 the next step's first requirement, not a nice-to-have: a floor plan is personal data under the DPDP
 Act, and scan is the first feature that would send one off the device.
+
+---
+
+## ⭐⭐ E3 — the coverage gate was wrong, and only pictures showed it (2026-07-30)
+
+The owner pushed back: *"you're telling me we can only extract the number of rooms but can't place
+them correctly?"* That was worth checking, because **nobody had ever looked at a single real
+placement.** `batch-real.py` recorded room counts, names and a coverage number, and threw the
+rectangles away. Every claim about placement rested on one synthetic fixture.
+
+`tools/scan-eval/exp-place.py` re-runs the same plans with the same prompt, **keeps** the rectangles,
+and draws them back over the original image. Overlays in `out/overlay/`. Judged by eye:
+
+| plan | rooms | coverage | placement, by eye | old gate did |
+|---|---|---|---|---|
+| plan-008 | 11 | 0.390 | **all 11 boxes on the right room** | ❌ threw it away |
+| plan-006 | 10 | 0.421 | good — 7 of 10 | ❌ threw it away |
+| plan-018 | 15 | 0.204 | bad — boxes over a 3D render and a legend | ✅ |
+| plan-003 | 17 | 0.574 | bad — a "balcony" landed on the title block | ✅ |
+| plan-005 | 21 | **0.760** | mixed — dining, kitchen, puja all wrong | ❌ **trusted it** |
+| plan-002 | 24 | 0.421 | bad — scattered | ✅ |
+
+⭐ **Coverage is not mis-calibrated, it is non-monotonic with quality.** Two plans with *identical*
+coverage placed well and badly. The corpus's *highest* coverage placed worse than its
+lowest-but-one. A simple house with a garden and a porch legitimately has a lot of area that is not a
+labelled room, so a good read of a real home scores LOW. The gate was wrong in **both** directions.
+
+**Room count separates cleanly where nothing else does** — good 10–11, bad 15–24, no overlap. Run
+against the eye verdicts, every other cheap signal overlapped: coverage (good 0.39–0.42 vs bad
+0.20–0.57), area-CV (0.63–0.84 vs 0.44–0.71), overlap ratio, and grid-snappiness — which turns out to
+measure *how tidy the plan's proportions are*, not whether the read was invented (the two CORRECT
+synthetic reads snap at 1.00; the wrong one snaps at 0.00).
+
+Room count is also the real distinction the eye is picking up: a **single-family house plan** names
+10–12 spaces; an **apartment floor plate** names 17–25, thick with ducts, shafts, lobbies and lifts.
+And it is what the published benchmarks predict — these models degrade as the number of separate
+items to count grows.
+
+### The change
+
+`PLACED_COVERAGE = 0.577` → **`MAX_TRUSTED_ROOMS = 12`**. Coverage is still measured and carried in
+`ScanNotes`, with "this decides nothing" written on it, because it is worth being able to answer "why
+did it do that?". `AssistReason.LOW_COVERAGE` → `TOO_MANY_ROOMS`, with copy that explains it in the
+user's terms ("that's usually a whole floor of flats rather than one home").
+
+⭐ Roughly **40 % of the real corpus now gets its rooms placed, up from 26 %** — and, more to the
+point, the *right* 40 %.
+
+### ⚠ Three limits, stated rather than buried
+
+1. **6 plans judged, 2 of them good.** 13 and 14 rooms were never observed, so the cut between 11 and
+   15 is a judgement. It is still infinitely better than the previous basis, which was zero.
+2. **A badly skewed photo of a simple plan is now trusted** — 8 rooms, under the gate, and only 2 of
+   8 placed right. **Nothing available catches it**: its coverage (0.569) sits *above* both real plans
+   that placed perfectly, so no coverage threshold could separate them. Pinned as a test so the
+   trade-off stays deliberate. The mandatory confirmation step is what catches it — which is exactly
+   what §6.2b requires that step to be for.
+3. **Only 10 of 30 plans were re-captured.** The free tier's limiter reported a **582-second** reset,
+   so the sweep could not finish in one sitting. That is more evidence for §3f's conclusion: the free
+   tier cannot serve production — it cannot even complete a 30-plan evaluation.
+
+### New fixture
+
+`real-dense.json` — a **real** reply from a mirrored two-flat floor plate (24 spaces, names perfect,
+rectangles scattered). It is what the Assisted render golden and the Assisted tests are driven from,
+so the documented failure mode is exercised by the reply that actually exhibits it. Only the model's
+reply is committed; the plan images stay out of the repo.
+
+⚠ **Where the real-reply expectations live matters.** `sim.mjs` carries a deliberately cut-down
+synonym table, and now that the gate is a room *count*, a smaller table changes the answer. So the
+recorded-reply pins moved to Kotlin's `RecordedScanTest`, where the real table runs; the mirror keeps
+what it can check honestly — geometry.

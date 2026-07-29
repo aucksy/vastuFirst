@@ -9,27 +9,29 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 /**
- * The mapper against the **actual replies the Groq API returned on 2026-07-29**, copied verbatim out
- * of `tools/scan-eval/out/`. These are the only three reads in the project with measured ground
- * truth, so they are the only place the coverage gate can be checked against a known-right and a
- * known-wrong answer rather than against itself.
+ * The mapper against the **actual replies the Groq API returned**, copied verbatim out of
+ * `tools/scan-eval/out/`. Nothing here is invented.
  *
- *   plan-01        clean digital render   8/8 rooms placed correctly, mean IoU 0.79  → must be Placed
- *   plan-01-jpeg   downscaled + JPEG      6/8 correct, IoU 0.73                      → must be Placed
- *   plan-01-photo  simulated phone photo  2/8 correct, IoU 0.37                      → must be Assisted
+ *   plan-01        clean digital render   8/8 rooms placed correctly, mean IoU 0.79  → Placed
+ *   plan-01-jpeg   downscaled + JPEG      6/8 correct, IoU 0.73                      → Placed
+ *   plan-01-photo  simulated phone photo  2/8 correct, IoU 0.37                      → Placed ⚠ known miss
+ *   real-dense     real 24-space floor plate, names perfect, rectangles scattered    → Assisted
  *
- * The threshold that separates them was derived from a *different* corpus — the 24 real 2D plans —
- * before these numbers were looked at, so this is a check, not a fit.
+ * ⭐ `real-dense` is the reply that moved the gate from coverage to room count: its coverage (0.421)
+ * is *identical* to a real plan that placed well, so coverage could not tell them apart. See
+ * [ScanMapper.MAX_TRUSTED_ROOMS] for the full table of what was judged by eye.
  */
 class RecordedScanTest {
 
     @Test
-    fun `all three recorded replies are bundled and parse`() {
+    fun `every recorded reply is bundled and parses`() {
         for (id in RecordedScans.ids) {
             val rec = assertNotNull(RecordedScans.load(id), "fixture $id is missing from resources")
             assertEquals("qwen/qwen3.6-27b", rec.model)
-            assertEquals(8, rec.reply.rooms.size, "$id should carry all 8 rooms")
+            assertTrue(rec.reply.rooms.isNotEmpty(), "$id carries no rooms")
         }
+        assertEquals(8, RecordedScans.load(RecordedScans.CLEAN)!!.reply.rooms.size)
+        assertEquals(24, RecordedScans.load(RecordedScans.DENSE)!!.reply.rooms.size)
     }
 
     @Test
@@ -40,7 +42,7 @@ class RecordedScanTest {
             RoomType.BEDROOM, RoomType.TOILET, RoomType.BATHROOM, RoomType.BALCONY,
         ).sortedBy { it.name }
 
-        for (id in RecordedScans.ids) {
+        for (id in listOf(RecordedScans.CLEAN, RecordedScans.COMPRESSED, RecordedScans.PHOTO)) {
             val draft = RecordedScans.load(id)!!.reply
             val rooms = when (val out = ScanMapper.map(draft)) {
                 is ScanOutcome.Placed -> out.rooms
@@ -66,18 +68,44 @@ class RecordedScanTest {
         assertIs<ScanOutcome.Placed>(out)
     }
 
+    /**
+     * ⭐⭐ The gate is the ROOM COUNT, and this is the real reply that forced it there.
+     *
+     * A mirrored two-flat floor plate: 24 named spaces, every name read correctly, and the
+     * rectangles scattered nowhere near the rooms they name — verified by drawing them back over the
+     * plan (`tools/scan-eval/out/overlay/plan-002.png`). Its coverage is **0.421, identical to a
+     * plan that placed well**, which is why coverage could not stay as the gate.
+     */
     @Test
-    fun `⭐ the phone photo's geometry is thrown away and its rooms are kept`() {
-        // Measured: 2 of 8 rooms within IoU 0.5. Placing those would put the kitchen in the wrong
-        // zone, and the zone is what gets scored.
-        val out = ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)
+    fun `⭐ a dense floor plate keeps its rooms and throws away its geometry`() {
+        val out = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         val assisted = assertIs<ScanOutcome.Assisted>(out)
-        assertEquals(AssistReason.LOW_COVERAGE, assisted.reason)
-        assertEquals(8, assisted.rooms.size)
-        assertTrue(assisted.rooms.all { it.rect == null })
+        assertEquals(AssistReason.TOO_MANY_ROOMS, assisted.reason)
+        assertTrue(assisted.rooms.size > ScanMapper.MAX_TRUSTED_ROOMS)
+        assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
+        // The names it read are excellent, which is the whole point of the Assisted path.
+        val names = assisted.rooms.map { it.type }
+        assertTrue(RoomType.KITCHEN in names && RoomType.BEDROOM in names && RoomType.TOILET in names)
+    }
+
+    /**
+     * ⚠ A KNOWN, DELIBERATE MISS, pinned so it stays deliberate.
+     *
+     * The simulated phone photo placed only 2 of its 8 rooms correctly — but it has 8 rooms, which is
+     * under the room-count gate, so it is trusted. **Nothing available catches it**: its coverage
+     * (0.569) sits *above* both real plans that placed perfectly, so no coverage threshold can
+     * separate them. The mandatory confirmation step is what catches it, which is precisely what
+     * §6.2b requires that step to be for — and the Placed copy asks for exactly that check.
+     */
+    @Test
+    fun `a skewed photo is trusted — the known limit of the room-count gate`() {
+        val out = ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)
+        val placed = assertIs<ScanOutcome.Placed>(out)
+        assertEquals(8, placed.rooms.size)
         assertTrue(
-            assisted.notes.coverage < ScanMapper.PLACED_COVERAGE,
-            "the photo read ${assisted.notes.coverage}, gate is ${ScanMapper.PLACED_COVERAGE}",
+            placed.notes.coverage > 0.39,
+            "the photo read ${placed.notes.coverage}, ABOVE the good real plans — so no coverage " +
+                "threshold could have separated them",
         )
     }
 
@@ -85,11 +113,11 @@ class RecordedScanTest {
     fun `⭐ the model reported 0-95 confidence on the read it got wrong`() {
         // S2, in the recorded data rather than in a comment. Same self-report, opposite quality.
         val clean = ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
-        val photo = ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)
+        val dense = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         assertEquals(0.95, clean.notes.modelConfidence, 1e-9)
-        assertEquals(0.95, photo.notes.modelConfidence, 1e-9)
+        assertEquals(0.95, dense.notes.modelConfidence, 1e-9)
         assertIs<ScanOutcome.Placed>(clean)
-        assertIs<ScanOutcome.Assisted>(photo)
+        assertIs<ScanOutcome.Assisted>(dense)
     }
 
     @Test
@@ -102,7 +130,8 @@ class RecordedScanTest {
         }
         assertIs<ScanOutcome.Placed>(outcomes[0])
         assertIs<ScanOutcome.Placed>(outcomes[1])
-        assertIs<ScanOutcome.Assisted>(outcomes[2])
+        assertIs<ScanOutcome.Placed>(outcomes[2])
+        assertIs<ScanOutcome.Assisted>(outcomes[3])
         // …and it cycles, so a screen can be driven round the states without re-creating it.
         assertIs<ScanOutcome.Placed>(assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome)
     }
