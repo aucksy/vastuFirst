@@ -504,6 +504,89 @@ guided grid that already exists and is fuzz-hardened.
 Fits Stage 3's 10–28 Aug window with room to spare. **L0–L2 need no key and no network** — they are
 built against recorded replies and proven in CI at zero cost.
 
+## 3j. ⭐ OWNER DECISIONS (2026-07-29, round 2) — and what testing them showed
+
+### D1 · No new room types. A synonym table instead.
+
+> *"Vastu only cares about a room right and not area inside the room? If yes, let's just add missing
+> rooms from the list and not areas."*
+
+**Confirmed against the engine.** `rooms.json` carries **15 scored room types**, each weighted against
+the zone its position resolves to — `ENTRANCE/KITCHEN/MASTER_BEDROOM 3.0`, `TOILET 2.5`,
+`POOJA/STAIRCASE 2.0`, `BEDROOM/LIVING 1.5`, `STUDY/DINING 1.0`, the rest 0.8. The only place area
+enters is Brahmasthan encroachment (`config.json`: `roomAreaFraction 0.02`,
+`analysisRectAreaFraction 0.005`) — and that is a room's **own** footprint against the centre, never
+its internal subdivisions.
+
+⭐ **So a dressing area inside a bedroom is invisible to scoring: the bedroom already occupies that
+floor.** The owner's reasoning is right, and it leads somewhere better than adding types — **no new
+types are needed at all**:
+
+| Real label | Handling | Rationale |
+|---|---|---|
+| DRESS · DRESSING · WALK-IN CLOSET (14) | **drop** | Sub-area of a bedroom; parent already covers the floor |
+| DUCT · ELECTRICAL DUCT · LIFT (6) | **drop** | Not habitable, not scored |
+| PORCH · SIT OUT | → `BALCONY` | Covered outdoor space |
+| VESTIBULE · FOYER | → `ENTRANCE` | |
+| SER ROOM | → `BEDROOM` | A real sleeping room |
+| AV ROOM / OFFICE | → `STUDY` | |
+| LOUNGE · DRAWING ROOM | → `LIVING` | |
+| POWDER ROOM | → `TOILET` | |
+
+⭐ **Why this matters beyond convenience:** a genuinely new room type would need a Vastu weight plus
+ideal/acceptable/prohibited zones plus provenance — that is an **expert ruling** (§13 territory), not
+something to invent. A synonym table needs none of it: **no engine change, no rules change, no score
+movement.** It ships as data with tests. Sub-areas are dropped by *geometric containment* (a rect
+wholly inside another room's rect), which is testable rather than name-based guesswork.
+
+### D2 · Numbered-legend plans — supported. Names yes, geometry no.
+
+> *"Yes let's consider numbered plans. AI can handle that right."*
+
+**Tested** (`exp-legend.py` on `plan-018`). Split verdict:
+
+✅ **Legend reading is excellent.** All 15 resolved: DRAWING ROOM, LIVING ROOM, DINING, BALCONY,
+BALCONY 2, KITCHEN, UTILITY, MASTER BEDROOM, BEDROOM ×3, POWDER ROOM, ATT. TOILET ×3 — a coherent
+4BHK. Numbered plans are supported.
+
+❌ **The geometry was fabricated.** Every one of the 15 rooms returned **`w 0.15, h 0.15`** — identical
+size — at positions snapped to a tidy 0.05 grid. Not a measurement; a plausible-looking spread. And
+`planConfidence` was **0.95** again (S2 confirmed a third time).
+
+⭐ **New objective detector — the "uniform box" signature.** Real homes have varied room sizes. If the
+returned rectangles have near-zero variance in area, the geometry is invented and must be discarded
+even when coverage looks tolerable. Cheap, deterministic, and it complements the coverage gate:
+
+```
+suspectFabricated = stdev(areas) / mean(area) < ~0.15   ->  drop L2, keep L1
+```
+
+This case is *already handled* by the architecture — it is simply "L1 works, L2 doesn't", which routes
+to Assisted mode. Numbered plans need no special path beyond legend resolution in the prompt.
+
+### D3 · Groq free tier only until launch; rate limits become a wait, not an error
+
+> *"We will get paid API key after launch don't worry about it… during testing you can ask user to
+> wait if Groq throws limit error."*
+
+No OpenRouter key for now. The `PlanReader` failover seam stays (it costs nothing and is where the
+paid key drops in later), but ships with one provider. **HTTP 429 is a first-class UI state, not an
+error**: a calm "we're reading a lot of plans right now — try again in a minute", with the guided grid
+offered alongside so the user is never stuck. Groq's headers give `x-ratelimit-reset-tokens`, so the
+wait can state a real number instead of guessing.
+
+⚠ Standing risk, unchanged: **8 000 tokens/minute ≈ 3 scans/minute across all users.** Fine for the
+client's testing; must be revisited before public launch.
+
+### D4 · Plans are always in English
+
+> *"Plans will always be in English — other languages are just user facing."*
+
+**E5 (Hindi/Devanagari label testing) is dropped from the experiment list.** The six-language
+requirement (§7.5) applies to the app's own UI, not to the uploaded drawing. Removes an untested risk
+and a chunk of work. ⚠ If a Hindi-labelled plan ever *is* uploaded, it falls into the existing
+"no readable room labels" refusal — a graceful landing, not a crash.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
