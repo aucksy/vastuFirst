@@ -90,7 +90,7 @@ private fun IdleBody(onPickImage: () -> Unit, onTakePhoto: () -> Unit, onDrawIns
             "You then place them on the grid and check everything before anything is scored.",
         style = VastuTheme.type.body, color = colors.textSecondary,
     )
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
 
     // ⭐ Steer to the good input. Measured (§3e): skew is what destroys the read, not compression —
     // a PDF or a screenshot reads far better than a photo taken at an angle, and the difference is
@@ -99,7 +99,7 @@ private fun IdleBody(onPickImage: () -> Unit, onTakePhoto: () -> Unit, onDrawIns
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     VastuButton("Take a photo instead", onClick = onTakePhoto, style = VastuButtonStyle.SECONDARY)
 
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
     VastuCard {
         VText("What works best", style = VastuTheme.type.bodyLg, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -115,7 +115,7 @@ private fun IdleBody(onPickImage: () -> Unit, onTakePhoto: () -> Unit, onDrawIns
         )
     }
 
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
 }
 
@@ -193,7 +193,7 @@ private fun RoomsBody(
     VText(title, style = VastuTheme.type.h2, color = colors.textPrimary)
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(body, style = VastuTheme.type.body, color = colors.textSecondary)
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
 
     VastuCard {
         rooms.forEach { room -> ReadRoomRow(room) }
@@ -218,11 +218,11 @@ private fun RoomsBody(
         }
     }
 
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
     VastuButton(cta, onClick = onUseRooms)
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     VastuButton("Try a different picture", onClick = onRetry, style = VastuButtonStyle.SECONDARY)
-    Spacer(Modifier.height(VastuTheme.spacing.s5))
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
 }
 
