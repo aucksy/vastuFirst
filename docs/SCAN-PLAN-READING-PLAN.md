@@ -78,6 +78,91 @@ knowledge would have failed on its first call. Pin the model id in config, never
 Cost is per-token with images tokenised into the same stream, so a scan's price scales with image
 resolution — downscaling before upload is a **cost** control, not just a bandwidth one.
 
+## 3b. Cost — there is no training cost (verified 2026-07-29)
+
+**Nothing is trained or fine-tuned.** We send an image plus instructions and read the answer. That is
+*inference*, billed per use. The only one-off spend is my own iteration while tuning the prompt.
+
+Prices per 1M tokens, at ~₹88/USD:
+
+| Model | Input | Output | Vision | On Groq free tier? |
+|---|---|---|---|---|
+| `qwen/qwen3.6-27b` | $0.285 | $0.90–1.99 * | yes | **yes** |
+| `google/gemini-3-flash-preview` | $0.50 | $3.00 | yes | no |
+| `google/gemini-3.6-flash` | $1.50 | $7.50 | yes | no |
+
+\* sources disagree on the output rate; the higher figure is used in every estimate below.
+
+**Per scan** — image ~2–3k tokens + ~800 tokens of instructions ≈ 3.5k in; JSON for ~10 rooms ≈ 700 out:
+
+| | Cost | ₹ |
+|---|---|---|
+| qwen3.6-27b, reasoning **off** | $0.0024 | **₹0.21** |
+| qwen3.6-27b, reasoning **on** | $0.0070 | ₹0.62 |
+| Gemini 3 Flash | $0.0038 | ₹0.33 |
+
+⭐ **The biggest cost lever is a config flag.** Qwen3.6 is a *reasoning* model and reasoning tokens bill
+as output. Plan reading is extraction, not deliberation — **run it at minimal/no reasoning**. That is
+the difference between 21 and 62 paise a scan.
+
+At volume (qwen, reasoning off): 1 000 scans ≈ ₹210 · 10 000 ≈ ₹2 100 · 100 000 ≈ ₹21 000.
+Against a ₹699 report, one scan costs **~0.03 %** of one sale.
+
+**Prompt-tuning budget:** ~25 real plans × 100–300 iterations ≈ 2.5–7.5k calls ≈ **₹1 000–3 000
+one-off**, and much of it runs on Groq's free tier.
+
+**Cheaper source for the same model?** OpenRouter is already listed as the cheapest provider for
+qwen3.6-27b ($0.285 in). DeepInfra and Alibaba's own DashScope serve Qwen models and can undercut on
+paper, but at our volumes the gap is tens of rupees per thousand scans — not worth a second
+integration. OpenRouter's real value here is one key across many models plus automatic failover, which
+is exactly the two-key arrangement the owner asked for. Revisit only if volume passes ~100k scans.
+
+## 3c. ⚠ Accuracy — the finding that shapes the whole feature
+
+**AECV-bench** (2026, 120 floor plans, 10 state-of-the-art vision models):
+
+| Element | Best model | Accuracy |
+|---|---|---|
+| Bedrooms | GPT-5.2 / Claude Opus 4.5 | 91 % |
+| Toilets | Gemini 3 Pro / GLM-4.6V | 82 % |
+| **Doors** | Gemini 3 Pro | **39 %** |
+| Windows | Gemini 3 Pro | 34 % |
+| **Mean** | Gemini 3 Pro | **51 %** |
+
+Document-QA split: OCR / text extraction **~95 %**, comparative reasoning ~80 %, spatial reasoning
+~70 %, instance counting 40–55 %. The authors' conclusion: *"Current AI works well as a document
+assistant but lacks robust drawing literacy."*
+
+⭐ **Two decisions fall straight out of this.**
+
+1. **Never ask the model for the front door.** Door detection tops out at 39 % — and the front door is
+   the **highest-weighted single input the engine scores**. Letting a coin-flip set it would silently
+   corrupt the number the customer pays for. The user already places the door by tapping a wall, and
+   that path was hardened in v0.3.11 (`doorForTap`, measured from the house). **Scan drafts rooms
+   only; the door stays manual.** This converts the benchmark's worst result into a non-issue.
+2. **Lean on the labels, not the geometry.** Indian architectural plans are captioned — *"BEDROOM
+   12'-0" × 10'-0"", "KITCHEN", "POOJA"*. That makes this an OCR-plus-layout task (95 % / 70 %) rather
+   than shape inference from bare walls (40–55 %). The prompt must be built around reading captions
+   and their positions, and a plan with no captions should be treated as low-confidence and routed to
+   the guided grid.
+
+**Honest expectation to set with the client:** scan saves typing and gets most *labelled* rooms about
+right. It is a drafting aid with mandatory human confirmation — which is precisely what §6.2b already
+specifies. It must never be sold as "the app reads your plan for you".
+
+## 3d. Model choice is not final — measure it
+
+`qwen3.6-27b` was selected under one constraint: *it is the only vision model Groq hosts*. With
+OpenRouter in the mix that constraint is gone, and Qwen3.6 is billed as an **agentic coding** model
+with vision attached — not a document-vision specialist. It did not appear in AECV-bench at all.
+
+Because `PlanReader` makes the model a config string, the right move is a **measured bake-off**: the
+same 20–25 real plans through 3 candidates (qwen3.6-27b · Gemini 3 Flash · one premium control such as
+Gemini 3 Pro), scored on rooms-found and label accuracy against a hand-made answer key. Cost ≈ ₹200.
+**Pick on measured accuracy, not on marketing or on who is free.** Free is worthless if the draft is
+wrong often enough that correcting it is slower than drawing from scratch — that is the real bar this
+feature has to clear.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
