@@ -34,3 +34,7 @@ Design System/Final Designs/vastufirst-mobile-apps-implementation/
 # never the transient verify diffs — they exist on disk for the CI artifact, not for the repo.
 **/roborazzi/*_compare.png
 **/roborazzi/*_actual.png
+
+# Third-party floor plans used as private test input — never redistribute
+Documents/Sample Floor plans/
+tools/scan-eval/corpus/
