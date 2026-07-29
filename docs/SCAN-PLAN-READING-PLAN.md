@@ -412,6 +412,98 @@ engine scores, so this is a scoring decision, not a cosmetic one. **Needs an own
 the drawing with a key printed alongside. A real and common style; currently it passes the
 "has labels" check while carrying no usable names. Either resolve the legend or reject explicitly.
 
+## 3i. ⭐⭐⭐ THE ARCHITECTURE — what everything measured adds up to
+
+**One sentence: the model reads *text*; our own code does *geometry* and *everything Vastu*; the
+user confirms.** Every measurement in §3e–§3h points the same way, and the design is now evidence-led
+rather than assumed.
+
+### The three hard safety rules — each bought with a measurement
+
+| # | Rule | Why — measured |
+|---|---|---|
+| **S1** | **The model never answers a Vastu-shaped question, and no Vastu vocabulary appears in the prompt.** | E1: asked for a room's *sector*, it returned byte-identical answers for a clean render and a badly skewed photo — it wasn't reading the image — and its errors moved toward doctrine (MASTER BEDROOM→SW, KITCHEN→E, the textbook positions, not the drawing's W and NE). A reader that nudges homes toward canonical placement makes every home score better than it is. |
+| **S2** | **Never gate on the model's self-reported confidence.** | §3e: `planConfidence` 0.95 on both a 100 % read and a 25 % read. |
+| **S3** | **Never let the model place the front door.** | Benchmarks: door detection 39 %, and the door is the highest-weighted single input the engine scores. The user taps it, as today. |
+
+⭐ **S1 is the one specific to this product.** Every other app using a vision model wants the model to
+be knowledgeable. We need it to be *ignorant* — a neutral document reader. The instant it starts
+"helping" with Vastu, the score becomes fiction.
+
+### The five layers
+
+```
+ L0  TRIAGE      is this a usable plan at all?         model classifies · our code decides
+ L1  IDENTITY    which rooms does this home have?      model reads TEXT        ← reliable core
+ L2  ARRANGEMENT roughly where are they?               model gives rectangles · quality-gated
+ L3  ZONES       which Vastu zone is each room in?     OUR CODE ONLY. never the model.
+ L4  CONFIRM     user adjusts, sets north + door       the existing grid editor
+```
+
+**L1 is the product.** It works on every 2D labelled plan and is the model's 95 %-accurate skill. If
+L2 fails entirely, L1 alone still deletes the two slowest steps of the current flow — working out the
+room list and hunting each type out of a palette.
+
+**L2 is a bonus, never a promise.** Signals in priority order — the higher one available, the better
+the draft:
+
+1. **Printed dimensions in the labels** (`BED ROOM 12'1"X11'0"`) — *text*, so 95 %-grade. Present in
+   27 % of labels and in most labels on 7 of 23 plans. Gives true room *sizes*.
+2. **The model's rectangles** — 40–70 %-grade. Good enough for rough arrangement, gated on coverage.
+3. **Nothing** — rooms are handed to the user unplaced, in a sensible default order.
+
+**L3 is deterministic, always.** E1 proved our own 3×3 partition of the model's coordinates (100 %)
+beats asking the model to partition (50 %). Zone assignment already exists in the engine and is
+tested; scan feeds it coordinates and never opinions.
+
+### What this covers — the plan-type matrix
+
+| Plan type | Seen in the 30 | Outcome | What the user gets |
+|---|---|---|---|
+| 2D, labelled, **dimensioned** | 7 / 23 | L1 + L2 (sizes) | Rooms placed and correctly sized |
+| 2D, labelled | 16 / 23 | L1 + L2 (rough) | Rooms placed, needs adjusting |
+| 2D photo, skewed | — | L1 only | Room list pre-loaded, user places |
+| Numbered legend (`1…15`) | 1 | L1 if the key is readable, else refuse | Rooms, or a clear ask |
+| Multi-unit sheet | seen | Ask user to crop to one home | Clear instruction |
+| **3D render** | 5 / 30 | **Refuse** | "Upload the flat, top-down plan" |
+| Unlabelled | 1 / 30 | **Refuse** (owner's rule §3g) | "Upload a labelled plan, or draw it" |
+
+**Every branch ends somewhere useful.** Nothing dead-ends, nothing lies, and the worst case is the
+guided grid that already exists and is fuzz-hardened.
+
+### Open experiments, in value order
+
+| | Experiment | Settles | Cost |
+|---|---|---|---|
+| **E2** | Dimension-driven sizing — parse `12'1"X11'0"` from labels, size rooms from text instead of rectangles | Whether L2 tier 1 is real | ~₹5 |
+| **E3** | Coverage-threshold calibration across the 24 real 2D plans, judged by eye | The one number still untrusted | ~₹5 + an hour of looking |
+| **E4** | Does a neutral prompt (rooms renamed "Room A/B") change the sector answers? | Confirms S1 beyond a strong signal | ~₹2 |
+| **E5** | Hindi/Devanagari labels | 6-language launch (§7.5) — completely untested | ~₹5 |
+| **E6** | Multi-unit sheet detection | A real case seen in the corpus | ~₹5 |
+
+### Owner decisions still needed
+
+1. **Unmappable rooms** (§3h) — DRESS/DRESSING ×14, PORCH, VESTIBULE, DUCT, LIFT, SER ROOM. Add
+   types / fold into parent / map to nearest? **This moves scores**, so it is not cosmetic.
+2. **Numbered-legend plans** — resolve the key, or refuse and ask for a named plan?
+3. **Where the API key lives** (§6.2) — unchanged, and now urgent given the free tier cannot serve
+   production (§3f).
+
+### Effort
+
+| Layer | Days |
+|---|---|
+| L0 triage + refusal messages | 1 |
+| L1 identity, synonym table, tests | 2 |
+| L2 arrangement, coverage gate, fuzz suite | 2 |
+| Android glue — picker, PdfRenderer, downscale, HTTP, Groq→OpenRouter failover | 2 |
+| Consent + legal copy | 0.5 |
+| Screens, render goldens, adversarial review, tag | 1.5 |
+| **Total** | **~9 days** |
+
+Fits Stage 3's 10–28 Aug window with room to spare. **L0–L2 need no key and no network** — they are
+built against recorded replies and proven in CI at zero cost.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
