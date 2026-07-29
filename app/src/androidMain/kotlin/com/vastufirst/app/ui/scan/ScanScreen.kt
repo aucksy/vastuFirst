@@ -251,7 +251,12 @@ private fun ReadRoomRow(room: ScannedRoom) {
     ) {
         Column(Modifier.weight(1f)) {
             VText(room.type.label(), style = VastuTheme.type.body, color = colors.textPrimary)
-            VText(room.label, style = VastuTheme.type.caption, color = colors.textTertiary)
+            // ⚠ textSecondary, NOT textTertiary. The ATF contrast check fails the lightest text at
+            // caption size, and this is the worst line in the app to make hard to read: it is the
+            // caption we read off the user's own plan, and checking it is the whole job §6.2b gives
+            // them. Caught only because the Assisted golden was switched to a real 24-space plan —
+            // with 8 rooms it was already failing and I had baselined it without looking.
+            VText(room.label, style = VastuTheme.type.caption, color = colors.textSecondary)
         }
         if (needsCheck) CheckPill()
     }
