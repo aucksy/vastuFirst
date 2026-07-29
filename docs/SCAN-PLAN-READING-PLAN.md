@@ -224,6 +224,64 @@ rectify, then extract) would likely move photos into the Placed path. It is the 
 OpenCV is a heavy dependency against a 30 MB APK budget (NFR §10) and it is not needed to ship a
 useful v1. Revisit once real user plans show how many arrive as photos.
 
+## 3f. ⭐ Tested against REAL plans — and the corpus question is not closed
+
+**The owner challenged the synthetic-only evidence, and was right to.** Everything in §3e rests on
+one fixture I drew myself, built to tile its footprint exactly with clean labels and no clutter.
+That flatters the model, and — more seriously — **it mis-calibrates the coverage gate**: real plans
+have wall thickness, corridors, stairwells and shafts, so their rooms will *never* sum to 100 % of
+the footprint. **The ~85 % threshold in §4.2 is calibrated on a fiction and must be re-derived from
+real plans before it is trusted.** Treat it as a placeholder.
+
+### ROBIN — 510 real Indian plans, downloaded and tested
+
+[github.com/gesstalt/ROBIN](https://github.com/gesstalt/ROBIN), GPL-3.0, 510 JPGs across 3/4/5-room
+categories. Held in `tools/scan-eval/corpus/`, which is **git-ignored** — we evaluate against it, we
+do not redistribute it.
+
+⚠ **ROBIN plans carry no room labels at all.** Rooms are identified purely by furniture symbols — a
+bed means bedroom, a WC means toilet. That is the exact opposite of the case §3e's prompt targets, so
+ROBIN is an **adversarial** corpus, not a representative one. Its plans are also frequently
+**L-shaped**, which is the parked Group D footprint issue appearing in real data.
+
+**Result — the refuse path works.** On the unlabelled plans tested the model returned
+`unreadable: true`, **zero rooms, confidence 0.00**. It did not invent rooms. Given §3e finding 2
+(confidence 0.95 on a 25 % read) the honest expectation was that it would hallucinate confidently;
+it did not. ⚠ Only 2 plans completed before the rate limit bit — **this is an encouraging signal, not
+a proven property**, and it needs re-running across a proper sample.
+
+### ⚠ Groq's free tier cannot serve production
+
+Measured from the live rate-limit headers:
+
+| Limit | Value | Consequence |
+|---|---|---|
+| Requests / day | 1 000 | fine |
+| **Tokens / minute** | **8 000** | **binding** |
+
+A scan costs ~2 630 tokens, so the free tier allows **~3 scans per minute in total, across all
+users**. Two people scanning at once would throttle each other. It is adequate for development and
+for the client's own testing; **it cannot back a launched product.** The OpenRouter key therefore
+moves from "nice fallback" to **required before launch**, and the failover must handle HTTP 429
+specifically (not just outages) by falling through to the paid provider.
+
+### What is still unvalidated
+
+Neither corpus matches what users will actually upload — an architect's PDF or a builder's brochure,
+which has room names **and** furniture **and** dimension lines **and** clutter. ROBIN has geometry
+without labels; the synthetic fixture has labels without clutter. **The representative corpus is
+still missing**, and until it exists these numbers should not be quoted to the client as what the
+feature will do.
+
+**Best available corpus: the client's own plans.** Simran is a Vastu consultant — her customers send
+her exactly the plans this feature will receive. Ten to twenty real ones, with permission and any
+personal details removed, would be worth more than any public dataset, cost nothing, and carry no
+licence question.
+
+⚠ **Licence note:** **CubiCasa5K** (5 000 richly annotated plans, the obvious first hit) is
+**CC BY-NC — non-commercial**. VastuFirst is a paid product. Do not use it, for evaluation or
+anything else.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
