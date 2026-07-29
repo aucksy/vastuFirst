@@ -93,7 +93,9 @@ class RecordedScanTest {
     }
 
     @Test
-    fun `the fake reader replays the fixtures through the real mapper`() = runBlocking {
+    // runBlocking<Unit>, not runBlocking: JUnit4 rejects a test method with a return value, and the
+    // last expression here is an assertIs that hands one back.
+    fun `the fake reader replays the fixtures through the real mapper`() = runBlocking<Unit> {
         val reader = FakePlanReader()
         val outcomes = List(RecordedScans.ids.size) { reader.read(ByteArray(0), null) }
         assertIs<ScanOutcome.Placed>(outcomes[0])

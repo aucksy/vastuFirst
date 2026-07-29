@@ -14,8 +14,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * One recorded run of the eval harness. Mirrors the on-disk shape of `tools/scan-eval/out/*.json`;
- * `usage` and the other harness bookkeeping are ignored by [RecordedScans.JSON].
+ * One recorded run of the eval harness. Mirrors the on-disk shape of the JSON files in
+ * `tools/scan-eval/out/`; `usage` and the other harness bookkeeping are ignored by
+ * [RecordedScans.JSON].
+ *
+ * ⚠ Do not write a `out/<star>.json` glob in a KDoc here. **Kotlin block comments NEST** (unlike
+ * Java's), so the slash-star inside the glob opens a second comment, the closing delimiter shuts
+ * only that one, and everything to the end of the file is silently swallowed. The compiler reports
+ * it as "Unclosed comment" at the last line, which points nowhere near the cause.
  */
 @Serializable
 data class RecordedReply(

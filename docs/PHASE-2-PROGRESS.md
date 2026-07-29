@@ -909,3 +909,21 @@ variance and resulting cell rectangles checked by hand. That caught three wrong 
 sub-area drop I had written as a degenerate drop, an "everything overlaps" case that actually trips
 the fabrication detector, and the 8×8 rounding above) **before** a CI round-trip rather than after
 three of them.
+
+### ⚠ Two gotchas that cost a CI round-trip
+
+**1. ⭐ Kotlin block comments NEST — unlike Java's.** A KDoc line reading
+``Mirrors the on-disk shape of `tools/scan-eval/out/*.json` `` contains a slash-star inside the glob.
+That opens a *second* comment; the closing delimiter shuts only the inner one, and **the entire rest
+of the file is swallowed as comment**. The compiler reports `Syntax error: Unclosed comment` at the
+last line of the file, which points nowhere near the cause. Never write a `*`-glob in a Kotlin
+comment — name the directory instead. Cheap local guard before pushing:
+
+```
+grep -rn '[^ /]/\*' <changed .kt files>
+```
+
+**2. A JUnit4 test method must return void.** `fun x() = runBlocking { … }` returns whatever the block's
+last expression evaluates to — and `assertIs<T>(…)` returns the cast value — so the test is silently
+rejected at runtime with "Method should be void". Use `runBlocking<Unit> { … }` when a suspending test
+ends on an assertion that returns something.
