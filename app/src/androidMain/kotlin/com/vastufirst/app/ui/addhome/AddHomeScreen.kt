@@ -31,6 +31,7 @@ import com.vastufirst.app.ui.common.screenRoot
 @Composable
 fun AddHomeScreen(
     onDrawGrid: () -> Unit,
+    onScan: () -> Unit,
     onSample: () -> Unit,
 ) {
     val colors = VastuTheme.colors
@@ -51,10 +52,19 @@ fun AddHomeScreen(
         Spacer(Modifier.height(VastuTheme.spacing.s6))
 
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            // Upload leads, because it is the shortcut — but the subtitle promises only what the
+            // model is measured to be good at. It reads room NAMES (~95 %); it does not reliably
+            // know where they are, and you always place and confirm them yourself.
+            MethodCard(
+                icon = "⤒",
+                title = "Upload a plan",
+                subtitle = "Photo or PDF · we read the room names, you place them",
+                onClick = onScan,
+            )
             MethodCard(
                 icon = "▦",
                 title = "Draw it on a grid",
-                subtitle = "Place room blocks by hand · one-handed",
+                subtitle = "Place room blocks by hand · stays on your phone",
                 onClick = onDrawGrid,
             )
             MethodCard(
@@ -62,13 +72,6 @@ fun AddHomeScreen(
                 title = "Try a sample plan",
                 subtitle = "See the whole flow in ten seconds",
                 onClick = onSample,
-            )
-            MethodCard(
-                icon = "⤒",
-                title = "Upload a plan",
-                subtitle = "Photo or PDF · AI reads the rooms",
-                onClick = {},
-                soon = true,
             )
         }
 

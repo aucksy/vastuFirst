@@ -78,16 +78,16 @@ class FakePlanReader(
 
     private var next = 0
 
-    override suspend fun read(image: ByteArray, imageAspect: Double?): ScanOutcome {
+    override suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult {
         val id = fixtures[next % fixtures.size]
         next++
         val draft = RecordedScans.load(id)?.reply
-            ?: return ScanOutcome.Refused(RefusalReason.NO_ROOMS, ScanNotes(0.0, 0.0, 0.0))
-        return ScanMapper.map(draft, imageAspect)
+            ?: return ScanResult.Read(ScanOutcome.Refused(RefusalReason.NO_ROOMS, ScanNotes(0.0, 0.0, 0.0)))
+        return ScanResult.Read(ScanMapper.map(draft, imageAspect))
     }
 }
 
-/** A [PlanReader] that always returns [outcome] — for driving one screen state in a render golden. */
-class FixedPlanReader(private val outcome: ScanOutcome) : PlanReader {
-    override suspend fun read(image: ByteArray, imageAspect: Double?): ScanOutcome = outcome
+/** A [PlanReader] that always returns [result] — for driving one screen state in a render golden. */
+class FixedPlanReader(private val result: ScanResult) : PlanReader {
+    override suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult = result
 }

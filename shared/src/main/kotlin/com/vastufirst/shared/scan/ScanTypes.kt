@@ -220,6 +220,29 @@ sealed interface ScanOutcome {
 }
 
 /**
+ * What a read attempt produced. Separates *what the plan says* ([ScanOutcome]) from *whether we
+ * could ask at all* — because those are different things to the user and only one of them is worth
+ * trying again.
+ */
+sealed interface ScanResult {
+    /** We got an answer. It may still be a refusal — that is a property of the plan, not of the call. */
+    data class Read(val outcome: ScanOutcome) : ScanResult
+
+    /**
+     * ⭐ HTTP 429 — and a **first-class state, not an error**. The free tier allows 8 000 tokens a
+     * minute, so at ~2 630 tokens a scan that is roughly three scans a minute **across all users**:
+     * two people scanning at once will throttle each other. The screen says a calm "we're reading a
+     * lot of plans right now, try again in a minute" and offers the guided grid alongside, so nobody
+     * is ever stuck. [retryAfterSeconds] comes from the real `x-ratelimit-reset-tokens` header when
+     * present, so the wait can state a number instead of guessing.
+     */
+    data class Busy(val retryAfterSeconds: Int?) : ScanResult
+
+    /** No network, the service is down, or the pinned model was retired. Falls back to the grid. */
+    data object Unavailable : ScanResult
+}
+
+/**
  * The one seam between "read the picture" and everything else.
  *
  * Implementations: `FakePlanReader` (recorded replies — needs no key, no network, and is what CI
@@ -228,6 +251,6 @@ sealed interface ScanOutcome {
  * the correctness risk lives — so it is built and proven green in CI before any account exists.
  */
 interface PlanReader {
-    /** [image] is the encoded bytes of a downscaled JPEG. Never throws; failures are [ScanOutcome]s. */
-    suspend fun read(image: ByteArray, imageAspect: Double?): ScanOutcome
+    /** [image] is the encoded bytes of a downscaled JPEG. Never throws — failures are [ScanResult]s. */
+    suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult
 }

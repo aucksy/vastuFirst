@@ -1,0 +1,72 @@
+package com.vastufirst.app.ui.scan
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.vastufirst.shared.scan.PlanReader
+import com.vastufirst.shared.scan.ScanResult
+import kotlinx.coroutines.launch
+
+/**
+ * Drives one scan. Holds the screen's state and nothing else — the reading itself is behind
+ * [PlanReader], and every decision about what the reply *means* is in the pure `ScanMapper`.
+ *
+ * Not part of the guided-grid graph's shared ViewModel: a scan is a one-shot action with its own
+ * lifetime, and keeping it separate means the editor's ViewModel is untouched by this feature.
+ */
+class ScanViewModel(
+    private val reader: PlanReader,
+    private val decode: ImageDecoder,
+) : ViewModel() {
+
+    var state by mutableStateOf<ScanUiState>(ScanUiState.Idle)
+        private set
+
+    private var lastSource: Any? = null
+
+    /** Read the picked file. [source] is whatever the platform picker handed back (a Uri). */
+    fun scan(source: Any?) {
+        lastSource = source
+        if (source == null) { state = ScanUiState.Idle; return }
+        state = ScanUiState.Reading
+        viewModelScope.launch {
+            val image = decode.toJpeg(source)
+            if (image == null) { state = ScanUiState.BadImage; return@launch }
+            state = when (val r = reader.read(image.bytes, image.aspect)) {
+                is ScanResult.Read -> ScanUiState.Done(r.outcome)
+                is ScanResult.Busy -> ScanUiState.Busy(r.retryAfterSeconds)
+                ScanResult.Unavailable -> ScanUiState.Unavailable
+            }
+        }
+    }
+
+    /** Back to the ask, so the user can choose a different file. */
+    fun reset() { state = ScanUiState.Idle }
+
+    /** Same file, another go — for the rate-limited and offline states, where retrying is the fix. */
+    fun retrySameImage() { scan(lastSource) }
+}
+
+/** A decoded, downscaled, JPEG-encoded image plus its width ÷ height. */
+data class DecodedImage(val bytes: ByteArray, val aspect: Double?) {
+    // ByteArray gives reference equality in a data class, which is a well-known trap; these two are
+    // spelled out so an accidental == comparison compares content.
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is DecodedImage && bytes.contentEquals(other.bytes) && aspect == other.aspect)
+
+    override fun hashCode(): Int = 31 * bytes.contentHashCode() + (aspect?.hashCode() ?: 0)
+}
+
+/**
+ * Turns whatever the picker returned into bytes we can send.
+ *
+ * ⚠ This is the seam for step 4 of the build plan: `PdfRenderer` (in the platform since API 21, no
+ * dependency) for PDFs, `BitmapFactory` for images, then **downscale to ~1400 px and JPEG-encode
+ * before upload** — which is a COST control, not just a bandwidth one, because a scan is billed per
+ * token and an image is tokenised into the same stream.
+ */
+interface ImageDecoder {
+    suspend fun toJpeg(source: Any): DecodedImage?
+}

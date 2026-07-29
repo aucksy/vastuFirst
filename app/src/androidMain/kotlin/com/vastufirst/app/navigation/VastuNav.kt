@@ -27,6 +27,11 @@ import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportScreen
+import com.vastufirst.app.ui.scan.ScanRoute
+import com.vastufirst.app.ui.scan.ScanViewModel
+import com.vastufirst.app.ui.scan.gridForOutcome
+import com.vastufirst.app.ui.scan.scannedRooms
+import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.app.ui.score.ScoreScreen
 import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
@@ -97,6 +102,7 @@ fun VastuNavHost() {
                 val vm = sharedVm(nav, entry)
                 AddHomeScreen(
                     onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
+                    onScan = { nav.go(Routes.SCAN) },
                     onSample = {
                         val sample = SamplePlans.all.first()
                         vm.updateRooms(sample.rooms)
@@ -104,6 +110,26 @@ fun VastuNavHost() {
                         vm.updateNorth(sample.north)
                         nav.go(Routes.MARK_NORTH)
                     },
+                )
+            }
+
+            composable(Routes.SCAN) { entry ->
+                val planVm = sharedVm(nav, entry)
+                val scanVm: ScanViewModel = koinViewModel()
+                ScanRoute(
+                    vm = scanVm,
+                    onUseRooms = { outcome ->
+                        // The scan's rooms land in the guided grid — the confirmation surface §6.2b
+                        // requires. Grid FIRST, then rooms: resolveGridResize re-packs whatever is
+                        // already placed, so setting the plot while it is still empty is a plain
+                        // resize and can never disturb the rooms we are about to add.
+                        val (cols, rows) = gridForOutcome(outcome)
+                        planVm.updateGrid(cols, rows)
+                        planVm.updateRooms(toGridRooms(outcome.scannedRooms(), cols, rows))
+                        nav.go(Routes.GUIDED_GRID)
+                    },
+                    onDrawInstead = { nav.go(Routes.GUIDED_GRID) },
+                    onBack = { nav.popBackStack() },
                 )
             }
 

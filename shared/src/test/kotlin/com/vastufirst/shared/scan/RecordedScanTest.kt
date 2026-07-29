@@ -97,12 +97,14 @@ class RecordedScanTest {
     // last expression here is an assertIs that hands one back.
     fun `the fake reader replays the fixtures through the real mapper`() = runBlocking<Unit> {
         val reader = FakePlanReader()
-        val outcomes = List(RecordedScans.ids.size) { reader.read(ByteArray(0), null) }
+        val outcomes = List(RecordedScans.ids.size) {
+            assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome
+        }
         assertIs<ScanOutcome.Placed>(outcomes[0])
         assertIs<ScanOutcome.Placed>(outcomes[1])
         assertIs<ScanOutcome.Assisted>(outcomes[2])
         // …and it cycles, so a screen can be driven round the states without re-creating it.
-        assertIs<ScanOutcome.Placed>(reader.read(ByteArray(0), null))
+        assertIs<ScanOutcome.Placed>(assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome)
     }
 
     /**

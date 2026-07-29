@@ -3,6 +3,10 @@ package com.vastufirst.app.render
 import android.app.Application
 import androidx.compose.runtime.Composable
 import com.vastufirst.app.ui.addhome.AddHomeScreen
+import com.vastufirst.app.ui.scan.ScanScreen
+import com.vastufirst.app.ui.scan.ScanUiState
+import com.vastufirst.shared.scan.RecordedScans
+import com.vastufirst.shared.scan.ScanMapper
 import com.vastufirst.app.ui.grid.GuidedGridContent
 import com.vastufirst.app.ui.home.HomeContent
 import com.vastufirst.app.ui.home.RenameDialogContent
@@ -44,7 +48,16 @@ class AccessibilityTest {
             "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
             "legal" to { LegalScreen(onBack = {}) },
             "unlock" to { UnlockScreen(onUnlocked = {}) },
-            "addhome" to { AddHomeScreen(onDrawGrid = {}, onSample = {}) },
+            "addhome" to { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) },
+            "scan-idle" to {
+                ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, {}, {})
+            },
+            "scan-assisted" to {
+                ScanScreen(
+                    ScanUiState.Done(ScanMapper.map(RecordedScans.load(RecordedScans.PHOTO)!!.reply)),
+                    {}, {}, {}, {}, {}, {},
+                )
+            },
             "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
             "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
             "marknorth" to {

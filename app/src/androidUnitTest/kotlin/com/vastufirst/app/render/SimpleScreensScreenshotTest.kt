@@ -35,7 +35,7 @@ class SimpleScreensScreenshotTest {
 
     @Test
     fun addHome() {
-        captureAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onSample = {}) }
-        writeManifestAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onSample = {}) }
+        captureAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) }
+        writeManifestAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) }
     }
 }

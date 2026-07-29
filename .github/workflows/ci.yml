@@ -69,6 +69,26 @@ jobs:
       - name: Unit tests (pure logic modules)
         run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
 
+      # "BUILD SUCCESSFUL" also prints when a test class quietly stopped being picked up, so print
+      # what actually ran. Claims like "55 tests cover the scan mapper" should be checkable from the
+      # CI log rather than taken on trust (CLAUDE.md §3: show the real result).
+      - name: Test summary (what actually ran)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          total = fails = skips = 0
+          rows = []
+          for f in sorted(glob.glob('*/build/test-results/**/*.xml', recursive=True)):
+              s = ET.parse(f).getroot()
+              t, fl, er, sk = (int(s.get(k, 0)) for k in ('tests', 'failures', 'errors', 'skipped'))
+              total += t; fails += fl + er; skips += sk
+              rows.append((s.get('name', '?'), t, fl + er, sk))
+          for name, t, fl, sk in rows:
+              print(f"  {t:4d} tests  {fl:2d} failed  {sk:2d} skipped   {name}")
+          print(f"TOTAL: {total} tests, {fails} failed, {skips} skipped")
+          PY
+
       # --- Gate 3: the build renders every screen (UI-POLISH.md §6) ---
       # This is the gate that would have caught the zero-height grid, the inset overlap and the
       # shattered rows. It runs AFTER the fast guardrails above, so those still fail-fast.

@@ -17,6 +17,7 @@ object Routes {
     const val NEWPLAN_GRAPH = "newplan"
     const val WELCOME = "welcome"
     const val ADD_HOME = "add_home"
+    const val SCAN = "scan"
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
     const val SCORE = "score"
