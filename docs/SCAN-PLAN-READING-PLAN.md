@@ -325,6 +325,93 @@ wrong, which is the worst failure mode for a paid score.
 Only the third is fuzzy; the first two are crisp and cheap, and they catch the failures a user can
 actually fix. This is `ScanOutcome` gaining explicit refusal reasons rather than one `Unreadable`.
 
+## 3h. ⭐⭐ Measured on 30 REAL plans — the gate would have rejected all of them
+
+Owner downloaded and curated 30 real Indian plans. Full run: `tools/scan-eval/batch-real.py`,
+results in `out/real-plans.json`.
+
+### What the images actually were
+
+| Classification | Count |
+|---|---|
+| `2D_PLAN` | 24 (80 %) |
+| `3D_RENDER` | 5 (17 %) |
+| `NOT_A_PLAN` | 1 (3 %) |
+
+**One upload in five is not a usable plan.** The classifier caught every render I verified by eye,
+including `plan-031` (§3g). The 2D/3D gate is not theoretical — it fires on real user input.
+
+### ⭐ The finding that matters most
+
+| Corpus | Footprint coverage |
+|---|---|
+| Synthetic fixture (§3e) | **100 %** |
+| 30 real plans | **min 20 % · median 44 % · max 76 %** |
+
+**The ~85 % coverage gate proposed in §3e would have rejected 30 out of 30 real plans.** Every
+single one. The feature would have shipped refusing all genuine input while passing only the test
+plan I drew myself.
+
+This is exactly the failure the owner's challenge (§3f) predicted, and it is worth stating plainly:
+**a synthetic fixture cannot calibrate a threshold.** The gate stays — coverage still separates a
+good read from a bad one *within* a corpus — but its threshold must be re-derived from real plans,
+and the absolute number is far lower than intuition suggests because real homes are mostly walls,
+corridors, ducts and shafts.
+
+### Labels are excellent. Geometry is not. Again.
+
+Real reads, verbatim: `BEDROOM 6750X4350` · `ATT. TOILET 1350X2250` ·
+`LIFT 1850X1850 (8 PERSON)` · `5'-0" WIDE BALCONY` · `SER ROOM` · `WALK IN CLOSET` · `PUJA`.
+That is precise reading of Indian plan conventions, including abbreviations.
+
+Meanwhile `plan-014` returned a **flawless** room list — BEDROOM-1, WALK-IN WARDROBE, TOILET-1,
+PUJA SPACE, LIVING & DINING, FOYER, VERANDAH — at **28 % coverage**. Names right, rectangles wrong.
+
+⭐ **This is now measured three independent ways** (clean vs photo §3e, unlabelled corpus §3f, 30 real
+plans here): **the model reliably identifies WHICH rooms a home has, and does not reliably know
+WHERE they are.** That is not a prompt problem to be tuned away; it is what the published benchmarks
+say too (OCR ~95 %, spatial 40–70 %).
+
+### The product conclusion this forces
+
+**"Assisted" is not the fallback — it is the primary mode.** The honest feature is:
+
+> *We read your plan and found these 11 rooms — Master Bedroom, Kitchen, Puja, 3 Toilets, Balcony…
+> Now place them on the grid.*
+
+That removes the two slowest parts of the current flow — deciding the room list and picking each
+type out of a palette — and keeps the part the model cannot do, placement, with the person who knows
+the answer. It is a real saving, it is honest, and it degrades to the existing guided grid with no
+new failure mode. Promising "the AI draws your plan" would ship a confidently wrong ₹699 score.
+
+### Two more things real data exposed
+
+**1. ⭐ 27 % of labels carry the room's printed DIMENSIONS** (`BED ROOM 12'1"X11'0"`,
+`KITCHEN 2950X4200`), and in **7 of 23 plans most labels do**. Those dimensions are *text*, which is
+the model's 95 %-accurate skill — a far more trustworthy geometric signal than its own rectangles.
+Where present, they could size rooms properly on the grid. **Promising, not proven** — a bonus when
+available, never the foundation. Worth its own experiment.
+
+**2. ⚠ Only 74 % of labels map to the app's 19 `RoomType` values.** The commonest gaps:
+
+| Unmapped space | Occurrences |
+|---|---|
+| DRESS / DRESSING / DRESS AREA | 14 |
+| PORCH · SIT OUT | 4 |
+| VESTIBULE | 2 |
+| DUCT · ELECTRICAL DUCT | 3 |
+| LIFT · LIFT LOBBY | 3 |
+| SER ROOM (servant) · AV ROOM | 2 |
+
+A **dressing area** appears in real Indian plans constantly and the app has no type for it. The
+mapper needs a synonym table *and* a documented policy for unmappable spaces — merge into the parent
+room, map to the nearest type, or drop with a note. Silently dropping them changes the footprint the
+engine scores, so this is a scoring decision, not a cosmetic one. **Needs an owner call.**
+
+**3. ⚠ Numbered-legend plans.** `plan-018` returned labels `1, 2, 3 … 15` — the rooms are numbered on
+the drawing with a key printed alongside. A real and common style; currently it passes the
+"has labels" check while carrying no usable names. Either resolve the legend or reject explicitly.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
