@@ -185,3 +185,8 @@ recorded readings; choose three times to see all three.
       underselling? We can say more only if we can back it up.
 - [ ] **G7 — Leaving mid-scan.** Start a scan, switch to another app, come back. It's expected to
       return to the beginning rather than resume; tell me if that's annoying in practice.
+
+- [ ] **G8 — ⭐ The "we found 16 rooms" screen (added v0.3.15).** Scan four times to reach it. This is
+      a real reading of a real apartment floor plate. Check the room names against what a plan like
+      that actually says: LOBBY became "Corridor", SIT-OUT became "Balcony", LOUNGE became "Living",
+      STUDY-ROOM became "Study". Are any of those translations wrong for how your customers talk?

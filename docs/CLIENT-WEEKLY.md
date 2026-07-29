@@ -87,6 +87,39 @@ the rooms are — which will be most plans — we drop them onto the grid as a r
 you to drag into place. Is that genuinely easier than starting from an empty grid, or would you
 rather just see the list of rooms and draw it yourself? Your call.
 
+### ⭐ Correction, after you pushed back — it places rooms better than I said
+
+You asked whether we really can't place the rooms. Checking that properly found I had been judging it
+the wrong way, so here is the corrected picture.
+
+I had the app decide "can we place these rooms?" using how much of the home's floor area the rooms
+added up to. That turns out to be the wrong question. I drew the AI's answers back over 6 of your real
+plans and looked at them:
+
+- On a **straightforward house plan**, it is genuinely good. On one of your plans it put **all eleven
+  rooms in exactly the right place**. On another, seven of ten.
+- On a **busy apartment floor plate** — 17 to 25 rooms, full of ducts, shafts, lifts and lobbies — it
+  falls apart, and no amount of tuning fixes that.
+
+The measure I had been using couldn't tell those two apart. Two of your plans scored *identically* on
+it: one placed perfectly, the other was a mess. So the app now decides on **how many rooms the plan
+has** instead — few enough to be one home, and we place them; too many and it's a whole floor of
+flats, so we hand you the room list instead.
+
+**The result: roughly 4 in 10 of your plans now get their rooms placed for you, up from about 1 in 4 —
+and, more importantly, it's the right ones.** It was previously throwing away that flawless eleven-room
+read.
+
+⚠ Two honest caveats. This rests on 6 plans looked at by eye, not 24 — your free AI allowance ran out
+partway through (it told us to wait ten minutes), which is more evidence that we'll need the paid
+plan before launch. And a badly angled *photo* of a simple plan will still be trusted when it
+shouldn't be; nothing we can measure catches that one, which is exactly why you always confirm the
+rooms yourself before anything is scored.
+
+**One more thing worth knowing.** Nearly every room name on your plans has its real size printed next
+to it — "BEDROOM 3300X4200". The AI reads that text perfectly. Using those printed sizes instead of the
+AI's guesswork is the single biggest improvement still available, and it's about a day's work.
+
 ### Built and proven this week
 - The whole "AI reading → rooms on your grid" conversion, with **55 automated tests** plus a stress
   test that throws **100,000 randomly broken AI replies** at it and checks nothing illegal ever reaches
