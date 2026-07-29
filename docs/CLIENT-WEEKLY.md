@@ -43,15 +43,15 @@ result shapes the whole feature:
 
 - **The AI is very good at reading room *names*.** It correctly read things like "BEDROOM 6750X4350",
   "ATT. TOILET", "SER ROOM" and "PUJA" — including the abbreviations Indian plans use.
-- **It is not reliable at knowing *where* those rooms are.** On the same plans it named perfectly, its
-  idea of the layout was often well off. We measured this three separate ways and got the same answer
-  each time.
+- **Knowing *where* the rooms are depends on the plan.** On a straightforward house plan it is good.
+  On a busy apartment floor plate it is not. (See the correction further down — I got this wrong at
+  first and had to go back and check it properly.)
 
-**So the app will do the honest thing:** it reads your plan, tells you which rooms it found, and asks
-*you* to place them. That still removes the two slowest parts of the job — working out the room list,
-and hunting each room type out of a list — and it never pretends to a precision it doesn't have. When
-a plan is clear enough (typically an architect's PDF rather than a phone photo), it will place the
-rooms for you too, and you just check them.
+**So the app does the honest thing:** it reads your plan and tells you which rooms it found. Where it
+can also tell where they go, it places them and you check them. Where it can't, it hands you the room
+list and you place them. Either way it removes the two slowest parts of the job — working out the room
+list, and hunting each room type out of a list — and it never pretends to a precision it doesn't
+have.
 
 **Three things it will politely refuse, with a clear reason:**
 
