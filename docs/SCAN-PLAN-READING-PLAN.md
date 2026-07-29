@@ -282,6 +282,49 @@ licence question.
 **CC BY-NC — non-commercial**. VastuFirst is a paid product. Do not use it, for evaluation or
 anything else.
 
+## 3g. ⭐ OWNER DECISION (2026-07-29) — what the user must upload
+
+> *"It will be a requirement for the user to upload a plan that has the rooms labelled and
+> optionally north marked; if not, they mark north in the next step."*
+
+This settles the central design question and **ratifies the prompt strategy in §3c**: the model's
+strongest skill is reading printed text (~95 %) and its weakest is inferring geometry (40–55 %).
+Requiring labels means the feature leans on the strength by contract, not by hope.
+
+Consequences:
+
+1. **A labelled plan is a precondition, not a nice-to-have.** An unlabelled plan is a *rejected
+   input* with a clear message — not a failed read. ROBIN (§3f) is therefore out of scope for the
+   main path and only ever exercised the refusal path, which is exactly what it was useful for.
+2. **North is optional in the image.** If a north mark is present we can offer it; if not, the user
+   sets it on the existing Mark-North screen. **No change needed** — that screen already exists and
+   is the app's signature interaction. Scan simply doesn't have to solve north.
+3. The extraction prompt now also reports `hasRoomLabels` and `northMarked`, so the app can say
+   precisely *which* precondition failed instead of a generic "couldn't read it".
+
+### ⚠ And a third precondition that only real data revealed: the plan must be 2D
+
+The very first real image inspected (`plan-031.jpg`) was a **3D isometric marketing render** — a
+perspective view with furniture, shadows and drop shadows, builder branding, and the room labels
+floating *outside* the building on leader lines. There is no top-down rectangle to extract: the
+geometry is projected, so every room's apparent shape is a function of the camera, not the floor.
+
+This matters because **a large share of what an image search returns for "floor plan" is builder
+marketing, not a plan** — and a user searching their builder's website will hit exactly the same
+mix. A 3D render would not fail loudly; it would yield plausible-looking rectangles that are simply
+wrong, which is the worst failure mode for a paid score.
+
+**So the input gate is three questions, asked before any extraction is trusted:**
+
+| Precondition | Failure message |
+|---|---|
+| Is it a **2D** plan (not a 3D render / elevation / photo)? | "This looks like a 3D picture of the home. Please upload the flat, top-down plan." |
+| Are the rooms **labelled**? | "We can't see room names on this plan. Upload one with the rooms named, or draw it instead." |
+| Do the rooms **tile the footprint** (coverage gate, §3e)? | "We couldn't read this cleanly — let's place the rooms together." |
+
+Only the third is fuzzy; the first two are crisp and cheap, and they catch the failures a user can
+actually fix. This is `ScanOutcome` gaining explicit refusal reasons rather than one `Unreadable`.
+
 ## 4. The pure layer, in detail
 
 ### 4.1 `ScanDraft` — what the model is asked for
