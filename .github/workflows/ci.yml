@@ -61,6 +61,14 @@ jobs:
       - name: Window-inset check (every screen root clears the system bars)
         run: bash scripts/check-screen-roots.sh
 
+      # Does the key that is about to be baked into this APK actually work, and is the pinned model
+      # still served? Neither question was asked by anything before, and both fail the same way on a
+      # phone: "we couldn't read your plan just now", on every attempt, forever. Costs no tokens — it
+      # lists models rather than reading a plan. Skips cleanly when there is no key (a supported
+      # state) and does not fail the build for the service's own downtime.
+      - name: Plan-reader key check (the key works, the model still exists)
+        run: python3 scripts/check-plan-reader-key.py
+
       - name: Design-fidelity check (theme matches handoff/tokens.json + the design type ramp)
         run: node scripts/check-design-fidelity.mjs .
 

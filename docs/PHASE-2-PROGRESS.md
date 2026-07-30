@@ -1292,3 +1292,32 @@ v0.3.16's random key is gone with the runner that made it, so **this one last in
 uninstall**. From v0.3.17 onward it updates in place. Said plainly in the release notes, the client
 note and the device checklist, because "you will lose your data one more time" is not something to
 leave for someone to discover.
+
+---
+
+## The build now checks that its reading key works — v0.3.18 (2026-07-30)
+
+The owner rotated the key in the repository secret, which means the APK published minutes earlier
+carried the previous one. That exposed a gap: **nothing about a green build said whether the key baked
+into it is accepted.** A rotated, revoked or mistyped key compiles, tests, renders and ships
+identically to a working one, and then tells every user *"we couldn't read your plan just now"* on
+every attempt, forever. The fourth defect in this project with that shape.
+
+`scripts/check-plan-reader-key.py` runs in CI and release. It lists the account's models — no tokens,
+because it never reads a plan — and asserts two things:
+
+| Condition | Verdict | Why that way |
+|---|---|---|
+| No key at all | **pass** | a keyless build is supported; the app says it cannot read |
+| Key rejected (401/403) | **fail** | this APK would fail every scan |
+| **Pinned model not served** | **fail** | how a retirement arrives; both Llama 4 vision models died mid-2026 |
+| Network error or 5xx | **pass**, with a warning | Groq's uptime is not our build gate |
+
+⭐ **Proven to bite on both real failure paths**, not reasoned about: a fabricated key returns HTTP 401
+and fails, and pinning the retired `llama-4-scout` fails with the served list printed. The listing also
+re-confirms the standing constraint — of the 15 models this account can reach, `qwen/qwen3.6-27b` is
+still the only one that takes an image.
+
+⭐ **And CI going green is now the proof that the owner's new secret is valid**, without the key ever
+being seen, printed or logged. That is the useful property: the question "did the key get set
+correctly?" is answered by the build instead of by the client's first scan.

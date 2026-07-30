@@ -54,6 +54,11 @@ jobs:
         run: bash scripts/check-manifest.sh
       - name: Window-inset check (every screen root clears the system bars)
         run: bash scripts/check-screen-roots.sh
+
+      # ⭐ A release must not publish an APK whose reading key is rejected — that is the whole feature
+      # silently missing, discovered by the client rather than by us.
+      - name: Plan-reader key check (the key works, the model still exists)
+        run: python3 scripts/check-plan-reader-key.py
       - name: Design-fidelity check (theme matches the design contract)
         run: node scripts/check-design-fidelity.mjs .
       - name: Unit tests (pure logic modules)
