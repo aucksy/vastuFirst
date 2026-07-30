@@ -1187,6 +1187,37 @@ The accessibility pass adopted **`scan-consent: 0` ATF findings** and settings h
 longest piece of prose in the app arrived with no contrast or labelling problem — which is not luck,
 it is `textSecondary` rather than `textTertiary` on every body line, the lesson from the last one.
 
+### What was verified in the shipped APK itself, and the one thing that was not
+
+The release asset was downloaded (authenticated range request — the repo is private, so an
+unauthenticated `HEAD` returns 404 even for a file that exists) and opened:
+
+| Checked inside `vastufirst-v0.3.16.apk` | Result |
+|---|---|
+| The reading key reached the build | **yes** — present in the dex, 56 characters, value never printed |
+| `scan/reader-config.json` shipped | yes — model `qwen/qwen3.6-27b`, reasoning `none` |
+| `scan/plan-read-prompt.txt` shipped | yes — 1 139 characters, `OUTER WALL` intact |
+| **Safety rule S1 in the file that actually ships** | **holds** — no Vastu vocabulary in the packaged prompt |
+| `android.permission.INTERNET` in the packaged manifest | yes |
+
+⚠ **Two methodological traps in that check, both of which produced a wrong answer first.** An APK is a
+zip, so grepping the raw bytes for a shipped string finds nothing — the entries have to be
+decompressed. And `AndroidManifest.xml` inside an APK is *binary* AXML with a **UTF-16LE** string pool,
+so an ASCII search for `android.permission.INTERNET` says "absent" about a manifest that plainly
+contains it. Both nearly became a false alarm reported as a fact.
+
+⚠ **Noticed on the way:** the merged manifest also carries `android.permission.DUMP`, which is not in
+our source manifest — it arrives from a dependency, is signature-level so it can never be granted to
+this app, and is harmless in a debug test build. `check-manifest.sh` reads the source manifest, not the
+merged one. **Worth re-checking against the merged manifest of the minified release variant before
+store submission**, which is when it would matter.
+
+⭐ **And the honest gap: the on-device HTTP call itself is still unproven.** The recipe is proven
+against the live API from this machine, the key is proven to be in the APK, the config and prompt are
+proven to ship, and the permission is proven present — but nothing here exercises
+`HttpURLConnection` on Android. That is a device check (checklist G9/G10), not a claim to make from a
+green build.
+
 ### Decisions worth recording
 
 - **Consent is a navigation destination, not a dialog and not a flag check.** The only route to the

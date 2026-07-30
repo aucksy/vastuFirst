@@ -158,7 +158,7 @@ lose a verdict.
 
 ## G · Scan your plan
 
-> ⚠ **Everything below changed in the build after v0.3.15.** Up to and including v0.3.15 the app did
+> ⚠ **Everything below changed in v0.3.16.** Up to and including v0.3.15 the app did
 > **not** read your picture at all — it replayed four readings recorded on 29 July, and three of those
 > four were the same test plan, which is why every upload looked identical. **From v0.3.16 it really
 > reads the plan you choose.** Any row you already ticked against v0.3.14 or v0.3.15 was testing the

@@ -33,6 +33,8 @@ These are the things only you can decide, and they need to be settled before the
 
 ### Thursday 30 July — the app now actually reads your plan
 
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.16/vastufirst-v0.3.16.apk
+
 Up to this point, "upload a plan" was a working screen in front of a switched-off reader: it replayed
 a few readings we had recorded during testing, so whichever plan you picked, you saw the same rooms.
 That is now connected properly. Upload a plan and it reads **your** plan.
