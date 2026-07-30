@@ -105,10 +105,12 @@ fun SettingsContent(
             RowItem("Delete all my data", trailing = "›", labelColor = colors.error, trailingColor = colors.error, onClick = { showConfirm = true })
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+        // ⚠ Kept to one short sentence on purpose. Spelling the exception out in full took this to
+        // three lines, which pushed the last row of the screen below the fold at 320 dp and at 200 %
+        // font — the L1 ratchet caught it. The detail belongs on the consent screen, which is where
+        // the user is actually deciding; this line only has to be true and readable.
         VText(
-            "No account. No phone number. Your homes and your score never leave this phone. The one " +
-                "exception is a plan you upload to be read, which you agree to separately and can " +
-                "switch off above.",
+            "No account. No phone number. Nothing leaves your phone except a plan you upload to be read.",
             style = VastuTheme.type.bodySm,
             color = colors.textTertiary,
         )
