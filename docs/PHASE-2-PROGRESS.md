@@ -1138,7 +1138,9 @@ build-order step 6, measured against the corpus, on its own.
 
 ### Proof
 
-- **Pure layer, 18 new tests**: the request shape field by field (including that the prompt's quotes,
+- **178 tests, 0 failed** across the pure modules (up from 161), of which **17 are new**: 12 in
+  `GroqWireTest`, 5 in `ScanReaderConfigTest`. Plus 4 gate tests in `:app`. The request shape field by
+  field (including that the prompt's quotes,
   braces and newlines survive JSON encoding — the failure mode that looks exactly like a bad model),
   a **real recorded reply travelling the whole way from HTTP body to `ScanOutcome`** and matching the
   mapper called directly, malformed replies degrading to Unavailable rather than to a refusal, every
@@ -1180,6 +1182,10 @@ from the run's artifact): the new row renders correctly at both, everything is l
 Also looked at, per CLAUDE.md §2b: `scan-consent/baseline` (card, hierarchy and the "rather not?"
 alternative all hold) and `scan-not-configured/baseline` (**0 L1 findings**, fits above the fold, and
 carries no picker — which is the whole point of it).
+
+The accessibility pass adopted **`scan-consent: 0` ATF findings** and settings held at 1, so the
+longest piece of prose in the app arrived with no contrast or labelling problem — which is not luck,
+it is `textSecondary` rather than `textTertiary` on every body line, the lesson from the last one.
 
 ### Decisions worth recording
 
