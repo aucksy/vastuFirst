@@ -1160,6 +1160,27 @@ build-order step 6, measured against the corpus, on its own.
   `scan-not-configured`. The consent screen is also in the ATF accessibility pass, because it carries
   more prose than any other screen and prose is where the contrast trap already bit once.
 
+### The ratchet earned its keep, and one baseline moved
+
+The L1 geometry gate failed the first push with **settings 1 → 3**, and it was right twice over:
+
+1. Spelling the upload exception out in full took the closing privacy line to three lines, which
+   **clipped it at 320 dp** and pushed the last row of the screen further past the fold. Fixed by
+   cutting it back to one sentence — the detail belongs on the consent screen, where the decision is
+   actually being made. That took it to 2.
+2. The remaining two findings are the documented **below-the-fold capture artifact**: Settings now has
+   one more row, so at 200 % font and at 320 dp the bottom of a scrolling screen sits outside the
+   capture window.
+
+⭐ **Adopted 1 → 2 only after looking at both configurations** (`settings/font2_0`, `settings/w320`
+from the run's artifact): the new row renders correctly at both, everything is legible, and the only
+"clipped" content is below the fold and reachable by scrolling. Same call, same reason, as
+`marknorth 17 → 18`.
+
+Also looked at, per CLAUDE.md §2b: `scan-consent/baseline` (card, hierarchy and the "rather not?"
+alternative all hold) and `scan-not-configured/baseline` (**0 L1 findings**, fits above the fold, and
+carries no picker — which is the whole point of it).
+
 ### Decisions worth recording
 
 - **Consent is a navigation destination, not a dialog and not a flag check.** The only route to the
