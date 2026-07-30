@@ -1,0 +1,43 @@
+{
+ "_note": "E3 \u2014 placement quality judged BY EYE from tools/scan-eval/out/overlay/*.png, which are drawn by exp-place.py and are git-ignored because they are derived from third-party plan images. This file is the calibration evidence for ScanMapper.MAX_TRUSTED_ROOMS, kept in the repo so the threshold is reproducible rather than resting on one machine's scratch directory. Re-create the overlays with: python tools/scan-eval/exp-place.py",
+ "_finding": "Room count separates good from bad placement (good 10-11, bad 15-24, no overlap). Coverage does NOT: two plans with identical coverage 0.421 placed well and badly, and the corpus's highest coverage 0.760 placed worse than its lowest-but-one.",
+ "_caveat": "6 plans judged, 2 of them good. 13 and 14 rooms were never observed.",
+ "verdicts": [
+  {
+   "file": "plan-002.webp",
+   "rooms": 24,
+   "coverage": 0.421,
+   "placement": "bad"
+  },
+  {
+   "file": "plan-003.jpg",
+   "rooms": 17,
+   "coverage": 0.574,
+   "placement": "bad"
+  },
+  {
+   "file": "plan-005.webp",
+   "rooms": 21,
+   "coverage": 0.76,
+   "placement": "mixed"
+  },
+  {
+   "file": "plan-006.webp",
+   "rooms": 10,
+   "coverage": 0.421,
+   "placement": "good"
+  },
+  {
+   "file": "plan-008.webp",
+   "rooms": 11,
+   "coverage": 0.39,
+   "placement": "good"
+  },
+  {
+   "file": "plan-018.avif",
+   "rooms": 15,
+   "coverage": 0.204,
+   "placement": "bad"
+  }
+ ]
+}
