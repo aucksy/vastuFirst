@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "How the plan reader talks to the model. DATA, not Kotlin constants — the model id in",
+    "particular, because both Llama 4 vision models were shut down mid-2026 (Scout on 17 July,",
+    "twelve days before this feature was designed) and any code written from prior knowledge would",
+    "have failed on its first call. A retired model must be a config edit, not a release.",
+    "",
+    "reasoningEffort 'none' is the single biggest cost lever: qwen3.6 is a reasoning model and",
+    "reasoning tokens bill as output, but reading a plan is extraction, not deliberation. Measured:",
+    "21 paise a scan with reasoning off, 62 with it on.",
+    "",
+    "userAgent is NOT decoration. Cloudflare fronts the Groq API and rejects an unknown client with",
+    "its own 403 (error 1010) before the request reaches the API at all.",
+    "",
+    "The prompt lives in its own file so it diffs as prose. It is the EXACT text the 30 real plans",
+    "were measured with (tools/scan-eval, batch-real.py) — every accuracy figure this feature is",
+    "designed around was taken with these words, so changing them invalidates the numbers. Prompt",
+    "tuning is a deliberate, re-measured step, never a tweak."
+  ],
+  "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+  "model": "qwen/qwen3.6-27b",
+  "reasoningEffort": "none",
+  "temperature": 0.0,
+  "userAgent": "curl/8.4.0",
+  "promptResource": "/scan/plan-read-prompt.txt",
+  "connectTimeoutMs": 20000,
+  "readTimeoutMs": 90000
+}

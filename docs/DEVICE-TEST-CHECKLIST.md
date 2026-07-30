@@ -156,37 +156,67 @@ before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-P
 Nothing yet — this section fills up as you report results, so we never re-test something twice or
 lose a verdict.
 
-## G · Scan your plan (arrived in v0.3.14)
+## G · Scan your plan
 
-The scan reader is still the **fake** one: it replays three plan readings we recorded from the real
-service on 29 July. Nothing leaves your phone yet, so this is about whether the *flow* and the
-*wording* are right, not about accuracy.
+> ⚠ **Everything below changed in the build after v0.3.15.** Up to and including v0.3.15 the app did
+> **not** read your picture at all — it replayed four readings recorded on 29 July, and three of those
+> four were the same test plan, which is why every upload looked identical. **From v0.3.16 it really
+> reads the plan you choose.** Any row you already ticked against v0.3.14 or v0.3.15 was testing the
+> wording, not the reading, and G3/G4/G8 in particular are worth doing again.
 
-Tap **Add your home → Upload a plan**. Choosing any picture or PDF will show you one of the three
-recorded readings; choose three times to see all three.
+Tap **Add your home → Upload a plan**. The first time, you'll get a screen explaining that the plan
+leaves the phone, and you have to agree before anything is sent.
+
+⚠ **Two plans a minute is the limit** on the free reading allowance. A third one straight away will
+politely ask you to wait about a minute, and that is expected, not a fault. Spacing them out avoids
+it entirely.
 
 - [ ] **G1 — Picking a file.** "Choose a PDF or picture" opens the file browser; "Take a photo
       instead" opens the photo picker. Neither should ask permission for your gallery.
 - [ ] **G2 — A real PDF opens.** Pick an actual PDF of a floor plan. It should get as far as
-      "Reading your plan…" rather than "We couldn't open that file". ⚠ This is the one thing here
-      that exercises real code — the PDF page is genuinely rendered on your phone.
-- [ ] **G3 — "We read 8 rooms" (rooms placed).** Tap through to the grid: eight rooms should be
-      sitting there, roughly in the shape of a home.
-- [ ] **G4 — ⭐ "We found 8 rooms" (rooms NOT placed).** This is the one to judge hardest, because
-      it is what most real plans will do. The rooms arrive as a row of small single squares in the
-      corner, and you drag each into place. **Is that genuinely easier than starting from an empty
-      grid, or would you rather it just showed you the list and let you draw?** Your call — it is
-      the main open question in this feature.
-- [ ] **G5 — The refusal wording.** (Not reachable by tapping yet; look at the screenshots instead
-      if you'd like.) Does "That looks like a 3D picture — please upload the flat, top-down plan"
-      say enough for someone to know what to do?
+      "Reading your plan…" rather than "We couldn't open that file". The PDF page is rendered on your
+      phone before anything is sent.
+- [ ] **G3 — "We read N rooms" (rooms placed).** On a straightforward single-home plan, tap through
+      to the grid: the rooms should be sitting there, roughly in the shape of a home.
+- [ ] **G4 — ⭐ "We found N rooms" (rooms NOT placed).** This is the one to judge hardest, because it
+      is what busy plans will do. The rooms arrive as a row of small single squares in the corner, and
+      you drag each into place. **Is that genuinely easier than starting from an empty grid, or would
+      you rather it just showed you the list and let you draw?** Your call — it is the main open
+      question in this feature.
+- [ ] **G5 — The refusal wording.** Now reachable for real: upload a 3D marketing picture of a house
+      (the kind on a builder's website). Does "That looks like a 3D picture — please upload the flat,
+      top-down plan" say enough for someone to know what to do?
 - [ ] **G6 — Is the promise honest?** The whole screen deliberately promises only that we read the
       room *names*, never that we know where the rooms are. Does that read as useful, or as
       underselling? We can say more only if we can back it up.
 - [ ] **G7 — Leaving mid-scan.** Start a scan, switch to another app, come back. It's expected to
       return to the beginning rather than resume; tell me if that's annoying in practice.
 
-- [ ] **G8 — ⭐ The "we found 16 rooms" screen (added v0.3.15).** Scan four times to reach it. This is
-      a real reading of a real apartment floor plate. Check the room names against what a plan like
-      that actually says: LOBBY became "Corridor", SIT-OUT became "Balcony", LOUNGE became "Living",
-      STUDY-ROOM became "Study". Are any of those translations wrong for how your customers talk?
+- [ ] **G8 — ⭐ Room-name translations.** Whichever plan you scan, check the names it read against what
+      the plan actually prints. We rename some on purpose: LOBBY becomes "Corridor", SIT-OUT becomes
+      "Balcony", LOUNGE becomes "Living", STUDY-ROOM becomes "Study", a servant's room becomes a
+      bedroom. Dressing areas, ducts and lifts are dropped on purpose and listed under "we also saw".
+      Are any of those wrong for how your customers talk?
+
+### Rows that only exist now the reading is real (v0.3.16)
+
+- [ ] **G9 — ⭐⭐ Different plans give different answers.** The whole point of this build. Scan two
+      genuinely different plans, a minute apart. The room list must match each plan — a 3-bedroom
+      should not come back looking like a 2-bedroom. **If two different plans ever give the identical
+      list again, stop and tell me: that is the old fault, not a new one.**
+- [ ] **G10 — Your own plan, honestly judged.** Scan a plan you know well. Two questions, and both
+      answers are useful: did it get the room *names* right, and if it placed them on the grid, were
+      they roughly in the right places? Names being right while positions are wrong is the expected
+      result on busy plans — I want to know how often it happens on *your* plans.
+- [ ] **G11 — The privacy screen.** It appears before the first scan only. Read it as a customer
+      would: does it say enough, plainly enough? Is anything on it something you would rather not
+      promise?
+- [ ] **G12 — Turning it off.** Settings now has "Reading uploaded plans online". Tap it to switch it
+      off, then go back to Add home → Upload a plan: it must ask you to agree again before it will
+      scan. (This is a legal requirement, so it matters that it actually works.)
+- [ ] **G13 — Scanning three in a row.** Do three scans quickly on purpose. The third should say
+      something calm about waiting a minute, with the option to draw instead — never an error, never a
+      dead end.
+- [ ] **G14 — A photo taken at an angle.** Photograph a printed plan deliberately tilted. It should
+      still read the room names; it will probably hand them to you unplaced. Confirm it doesn't
+      pretend to know where they go.

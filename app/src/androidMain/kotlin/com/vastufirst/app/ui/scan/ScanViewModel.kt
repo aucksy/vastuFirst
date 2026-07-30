@@ -19,15 +19,22 @@ import kotlinx.coroutines.launch
 class ScanViewModel(
     private val reader: PlanReader,
     private val decode: ImageDecoder,
+    /**
+     * False when the build carries no plan-reading key. The screen then says so plainly instead of
+     * offering a picker that cannot work — see [ScanUiState.NotConfigured] for why this is a state
+     * and not a silent fallback to recorded replies.
+     */
+    private val canRead: Boolean = true,
 ) : ViewModel() {
 
-    var state by mutableStateOf<ScanUiState>(ScanUiState.Idle)
+    var state by mutableStateOf<ScanUiState>(if (canRead) ScanUiState.Idle else ScanUiState.NotConfigured)
         private set
 
     private var lastSource: Any? = null
 
     /** Read the picked file. [source] is whatever the platform picker handed back (a Uri). */
     fun scan(source: Any?) {
+        if (!canRead) { state = ScanUiState.NotConfigured; return }
         lastSource = source
         if (source == null) { state = ScanUiState.Idle; return }
         state = ScanUiState.Reading
@@ -43,7 +50,7 @@ class ScanViewModel(
     }
 
     /** Back to the ask, so the user can choose a different file. */
-    fun reset() { state = ScanUiState.Idle }
+    fun reset() { state = if (canRead) ScanUiState.Idle else ScanUiState.NotConfigured }
 
     /** Same file, another go — for the rate-limited and offline states, where retrying is the fix. */
     fun retrySameImage() { scan(lastSource) }

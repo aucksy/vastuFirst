@@ -31,6 +31,28 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Thursday 30 July — the app now actually reads your plan
+
+Up to this point, "upload a plan" was a working screen in front of a switched-off reader: it replayed
+a few readings we had recorded during testing, so whichever plan you picked, you saw the same rooms.
+That is now connected properly. Upload a plan and it reads **your** plan.
+
+Three things worth knowing:
+
+- **It asks first.** Before the very first plan is read, a short screen explains that the picture
+  leaves the phone, who reads it, that it is only asked to read the room names, and that we keep no
+  copy. Everything else in the app — drawing, the score, the report, your saved homes — still happens
+  entirely on the phone. You can switch plan reading off again at any time in Settings.
+- **Two plans a minute.** The free reading allowance is small. A third plan straight away is asked to
+  wait about a minute; drawing by hand always works instantly. This is fine for your testing and will
+  need a paid allowance before real customers use it.
+- **A plan costs about 15 paise to read**, unchanged from last week's estimate.
+
+**Still true, and worth repeating:** it reads room *names* very well and often does not know *where*
+the rooms are. On a straightforward house plan it places them for you to check; on a busy apartment
+sheet it hands you the list and you place them. It will never guess your front door — you tap that
+yourself, because that single choice moves the score more than anything else.
+
 Work started on **"scan your plan"** — upload a photo or PDF of your floor plan and have the app read
 the rooms for you, instead of drawing them all by hand. This week built and tested the part that
 turns what the AI sees into rooms on your grid. It is not yet something you can tap in the app; that

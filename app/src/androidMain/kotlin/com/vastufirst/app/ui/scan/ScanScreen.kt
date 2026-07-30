@@ -73,6 +73,7 @@ fun ScanScreen(
             is ScanUiState.Busy -> BusyBody(state.retryAfterSeconds, onRetry, onDrawInstead)
             ScanUiState.Unavailable -> UnavailableBody(onRetry, onDrawInstead)
             ScanUiState.BadImage -> BadImageBody(onRetry, onDrawInstead)
+            ScanUiState.NotConfigured -> NotConfiguredBody(onDrawInstead)
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -354,6 +355,23 @@ private fun BadImageBody(onRetry: () -> Unit, onDrawInstead: () -> Unit) {
             VastuButton("Choose another file", onClick = onRetry)
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             VastuButton("Draw it on a grid instead", onClick = onDrawInstead, style = VastuButtonStyle.SECONDARY)
+        }
+    }
+}
+
+@Composable
+private fun NotConfiguredBody(onDrawInstead: () -> Unit) {
+    // ⭐ The screen refuses to look like a working one. There is no picker here, because offering a
+    // file chooser that leads nowhere is how the previous two builds convinced their owner the
+    // feature was broken rather than absent.
+    GuidanceState(
+        title = "This copy of the app can't read plans",
+        body = "Plan reading was left switched off when this version was built, so there's nothing " +
+            "behind the upload button. It isn't your plan or your phone. Drawing your home on the " +
+            "grid works normally and gives exactly the same score.",
+    ) {
+        Column {
+            VastuButton("Draw it on a grid instead", onClick = onDrawInstead)
         }
     }
 }

@@ -29,6 +29,19 @@ sealed interface ScanUiState {
 
     /** The picked file could not be turned into an image (a corrupt or password-locked PDF). */
     data object BadImage : ScanUiState
+
+    /**
+     * ⭐ This build was made without the plan-reading key, so it cannot read a plan at all — and it
+     * says so, out loud, on the screen.
+     *
+     * It exists because of a specific failure: v0.3.14 and v0.3.15 shipped with a stand-in reader
+     * that replayed four recorded readings on a loop. Three of the four were the same test plan, so
+     * every upload produced the same room list and the owner reasonably concluded the feature was
+     * broken. The screen looked exactly like a working one. **A build that cannot do the thing must
+     * never be indistinguishable from a build that can**, so "no key" is a visible state rather than
+     * a silent substitution.
+     */
+    data object NotConfigured : ScanUiState
 }
 
 /**

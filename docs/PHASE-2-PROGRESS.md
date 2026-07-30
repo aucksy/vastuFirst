@@ -1066,3 +1066,113 @@ reply is committed; the plan images stay out of the repo.
 synonym table, and now that the gate is a room *count*, a smaller table changes the answer. So the
 recorded-reply pins moved to Kotlin's `RecordedScanTest`, where the real table runs; the mirror keeps
 what it can check honestly — geometry.
+
+---
+
+## ⭐⭐ The reader is real — v0.3.16 (2026-07-30)
+
+The owner tried the shipped build with several different plans and got the same room list every time.
+He was right, and the reason is not subtle: **the app was never looking at his images.**
+
+`AppModule` bound `FakePlanReader`, which replays four recorded replies in order and ignores the
+image bytes entirely. Three of those four are the *same* synthetic test plan (`plan-01` clean, JPEG'd
+and photographed), so uploads one, two and three produce an identical eight-room list — and because
+the reader is a Koin `single`, closing the app resets the cursor and the first fixture comes back
+again. Every visible part of the screen worked: the picker opened, the PDF rendered, a progress
+spinner ran, rooms landed on the grid. The one thing that never happened was the read.
+
+⚠ **The caveat existed in `docs/DEVICE-TEST-CHECKLIST.md` and nowhere the owner would meet it.** A
+build that cannot do the thing must not be indistinguishable from a build that can. That is the
+lesson, and it is now enforced in three places rather than written down in one:
+
+| Enforcement | What it does |
+|---|---|
+| `ScanUiState.NotConfigured` | a build with no key **says so on the screen** and offers no picker |
+| `FakePlanReader` unbound from the app | recorded replies drive tests and goldens; the app reads or admits it cannot |
+| `scan-not-configured` render golden | the state is rendered and looked at, like every other screen |
+
+### What landed
+
+| File | What it is |
+|---|---|
+| `shared/…/resources/scan/reader-config.json` + `plan-read-prompt.txt` | model id, endpoint, reasoning effort, timeouts, User-Agent — **data, not constants** — and the prompt as prose |
+| `shared/…/scan/ScanReaderConfig.kt` | fail-loud loader, same contract as the ruleset loader |
+| `shared/…/scan/GroqWire.kt` | **pure**: request body, envelope unwrapping, HTTP status → user-visible state, rate-limit duration parsing |
+| `shared/…/scan/GroqPlanReader.kt` | the transport. One POST, never throws, never logs, dispatches its own IO |
+| `app/…/ui/scan/PlanReadingConsent.kt` + `ScanConsentScreen.kt` | the DPDP gate, and it is a **route**, not a dialog |
+| `app/…/AndroidManifest.xml` | `INTERNET` — see below |
+| `scripts/check-manifest.sh` | the guard that stops the below happening twice |
+
+### ⭐ Caught by looking, not by the build: the app had no INTERNET permission
+
+Scan was written, reviewed, unit-tested and one commit from being tagged while
+`AndroidManifest.xml` declared **no permissions at all** — correct for an offline app, fatal for this
+feature. Nothing in the toolchain would have said so: it compiles, every test passes, the render
+goldens are byte-identical, and the failure on a real phone is a polite *"we couldn't read your plan
+just now"* on every attempt by every user forever, which reads as a flaky server rather than as a
+missing line of XML. It would have cost another release and another evening of the owner's time.
+
+`scripts/check-manifest.sh` now fails the build if it disappears, **and** fails if a permission this
+product has no business holding appears (location, camera, contacts, storage, phone state) — a merged
+manifest can gain those without anyone deciding to. Proven to bite by deleting the line.
+
+### Verified against the live API before a line of Kotlin was written
+
+`qwen/qwen3.6-27b`, `reasoning_effort: none`, `User-Agent: curl/8.4.0`, two real plans on
+2026-07-30: **HTTP 200**, 2 143 prompt + 751 completion = 2 894 tokens. The recipe measured on 29 July
+still holds, and the Kotlin is written against an observed response rather than a remembered one.
+
+⚠ **It also re-measured the limit that matters.** After **two** scans the live headers reported
+`x-ratelimit-remaining-tokens: 825` against a 2 894-token cost — so on the free tier the **third scan
+within a minute is refused**, across all users, not the third hundred. `x-ratelimit-reset-tokens` came
+back as `53.812s` and `x-ratelimit-reset-requests` as `2m52.8s`, which is why the wait is parsed from
+a duration string rather than read as a plain number of seconds.
+
+### The prompt is unchanged, deliberately
+
+Numbered-legend resolution (owner decision D2) is **not** in the shipped prompt. Every accuracy figure
+this feature is designed around — 24 of 30 real plans classified 2D, names read excellently, placement
+trusted only under 12 rooms — was measured with exactly these words. Changing the prompt and the
+transport in the same build would leave no way to tell which one moved the result. Prompt work is
+build-order step 6, measured against the corpus, on its own.
+
+### Proof
+
+- **Pure layer, 18 new tests**: the request shape field by field (including that the prompt's quotes,
+  braces and newlines survive JSON encoding — the failure mode that looks exactly like a bad model),
+  a **real recorded reply travelling the whole way from HTTP body to `ScanOutcome`** and matching the
+  mapper called directly, malformed replies degrading to Unavailable rather than to a refusal, every
+  rate-limit duration shape, and every other status landing on Unavailable.
+- ⭐ **Safety rule S1 is now mechanical.** A test asserts the prompt contains none of *vastu, zone,
+  sector, auspicious, brahmasthan, direction, mandala*. It was a paragraph in a design document; it is
+  now something that fails a build. The measurement behind it: asked for a room's sector the model
+  returned byte-identical answers for a clean render and a badly skewed photo, with its errors moving
+  toward textbook positions — a reader that nudges homes toward canonical placement inflates every
+  score, and the score is the product.
+- **A refusal is never used to describe our own failure.** A reply we cannot parse is Unavailable
+  ("try again"), not Refused ("your plan is the problem") — the second would be a lie.
+- **Gate tests in `:app`**: a keyless build reports NotConfigured from the first frame and refuses to
+  decode or send anything (both test doubles throw if touched), consent starts switched off, and
+  switching it off again works.
+- **The duration arithmetic was checked numerically in node first** (16 cases), before pushing, per
+  the standing rule — no CI round-trip spent on `2m52.8s`.
+- **Two new render goldens** across the 11-configuration matrix: `scan-consent` and
+  `scan-not-configured`. The consent screen is also in the ATF accessibility pass, because it carries
+  more prose than any other screen and prose is where the contrast trap already bit once.
+
+### Decisions worth recording
+
+- **Consent is a navigation destination, not a dialog and not a flag check.** The only route to the
+  scanner runs through it, so the ordering is structural instead of remembered. It is withdrawable
+  from Settings, which is what makes it consent, and the stored key is versioned (`..._v1`) so that if
+  what we send or who receives it ever changes, everyone is asked again.
+- **The consent copy describes our own behaviour only.** What we send, who reads it, what it is asked,
+  that we keep nothing, and that the phone still does the scoring. It makes no promise on the reading
+  service's behalf, because we could not keep one.
+- **The key is a build input, never a repository file** — a GitHub Actions secret in CI, a git-ignored
+  `.env` locally, escaped before it is pasted into generated Kotlin. §6.2 option A, acceptable only
+  because a free-tier key has no money attached; a server proxy is still required before store
+  submission, and `PlanReader` is why that stays a one-file change.
+- **`withContext(Dispatchers.IO)` lives inside the reader**, not in the ViewModel. A blocking suspend
+  function that trusts every future caller to remember the dispatcher is one refactor away from an
+  ANR. That is the only reason `:shared` gained coroutines-core — still zero Android.

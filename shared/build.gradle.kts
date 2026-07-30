@@ -13,8 +13,12 @@ kotlin {
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+    // `PlanReader.read` is `suspend`, which is a language feature and needs no dependency. The
+    // runtime is here for exactly one reason: GroqPlanReader moves its own socket off the calling
+    // thread (`withContext(Dispatchers.IO)`) instead of trusting every future caller to remember to.
+    // Still zero Android — coroutines-core is plain Kotlin, so `check-boundaries.sh` stays happy and
+    // the iOS re-target stays a build-file change.
+    implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlin.test)
-    // `PlanReader.read` is `suspend` (a language feature, no dependency); runBlocking in the scan
-    // tests is the only thing that needs the coroutines runtime, so it is test-only.
     testImplementation(libs.kotlinx.coroutines.core)
 }

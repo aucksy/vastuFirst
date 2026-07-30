@@ -1,13 +1,16 @@
 package com.vastufirst.app.di
 
+import com.vastufirst.app.BuildConfig
 import com.vastufirst.app.platform.createAndroidSqlDriver
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.scan.AndroidImageDecoder
+import com.vastufirst.app.ui.scan.AndroidPlanReadingConsent
 import com.vastufirst.app.ui.scan.ImageDecoder
+import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.data.PlanRepository
-import com.vastufirst.shared.scan.FakePlanReader
+import com.vastufirst.shared.scan.GroqPlanReader
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.data.VastuDatabaseFactory
 import com.vastufirst.engine.VastuEngine
@@ -32,16 +35,27 @@ val appModule = module {
     single { VastuDatabaseFactory.create(get()) }
     single { PlanRepository(db = get(), io = Dispatchers.IO) }
 
-    // Scan — the reader is behind an interface so the transport swaps without touching a line of the
-    // pure layer. ⚠ Today it is the FAKE reader, which replays the three replies the real Groq API
-    // returned on 2026-07-29: the whole flow is tappable and reviewable before a paid call is made,
-    // and before the key question (§6.2 — key in the APK vs a proxy) has to be answered. Swapping in
-    // GroqPlanReader is a one-line change here.
-    single<PlanReader> { FakePlanReader() }
+    // Scan — the REAL reader. One HTTP POST to the model named in `scan/reader-config.json`.
+    //
+    // ⚠ The stand-in reader that replayed recorded replies is deliberately NOT bound here any more.
+    // It shipped in v0.3.14/15 and, because three of its four recorded readings were the same test
+    // plan, every upload produced the same room list — which looks precisely like a broken feature.
+    // Recorded replies still drive the tests and the render goldens, where they belong; the app now
+    // either reads the user's plan or says it cannot.
+    single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.GROQ_API_KEY) }
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
+    single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
 
     // ViewModels.
     viewModel { HomeViewModel(repo = get()) }
     viewModel { NewPlanViewModel(engine = get(), repo = get()) }
-    viewModel { ScanViewModel(reader = get(), decode = get()) }
+    viewModel {
+        ScanViewModel(
+            reader = get(),
+            decode = get(),
+            // A build made without the key cannot read anything, and the screen says so rather than
+            // offering a picker that leads nowhere.
+            canRead = BuildConfig.GROQ_API_KEY.isNotBlank(),
+        )
+    }
 }

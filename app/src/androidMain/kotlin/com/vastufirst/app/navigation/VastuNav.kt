@@ -27,6 +27,8 @@ import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportScreen
+import com.vastufirst.app.ui.scan.PlanReadingConsent
+import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanRoute
 import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.app.ui.scan.gridForOutcome
@@ -100,9 +102,12 @@ fun VastuNavHost() {
 
             composable(Routes.ADD_HOME) { entry ->
                 val vm = sharedVm(nav, entry)
+                val consent = koinInject<PlanReadingConsent>()
                 AddHomeScreen(
                     onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
-                    onScan = { nav.go(Routes.SCAN) },
+                    // ⭐ The consent screen is not optional and not skippable: the scanner is only
+                    // ever reached through it, or after it has already been answered once.
+                    onScan = { nav.go(if (consent.isGranted()) Routes.SCAN else Routes.SCAN_CONSENT) },
                     onSample = {
                         val sample = SamplePlans.all.first()
                         vm.updateRooms(sample.rooms)
@@ -110,6 +115,23 @@ fun VastuNavHost() {
                         vm.updateNorth(sample.north)
                         nav.go(Routes.MARK_NORTH)
                     },
+                )
+            }
+
+            composable(Routes.SCAN_CONSENT) {
+                val consent = koinInject<PlanReadingConsent>()
+                ScanConsentScreen(
+                    onAgree = {
+                        consent.set(true)
+                        // Replace the gate in the back stack: having agreed, Back from the scanner
+                        // should go to "Add home", not back through the consent screen.
+                        nav.navigate(Routes.SCAN) {
+                            popUpTo(Routes.SCAN_CONSENT) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onDrawInstead = { nav.go(Routes.GUIDED_GRID) },
+                    onBack = { nav.popBackStack() },
                 )
             }
 

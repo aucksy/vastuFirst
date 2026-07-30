@@ -17,6 +17,13 @@ object Routes {
     const val NEWPLAN_GRAPH = "newplan"
     const val WELCOME = "welcome"
     const val ADD_HOME = "add_home"
+
+    /**
+     * The privacy gate in front of [SCAN]. A separate destination rather than a dialog, so the
+     * ordering is structural: the only route to the scanner passes through it, and it cannot be
+     * skipped by a state that forgot to check a flag.
+     */
+    const val SCAN_CONSENT = "scan_consent"
     const val SCAN = "scan"
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"

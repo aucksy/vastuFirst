@@ -686,10 +686,10 @@ decision.
 |---|---|---|---|
 | 1 | `ScanDraft`/`ScanOutcome` types + `PlanReader` seam + `FakePlanReader` with recorded fixtures | No | ✅ **done 2026-07-29** |
 | 2 | `ScanMapper` + full `:shared` test suite + fuzz Suite E, all proven to bite | No | ✅ **done 2026-07-29** |
-| 3 | Scan UI: pick/capture → progress → "we read N rooms, check them" → editor with flagged rooms | No (fake reader) | in progress |
-| 4 | Consent screen + legal copy | Needs §6.3 wording sign-off | |
-| 5 | `GroqPlanReader` — real call, model id in config, retry/timeout/refusal → fallback | **Needs key** | |
-| 6 | Prompt engineering against real plans, measured on a fixture set | **Needs key** | |
+| 3 | Scan UI: pick/capture → progress → "we read N rooms, check them" → editor with flagged rooms | No (fake reader) | ✅ **done 2026-07-29 (v0.3.14/15)** |
+| 4 | Consent screen + legal copy | Owner said yes, 2026-07-30 | ✅ **done 2026-07-30** |
+| 5 | `GroqPlanReader` — real call, model id in config, retry/timeout/refusal → fallback | Key held as a repo secret | ✅ **done 2026-07-30 (v0.3.16)** |
+| 6 | Prompt engineering against real plans, measured on a fixture set | No | **next** — deliberately not touched in the same build as the transport |
 | 7 | Render goldens for every new screen, adversarial review, tag, device checklist rows | No | |
 
 Steps 1–3 are the bulk of the risk and are **unblocked today**.

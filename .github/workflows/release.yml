@@ -16,6 +16,11 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # ⭐ Without this secret the released APK cannot read plans — it will say so on screen rather
+      # than fail quietly, but the feature the release is FOR would be missing. Set it at
+      # Settings → Secrets and variables → Actions → GROQ_API_KEY.
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,6 +50,8 @@ jobs:
         run: bash scripts/check-boundaries.sh
       - name: Token check
         run: bash scripts/check-tokens.sh
+      - name: Manifest check (the plan reader needs the network; nothing else needs a permission)
+        run: bash scripts/check-manifest.sh
       - name: Window-inset check (every screen root clears the system bars)
         run: bash scripts/check-screen-roots.sh
       - name: Design-fidelity check (theme matches the design contract)
@@ -90,4 +97,6 @@ jobs:
           name: "VastuFirst ${{ github.ref_name }}"
           body: |
             VastuFirst Android — ${{ github.ref_name }}.
-            Debug-signed APK for testing (installs on any Android 8.0+ device). Fully offline.
+            Debug-signed APK for testing (installs on any Android 8.0+ device).
+            Drawing, scoring and your saved homes all work offline. Reading an uploaded plan is
+            the one feature that needs the internet, and it asks first.

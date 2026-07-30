@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      ⭐ The app's ONLY permission, and it arrived with "scan your plan" (v0.3.16).
+
+      Everything else in VastuFirst is computed on the device: drawing, the engine, the score, the
+      report, saved homes. Reading an uploaded plan is the single feature that talks to a server, it
+      asks the user first, and refusing it costs nothing because the guided grid gives the same score.
+
+      Without this line every read fails with a SecurityException, the reader reports "we couldn't
+      read your plan just now", and the feature looks broken in a way no compiler and no unit test
+      would ever mention. scripts/check-manifest.sh fails the build if it goes missing again.
+
+      Note what is NOT here: no camera permission (the system photo picker hands back one chosen
+      item), no storage permission, no location, no network-state.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".VastuApp"
         android:label="@string/app_name"

@@ -1,6 +1,7 @@
 package com.vastufirst.app.render
 
 import android.app.Application
+import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanScreen
 import com.vastufirst.app.ui.scan.ScanUiState
 import com.vastufirst.shared.scan.RecordedScans
@@ -96,5 +97,32 @@ class ScanScreenshotTest {
         val s = ScanUiState.Busy(retryAfterSeconds = 45)
         captureAcrossMatrix("scan-busy", screen(s))
         writeManifestAcrossMatrix("scan-busy", screen(s))
+    }
+
+    /**
+     * ⭐ A build made without the plan-reading key. Rendered because it is the screen that stops the
+     * v0.3.14/15 failure repeating: a build that cannot read plans looked exactly like one that
+     * could, so the owner spent an evening uploading different pictures at a stand-in reader that was
+     * replaying the same recorded plan. There is no picker in this state, on purpose.
+     */
+    @Test
+    fun scanNotConfigured() {
+        captureAcrossMatrix("scan-not-configured", screen(ScanUiState.NotConfigured))
+        writeManifestAcrossMatrix("scan-not-configured", screen(ScanUiState.NotConfigured))
+    }
+
+    /**
+     * The privacy gate (§6.3). It is the first screen in this app that asks the user to let something
+     * leave the phone, so its copy is the most load-bearing on the whole scan path — and it has to
+     * hold at 200 % font on a 360 dp screen without a single line being clipped, because a consent
+     * notice you cannot finish reading is not a consent notice.
+     */
+    @Test
+    fun scanConsent() {
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {})
+        }
+        captureAcrossMatrix("scan-consent", content)
+        writeManifestAcrossMatrix("scan-consent", content)
     }
 }

@@ -3,6 +3,7 @@ package com.vastufirst.app.render
 import android.app.Application
 import androidx.compose.runtime.Composable
 import com.vastufirst.app.ui.addhome.AddHomeScreen
+import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanScreen
 import com.vastufirst.app.ui.scan.ScanUiState
 import com.vastufirst.shared.scan.RecordedScans
@@ -58,6 +59,9 @@ class AccessibilityTest {
                     {}, {}, {}, {}, {}, {},
                 )
             },
+            // The privacy gate carries more prose than any other screen, and the contrast trap this
+            // check already caught once on the scan screen lives in exactly that kind of copy.
+            "scan-consent" to { ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {}) },
             "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
             "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
             "marknorth" to {

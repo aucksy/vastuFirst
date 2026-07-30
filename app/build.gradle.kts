@@ -61,6 +61,21 @@ kotlin {
     }
 }
 
+// The plan-reading key, supplied by the build environment and never by the repository.
+//
+// ⭐ It is read from a GitHub Actions secret in CI and from a git-ignored `.env` locally, so it is
+// never committed — and when it is ABSENT the app says so plainly instead of pretending to read a
+// plan. That honesty is the whole point of threading it this far: a build that cannot read plans and
+// looks identical to one that can is exactly the build that got handed over on 30 July.
+//
+// This is the interim arrangement (§6.2 option A) for private test builds. A key inside an APK is
+// extractable, which is acceptable for a free-tier key with no money attached and NOT acceptable for
+// the Play Store — the reader sits behind an interface precisely so moving to a server proxy is a
+// one-file change later.
+val groqApiKey: String = (project.findProperty("groqApiKey") as String?)
+    ?: System.getenv("GROQ_API_KEY")
+    ?: ""
+
 android {
     namespace = "com.vastufirst.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -69,8 +84,18 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 25
-        versionName = "0.3.13"  // v0.3.11+12 tags both hit commits carrying the CI-skip directive
+        versionCode = 26
+        versionName = "0.3.16"
+
+        // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
+        // stray quote or backslash in a key would produce a file that does not compile.
+        val escapedKey = groqApiKey.replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "GROQ_API_KEY", "\"$escapedKey\"")
+    }
+
+    buildFeatures {
+        // Off by default in AGP 8; the generated BuildConfig is how the key reaches Kotlin.
+        buildConfig = true
     }
 
     buildTypes {

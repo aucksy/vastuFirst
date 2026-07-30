@@ -32,7 +32,9 @@ import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import com.vastufirst.app.ui.home.HomeViewModel
+import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
@@ -45,10 +47,18 @@ fun SettingsScreen(
     onLegal: () -> Unit,
     onBack: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
+    consent: PlanReadingConsent = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
     // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
-    SettingsContent(onLegal = onLegal, onBack = onBack, onDeleteAll = homeViewModel::deleteAll)
+    var allowed by remember { mutableStateOf(consent.isGranted()) }
+    SettingsContent(
+        onLegal = onLegal,
+        onBack = onBack,
+        onDeleteAll = homeViewModel::deleteAll,
+        planReadingAllowed = allowed,
+        onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
+    )
 }
 
 /** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */
@@ -57,6 +67,8 @@ fun SettingsContent(
     onLegal: () -> Unit,
     onBack: () -> Unit,
     onDeleteAll: () -> Unit,
+    planReadingAllowed: Boolean = false,
+    onSetPlanReading: (Boolean) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     var showConfirm by remember { mutableStateOf(false) }
@@ -81,11 +93,25 @@ fun SettingsContent(
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Group {
             RowItem("Your plans stay on this device", trailing = "On", trailingColor = colors.verdictIdeal)
+            // ⭐ Consent has to be withdrawable to be consent at all (DPDP, NFR §10). Tapping the row
+            // flips it, and turning it off puts the upload behind the explanation screen again.
+            RowItem(
+                "Reading uploaded plans online",
+                trailing = if (planReadingAllowed) "Allowed" else "Off",
+                trailingColor = if (planReadingAllowed) colors.verdictIdeal else colors.textTertiary,
+                onClick = { onSetPlanReading(!planReadingAllowed) },
+            )
             RowItem("Honesty & sources", trailing = "›", onClick = onLegal)
             RowItem("Delete all my data", trailing = "›", labelColor = colors.error, trailingColor = colors.error, onClick = { showConfirm = true })
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        VText("No account. No phone number. Nothing leaves your phone unless you export it.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        VText(
+            "No account. No phone number. Your homes and your score never leave this phone. The one " +
+                "exception is a plan you upload to be read, which you agree to separately and can " +
+                "switch off above.",
+            style = VastuTheme.type.bodySm,
+            color = colors.textTertiary,
+        )
     }
 
     if (showConfirm) {
