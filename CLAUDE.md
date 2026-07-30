@@ -64,6 +64,30 @@ The three non-negotiables:
 3. **Prove it works** via CI — show the real result, never just claim it passes.
 4. Push after each phase and tag a build (standing rule for this owner).
 
+## 3b. ⭐ HARD RULE — how every session ENDS
+
+**Every session ends with a short, plain-English wrap-up. Two lists, nothing else:**
+
+```
+DONE  — what changed, in words the owner can act on, plus the APK link
+YOURS — what I need from him, each item a complete question with the context inside it
+```
+
+Rules for it, all binding:
+
+- **No codes, ever.** Not `G4`, not `S8`, not `F3`, not `§6.2b`, not `v0.3.14`-as-an-identifier, not
+  a file or class name. The owner does not read every line I print and will not go looking up a label.
+  If a checklist row matters, **write the question out** instead of pointing at its number.
+- **Each "yours" item stands alone.** It must make sense to someone who read nothing else in the
+  session. "Is a row of squares to drag easier than an empty grid?" — not "please check item G4".
+- **Say what is NOT done**, in the same plain words, especially anything blocking.
+- **Short.** If it runs past roughly a screen, it is too long — the detail belongs in `docs/`.
+- Assume he read **nothing** above the wrap-up. This applies even mid-session, whenever I hand
+  something back.
+
+Why this is a rule: I ended a session pointing him at "the question on the checklist as G4". That is
+a label only I can resolve, so the question effectively went unasked.
+
 ## 4. Golden rules
 
 - **Ask, don't assume.** If a missing detail changes cost/design/result, stop and ask.

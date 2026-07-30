@@ -82,7 +82,7 @@ service needs two things settled first — a privacy consent step (a floor plan 
 information under India's data protection law, and this is the first feature that would send one off
 your phone), and a decision about where the service key lives. Both are next.
 
-**The question I'd most like your opinion on** is on the checklist as G4. When we can't tell where
+**The question I'd most like your opinion on.** When we can't tell where
 the rooms are — which will be most plans — we drop them onto the grid as a row of small squares for
 you to drag into place. Is that genuinely easier than starting from an empty grid, or would you
 rather just see the list of rooms and draw it yourself? Your call.
