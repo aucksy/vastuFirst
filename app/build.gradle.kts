@@ -84,8 +84,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 26
-        versionName = "0.3.16"
+        versionCode = 27
+        versionName = "0.3.17"
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.

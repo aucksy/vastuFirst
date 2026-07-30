@@ -26,6 +26,18 @@ happens, what a screen reader says out loud, and whether Android killing the app
 **You don't need to do these in one sitting, or in order.** Tick what you get to. Anything you don't
 reach stays on the list for next time.
 
+### ⚠ Installing this version — one last uninstall
+
+Up to v0.3.16 every build we published carried a different signature, which is why Android made you
+uninstall each time, and why your saved homes kept disappearing. **From v0.3.17 onward builds install
+straight over each other and your homes are kept.** Moving *to* v0.3.17 still needs one uninstall,
+because the old signature can't be recovered — that is the last one.
+
+- [ ] **Install v0.3.17 over v0.3.18 when it arrives, without uninstalling.** Draw or scan a home, save
+      it, then install the next build I send. Your homes must still be there. If Android says "App not
+      installed" or you have to uninstall again, tell me — the check that is supposed to prevent it
+      failed.
+
 ### How to report a problem so it's quick to fix
 
 Three things, and a screenshot if it's visual:
