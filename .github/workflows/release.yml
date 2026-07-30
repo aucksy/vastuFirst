@@ -84,6 +84,11 @@ jobs:
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
 
+      # ⭐ A release is exactly where this matters: a published APK signed by a new key costs every
+      # tester their saved homes, and they find out by hitting "App not installed".
+      - name: Signature check (the release must install over the previous one)
+        run: python3 scripts/check-apk-signature.py "app/build/outputs/apk/debug/*.apk"
+
       - name: Name the APK for the release
         run: |
           mkdir -p release
@@ -97,6 +102,11 @@ jobs:
           name: "VastuFirst ${{ github.ref_name }}"
           body: |
             VastuFirst Android — ${{ github.ref_name }}.
-            Debug-signed APK for testing (installs on any Android 8.0+ device).
-            Drawing, scoring and your saved homes all work offline. Reading an uploaded plan is
-            the one feature that needs the internet, and it asks first.
+            Test APK, installs on any Android 8.0+ device.
+
+            From v0.3.17 onward every build is signed with the same key, so this installs straight
+            over the previous version and your saved homes are kept. Coming from v0.3.16 or earlier
+            you have to uninstall once — those builds were each signed with a throwaway key.
+
+            Drawing, scoring and your saved homes all work offline. Reading an uploaded plan is the
+            one feature that needs the internet, and it asks first.

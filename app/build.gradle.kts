@@ -98,6 +98,39 @@ android {
         buildConfig = true
     }
 
+    // ⭐⭐ A STABLE SIGNING KEY, AND IT IS NOT A SECRET.
+    //
+    // THE BUG THIS FIXES: with no signing config, AGP signs a debug build with the keystore at
+    // ~/.android/debug.keystore — and a fresh GitHub Actions runner does not have one, so AGP
+    // GENERATES A RANDOM KEY on every single build. Android refuses to install an update whose
+    // signature differs from the installed app, so every new test build had to be UNINSTALLED first,
+    // and uninstalling erases the app's data. Every home the owner had drawn was destroyed by every
+    // release. Measured, not guessed: v0.3.15 and v0.3.16 ship certificates with different SHA-256s.
+    //
+    // WHY COMMITTING THIS FILE DOES NOT BREAK "no secrets in the repo": it is a self-signed test
+    // certificate with the conventional debug password, holding no account, no service and no store
+    // identity. Its only power is to sign a build that Android will accept as an update to another
+    // build signed by the same key, which is precisely the behaviour we want. It is the same trust
+    // level as the debug keystore Android Studio writes into every developer's home directory.
+    //
+    // ⚠ THE PLAY STORE KEY IS A DIFFERENT KEY AND MUST NEVER LIVE HERE. That one is created at store
+    // setup, kept by the owner, and supplied to the build as a secret. Changing to it costs one final
+    // reinstall for the two sideloaded test phones — and nothing at all for real users, who will be
+    // installing from the Play Store rather than updating a sideloaded APK.
+    //
+    // scripts/check-apk-signature.py fails the build if a produced APK is ever signed by anything
+    // other than this key, because the symptom otherwise only shows up on a phone, days later, as
+    // lost data.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("signing/vastufirst-debug.keystore")
+            storeType = "pkcs12"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false

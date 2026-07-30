@@ -1234,3 +1234,61 @@ green build.
 - **`withContext(Dispatchers.IO)` lives inside the reader**, not in the ViewModel. A blocking suspend
   function that trusts every future caller to remember the dispatcher is one refactor away from an
   ANR. That is the only reason `:shared` gained coroutines-core — still zero Android.
+
+---
+
+## ⭐⭐ Every release destroyed the owner's saved homes — v0.3.17 (2026-07-30)
+
+Owner: *"I am having to uninstall previous version everytime I install new — this means any self build
+plans are lost."*
+
+**Diagnosed, not guessed.** Both published APKs were pulled and their signing certificates compared:
+
+| Release | Signing certificate SHA-256 |
+|---|---|
+| v0.3.15 | `1f3b25d8…` |
+| v0.3.16 | `4dbe5b6c…` |
+
+Different keys. **Every cloud build was signed by a different, randomly generated key**, because
+`assembleDebug` with no signing config falls back to `~/.android/debug.keystore` — and a fresh GitHub
+Actions runner has no such file, so AGP silently creates one, uses it, and throws it away with the
+runner. Android refuses to install an APK over an app signed by a different key, so the only way in
+was to uninstall, and uninstalling erases the app's database. **Nine releases, each one quietly
+deleting every home he had drawn.**
+
+⚠ **This is the third defect in this project of exactly the same shape**: green build, passing tests,
+identical screenshots, and destructive on a real phone (the others: no INTERNET permission, and the
+stand-in reader that looked real). None of them are code defects in the ordinary sense — they all live
+in the space between "the build succeeded" and "the thing works for a person".
+
+### The fix
+
+- `signing/vastufirst-debug.keystore` — a stable, committed **test** key (PKCS12, 30-year validity),
+  wired as the `debug` signing config. Every build from now on carries the same identity, so it
+  installs as an update and the database survives.
+- ⚠ **`.gitignore` had `*.keystore`, so the new key was silently excluded** — the build would have gone
+  straight back to a random key with nothing to show why. Caught by testing `git add -n` rather than
+  trusting the `git add` that appeared to work. One deliberate negation, with the reasoning next to it.
+- `scripts/check-apk-signature.py` — parses the APK Signing Block (no v1 JAR signature exists to read
+  once minSdk ≥ 24) and fails the build if the certificate is not the expected one, in **both** CI and
+  release. Pure standard library, so it needs nothing installed. **Proven to bite against the real
+  v0.3.16 APK**, which it correctly rejects, and proven to pass against a matching fingerprint.
+
+### Why committing a key does not violate "no secrets in the repo"
+
+It is a self-signed test certificate with the conventional debug password. It holds no account, no
+service, no store identity, and its only power is to sign builds that Android will treat as updates to
+other builds signed with it — which is the entire point. Same trust level as the debug keystore
+Android Studio writes into every developer's home directory.
+
+⚠ **The Play Store key is a different key and must never be committed.** It is created at store setup,
+held by the owner, and supplied to the build as a secret. Switching to it costs one final reinstall on
+the two sideloaded test phones and nothing at all for real users, who will install from the Store
+rather than update a sideloaded APK.
+
+### The cost that cannot be avoided
+
+v0.3.16's random key is gone with the runner that made it, so **this one last install needs an
+uninstall**. From v0.3.17 onward it updates in place. Said plainly in the release notes, the client
+note and the device checklist, because "you will lose your data one more time" is not something to
+leave for someone to discover.

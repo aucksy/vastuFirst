@@ -31,6 +31,20 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Thursday 30 July, later — new versions no longer wipe your saved homes
+
+A real fault, found because the owner had to uninstall the app to install each new version: **every
+build we published was stamped with a different signature**, and Android will not install an update
+whose signature has changed. The only way in was to uninstall — which deletes everything the app has
+saved. Every home you had drawn was being destroyed by every update.
+
+Fixed. Every build from now on carries the same signature, installs straight over the previous one, and
+keeps your saved homes. There is also now an automatic check that refuses to publish a build that would
+break this again.
+
+⚠ **One last time only:** to move to this version you do have to uninstall first, because the previous
+version's signature can't be recovered. After that, updates just install.
+
 ### Thursday 30 July — the app now actually reads your plan
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.16/vastufirst-v0.3.16.apk

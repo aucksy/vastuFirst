@@ -207,6 +207,13 @@ jobs:
       - name: Build Android app (empty VastuTheme screen)
         run: gradle :app:assembleDebug --stacktrace
 
+      # An APK signed by a different key than the last one cannot be installed as an update, so every
+      # tester has to uninstall — which erases every home they saved. That is what happened on every
+      # release up to v0.3.16, silently, because a fresh runner has no debug keystore and AGP makes a
+      # random one. This is the only gate that can catch it before a phone does.
+      - name: Signature check (the build must install over the previous one)
+        run: python3 scripts/check-apk-signature.py "app/build/outputs/apk/debug/*.apk"
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:

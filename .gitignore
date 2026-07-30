@@ -27,6 +27,14 @@ keystore.properties
 .env.*
 !.env.example
 
+# ⭐ ONE deliberate exception, and it is not a secret: the stable key that signs cloud TEST builds.
+# Without a committed key, each cloud build signs with a randomly generated one, Android refuses the
+# install as an update, and every tester has to uninstall — which erases every home they have saved.
+# This is a self-signed test certificate with the conventional debug password; it holds no account,
+# no service and no store identity. The Play Store key is a different key, is never committed, and
+# reaches the build as a secret. See the comment in app/build.gradle.kts.
+!signing/vastufirst-debug.keystore
+
 # Design bundle: keep the zip (source), ignore the extracted working copy (Impl PRD §0.1)
 Design System/Final Designs/vastufirst-mobile-apps-implementation/
 
