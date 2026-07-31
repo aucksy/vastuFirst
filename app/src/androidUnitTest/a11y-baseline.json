@@ -2,6 +2,7 @@
   "addhome": 4,
   "editor": 4,
   "editor-empty": 5,
+  "editor-selected": 8,
   "home": 1,
   "home-empty": 0,
   "home-rename": 2,
