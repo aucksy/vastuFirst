@@ -1,0 +1,153 @@
+package com.vastufirst.shared.scan
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+/**
+ * ⭐⭐ Shaping rooms to the sizes the plan PRINTS, pinned against the owner's own flat.
+ *
+ * Green Court, Sector 90, Gurgaon — Category II. The rectangles below are what the shipped app
+ * actually drew, read off his screenshot; the captions are what the sheet actually prints.
+ *
+ * **Four of its six dimensioned rooms came out with their orientation inverted**: the lobby, the
+ * kitchen, the bedroom and the passage were all drawn wider than deep when the plan says the
+ * opposite, and the passage — a 2'-3" strip — was drawn three times wider than tall. A room's Vastu
+ * direction follows its shape, so this was moving the number the customer pays for.
+ *
+ * ⚠ These expectations live in Kotlin rather than in the fuzz mirror on purpose: the mirror carries a
+ * deliberately cut-down synonym table, so `W.C`, `LOBBY` and `PASSAGE` do not resolve there and the
+ * plan would silently map to something else. Same lesson the recorded-reply pins already learned.
+ */
+class ScanReshapeTest {
+
+    /** The owner's flat as the reader saw it: his captions, and the boxes the app drew from them. */
+    private fun gurgaonFlat() = ScanDraft(
+        planType = PlanImageType.TWO_D_PLAN,
+        hasRoomLabels = true,
+        planConfidence = 0.95,
+        rooms = listOf(
+            ScanBox("BALCONY 6'-0\" WIDE", x = 0.0, y = 0.0, w = 1.0, h = 0.3, confidence = 0.9),
+            ScanBox("W.C 5'-0\"X2'-11\"", x = 0.0, y = 0.3, w = 0.4, h = 0.1, confidence = 0.9),
+            ScanBox("BATH 5'-0\"X3'-8½\"", x = 0.0, y = 0.4, w = 0.4, h = 0.2, confidence = 0.9),
+            ScanBox("KITCHEN 6'-11\"X9'-7\"", x = 0.0, y = 0.6, w = 0.4, h = 0.1, confidence = 0.9),
+            ScanBox("BED ROOM 10'-0\"X10'-6\"", x = 0.4, y = 0.3, w = 0.6, h = 0.4, confidence = 0.9),
+            ScanBox("LOBBY 10'-0\"X12'-9\"", x = 0.4, y = 0.7, w = 0.6, h = 0.2, confidence = 0.9),
+            ScanBox("PASSAGE 2'-3\"X9'-6\"", x = 0.7, y = 0.9, w = 0.3, h = 0.1, confidence = 0.9),
+        ),
+    )
+
+    private fun placed(): ScanOutcome.Placed {
+        val out = ScanMapper.map(gurgaonFlat(), imageAspect = 1.0)
+        assertIs<ScanOutcome.Placed>(out, "a 7-room single-home plan must place")
+        return out
+    }
+
+    private fun ScanOutcome.Placed.room(caption: String) =
+        rooms.firstOrNull { it.label.startsWith(caption) }
+            ?: throw AssertionError("$caption did not survive: ${rooms.map { it.label }}")
+
+    @Test
+    fun `the lobby is deeper than it is wide, as the plan says`() {
+        // Printed 10'-0" x 12'-9". Drawn 6 wide x 2 deep — the room this whole complaint began with.
+        val r = placed().room("LOBBY").rect!!
+        assertTrue(r.h > r.w, "LOBBY printed 10'x12'9\" must be deeper than wide, got ${r.w}x${r.h}")
+    }
+
+    @Test
+    fun `the passage survives even though its printed shape will not fit where it was read`() {
+        // ⚠ The honest case, and worth spelling out rather than asserting something prettier.
+        //
+        // The passage is printed 2'-3" x 9'-6" — over four times taller than wide. Its true shape is
+        // a tall thin strip, but the lobby beside it, grown to ITS true depth and pushed upward by
+        // the bottom of the grid, ends up covering exactly the cells the reader had put the passage
+        // in. The printed shape therefore cannot be honoured here without burying the room.
+        //
+        // What must NOT happen is the room disappearing: a lost room changes the footprint the engine
+        // scores, and the user cannot re-add something they never saw. So the read shape is used
+        // instead, and the room arrives flagged for checking. A room of the wrong shape is a problem
+        // the user can see and fix; a missing room is not.
+        val p = placed()
+        val passage = p.room("PASSAGE")
+        assertTrue(passage.rect != null, "the passage must reach the grid")
+        assertTrue(
+            RoomFlag.OVERLAP_TRIMMED in passage.flags,
+            "a passage that could not take its printed shape must be flagged, not silently reshaped",
+        )
+    }
+
+    @Test
+    fun `the kitchen is deeper than it is wide, as the plan says`() {
+        // Printed 6'-11" x 9'-7". Drawn 4 wide x 1 deep. The kitchen is the joint-highest-weighted
+        // room the engine scores, so its direction is the most expensive one to get wrong.
+        val r = placed().room("KITCHEN").rect!!
+        assertTrue(r.h > r.w, "KITCHEN printed 6'11\"x9'7\" must be deeper than wide, got ${r.w}x${r.h}")
+    }
+
+    @Test
+    fun `the rooms the plan really does print wider than deep stay that way`() {
+        // The rule is not "always make it tall" — it is "believe the sheet". The WC genuinely is
+        // wider than it is deep, and it must not be flipped along with the others.
+        val wc = placed().room("W.C").rect!!
+        assertTrue(wc.w >= wc.h, "W.C printed 5'0\"x2'11\" must not be deeper than wide, got ${wc.w}x${wc.h}")
+    }
+
+    @Test
+    fun `a room whose caption prints no size keeps the shape it was read with`() {
+        // "BALCONY 6'-0\" WIDE" states one dimension, which cannot shape a room. It must be left
+        // exactly as the reader drew it rather than guessed at.
+        val balcony = placed().room("BALCONY").rect!!
+        assertEquals(10, balcony.w, "an undimensioned room keeps the reader's width")
+        assertEquals(3, balcony.h, "an undimensioned room keeps the reader's depth")
+    }
+
+    @Test
+    fun `the relative sizes follow the plan — a lobby is far bigger than a toilet`() {
+        // The printed areas differ ninefold (127 sq ft against 15). The reader had drawn them three
+        // cells apart. Whatever the exact numbers, the ordering must now be right.
+        val p = placed()
+        val lobby = p.room("LOBBY").rect!!
+        val wc = p.room("W.C").rect!!
+        assertTrue(lobby.w * lobby.h > wc.w * wc.h, "the lobby must be drawn bigger than the WC")
+    }
+
+    @Test
+    fun `every room still lands inside the grid and none overlaps`() {
+        // The guarantees the editor is held to. Re-shaping must not be able to break them, whatever
+        // the printed numbers say — the fuzz suite proves this across random replies, this pins it
+        // on the one real plan we have.
+        val p = placed()
+        for (r in p.rooms) {
+            val q = r.rect!!
+            assertTrue(q.w >= 1 && q.h >= 1, "${r.label} is under a cell")
+            assertTrue(q.col >= 0 && q.row >= 0 && q.col + q.w <= p.cols && q.row + q.h <= p.rows,
+                "${r.label} is off the grid: $q in ${p.cols}x${p.rows}")
+        }
+        for (i in p.rooms.indices) {
+            for (j in i + 1 until p.rooms.size) {
+                val a = p.rooms[i].rect!!
+                val b = p.rooms[j].rect!!
+                val hit = a.col < b.col + b.w && b.col < a.col + a.w &&
+                    a.row < b.row + b.h && b.row < a.row + a.h
+                assertTrue(!hit, "${p.rooms[i].label} overlaps ${p.rooms[j].label}")
+            }
+        }
+    }
+
+    @Test
+    fun `a plan that prints no sizes at all is left completely alone`() {
+        // The commonest case by far — roughly three quarters of captions in the corpus carry no
+        // dimensions — so it must be a no-op, not a slightly different answer.
+        // Captions spelled out rather than derived by trimming at the first space — "BED ROOM" would
+        // have become "BED", which resolves to nothing and would have tested a refusal by accident.
+        val plainCaptions = listOf("BALCONY", "W.C", "BATH", "KITCHEN", "BED ROOM", "LOBBY", "PASSAGE")
+        val plain = gurgaonFlat().let { d ->
+            d.copy(rooms = d.rooms.mapIndexed { i, b -> b.copy(label = plainCaptions[i]) })
+        }
+        val a = ScanMapper.map(plain, imageAspect = 1.0)
+        val b = ScanMapper.map(plain, imageAspect = 1.0)
+        assertEquals(a, b, "mapping must stay deterministic")
+        assertIs<ScanOutcome.Placed>(a)
+    }
+}

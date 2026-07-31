@@ -1,0 +1,148 @@
+package com.vastufirst.shared.scan
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * The sizes plans PRINT beside their room names — the reliable signal we were deleting.
+ *
+ * Every caption here is real: from the 30-plan corpus, or from the owner's own Green Court sheet.
+ * All twenty were checked numerically before a line of this was written, because a wrong reading
+ * here silently mis-shapes a room and a room's shape decides its Vastu direction.
+ */
+class RoomDimensionsTest {
+
+    private val mmPerFoot = 304.8
+
+    private fun feet(label: String): Pair<Double, Double>? =
+        RoomDimensions.parse(label)?.let { it.widthMm / mmPerFoot to it.depthMm / mmPerFoot }
+
+    private fun assertFeet(label: String, w: Double, d: Double) {
+        val got = feet(label) ?: throw AssertionError("no size read from \"$label\"")
+        assertEquals(w, got.first, 0.01, "width of \"$label\"")
+        assertEquals(d, got.second, 0.01, "depth of \"$label\"")
+    }
+
+    // ── feet and inches, the convention on the owner's plan ──────────────────────────────────────
+
+    @Test
+    fun `plain feet and inches`() {
+        assertFeet("BED ROOM 10'-0\"X10'-6\"", 10.0, 10.5)
+        assertFeet("PASSAGE 2'-3\"X9'-6\"", 2.25, 9.5)
+        assertFeet("KITCHEN 6'-11\"X9'-7\"", 6.9167, 9.5833)
+    }
+
+    @Test
+    fun `the hyphen is optional`() {
+        assertFeet("BED ROOM 12'1\"X11'0\"", 12.0833, 11.0)
+        assertFeet("LOBBY/DINING 17'1\"X9'10\"", 17.0833, 9.8333)
+    }
+
+    @Test
+    fun `half-inch fractions are printed as glyphs and must be read`() {
+        // Straight off the owner's sheet. Dropping the ½ would mis-size the room by half an inch —
+        // harmless — but failing to PARSE it drops the whole size, which is not.
+        assertFeet("LOBBY 10'-3½\"X14'-10½\"", 10.2917, 14.875)
+        assertFeet("W.C 4'-11\"X6'-4½\"", 4.9167, 6.375)
+    }
+
+    // ── millimetres, the commoner convention in the corpus ───────────────────────────────────────
+
+    @Test
+    fun `bare millimetre pairs`() {
+        val m = RoomDimensions.parse("BEDROOM 6750X4350")!!
+        assertEquals(6750.0, m.widthMm, 0.01)
+        assertEquals(4350.0, m.depthMm, 0.01)
+    }
+
+    @Test
+    fun `millimetres are not mistaken for feet`() {
+        // 2950 X 4200 is a kitchen in millimetres. Read as feet it would be a stadium.
+        val m = RoomDimensions.parse("KITCHEN 2950X4200")!!
+        assertTrue(m.widthMm > 1000, "a four-digit pair is millimetres, not feet")
+        assertEquals(0.702, m.ratio, 0.001)
+    }
+
+    @Test
+    fun `a small bare pair reads as feet`() {
+        val m = RoomDimensions.parse("BEDROOM 12X14")!!
+        assertEquals(12 * mmPerFoot, m.widthMm, 0.01)
+        assertEquals(14 * mmPerFoot, m.depthMm, 0.01)
+    }
+
+    @Test
+    fun `a trailing parenthetical does not disturb the pair`() {
+        val m = RoomDimensions.parse("LIFT 1850X1850 (8 PERSON)")!!
+        assertEquals(1850.0, m.widthMm, 0.01)
+        assertEquals(1850.0, m.depthMm, 0.01)
+    }
+
+    @Test
+    fun `an index prefix does not disturb the pair`() {
+        val m = RoomDimensions.parse("BEDROOM-1 3000X3650")!!
+        assertEquals(3000.0, m.widthMm, 0.01)
+    }
+
+    // ── and the far more common case: no honest pair, so no guess ────────────────────────────────
+
+    @Test
+    fun `one dimension is not a size`() {
+        // A room cannot be shaped from a single number, and inventing the other one would be worse
+        // than leaving the reader's rectangle alone. Both forms appear on real plans.
+        assertNull(RoomDimensions.parse("BALCONY 6'-0\" WIDE"))
+        assertNull(RoomDimensions.parse("5'-0\" WIDE BALCONY"))
+        assertNull(RoomDimensions.parse("BALCONY 1500MM WIDE"))
+    }
+
+    @Test
+    fun `a capacity or an index is never read as a size`() {
+        assertNull(RoomDimensions.parse("LIFT (8 PERSON)"))
+        assertNull(RoomDimensions.parse("BEDROOM-1"))
+        assertNull(RoomDimensions.parse("TOILET-2"))
+    }
+
+    @Test
+    fun `a plain caption has no size`() {
+        assertNull(RoomDimensions.parse("LOBBY"))
+        assertNull(RoomDimensions.parse("MASTER BEDROOM"))
+        assertNull(RoomDimensions.parse("SER ROOM"))
+        assertNull(RoomDimensions.parse(""))
+    }
+
+    // ── the property the whole feature turns on ──────────────────────────────────────────────────
+
+    @Test
+    fun `the owner's plan reads as four rooms deeper than they are wide`() {
+        // ⭐ This is the defect in one assertion. Every one of these was drawn WIDER than deep, and
+        // the plan says the opposite. A room's direction follows its shape, so this was moving the
+        // score. `ratio` below 1 means "deeper than wide".
+        val deeperThanWide = listOf(
+            "LOBBY 10'-0\"X12'-9\"",
+            "KITCHEN 6'-11\"X9'-7\"",
+            "PASSAGE 2'-3\"X9'-6\"",
+            "BED ROOM 10'-0\"X10'-6\"",
+        )
+        for (caption in deeperThanWide) {
+            val size = RoomDimensions.parse(caption)!!
+            assertTrue(size.ratio < 1.0, "\"$caption\" is printed deeper than it is wide (${size.ratio})")
+        }
+        // …and the two that really are wider than deep, so the rule is not simply "always tall".
+        assertTrue(RoomDimensions.parse("W.C 5'-0\"X2'-11\"")!!.ratio > 1.0)
+        assertTrue(RoomDimensions.parse("BATH 5'-0\"X3'-8½\"")!!.ratio > 1.0)
+    }
+
+    @Test
+    fun `the printed sizes are internally consistent with the stated carpet area`() {
+        // The sheet states 336 sq ft carpet + 96 sq ft balcony. Its dimensioned rooms total 353 sq ft
+        // — a 5 % excess, which is the wall thickness. That agreement is why these numbers are
+        // trusted over the reader's rectangles, so it is pinned rather than asserted in prose.
+        val captions = listOf(
+            "BED ROOM 10'-0\"X10'-6\"", "W.C 5'-0\"X2'-11\"", "BATH 5'-0\"X3'-8½\"",
+            "KITCHEN 6'-11\"X9'-7\"", "LOBBY 10'-0\"X12'-9\"", "PASSAGE 2'-3\"X9'-6\"",
+        )
+        val sqFt = captions.sumOf { RoomDimensions.parse(it)!!.area } / (mmPerFoot * mmPerFoot)
+        assertTrue(sqFt in 340.0..365.0, "expected ~353 sq ft of rooms, got $sqFt")
+    }
+}

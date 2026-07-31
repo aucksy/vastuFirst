@@ -1103,6 +1103,77 @@ function scanTrimAgainst(cand, blockers) {
 }
 
 /** The whole mapper. Returns {kind:'placed'|'assisted'|'refused', ...}. */
+// ---- printed room sizes (RoomDimensions.kt) --------------------------------------------------
+// The reader reads TEXT at ~95 % and guesses rectangles at 40-70 %, so where a caption prints the
+// room's size that number beats the rectangle it arrived with. Mirrors RoomDimensions.parse.
+const FRACTIONS = { '\u00bd': 0.5, '\u00bc': 0.25, '\u00be': 0.75, '\u2153': 1/3, '\u2154': 2/3, '\u215b': 0.125 };
+const FEET_INCHES = "(\d+)\s*['\u2032\u2019]\s*-?\s*(\d+)?\s*([\u00bd\u00bc\u00be\u2153\u2154\u215b])?\s*[\"\u2033\u201d]?";
+const PAIR_FEET_INCHES = new RegExp(FEET_INCHES + "\s*[X\u00d7]\s*" + FEET_INCHES);
+const PAIR_PLAIN = /(?<![\d.'"\u2032\u2033])(\d{2,5})\s*(?:MM|CM)?\s*[X\u00d7]\s*(\d{2,5})\s*(?:MM|CM)?(?!\d)/;
+const MM_PER_FOOT = 304.8, FEET_IF_UNDER = 100;
+
+function feetInches(f, i, fr) {
+  return Number(f) + (Number(i || 0) + (fr ? (FRACTIONS[fr] || 0) : 0)) / 12;
+}
+
+function parsePrinted(label) {
+  const s = String(label).toUpperCase();
+  const m = PAIR_FEET_INCHES.exec(s);
+  if (m) {
+    const a = feetInches(m[1], m[2], m[3]), b = feetInches(m[4], m[5], m[6]);
+    return (a > 0 && b > 0) ? { w: a * MM_PER_FOOT, h: b * MM_PER_FOOT } : null;
+  }
+  const n = PAIR_PLAIN.exec(s);
+  if (n) {
+    const a = Number(n[1]), b = Number(n[2]);
+    if (!(a > 0 && b > 0)) return null;
+    return (a < FEET_IF_UNDER && b < FEET_IF_UNDER) ? { w: a * MM_PER_FOOT, h: b * MM_PER_FOOT } : { w: a, h: b };
+  }
+  return null;
+}
+
+/**
+ * ScanMapper.reshapeToPrinted. Total area preserved, top-left corner kept, and orientation taken
+ * from the PRINTED ORDER (first number is the width).
+ *
+ * FAULT INJECTION 'printed-follows-model' restores the rule this replaced -- resolving each room's
+ * orientation against the rectangle the reader drew. It looks reasonable and it silently defeats the
+ * whole feature, because the reader's sense of which way a room runs is exactly what was wrong.
+ */
+function reshapeToPrinted(snapped, cols, rows, inject) {
+  if (inject === 'no-printed-sizes') return snapped;
+  const printed = snapped.map((s) => parsePrinted(s.c.box.label));
+  let cellTotal = 0, printedTotal = 0;
+  snapped.forEach((s, i) => {
+    if (printed[i]) { cellTotal += s.rect.w * s.rect.h; printedTotal += printed[i].w * printed[i].h; }
+  });
+  if (cellTotal <= 0 || printedTotal <= 0) return snapped;
+  const cellsPerSquareMm = cellTotal / printedTotal;
+
+  return snapped.map((s, i) => {
+    const size = printed[i];
+    if (!size) return s;
+    const target = size.w * size.h * cellsPerSquareMm;
+    if (!isFinite(target) || target <= 0) return s;
+    let ratio = size.w / size.h;
+    if (inject === 'printed-follows-model') {
+      const drawn = s.rect.w / s.rect.h;
+      if (Math.abs(Math.log(ratio) - Math.log(drawn)) > Math.abs(Math.log(1 / ratio) - Math.log(drawn))) ratio = 1 / ratio;
+    }
+    if (!isFinite(ratio) || ratio <= 0) return s;
+    // Shrink to fit PROPORTIONALLY: clamping height after choosing width inverts a tall room in a
+    // shallow grid, which is the exact error this feature removes. Proportion beats area.
+    let wf = Math.sqrt(target * ratio), hf = Math.sqrt(target / ratio);
+    if (!isFinite(wf) || !isFinite(hf) || wf <= 0 || hf <= 0) return s;
+    const fit = Math.min(1, cols / wf, rows / hf);
+    wf *= fit; hf *= fit;
+    const w = clampInt(Math.round(wf), 1, cols);
+    const h = clampInt(Math.round(hf), 1, rows);
+    const col = clampInt(s.rect.col, 0, cols - w), row = clampInt(s.rect.row, 0, rows - h);
+    return { ...s, rect: { col, row, w, h }, asRead: { col, row, w, h } };
+  });
+}
+
 function scanMap(draft, imageAspect, opts = {}) {
   const dropped = [];
   const clean = [];
@@ -1155,13 +1226,20 @@ function scanMap(draft, imageAspect, opts = {}) {
     return { kind: 'assisted', reason: 'TOO_MANY_ROOMS', rooms: identified, notes: notes() };
   }
 
+  // ⚠ The drawing area stays the PICTURE. Re-framing onto the rooms' bounding box was tried and
+  // reverted: it makes every room's size depend on every other room's, and it removed this suite's
+  // `no-clamp` bite entirely, because after re-framing nothing can be out of bounds by construction.
   const [cols, rows] = scanGridFor(imageAspect, inject);
-  const snapped = [];
+  let snapped = [];
   for (const c of rooms) {
     const rect = scanSnap(c.box, cols, rows, inject);
     if (!rect) dropped.push({ label: c.box.label, reason: 'DEGENERATE' });
-    else snapped.push({ c, rect, asRead: rect });
+    // The printed size is attached here, NOT inside reshapeToPrinted, so that deleting the
+    // reshaping (--inject=no-printed-sizes) still leaves the invariant something to judge. An
+    // injection that removes a feature has to go red; one that merely stops recording it would not.
+    else snapped.push({ c, rect, asRead: rect, asReadRaw: rect, printed: parsePrinted(c.box.label) });
   }
+  snapped = reshapeToPrinted(snapped, cols, rows, inject);
 
   const order = snapped.slice().sort((a, b) =>
     b.c.box.confidence - a.c.box.confidence || (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h)
@@ -1171,20 +1249,34 @@ function scanMap(draft, imageAspect, opts = {}) {
     // ⚠ FAULT INJECTION 'repack' reuses the editor's relocating packer here — the thing this suite
     // exists to forbid. It produces a legal-looking layout that TRIMMED-MOVED catches.
     // 'no-trim' is the cruder version: just take what the model said.
-    const trimmed = inject === 'repack'
-      ? (fitWithoutOverlap([...placed.map((p) => p.rect), s.rect], cols, rows) || []).slice(-1)[0] || null
-      : inject === 'no-trim'
-        ? s.rect
-        : scanTrimAgainst(s.rect, placed.map((p) => p.rect));
+    // The printed shape first, then the shape it was READ with. Re-shaping must never cost a room:
+    // a room that vanishes changes the footprint the engine scores, which is worse than a room of
+    // the wrong shape (which the user can see and fix).
+    let trimmed, basis = s.rect;
+    if (inject === 'repack') {
+      trimmed = (fitWithoutOverlap([...placed.map((p) => p.rect), s.rect], cols, rows) || []).slice(-1)[0] || null;
+    } else if (inject === 'no-trim') {
+      trimmed = s.rect;
+    } else {
+      trimmed = scanTrimAgainst(s.rect, placed.map((p) => p.rect));
+      if (!trimmed) {           // the printed shape will not fit here; fall back to the read shape
+        basis = s.asReadRaw || s.rect;
+        trimmed = scanTrimAgainst(basis, placed.map((p) => p.rect));
+      }
+    }
     if (!trimmed) { dropped.push({ label: s.c.box.label, reason: 'OVERLAP_UNRESOLVABLE' }); continue; }
-    placed.push({ c: s.c, rect: trimmed, asRead: s.asRead });
+    // `asRead` is the rectangle this placement was actually DERIVED from, so the anti-relocation
+    // check compares like with like whether the printed shape or the read shape was used. It still
+    // catches a relocating packer, which moves a room to a free slot unrelated to either.
+    placed.push({ c: s.c, rect: trimmed, asRead: basis, printed: s.printed || null, shaped: s.rect });
+
   }
 
   if (placed.length < MIN_PLACED_ROOMS || placed.length < rooms.length * MIN_PLACED_FRACTION) {
     return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   }
   const out = placed.slice().sort((a, b) => a.rect.row - b.rect.row || a.rect.col - b.rect.col)
-    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead }));
+    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped }));
   return { kind: 'placed', cols, rows, rooms: out, notes: notes() };
 }
 
@@ -1210,6 +1302,23 @@ function scanInvariants(out) {
   for (let i = 0; i < rooms.length; i++) {
     for (let j = i + 1; j < rooms.length; j++) {
       if (overlaps(rooms[i].rect, rooms[j].rect)) problems.push(`OVERLAP ${i}/${j}`);
+    }
+  }
+  // ⭐ PRINTED-ORIENTATION: where the plan PRINTS a room's size, the room we hand over must run
+  // the way the plan says it runs. Checked on the shaped rectangle, before the overlap trim, because
+  // trimming is a deliberate, flagged concession to a bad POSITION and must not be read as licence to
+  // ignore the text. This is the invariant that catches resolving orientation against the reader's own
+  // rectangle -- which looks sensible, and reproduces exactly the defect the feature exists to fix: on
+  // the owner's plan the reader called the passage three times wider than tall when it is four times
+  // taller than wide, so deferring to it kept the passage horizontal.
+  for (const r of rooms) {
+    if (!r.printed || !r.shaped) continue;
+    const printedSense = Math.sign(r.printed.w - r.printed.h);
+    const drawnSense = Math.sign(r.shaped.w - r.shaped.h);
+    // Only judge rooms the grid can actually express a direction for: a room that rounds to a square
+    // on a 10-cell grid is not evidence either way.
+    if (printedSense !== 0 && drawnSense !== 0 && printedSense !== drawnSense) {
+      problems.push(`PRINTED-ORIENTATION ${r.label} printed ${Math.round(r.printed.w)}x${Math.round(r.printed.h)} drawn ${r.shaped.w}x${r.shaped.h}`);
     }
   }
   // The scanned plan must behave like a hand-drawn one for everything downstream: reopening it must
@@ -1238,6 +1347,13 @@ function scanInvariants(out) {
 const SCAN_LABELS = [
   'LIVING ROOM', 'KITCHEN', 'MASTER BEDROOM', 'BEDROOM 2', 'TOILET', 'BATH', 'POOJA', 'BALCONY',
   'DINING', 'STUDY', 'STORE', 'UTILITY', 'DRESS', 'DUCT', 'LIFT', 'ZORBING PIT', '7', 'UNIT-1',
+  // ⭐ Captions that PRINT a size, in both conventions the corpus contains, so the reshaping and
+  // the PRINTED-ORIENTATION invariant are actually exercised. Deliberately a mix of tall, wide and
+  // near-square rooms -- and the owner's own passage, which is the extreme case (4x taller than wide).
+  "LOBBY 10'-0\"X12'-9\"", "PASSAGE 2'-3\"X9'-6\"", "KITCHEN 6'-11\"X9'-7\"",
+  "BED ROOM 10'-0\"X10'-6\"", "W.C 5'-0\"X2'-11\"", "BATH 5'-0\"X3'-8½\"",
+  'BEDROOM 6750X4350', 'KITCHEN 2950X4200', 'TOILET 1350X2250', 'DINING 4175X2975',
+  'BALCONY 3300X2000', "STUDY-ROOM 2425X2000",
 ];
 
 function randomDraft(rnd) {
@@ -1332,6 +1448,7 @@ function fuzzScan(iterations, inject) {
 function scanPinnedCases(inject) {
   const problems = [];
   const opts = { inject };
+
   // ⚠ plan-01-photo now PLACES: it has 8 rooms, which is under the gate, and its geometry is known
   // to be wrong (2/8 right). Nothing available catches it — its coverage, 0.569, sits ABOVE both
   // real plans that placed perfectly. That is stated in ScanMapper and it is what the mandatory

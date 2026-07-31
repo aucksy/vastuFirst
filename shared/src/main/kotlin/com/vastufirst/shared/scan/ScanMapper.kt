@@ -209,6 +209,13 @@ object ScanMapper {
         }
 
         // ---- 7. snap to the grid ---------------------------------------------------------------
+        // ⚠ The drawing area stays the PICTURE, not the rooms' own bounding box — and that is a
+        // deliberate reversal of what this build first did. Re-framing onto the bounding box handles
+        // a branded sheet nicely, but it makes every room's size depend on every other room's: one
+        // stray rectangle over a title block inflates the frame and shrinks the whole home. It also
+        // silently removed the bite of an existing safety check (the fuzz suite's `no-clamp`
+        // injection stopped failing, because after re-framing nothing can be out of bounds by
+        // construction). Ship the part that is measured; the grid's shape is a separate question.
         val (cols, rows) = gridFor(imageAspect)
         val snapped = ArrayList<Pair<Candidate, CellRect>>(rooms.size)
         for (r in rooms) {
@@ -217,8 +224,21 @@ object ScanMapper {
             else snapped += r to rect
         }
 
+        // ---- 7b. ⭐ shape each room to the size PRINTED on the plan, where the plan prints one ----
+        // The reader reads text at ~95 % and guesses rectangles at 40–70 %, so where a caption states
+        // the room's size that number beats the rectangle it came with. See RoomDimensions: on the
+        // owner's flat four of six dimensioned rooms had their orientation inverted, and correcting
+        // them moves the kitchen and the bedroom into different Vastu directions.
+        val shaped = reshapeToPrinted(snapped, cols, rows)
+
         // ---- 8. overlaps: TRIM the less confident room, never relocate it -----------------------
-        val placed = resolveOverlaps(snapped, dropped)
+        // ⭐ Each room carries BOTH shapes: the one its caption printed and the one it was read with.
+        // Re-shaping must never COST a room — a room that vanishes changes the footprint the engine
+        // scores, which is a worse error than a room of the wrong shape. So if the printed shape
+        // cannot be fitted, the read shape is tried before the room is given up. Measured on the
+        // owner's plan: his lobby, grown to its true depth and pushed up by the grid's edge, ends up
+        // covering exactly where the reader had put the passage.
+        val placed = resolveOverlaps(shaped.mapIndexed { i, (c, rect) -> Triple(c, rect, snapped[i].second) }, dropped)
 
         if (placed.size < MIN_PLACED_ROOMS || placed.size < rooms.size * MIN_PLACED_FRACTION) {
             // The grid could not hold what we read. Hand the rooms over unplaced rather than show a
@@ -233,6 +253,77 @@ object ScanMapper {
     }
 
     // ---- pieces, each independently testable --------------------------------------------------
+
+    /**
+     * ⭐ Re-shape every room whose caption printed a size, to that size.
+     *
+     * Three deliberate choices, each of which could reasonably have gone the other way:
+     *
+     *  - **Total area is preserved, not imposed.** The scale is derived from what the reader already
+     *    drew (cells it used ÷ square millimetres those rooms actually are), so a plan cannot suddenly
+     *    demand more grid than it had. Only the *distribution* of area between rooms changes — which
+     *    is the point, because a 127 sq ft lobby and a 15 sq ft toilet were being drawn three cells
+     *    apart in size instead of nine.
+     *  - **The top-left corner stays where the reader put it**, and the extent is replaced. This is
+     *    not arbitrary: the reader locates a caption far better than it measures the box around it,
+     *    so the origin is its stronger output and the extent its weaker one — anchor the strong,
+     *    replace the weak. Measured against anchoring on the centre or on the nearest corner, it also
+     *    produces the fewest collisions on the owner's plan (2 against 2 and 3), and rooms are never
+     *    relocated, which is the standing rule the trim step exists to keep.
+     *  - ⭐ **Orientation comes from the PRINTED ORDER — first number is the width — not from the
+     *    drawing.** This was the other way round first, resolving each room against the rectangle the
+     *    reader drew, and it quietly defeated the entire feature: the reader had called the passage
+     *    three times wider than tall, so matching its sense kept it horizontal and merely restated the
+     *    error at a new ratio. Trusting the printed order corrects **four of the six** dimensioned
+     *    rooms on the owner's plan; deferring to the drawing corrected none of them. A sheet that
+     *    prints depth first would flip every room the same way — a visible, consistent error the user
+     *    can see and fix, which is a far better failure than the arbitrary one it replaces.
+     *
+     * Rooms whose caption prints no size are left exactly as they were, so a mixed plan works and a
+     * plan with no dimensions at all is untouched.
+     */
+    private fun reshapeToPrinted(
+        snapped: List<Pair<Candidate, CellRect>>,
+        cols: Int,
+        rows: Int,
+    ): List<Pair<Candidate, CellRect>> {
+        val printed = snapped.map { RoomDimensions.parse(it.first.box.label) }
+        val cellTotal = snapped.indices.filter { printed[it] != null }
+            .sumOf { (snapped[it].second.w * snapped[it].second.h).toDouble() }
+        val printedTotal = printed.filterNotNull().sumOf { it.area }
+        if (cellTotal <= 0.0 || printedTotal <= 0.0) return snapped
+        val cellsPerSquareMm = cellTotal / printedTotal
+
+        return snapped.mapIndexed { i, (candidate, rect) ->
+            val size = printed[i] ?: return@mapIndexed candidate to rect
+            val targetCells = size.area * cellsPerSquareMm
+            if (!targetCells.isFinite() || targetCells <= 0.0) return@mapIndexed candidate to rect
+
+            val ratio = size.ratio
+            if (!ratio.isFinite() || ratio <= 0.0) return@mapIndexed candidate to rect
+
+            // ⚠ Shrink to fit the grid PROPORTIONALLY. Computing the width, then clamping the height
+            // to the grid, silently INVERTS a tall room in a shallow grid — a 2 950 × 4 200 kitchen
+            // came out 6 wide × 5 deep, which is the very error this is here to remove. The fuzz
+            // suite's PRINTED-ORIENTATION check found it. When area and proportion cannot both be
+            // honoured, proportion wins: it is the part that decides the room's Vastu direction.
+            var wf = sqrt(targetCells * ratio)
+            var hf = sqrt(targetCells / ratio)
+            if (!wf.isFinite() || !hf.isFinite() || wf <= 0.0 || hf <= 0.0) return@mapIndexed candidate to rect
+            val fit = min(1.0, min(cols / wf, rows / hf))
+            wf *= fit
+            hf *= fit
+            // Rounding is monotonic, so it can flatten a near-square room to a square but can never
+            // turn a taller-than-wide room into a wider-than-tall one.
+            val w = wf.roundToInt().coerceIn(1, cols)
+            val h = hf.roundToInt().coerceIn(1, rows)
+            // Keep the corner the reader gave us; clamp back in if the new extent runs off the grid.
+            val col = rect.col.coerceIn(0, cols - w)
+            val row = rect.row.coerceIn(0, rows - h)
+            candidate to CellRect(col, row, w, h)
+        }
+    }
+
 
     /** Drop non-finite / inverted / off-plan rectangles; clamp the merely sloppy ones back in. */
     private fun sanitise(b: ScanBox, flags: MutableSet<RoomFlag>): ScanBox? {
@@ -337,17 +428,21 @@ object ScanMapper {
      * one reply, not a quality gate on the reply. S2 forbids the latter, not the former.
      */
     private fun resolveOverlaps(
-        snapped: List<Pair<Candidate, CellRect>>,
+        snapped: List<Triple<Candidate, CellRect, CellRect>>,
         dropped: MutableList<DroppedSpace>,
     ): List<Pair<Candidate, CellRect>> {
         val order = snapped.sortedWith(
-            compareByDescending<Pair<Candidate, CellRect>> { it.first.box.confidence }
+            compareByDescending<Triple<Candidate, CellRect, CellRect>> { it.first.box.confidence }
                 .thenByDescending { it.second.w * it.second.h }
                 .thenBy { it.first.box.label },
         )
         val out = ArrayList<Pair<Candidate, CellRect>>(snapped.size)
-        for ((cand, rect) in order) {
+        for ((cand, rect, asRead) in order) {
+            // The printed shape first; the shape it was read with only if that cannot be fitted at
+            // all. Keeping a room of the wrong shape beats losing it: the user can re-shape a room
+            // they can see, and cannot re-add one that never arrived.
             val trimmed = trimAgainst(rect, out.map { it.second })
+                ?: trimAgainst(asRead, out.map { it.second })
             if (trimmed == null) {
                 dropped += DroppedSpace(cand.box.label, DropReason.OVERLAP_UNRESOLVABLE)
                 continue
