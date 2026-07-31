@@ -1407,3 +1407,28 @@ Across the corpus, 6 % of captions now carry a check flag.
 - The whole resolver was mirrored in Python **by parsing the tables out of the Kotlin itself**, so the
   mirror cannot drift from the source, and all 22 expectations were checked before pushing — including
   the ones I might have broken (`MASTER TOILET`, `PUJA SPACE`, `SER ROOM`, `DRESSING`, `PASSAGE`).
+
+### Two CI round-trips, and what each one was worth
+
+⚠ **The mirror only covered the cases I thought of.** Two *pre-existing* expectations failed in CI:
+`5'-0" WIDE BALCONY` cleaning to `WIDE BALCONY`, and the test proving substring matches are flagged,
+which used that same caption as its example. Both were expectations encoding the old behaviour rather
+than regressions — but I should have found them here, not on the runner. The mirror now **parses every
+assertion out of the test file itself** (71 of them) instead of relying on a hand-picked list.
+
+⭐ **The second round-trip was the accessibility gate earning its keep.** With `LOBBY` now flagged, a
+"CHECK" pill moved above the screenshot fold for the first time — and the pill **had been failing the
+contrast check since it was written**. Measured: the accent colour on a tint made from the same accent
+is **3.71 : 1** where 4.5 is required at that text size. `textSecondary` on the same tint is **5.82 : 1**
+(6.68 on a raised card), so the tint keeps the pill's identity and the word becomes readable.
+
+That is the second contrast defect on this screen and both were on the load-bearing copy — the caption
+we read off the user's plan, and now the flag asking them to check a specific room. **A "CHECK" nobody
+can read is the same as no flag at all.**
+
+### Looked at, per CLAUDE.md §2b
+
+The re-recorded `scan-assisted` golden shows the rule working on a real 24-space floor plate:
+`LOBBY 5100X1800` reads as **Corridor** — correctly, because that plan also prints `LIVING 3925X5000`
+and `LOUNGE` — and carries a legible CHECK. Same input, opposite answer to the owner's plan, which is
+the whole point of resolving the caption against its plan rather than on its own.
