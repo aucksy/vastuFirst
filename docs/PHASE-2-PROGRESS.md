@@ -1594,3 +1594,16 @@ the flesh** — the dark chip naming the selected room (`Pooja · 2×2 · North-
 the Bedroom in the top row. That is the owner's own "the small grey tag covers the top row" report,
 now reproduced in a golden rather than only in a screenshot he sent. **Not touched** — it is an editor
 change beyond the room-type work he unfroze, and it is his call.
+
+### Looked at before tagging (CLAUDE.md §2b)
+
+`editor-selected` and `editor-retype` at **baseline** and at **200 % font**, and `scan-retype` at
+**320 dp** — the two configurations where a wrapped row of nineteen chips would fail if it were going
+to. It does not: at 200 % font the chips wrap two per line and at 320 dp two or three, every label
+legible and untruncated, the room's present kind clearly marked, nothing clipped or overflowing. Also
+`scan-assisted` at baseline, showing the lobby row reading **Corridor** with its CHECK and its
+Change — the exact case this build exists to make correctable.
+
+Final state: **193 pure tests green**, six fuzz suites clean, render ratchet no-regression, ATF
+no-regression with the scan list back to **0** findings, and the APK signature check passed so this
+build installs over the last one without erasing saved homes.
