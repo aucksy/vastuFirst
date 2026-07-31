@@ -138,7 +138,7 @@ class RoomRetypeTest {
         // the user picked. This is what makes the retype a scoring operation rather than a caption.
         val door = GridDoor(DoorSide.N, 1)
         val out = retypeRoom(home, "a", RoomType.LIVING)
-        val plan = buildEnginePlan(out, door, Intent.LIVING, PropertyType.APARTMENT, 0, "t")!!
+        val plan = buildEnginePlan(out, door, Intent.LIVING, PropertyType.FLAT, 0, "t")!!
         val result = engine.analyze(plan).roomResults.first { it.roomId == "a" }
         assertEquals(RoomType.LIVING, result.type)
         assertEquals("and it is weighted as a living room, not as circulation", 1.5, result.weight, 1e-9)
@@ -153,7 +153,7 @@ class RoomRetypeTest {
         val door = GridDoor(DoorSide.N, 1)
         fun scoreOf(type: RoomType): Int {
             val rooms = retypeRoom(home, "a", type)
-            val plan = buildEnginePlan(rooms, door, Intent.LIVING, PropertyType.APARTMENT, 0, "t")!!
+            val plan = buildEnginePlan(rooms, door, Intent.LIVING, PropertyType.FLAT, 0, "t")!!
             return engine.analyze(plan).score
         }
         val scores = listOf(RoomType.CORRIDOR, RoomType.LIVING, RoomType.TOILET, RoomType.MASTER_BEDROOM)
@@ -171,8 +171,8 @@ class RoomRetypeTest {
         val door = GridDoor(DoorSide.N, 1)
         val out = retypeRoom(home, "a", RoomType.LIVING)
         assertEquals(clampDoorToRooms(door, home), clampDoorToRooms(door, out))
-        val before = buildEnginePlan(home, door, Intent.LIVING, PropertyType.APARTMENT, 0, "t")!!
-        val after = buildEnginePlan(out, door, Intent.LIVING, PropertyType.APARTMENT, 0, "t")!!
+        val before = buildEnginePlan(home, door, Intent.LIVING, PropertyType.FLAT, 0, "t")!!
+        val after = buildEnginePlan(out, door, Intent.LIVING, PropertyType.FLAT, 0, "t")!!
         assertEquals("the outline must be identical", before.levels.first().outline, after.levels.first().outline)
         assertEquals("the door must be identical", before.levels.first().doors, after.levels.first().doors)
     }
