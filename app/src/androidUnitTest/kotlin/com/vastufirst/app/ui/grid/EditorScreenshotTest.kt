@@ -8,7 +8,14 @@ import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.SamplePlans
+import com.vastufirst.app.ui.scan.gridForOutcome
+import com.vastufirst.app.ui.scan.scannedRooms
+import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.scan.PlanImageType
+import com.vastufirst.shared.scan.ScanBox
+import com.vastufirst.shared.scan.ScanDraft
+import com.vastufirst.shared.scan.ScanMapper
 import org.junit.runner.RunWith
 import org.junit.Test
 import org.robolectric.RobolectricTestRunner
@@ -170,6 +177,54 @@ class EditorScreenshotTest {
             onNext = {},
             startSelectedId = sample.rooms.first().id,
             startTypeListOpen = typeListOpen,
+        )
+    }
+
+    /**
+     * ⭐⭐ The owner's own flat, scanned — the grid he would actually land on.
+     *
+     * Green Court, Sector 90, Gurgaon. The captions are what his sheet prints and the rectangles are
+     * what the shipped app drew from them; this renders the result through the REAL mapper, so the
+     * picture moves whenever the mapper's behaviour moves.
+     *
+     * ⚠ It exists because none of the recorded scan fixtures print room dimensions — they are
+     * synthetic or they route to Assisted — so shaping rooms to their printed sizes changed no golden
+     * at all and would have shipped with nothing rendering it. His plan is the only one that
+     * exercises it, and "never hand over a screen you have not looked at" applies most to the change
+     * whose whole point is what the screen looks like.
+     */
+    @Test
+    fun editor_scanned_real_plan() {
+        captureAcrossMatrix("editor-scanned") { ScannedGurgaonFlat() }
+        writeManifestAcrossMatrix("editor-scanned") { ScannedGurgaonFlat() }
+    }
+
+    @Composable
+    private fun ScannedGurgaonFlat() {
+        val draft = ScanDraft(
+            planType = PlanImageType.TWO_D_PLAN,
+            hasRoomLabels = true,
+            planConfidence = 0.95,
+            rooms = listOf(
+                ScanBox("BALCONY 6'-0\" WIDE", x = 0.0, y = 0.0, w = 1.0, h = 0.3, confidence = 0.9),
+                ScanBox("W.C 5'-0\"X2'-11\"", x = 0.0, y = 0.3, w = 0.4, h = 0.1, confidence = 0.9),
+                ScanBox("BATH 5'-0\"X3'-8½\"", x = 0.0, y = 0.4, w = 0.4, h = 0.2, confidence = 0.9),
+                ScanBox("KITCHEN 6'-11\"X9'-7\"", x = 0.0, y = 0.6, w = 0.4, h = 0.1, confidence = 0.9),
+                ScanBox("BED ROOM 10'-0\"X10'-6\"", x = 0.4, y = 0.3, w = 0.6, h = 0.4, confidence = 0.9),
+                ScanBox("LOBBY 10'-0\"X12'-9\"", x = 0.4, y = 0.7, w = 0.6, h = 0.2, confidence = 0.9),
+                ScanBox("PASSAGE 2'-3\"X9'-6\"", x = 0.7, y = 0.9, w = 0.3, h = 0.1, confidence = 0.9),
+            ),
+        )
+        val outcome = ScanMapper.map(draft, imageAspect = 1.0)
+        val (cols, rows) = gridForOutcome(outcome)
+        GuidedGridContent(
+            rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = cols,
+            rows = rows,
         )
     }
 
