@@ -1,19 +1,19 @@
 {
-  "addhome": 4,
-  "editor": 4,
-  "editor-empty": 5,
-  "editor-selected": 8,
+  "addhome": 3,
+  "editor": 0,
+  "editor-empty": 1,
+  "editor-selected": 0,
   "home": 1,
   "home-empty": 0,
   "home-rename": 2,
   "legal": 4,
-  "marknorth": 7,
-  "report": 11,
+  "marknorth": 5,
+  "report": 9,
   "scan-assisted": 0,
   "scan-consent": 0,
-  "scan-idle": 1,
+  "scan-idle": 0,
   "score": 6,
   "settings": 1,
   "unlock": 4,
-  "welcome": 1
+  "welcome": 0
 }
