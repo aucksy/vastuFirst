@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.13 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.13/vastufirst-v0.3.13.apk)
+**Latest build to test:** v0.3.20 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.20/vastufirst-v0.3.20.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -167,6 +167,37 @@ before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-P
 
 Nothing yet — this section fills up as you report results, so we never re-test something twice or
 lose a verdict.
+
+## H · Changing what kind of room something is  *(new in this build)*
+
+The app reads room names off your plan well, but not perfectly — and until this build there was no
+way to tell it that it got one wrong. Now you can. Two places, and both are worth trying.
+
+- [ ] **H1 — ⭐ On the list right after a scan.** Scan a plan, then tap any room in the list. It should
+      open a set of room types underneath it; pick a different one and the row should update. Is
+      tapping the row obvious enough, or did you have to hunt for it? The word "Change" sits on the
+      right of each row.
+- [ ] **H2 — ⭐ On the plan itself.** Tap a room on the grid, then use "Change room type" in the panel
+      that appears. The room's colour and name on the plan should change, and nothing should move.
+- [ ] **H3 — Nothing else may move.** This is the one to be fussy about. After changing a room's kind,
+      the room must stay exactly where it was and the same size, every other room must be untouched,
+      and the little **D** for your front door must stay put. If anything shifts, tell me — that would
+      be a real bug and the automated checks say it cannot happen.
+- [ ] **H4 — The score should change.** Change a room to something quite different (a corridor to a
+      living room, a bedroom to a master bedroom) and carry on to the score. The number should move.
+      If it does not, something is not reaching the score and I need to know.
+- [ ] **H5 — Backing out.** Open the list of room types and pick the one it already is. It should just
+      close and change nothing — that is the way out if you opened it by accident.
+- [ ] **H6 — ⭐ The rooms that were previously impossible.** Try setting a room to **Entrance**,
+      **Corridor**, **Utility**, **Bathroom**, **Guest**, **Courtyard**, **Garage** or **Basement**.
+      These eight were never in the "add a room" list, so before this build a room read as one of them
+      could be deleted but never put back. They should all be there now.
+- [ ] **H7 — Is the list too long?** There are nineteen kinds, and they wrap over several lines. On
+      your phone, is that fine, or does it feel like too much? I can group or shorten it.
+- [ ] **H8 — With big text.** If you use a large font size on your phone, check the list of types
+      still fits and nothing is cut off.
+- [ ] **H9 — Rotating mid-change.** Open the list of room types, then rotate the phone. It should still
+      be open, on the same room.
 
 ## G · Scan your plan
 

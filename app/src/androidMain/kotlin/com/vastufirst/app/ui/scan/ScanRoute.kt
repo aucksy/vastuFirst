@@ -69,6 +69,9 @@ fun ScanRoute(
             }
         },
         onUseRooms = onUseRooms,
+        // The correction rewrites the outcome held in the ViewModel, so what `onUseRooms` hands to
+        // the guided grid is already the corrected reading — nothing downstream needs to know.
+        onCorrectRoom = vm::correctRoom,
         onDrawInstead = onDrawInstead,
         onBack = onBack,
     )

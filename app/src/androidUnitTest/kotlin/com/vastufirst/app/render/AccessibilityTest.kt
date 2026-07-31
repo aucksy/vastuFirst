@@ -51,12 +51,12 @@ class AccessibilityTest {
             "unlock" to { UnlockScreen(onUnlocked = {}) },
             "addhome" to { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) },
             "scan-idle" to {
-                ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, {}, {})
+                ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {})
             },
             "scan-assisted" to {
                 ScanScreen(
                     ScanUiState.Done(ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)),
-                    {}, {}, {}, {}, {}, {},
+                    {}, {}, {}, {}, { _, _ -> }, {}, {},
                 )
             },
             // The privacy gate carries more prose than any other screen, and the contrast trap this
@@ -64,6 +64,16 @@ class AccessibilityTest {
             "scan-consent" to { ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {}) },
             "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
             "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
+            // ⭐ The selected-room panel had never reached this pass, because it appears only once a
+            // room is selected and nothing here could select one. It carries the remove/done buttons,
+            // the move arrows, the size steppers and now the room-type control — the densest cluster
+            // of touch targets in the app, and the one the older users this audience contains rely on.
+            "editor-selected" to {
+                GuidedGridContent(
+                    sample.rooms, sample.door, {}, {}, {},
+                    startSelectedId = sample.rooms.first().id,
+                )
+            },
             "marknorth" to {
                 MarkNorthContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleAnalysis, {}, {}, {})
             },

@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
+import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
@@ -75,6 +76,7 @@ import com.vastufirst.app.ui.newplan.doorMarkerCell
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.app.ui.newplan.retypeRoom
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
@@ -267,6 +269,13 @@ fun GuidedGridContent(
      *  is drawn only in that mode, and a golden cannot press a button to get there), and it is the
      *  entry point a future "move the front door" shortcut would use. */
     startInDoorMode: Boolean = false,
+    /** Open with a room already selected. Same reason as [startInDoorMode]: the selected-room panel
+     *  appears only once something is selected, so **no golden had ever rendered it** — it shipped
+     *  unseen through every build, contrary to CLAUDE.md §2b, and it is the panel this build adds a
+     *  control to. A screenshot cannot tap a room to get there. */
+    startSelectedId: String? = null,
+    /** Open with the room-type list already unfolded, for the same reason: a golden cannot tap. */
+    startTypeListOpen: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -301,7 +310,7 @@ fun GuidedGridContent(
     // had selected / armed / the door step they were on (C15). RoomType is an enum → Serializable, so
     // the default saver handles it.
     var armedType by rememberSaveable { mutableStateOf<RoomType?>(null) }
-    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedId by rememberSaveable { mutableStateOf(startSelectedId) }
     var doorMode by rememberSaveable { mutableStateOf(startInDoorMode) }
     // Replaced only when the SNAPPED cell changes, never per pointer event — so a drag recomposes
     // a handful of times, not sixty times a second (§4.7).
@@ -730,6 +739,12 @@ fun GuidedGridContent(
                 },
                 onDelete = { onRoomsChange(rooms.filterNot { it.id == selected.id }); selectedId = null },
                 onDone = { selectedId = null },
+                // A retype changes NO geometry (retypeRoom preserves every id, position and size and
+                // the list order), so it cannot break an editor invariant — but it DOES change the
+                // score, so it must travel the ordinary onRoomsChange → updateRooms → analyze →
+                // autosave road that every drag travels, never a shortcut of its own.
+                onRetype = { type -> onRoomsChange(retypeRoom(rooms, selected.id, type)) },
+                startTypeListOpen = startTypeListOpen,
             )
 
             doorMode -> VastuButton("Done placing door", onClick = { doorMode = false }, large = false)
@@ -944,8 +959,13 @@ private fun SelectedRoomTools(
     onResize: (Int, Int) -> Unit,
     onDelete: () -> Unit,
     onDone: () -> Unit,
+    onRetype: (RoomType) -> Unit,
+    startTypeListOpen: Boolean = false,
 ) {
     val colors = VastuTheme.colors
+    // Keyed on the room, so selecting a different room always shows the panel closed rather than
+    // mid-correction on someone else's room. rememberSaveable: a rotation must not lose an open list.
+    var typePickerOpen by rememberSaveable(room.id) { mutableStateOf(startTypeListOpen) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -961,8 +981,21 @@ private fun SelectedRoomTools(
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
 
-        // Remove / Done come FIRST, right under the room's name — the two decisions a user reaches
-        // for most sit closest to the top, and the fiddly nudge/size controls follow (owner report #5).
+        // ⭐ The correction this control exists for, directly under the name it corrects: a room read
+        // as the wrong KIND is the one mistake the editor previously had no answer to. Removing the
+        // room and placing a new one was the only route, and for eight of the nineteen kinds — the
+        // ones the palette has never offered — that route was a one-way door.
+        //
+        // Above Remove/Done deliberately: it is the likeliest reason someone selected this room at
+        // all. Remove and Done stay side by side above the fiddly nudge/size keys (owner report #5).
+        SectionLabel("Room type")
+        RoomTypePicker(
+            current = room.type,
+            expanded = typePickerOpen,
+            onExpandedChange = { typePickerOpen = it },
+            onPick = onRetype,
+        )
+
         Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             VastuButton(
                 "Remove", onClick = onDelete, style = VastuButtonStyle.SECONDARY,

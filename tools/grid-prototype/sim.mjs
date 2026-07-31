@@ -19,6 +19,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+// Fault injection for suites A–D. Suite E reads the same flag into its own local. An invariant that
+// has never been seen to FAIL is an invariant nobody has tested — every check here is proven to bite
+// by running the suite with the corresponding `--inject=` and watching it go red.
+const INJECT = (process.argv.find((a) => a.startsWith('--inject=')) || '').split('=')[1] || null;
+
 // ----------------------------------------------------------------------------------------------
 // Ported pure maths — GridEditing.kt
 // ----------------------------------------------------------------------------------------------
@@ -288,7 +293,10 @@ function drawnCentrePx(r, cellPx) {
 // Editor state machine + the gesture arbiter (mirrors awaitEachGesture)
 // ----------------------------------------------------------------------------------------------
 function makeEditor() {
-  return { rooms: [], door: null, cols: 8, rows: 8, selectedId: null, nextId: 0 };
+  // `violations` collects problems an operation can only detect by comparing BEFORE with AFTER —
+  // "the retype moved a room" is not a property of the resulting state, it is a property of the
+  // change. checkInvariants drains it, so such a finding reports exactly like any other.
+  return { rooms: [], door: null, cols: 8, rows: 8, selectedId: null, nextId: 0, violations: [] };
 }
 
 function newRoomId(ed) {
@@ -464,11 +472,88 @@ function opSelectTile(ed, index) {
 /** SelectedRoomTools "Done" — clears the selection without touching geometry. */
 function opDone(ed) { ed.selectedId = null; }
 
+/** RoomRetype.kt — change one room's kind, touching nothing else. Same instance when nothing moves. */
+function retypeRoom(rooms, id, type) {
+  const i = rooms.findIndex((r) => r.id === id);
+  if (i < 0 || rooms[i].type === type) return rooms;
+  return rooms.map((r, idx) => (idx === i ? { ...r, type } : r));
+}
+
+/**
+ * ⭐ SelectedRoomTools' room-type picker — `onRetype = onRoomsChange(retypeRoom(rooms, id, type))`.
+ *
+ * Changing a room's kind changes the SCORE (a master bedroom weighs 3.0 against a bedroom's 1.5; and
+ * CORRIDOR carries no rule at all, so a lobby read as one is NOT_SCORED and drops out of the weighted
+ * average entirely), so it travels the same onRoomsChange → updateRooms road as a drag. What it must
+ * never do is touch geometry — and that is the whole risk here. The obvious
+ * "helpful" future edit is to re-pack or re-clamp after a retype, exactly as `updateGrid` does; that
+ * would silently move a room the user did not touch, which is the same class of defect as the
+ * relocating packer Suite E's TRIMMED-MOVED exists to stop.
+ *
+ * So the check is BEFORE-vs-AFTER, not a property of the final state: every id, position, size and
+ * the list order must be identical, only the target's kind may differ, and the door may not move.
+ */
+function opRetype(ed, typeIndex) {
+  const sel = ed.rooms.find((r) => r.id === ed.selectedId);
+  if (!sel) return;
+  const type = ALL_TYPES[typeIndex % ALL_TYPES.length];
+  const before = ed.rooms.map((r) => ({ ...r }));
+  const doorBefore = ed.door ? { ...ed.door } : null;
+
+  // Three FAULT INJECTIONS, each a mistake someone would plausibly make rather than a contrivance.
+  // Note what they have in common: every one leaves the editor in a perfectly LEGAL state, so no
+  // state-shaped invariant notices. That is why this check compares before with after.
+  if (INJECT === 'retype-readds') {
+    // ⭐ The naive implementation — and exactly the workaround this control replaces: remove the room
+    // and add a new one of the chosen kind. The re-add goes through the NEW-room path, so it lands in
+    // the first free slot instead of where the user's room actually was. Fires RETYPE-MOVED.
+    const others = ed.rooms.filter((r) => r.id !== sel.id);
+    const slot = firstFreeSlot(sel.w, sel.h, ed.cols, ed.rows, others);
+    ed.rooms = slot ? [...others, { ...sel, type, col: slot[0], row: slot[1] }] : others;
+  } else if (INJECT === 'retype-spreads') {
+    // Keying the change on the room's KIND instead of its id — one character's difference in Kotlin,
+    // and it silently retypes every other bedroom in the home. Fires RETYPE-SPREAD.
+    ed.rooms = ed.rooms.map((r) => (r.type === sel.type ? { ...r, type } : r));
+  } else if (INJECT === 'retype-drops-door') {
+    // Routing a retype through the plot-resize style of update, which clears a door on a wall that no
+    // longer exists — except here every wall still exists. Fires RETYPE-DOOR.
+    ed.rooms = retypeRoom(ed.rooms, sel.id, type);
+    ed.door = null;
+  } else {
+    ed.rooms = retypeRoom(ed.rooms, sel.id, type);
+  }
+  ed.door = clampDoorToRooms(ed.door, ed.rooms);
+
+  if (ed.rooms.length !== before.length) {
+    ed.violations.push(`RETYPE-COUNT ${before.length}→${ed.rooms.length}`);
+    return;
+  }
+  for (let i = 0; i < before.length; i++) {
+    const a = before[i], b = ed.rooms[i];
+    if (a.id !== b.id || a.col !== b.col || a.row !== b.row || a.w !== b.w || a.h !== b.h) {
+      ed.violations.push(
+        `RETYPE-MOVED ${a.id} ${a.col},${a.row},${a.w}x${a.h}→${b.col},${b.row},${b.w}x${b.h}`);
+    }
+    const shouldChange = a.id === sel.id;
+    if (!shouldChange && a.type !== b.type) ed.violations.push(`RETYPE-SPREAD ${a.id} ${a.type}→${b.type}`);
+    if (shouldChange && b.type !== type) ed.violations.push(`RETYPE-MISSED ${a.id} wanted ${type}, got ${b.type}`);
+  }
+  const d = ed.door;
+  const moved = (!d) !== (!doorBefore) || (d && doorBefore && (d.side !== doorBefore.side || d.cell !== doorBefore.cell));
+  if (moved) {
+    ed.violations.push(
+      `RETYPE-DOOR ${doorBefore ? doorBefore.side + '@' + doorBefore.cell : 'null'}` +
+      `→${d ? d.side + '@' + d.cell : 'null'}`);
+  }
+}
+
 // ----------------------------------------------------------------------------------------------
 // Invariants — checked after EVERY operation
 // ----------------------------------------------------------------------------------------------
 function checkInvariants(ed) {
-  const problems = [];
+  // Findings an operation could only make by comparing BEFORE with AFTER (see opRetype): "a room
+  // moved when only its kind should have changed" is a property of the change, not of the result.
+  const problems = ed.violations.splice(0);
   // 1. No two rooms overlap (score-corrupting: engine double-counts a buried room).
   for (let i = 0; i < ed.rooms.length; i++)
     for (let j = i + 1; j < ed.rooms.length; j++)
@@ -564,6 +649,13 @@ function mulberry32(seed) {
   };
 }
 const TYPES = ['Living', 'Kitchen', 'Master', 'Bedroom', 'Pooja', 'Toilet', 'Stairs'];
+// UiMappers.ALL_ROOM_TYPES — every kind the room-type picker offers. Deliberately longer than the
+// palette's eleven: the eight after "Balcony" can be read off a plan but have never been placeable,
+// so before the picker existed a room read as one of them could be deleted and never restored.
+const ALL_TYPES = [
+  'Living', 'Kitchen', 'Master', 'Bedroom', 'Pooja', 'Toilet', 'Stairs', 'Study', 'Dining', 'Store',
+  'Balcony', 'Entrance', 'Corridor', 'Utility', 'Bathroom', 'Guest', 'Courtyard', 'Garage', 'Basement',
+];
 
 function randomOp(rng, ed) {
   const { cellPx } = geom(ed.cols, ed.rows);
@@ -587,7 +679,8 @@ function randomOp(rng, ed) {
     }
     return { op: 'drag', down, path };
   }
-  if (kind < 0.75) return { op: 'plot', cols: 3 + ((rng() * 9) | 0), rows: 3 + ((rng() * 9) | 0) }; // deliberately over/under range to test clamp+refuse
+  if (kind < 0.73) return { op: 'plot', cols: 3 + ((rng() * 9) | 0), rows: 3 + ((rng() * 9) | 0) }; // deliberately over/under range to test clamp+refuse
+  if (kind < 0.75) return { op: 'retype', type: (rng() * ALL_TYPES.length) | 0 };
   if (kind < 0.85) return { op: 'door', tap: px() };
   if (kind < 0.93) return { op: 'select', down: px() };
   return { op: 'remove' };
@@ -609,6 +702,7 @@ function applyOp(ed, o) {
     case 'plotkey': opPlotStep(ed, o.dc, o.dr); break;
     case 'tile': opSelectTile(ed, o.index); break;
     case 'done': opDone(ed); break;
+    case 'retype': opRetype(ed, o.type); break;
   }
 }
 
@@ -638,11 +732,12 @@ function randomButtonOp(rng, ed) {
     const d = [[-1, 0], [1, 0], [0, -1], [0, 1]][(rng() * 4) | 0];
     return { op: 'step', dw: d[0], dh: d[1] };
   }
-  if (kind < 0.84) { // a plot-size key (one step at a time, exactly as the UI does)
+  if (kind < 0.80) { // a plot-size key (one step at a time, exactly as the UI does)
     const d = [[-1, 0], [1, 0], [0, -1], [0, 1]][(rng() * 4) | 0];
     return { op: 'plotkey', dc: d[0], dr: d[1] };
   }
-  if (kind < 0.89) return { op: 'door', tap: px() };
+  if (kind < 0.86) return { op: 'retype', type: (rng() * ALL_TYPES.length) | 0 };
+  if (kind < 0.90) return { op: 'door', tap: px() };
   if (kind < 0.94) return { op: 'done' };
   if (kind < 0.97) return { op: 'remove' };
   // Occasionally a real finger drag, so the two paths are proven to compose.
@@ -832,7 +927,9 @@ function run(iterations, gen = randomOp, seedSalt = 0) {
   if (failures === 0) {
     console.log('✅ NO invariant violations — no overlap, no off-grid room, door always on footprint,');
     console.log('   draw==hit at every room centre, a selected room\'s centre always moves (never resizes),');
-    console.log('   the door marker is drawn on the matching footprint wall, and the plot stays in range.');
+    console.log('   the door marker is drawn on the matching footprint wall, the plot stays in range,');
+    console.log('   and changing a room\'s KIND moves no room, spreads to no other room and never');
+    console.log('   disturbs the front door.');
   } else {
     console.log(`❌ ${failures} of ${iterations} sequences violated an invariant.`);
     console.log(`   by category:`, tally);
@@ -1340,7 +1437,8 @@ if (only('A')) {
 }
 
 if (only('D')) {
-  console.log(`\n── Suite D: WCAG button paths (move arrows · size steppers · plot keys · tile select) ──`);
+  console.log(`\n── Suite D: WCAG button paths (move arrows · size steppers · plot keys · tile select · retype) ──`);
+  if (INJECT) console.log(`   ⚠ FAULT INJECTED: ${INJECT}`);
   run(iters, randomButtonOp, 0x5EED);
 }
 

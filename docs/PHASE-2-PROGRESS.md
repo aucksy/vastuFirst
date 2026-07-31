@@ -1432,3 +1432,103 @@ The re-recorded `scan-assisted` golden shows the rule working on a real 24-space
 `LOBBY 5100X1800` reads as **Corridor** — correctly, because that plan also prints `LIVING 3925X5000`
 and `LOUNGE` — and carries a legible CHECK. Same input, opposite answer to the owner's plan, which is
 the whole point of resolving the caption against its plan rather than on its own.
+
+---
+
+## ⭐⭐ The user can change a room's kind — v0.3.20 (2026-07-31)
+
+Owner: *"the user must be able to change a room's name manually."* Two questions asked before
+building, and both answered: he means the room's **type** from the app's fixed list (the thing that
+changes the score), not a free-text nickname; and he wants it in **both** places — on the grid and on
+the "we read N rooms" list after a scan.
+
+### ⭐ The gap was bigger than "there is no rename"
+
+The stated workaround was "delete the room and place a new one". **For eight of the nineteen room
+types that workaround does not exist.** `RoomLabels` can resolve a caption to any of the nineteen,
+but `GRID_ROOM_TYPES` — the "Add a room" palette — offers eleven. Entrance, Corridor, Utility,
+Bathroom, Guest bedroom, Courtyard, Garage and Basement could be read off a plan and, once removed,
+could never be put back. Deleting was a one-way door.
+
+⚠ **And a correction to this document.** The v0.3.19 note says a lobby read as a corridor costs
+"LIVING 1.5 against CORRIDOR's 0.8". Checked against `rooms.json` rather than repeated: **CORRIDOR
+carries no rule at all.** Fifteen of the nineteen types are scored; CORRIDOR, BATHROOM, COURTYARD and
+UTILITY are not. An unruled type resolves to `NOT_SCORED` with weight 0.0 and is excluded from *both*
+sides of the weighted average (`RoomEvaluator`, `Scorer`). So the largest room in the owner's Gurgaon
+flat was not under-weighted — **it was not counted at all**. That makes this a bigger scoring defect
+than the label fix that preceded it, and it is the honest reason the control had to exist.
+
+### What landed
+
+| File | What it is |
+|---|---|
+| `app/…/newplan/RoomRetype.kt` | `retypeRoom(rooms, id, type)` — pure, geometry-preserving, same instance when nothing changes |
+| `app/…/common/RoomTypePicker.kt` | the collapsed-until-asked control, shared by both screens |
+| `app/…/common/UiMappers.kt` | `ALL_ROOM_TYPES` — all nineteen, palette order first |
+| `shared/…/scan/ScanCorrections.kt` | `ScanOutcome.withRoomType(index, type)` — pure, rewrites the outcome itself |
+| `tools/grid-prototype/sim.mjs` | `opRetype` + four before/after checks in Suite D, three fault injections |
+
+### Decisions worth recording
+
+- **The retype rewrites the OUTCOME on the scan screen, not a side table of overrides.** The outcome
+  is both what the list draws and what is handed to the guided grid, so correcting it in place means
+  there is no second copy to keep in step and `VastuNav`'s handover needed no change at all.
+- **A wrapping list, never a side-scrolling strip.** The room's present kind is shown selected, and in
+  a scrolling strip that chip is off-screen for anything past about the sixth kind — the control would
+  open looking as though nothing were chosen, on exactly the plans where the reading was wrong.
+- **Collapsed by default.** Nineteen chips is four or five wrapped lines; parking that permanently in
+  the selected-room panel would push move and size off a small screen for everyone, to serve a
+  correction most rooms never need.
+- **Picking the kind a room already is closes the list and changes nothing** — the way out without
+  committing, so opening it is never a trap.
+- **The flags that were *asking* are cleared; the ones about *shape* are not.** `LOOSE_LABEL_MATCH`
+  and `LOW_MODEL_CONFIDENCE` both mean "we are unsure we read this right", which the user has now
+  answered, so the CHECK stops asking. `OVERLAP_TRIMMED` / `OUT_OF_BOUNDS_CLAMPED` are about the
+  room's size and survive.
+- **No new room types**, per the standing rule — every kind offered is one the engine already scores
+  or already ignores. No rules change, no expert ruling needed.
+
+### Proof
+
+- **`retypeRoom` is pure and cannot move anything**, and that is the whole risk: a retype changes no
+  geometry, so the danger is an implementation that "tidies up" afterwards. Suite D now fuzzes retype
+  interleaved with drags, arrows, steppers and plot keys, with a **before/after** comparison — a
+  property of the *change*, not of the resulting state, which is why no existing invariant could have
+  caught it. Every injected mistake leaves the editor perfectly legal.
+- ⭐ **Three fault injections, each a mistake someone would actually make, all proven to bite:**
+
+  | Injection | The mistake it models | Fires |
+  |---|---|---|
+  | `retype-readds` | delete-and-re-add — literally the workaround this replaces | `RETYPE-MOVED` (756/1500) |
+  | `retype-spreads` | keying the change on the room's *kind* instead of its id | `RETYPE-SPREAD` (76/1500) |
+  | `retype-drops-door` | routing it through plot-resize-style update logic | `RETYPE-DOOR` (196/1500) |
+
+  ⚠ **The first injection I wrote was vacuous and I nearly shipped it as proof.** It re-packed with
+  `fitWithoutOverlap`, which leaves an already-legal layout exactly where it is — so the suite stayed
+  green and would have "proven" an invariant that was never exercised. An injection that does not go
+  red is not evidence.
+- **All six suites clean** at 20 000 orders (50 000 for B and C).
+- **New Kotlin tests**: `RoomRetypeTest` (13 — geometry preserved across every room × every kind,
+  identity on no-ops, duplicate ids, the palette-gap pin, and the engine scoring the room as its new
+  kind at weight 1.5) and `ScanCorrectionTest` (10 — flags, diagnostics, bounds, refusals).
+  `GuidedGridInteractionTest` gains 4 driving the real screen end to end.
+- ⚠ **Contrast measured before pushing, and it caught a defect.** The obvious styling for the
+  "Change" affordance — the sage accent `primaryDark` — is **3.64 : 1** on that card against a
+  required 4.5. That is the CHECK pill's defect (3.71 : 1) repeating on the same screen for the same
+  reason. `textSecondary` measures **6.90 : 1**, so the "this is a control" signal moved to the label
+  type style. The chips themselves measured clean (7.40 unselected, 13.63 selected).
+
+### ⭐⭐ And a hole this closed on the way: the selected-room panel had never been rendered
+
+`GuidedGridContent` only shows the selected-room panel once a room is selected, and **no golden could
+select one**. So the remove/done buttons, the move arrows and the size steppers have shipped through
+every build unseen, contrary to CLAUDE.md §2b — which is also why the corner grips appear in no
+existing golden. Adding a control to that panel was the wrong moment to keep guessing, so
+`startSelectedId` / `startTypeListOpen` join `startInDoorMode` as harness seams, and three new
+goldens land: **`editor-selected`**, **`editor-retype`** (nineteen chips wrapped) and
+**`scan-retype`** (the same list inside a card, which is the narrowest it has to fit). The panel also
+joins the accessibility pass for the first time.
+
+⚠ **A new screen name is AUTO-ADOPTED by both ratchets**, so a defect on a brand-new golden is
+baselined rather than failed. The numbers these adopt have to be looked at, not trusted — the CHECK
+pill was baselined unlooked-at exactly once already.

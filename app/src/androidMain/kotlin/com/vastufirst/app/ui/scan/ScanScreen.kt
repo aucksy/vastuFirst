@@ -8,15 +8,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.designsystem.components.GuidanceState
@@ -26,7 +33,9 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.scan.AssistReason
 import com.vastufirst.shared.scan.DropReason
 import com.vastufirst.shared.scan.RefusalReason
@@ -53,8 +62,14 @@ fun ScanScreen(
     onTakePhoto: () -> Unit,
     onRetry: () -> Unit,
     onUseRooms: (ScanOutcome) -> Unit,
+    /** The user says room N is really a different kind — §6.2b's "confirm **or correct** each one". */
+    onCorrectRoom: (Int, RoomType) -> Unit,
     onDrawInstead: () -> Unit,
     onBack: () -> Unit,
+    /** Render with room N's type list already unfolded. The screenshot harness needs it — a golden
+     *  cannot tap a row, and the wrapped list of nineteen chips is narrower here than in the editor
+     *  (it sits inside a card), so it is a genuinely different layout risk and must be looked at. */
+    startOpenRow: Int = -1,
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -69,7 +84,8 @@ fun ScanScreen(
         when (state) {
             ScanUiState.Idle -> IdleBody(onPickImage, onTakePhoto, onDrawInstead)
             ScanUiState.Reading -> ReadingBody()
-            is ScanUiState.Done -> DoneBody(state.outcome, onUseRooms, onRetry, onDrawInstead)
+            is ScanUiState.Done ->
+                DoneBody(state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow)
             is ScanUiState.Busy -> BusyBody(state.retryAfterSeconds, onRetry, onDrawInstead)
             ScanUiState.Unavailable -> UnavailableBody(onRetry, onDrawInstead)
             ScanUiState.BadImage -> BadImageBody(onRetry, onDrawInstead)
@@ -137,8 +153,10 @@ private fun ReadingBody() {
 private fun DoneBody(
     outcome: ScanOutcome,
     onUseRooms: (ScanOutcome) -> Unit,
+    onCorrectRoom: (Int, RoomType) -> Unit,
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
+    startOpenRow: Int,
 ) {
     when (outcome) {
         is ScanOutcome.Placed -> RoomsBody(
@@ -149,8 +167,10 @@ private fun DoneBody(
             dropped = outcome.notes.dropped.map { it.label to it.reason },
             cta = "Check them on the grid",
             onUseRooms = { onUseRooms(outcome) },
+            onCorrectRoom = onCorrectRoom,
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
+            startOpenRow = startOpenRow,
         )
 
         is ScanOutcome.Assisted -> RoomsBody(
@@ -176,8 +196,10 @@ private fun DoneBody(
             dropped = outcome.notes.dropped.map { it.label to it.reason },
             cta = "Place them on the grid",
             onUseRooms = { onUseRooms(outcome) },
+            onCorrectRoom = onCorrectRoom,
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
+            startOpenRow = startOpenRow,
         )
 
         is ScanOutcome.Refused -> RefusedBody(outcome.reason, onRetry, onDrawInstead)
@@ -192,17 +214,38 @@ private fun RoomsBody(
     dropped: List<Pair<String, DropReason>>,
     cta: String,
     onUseRooms: () -> Unit,
+    onCorrectRoom: (Int, RoomType) -> Unit,
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
+    startOpenRow: Int,
 ) {
     val colors = VastuTheme.colors
+    // At most one row's type list is open at a time: two open lists on a phone is more chips than
+    // screen, and the question being answered is about ONE room.
+    var openRow by rememberSaveable { mutableStateOf(startOpenRow) }
+
     VText(title, style = VastuTheme.type.h2, color = colors.textPrimary)
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(body, style = VastuTheme.type.body, color = colors.textSecondary)
+    Spacer(Modifier.height(VastuTheme.spacing.s3))
+    // ⭐ The screen has always asked the user to check our reading; until this build it gave them no
+    // way to answer, which spends the attention the CHECK marks are for and leaves a wrong room type
+    // in a paid score. Said plainly, right above the list it refers to.
+    VText(
+        "Tap any room to change what kind of room it is.",
+        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+    )
     Spacer(Modifier.height(VastuTheme.spacing.s6))
 
     VastuCard {
-        rooms.forEach { room -> ReadRoomRow(room) }
+        rooms.forEachIndexed { index, room ->
+            ReadRoomRow(
+                room = room,
+                expanded = openRow == index,
+                onExpandedChange = { open -> openRow = if (open) index else -1 },
+                onPick = { type -> onCorrectRoom(index, type) },
+            )
+        }
     }
 
     // Anything we did NOT carry through is shown, never silently swallowed: a dropped space changes
@@ -232,34 +275,74 @@ private fun RoomsBody(
     OfflineAlternative(onDrawInstead)
 }
 
+/**
+ * One room we read, and the way to tell us we read it wrong.
+ *
+ * The whole row is the control rather than a separate button at its end: it is one node to a screen
+ * reader (one thing, one action), it is a target the size of the row for someone whose eyes and hands
+ * are not what they were — a large part of this audience — and it leaves the CHECK mark meaning only
+ * what it says instead of doubling as a button.
+ */
 @Composable
-private fun ReadRoomRow(room: ScannedRoom) {
+private fun ReadRoomRow(
+    room: ScannedRoom,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onPick: (RoomType) -> Unit,
+) {
     val colors = VastuTheme.colors
     val needsCheck = RoomFlag.OVERLAP_TRIMMED in room.flags || RoomFlag.LOOSE_LABEL_MATCH in room.flags
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = VastuTheme.spacing.s2)
-            // One node per room for a screen reader, phrased as what we did, not as a fact:
-            // "we read X as Y" invites the correction §6.2b requires.
-            .semantics(mergeDescendants = true) {
-                this.contentDescription =
-                    "We read \"${room.label}\" as ${room.type.label()}" +
-                        if (needsCheck) ". Please check this one." else ""
-            },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
-    ) {
-        Column(Modifier.weight(1f)) {
-            VText(room.type.label(), style = VastuTheme.type.body, color = colors.textPrimary)
-            // ⚠ textSecondary, NOT textTertiary. The ATF contrast check fails the lightest text at
-            // caption size, and this is the worst line in the app to make hard to read: it is the
-            // caption we read off the user's own plan, and checking it is the whole job §6.2b gives
-            // them. Caught only because the Assisted golden was switched to a real 24-space plan —
-            // with 8 rooms it was already failing and I had baselined it without looking.
-            VText(room.label, style = VastuTheme.type.caption, color = colors.textSecondary)
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = VastuTheme.sizes.minTouch)   // a11y: the row is now a tap target
+                .clickableTap(role = Role.Button) { onExpandedChange(!expanded) }
+                .padding(vertical = VastuTheme.spacing.s2)
+                // One node per room for a screen reader, phrased as what we did, not as a fact:
+                // "we read X as Y" invites the correction §6.2b requires — and now names the action
+                // that answers it, because an invitation with no way to accept it is not an invitation.
+                .semantics(mergeDescendants = true) {
+                    this.contentDescription =
+                        "We read \"${room.label}\" as ${room.type.label()}" +
+                            (if (needsCheck) ". Please check this one." else "") +
+                            ". Double tap to change what kind of room it is."
+                },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
+        ) {
+            Column(Modifier.weight(1f)) {
+                VText(room.type.label(), style = VastuTheme.type.body, color = colors.textPrimary)
+                // ⚠ textSecondary, NOT textTertiary. The ATF contrast check fails the lightest text at
+                // caption size, and this is the worst line in the app to make hard to read: it is the
+                // caption we read off the user's own plan, and checking it is the whole job §6.2b gives
+                // them. Caught only because the Assisted golden was switched to a real 24-space plan —
+                // with 8 rooms it was already failing and I had baselined it without looking.
+                VText(room.label, style = VastuTheme.type.caption, color = colors.textSecondary)
+            }
+            if (needsCheck) CheckPill()
+            // A visible affordance, so the row does not rely on the reader guessing it is tappable.
+            // Not an icon: "Change" is a word, and this screen's audience reads words more reliably
+            // than glyphs. Not announced separately — the row sets its own description, which is what
+            // a screen reader speaks instead of the merged text.
+            //
+            // ⚠ MEASURED, not chosen by eye. The obvious styling — the sage accent, `primaryDark` —
+            // is **3.64 : 1** on this card where 4.5 is required at this size: the same defect the
+            // CHECK pill shipped with, on the same screen, for the same reason. `textSecondary` is
+            // **6.90 : 1**. So the "this is a control" signal is carried by the label TYPE STYLE
+            // rather than by colour, which is the more robust signal anyway.
+            VText("Change", style = VastuTheme.type.label, color = colors.textSecondary)
         }
-        if (needsCheck) CheckPill()
+        if (expanded) {
+            RoomTypePicker(
+                current = room.type,
+                expanded = true,
+                // Only the row collapses it; the picker itself never renders its closed state here.
+                onExpandedChange = { onExpandedChange(it) },
+                onPick = onPick,
+                modifier = Modifier.padding(bottom = VastuTheme.spacing.s3),
+            )
+        }
     }
 }
 

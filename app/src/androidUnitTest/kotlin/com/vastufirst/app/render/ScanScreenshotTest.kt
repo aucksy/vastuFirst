@@ -30,11 +30,15 @@ import org.robolectric.annotation.GraphicsMode
 @Config(application = Application::class)
 class ScanScreenshotTest {
 
-    private fun screen(state: ScanUiState): @androidx.compose.runtime.Composable () -> Unit = {
+    private fun screen(
+        state: ScanUiState,
+        openRow: Int = -1,
+    ): @androidx.compose.runtime.Composable () -> Unit = {
         ScanScreen(
             state = state,
             onPickImage = {}, onTakePhoto = {}, onRetry = {},
-            onUseRooms = {}, onDrawInstead = {}, onBack = {},
+            onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
+            startOpenRow = openRow,
         )
     }
 
@@ -74,6 +78,21 @@ class ScanScreenshotTest {
         val s = ScanUiState.Done(assisted())
         captureAcrossMatrix("scan-assisted", screen(s))
         writeManifestAcrossMatrix("scan-assisted", screen(s))
+    }
+
+    /**
+     * ⭐ A room's type list open on the confirmation screen — the correction §6.2b always required
+     * and the screen never offered.
+     *
+     * Rendered because it is the narrowest place the nineteen wrapped chips have to fit (inside a
+     * card, inside the screen's padding) and because this screen has already produced two contrast
+     * defects, both on load-bearing copy, both invisible until something drew them.
+     */
+    @Test
+    fun scanRetype() {
+        val s = ScanUiState.Done(assisted())
+        captureAcrossMatrix("scan-retype", screen(s, openRow = 0))
+        writeManifestAcrossMatrix("scan-retype", screen(s, openRow = 0))
     }
 
     /** The refusal a real upload hits most: one in five of the 30 real plans was a 3D render. */

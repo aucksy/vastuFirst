@@ -88,6 +88,24 @@ val GRID_ROOM_TYPES: List<RoomType> = listOf(
     RoomType.DINING, RoomType.STORE, RoomType.BALCONY,
 )
 
+/**
+ * ⭐ **Every** kind of room the app can hold — what "change this room's kind" offers.
+ *
+ * It is deliberately LONGER than [GRID_ROOM_TYPES]. The plan reader can produce all nineteen kinds
+ * (a lobby, a foyer, a wash area, an attached bath, a servant's room all resolve to real types), but
+ * the palette above offers only eleven — so the eight below could be read off a plan and, once
+ * removed, could never be put back. "Delete it and place a new one" was not merely slow for those; it
+ * was a one-way door. That is the concrete reason this control exists rather than a convenience.
+ *
+ * Palette order first, so the kinds a user already knows sit where they expect them, then the eight
+ * the palette has never offered, commonest first. [ALL_ROOM_TYPES] is spelled out rather than derived
+ * from the enum so the order is a decision; a test fails if a kind is ever added and forgotten here.
+ */
+val ALL_ROOM_TYPES: List<RoomType> = GRID_ROOM_TYPES + listOf(
+    RoomType.ENTRANCE, RoomType.CORRIDOR, RoomType.UTILITY, RoomType.BATHROOM,
+    RoomType.GUEST_BEDROOM, RoomType.COURTYARD, RoomType.GARAGE, RoomType.BASEMENT,
+)
+
 /** A stable editor colour per room type (before scoring) — reuses the zone/verdict palette. */
 @Composable
 fun RoomType.editorColor(): Color = with(VastuTheme.colors) {

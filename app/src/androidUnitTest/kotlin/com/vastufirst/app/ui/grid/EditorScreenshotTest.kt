@@ -130,6 +130,49 @@ class EditorScreenshotTest {
         writeManifestAcrossMatrix("editor-door") { MarginHouse(doorStep = true) }
     }
 
+    /**
+     * ⭐⭐ A room SELECTED — and this is the first time anything in this project has drawn it.
+     *
+     * The selected-room panel appears only once the user taps a room, and no golden could tap. So the
+     * remove/done buttons, the move arrows and the size steppers have shipped through every build
+     * unseen, contrary to CLAUDE.md §2b, and the corner grips are missing from every existing golden
+     * for the same reason. It is also the panel this build adds the room-type control to, which is
+     * exactly the wrong moment to keep guessing: the panel is the tallest in the editor and 200 % font
+     * at 320 dp is where a new row shatters a layout.
+     */
+    @Test
+    fun editor_selected() {
+        captureAcrossMatrix("editor-selected") { SelectedHouse() }
+        writeManifestAcrossMatrix("editor-selected") { SelectedHouse() }
+    }
+
+    /**
+     * ⭐ The room-type list OPEN — nineteen chips wrapped, with the room's present kind marked.
+     *
+     * This is the state that carries the real layout risk: a wrapping row of nineteen chips at 200 %
+     * font on a 320 dp screen. It is also where a contrast defect would hide, the way the CHECK pill's
+     * did — an accent on a tint made from the same accent measured 3.71 : 1 against a required 4.5 and
+     * had been failing since the day it was written, unnoticed because nothing had rendered it.
+     */
+    @Test
+    fun editor_retype() {
+        captureAcrossMatrix("editor-retype") { SelectedHouse(typeListOpen = true) }
+        writeManifestAcrossMatrix("editor-retype") { SelectedHouse(typeListOpen = true) }
+    }
+
+    @Composable
+    private fun SelectedHouse(typeListOpen: Boolean = false) {
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            startSelectedId = sample.rooms.first().id,
+            startTypeListOpen = typeListOpen,
+        )
+    }
+
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
     // nodes, clipped text, tiny touch targets and unreachable CTAs (UI-POLISH §6.5).
     @Test

@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.shared.scan.ScanResult
+import com.vastufirst.shared.scan.withRoomType
 import kotlinx.coroutines.launch
 
 /**
@@ -47,6 +49,22 @@ class ScanViewModel(
                 ScanResult.Unavailable -> ScanUiState.Unavailable
             }
         }
+    }
+
+    /**
+     * The user overrules what we read room [index] as — §6.2b's "confirm **or correct** each one".
+     *
+     * ⭐ It rewrites the OUTCOME rather than keeping a separate table of overrides beside it. The
+     * outcome is what the confirmation screen draws and what is handed to the guided grid, so
+     * correcting it in place means there is no second copy to keep in step and the handover needs no
+     * knowledge of corrections at all. The rewrite itself is the pure [withRoomType], which returns
+     * the same instance when nothing changed — hence the identity check, so re-picking the kind a
+     * room already is does not count as an edit.
+     */
+    fun correctRoom(index: Int, type: RoomType) {
+        val done = state as? ScanUiState.Done ?: return
+        val corrected = done.outcome.withRoomType(index, type)
+        if (corrected !== done.outcome) state = ScanUiState.Done(corrected)
     }
 
     /** Back to the ask, so the user can choose a different file. */

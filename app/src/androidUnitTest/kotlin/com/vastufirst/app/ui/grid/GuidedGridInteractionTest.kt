@@ -225,6 +225,75 @@ class GuidedGridInteractionTest {
         assertEquals(listOf(4, 4), h.rooms.value.map { it.w })
     }
 
+    // ── changing a room's KIND ───────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `the room-type picker changes the kind and moves nothing`() = runComposeUiTest {
+        // The owner's Gurgaon case, driven end to end through the real screen: a room the reader
+        // called a corridor, corrected to the living room it actually is.
+        val h = Harness(listOf(
+            room("a", RoomType.CORRIDOR, 1, 1, 3, 3),
+            room("b", RoomType.KITCHEN, 4, 1, 2, 2),
+        ))
+        setContent { Editor(h) }
+        selectRoom("Corridor, 3 by 3 cells")
+
+        // By accessibility label throughout: the word "Bedroom" alone appears on the room's tile, in
+        // the panel's heading AND on a chip, so matching by visible text picks three nodes and throws.
+        tapDescPart("Change room type")
+        tapDesc("Change to Living")
+
+        val a = h.rooms.value.first { it.id == "a" }
+        assertEquals("the kind is what the user picked", RoomType.LIVING, a.type)
+        assertEquals("nothing may move", listOf(1, 1, 3, 3), listOf(a.col, a.row, a.w, a.h))
+        val b = h.rooms.value.first { it.id == "b" }
+        assertEquals("the neighbour keeps its kind", RoomType.KITCHEN, b.type)
+        assertEquals("and its place", listOf(4, 1, 2, 2), listOf(b.col, b.row, b.w, b.h))
+        assertEquals("no room may appear or vanish", 2, h.rooms.value.size)
+    }
+
+    @Test
+    fun `the picker offers kinds the add-a-room palette never has`() = runComposeUiTest {
+        // ⭐ The gap this control closes. A room read as a Corridor could be deleted, and then no
+        // palette chip could put a corridor back — so "delete it and place a new one" was a one-way
+        // door for eight of the nineteen kinds. Here it is reachable.
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)))
+        setContent { Editor(h) }
+        selectRoom("Bedroom, 3 by 3 cells")
+
+        tapDescPart("Change room type")
+        tapDesc("Change to Corridor")
+        assertEquals(RoomType.CORRIDOR, h.rooms.value.single().type)
+    }
+
+    @Test
+    fun `picking the kind it already is closes the list and changes nothing`() = runComposeUiTest {
+        // The way out without committing to a change — so opening the list is never a trap.
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 2, 2, 2, 2)))
+        setContent { Editor(h) }
+        selectRoom("Bedroom, 2 by 2 cells")
+
+        tapDescPart("Change room type")
+        tapDesc("Bedroom, the current room type")
+        // The trigger is back, so the list closed rather than leaving the user stuck in it.
+        onNodeWithContentDescription("Change room type", substring = true).assertExists()
+        assertEquals(RoomType.BEDROOM, h.rooms.value.single().type)
+        assertEquals(listOf(2, 2, 2, 2), h.rooms.value.single().let { listOf(it.col, it.row, it.w, it.h) })
+    }
+
+    @Test
+    fun `a selected room shows its kind and the way to change it`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.CORRIDOR, 0, 0, 2, 2)))
+        setContent { Editor(h) }
+        // Nothing selected: no panel, so no picker.
+        onNodeWithContentDescription("Change room type", substring = true).assertDoesNotExist()
+        selectRoom("Corridor, 2 by 2 cells")
+        onNodeWithText("ROOM TYPE").assertExists()   // SectionLabel uppercases its text
+        // Closed by default: nineteen chips permanently open would push move and size off a phone.
+        onNodeWithContentDescription("Change room type", substring = true).assertExists()
+        onNodeWithContentDescription("Change to Living").assertDoesNotExist()
+    }
+
     // ── door mode entry (H) ──────────────────────────────────────────────────────────────────────
 
     @Test
@@ -240,6 +309,12 @@ class GuidedGridInteractionTest {
     /** Tap a control by its accessibility label, scrolling it into view first (the editor scrolls). */
     private fun ComposeUiTest.tapDesc(desc: String) {
         onNodeWithContentDescription(desc).performScrollTo().performClick()
+        waitForIdle()
+    }
+
+    /** Tap by PART of an accessibility label, for controls whose label carries live state. */
+    private fun ComposeUiTest.tapDescPart(part: String) {
+        onNodeWithContentDescription(part, substring = true).performScrollTo().performClick()
         waitForIdle()
     }
 

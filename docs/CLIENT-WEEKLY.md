@@ -31,6 +31,38 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Friday 31 July — you can now correct a room the app got wrong
+
+When you scan a plan, the app reads the room names off it. It is very good at that, but not perfect —
+and until now, if it read a room wrongly there was no way to tell it so. Your Gurgaon flat is the
+example: the biggest room in it, printed "LOBBY", was read as a corridor.
+
+**Now you can just change it.** Tap any room and pick what it really is, from the app's list of room
+types. It works in two places:
+
+- **On the list right after a scan** — each room is now tappable, with a "Change" next to it. This is
+  where you will notice a mistake, so it is now also where you can fix it.
+- **On the plan itself** — tap a room, and there is a "Change room type" button in its panel. This one
+  also helps homes you drew by hand, not just scanned ones.
+
+The score and the report update straight away, exactly as they do when you move a room.
+
+⚠ **Two things worth knowing, because they matter more than they sound.**
+
+**First, this was a bigger problem than it looked.** The advice up to now was "delete the room and
+place a new one". For eight of the nineteen kinds of room, that was not actually possible — the list
+you add rooms from is shorter than the list the app can read from a plan. So a room read as a
+corridor, an entrance, a utility or a bathroom could be deleted and never put back. That is now fixed:
+every kind of room the app knows about can be chosen.
+
+**Second, a correction to something I told you earlier.** I said a lobby read as a corridor was scored
+too low. Checking it properly rather than repeating it: a corridor is **not scored at all**. So the
+largest room in your flat was not counted low — it was not counted. Changing it to a living room does
+not nudge the score, it genuinely fixes it.
+
+Nothing else about the plan builder changed.
+
+
 ### Thursday 30 July, later — new versions no longer wipe your saved homes
 
 A real fault, found because the owner had to uninstall the app to install each new version: **every
