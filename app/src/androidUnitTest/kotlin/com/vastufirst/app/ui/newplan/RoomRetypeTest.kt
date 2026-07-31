@@ -3,10 +3,12 @@ package com.vastufirst.app.ui.newplan
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
 import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
 import com.vastufirst.engine.VastuEngine
+import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -146,21 +148,44 @@ class RoomRetypeTest {
 
     @Test
     fun `changing a room's kind changes the score`() {
-        // The owner's Gurgaon flat in miniature: a big central space read as circulation. Asserted
-        // across four very differently weighted kinds rather than one pair, because any single pair
-        // could in principle land on the same rounded number by coincidence — and a test that fails
-        // for a reason that is not a defect costs a cloud round-trip.
-        val door = GridDoor(DoorSide.N, 1)
-        fun scoreOf(type: RoomType): Int {
-            val rooms = retypeRoom(home, "a", type)
-            val plan = buildEnginePlan(rooms, door, Intent.LIVING, PropertyType.FLAT, 0, "t")!!
-            return engine.analyze(plan).score
-        }
-        val scores = listOf(RoomType.CORRIDOR, RoomType.LIVING, RoomType.TOILET, RoomType.MASTER_BEDROOM)
-            .associateWith(::scoreOf)
+        // ⚠ Driven from the app's own sample home, NOT from the three-room fixture above. My first
+        // version used that one and the engine returned 0 for every kind — a plan too sparse to
+        // assess comes back INSUFFICIENT rather than as a number (the no-error-state rule), so the
+        // test was asking a question the engine had politely declined to answer. Same inputs as the
+        // render fixtures, which are already known to produce a real analysis.
+        val sample = SamplePlans.all.first()
+        fun analysisFor(type: RoomType) = engine.analyze(
+            buildEnginePlan(
+                retypeRoom(sample.rooms, "s2", type),   // s2 is the sample's plain BEDROOM
+                sample.door, Intent.BUILDING, PropertyType.INDEPENDENT_HOUSE, sample.north, "t",
+            )!!,
+        )
+
+        // Self-diagnosing: if this ever fails, the fixture stopped being scoreable and the assertion
+        // below would be meaningless rather than wrong.
+        val asDrawn = analysisFor(RoomType.BEDROOM)
+        assertNotEquals(
+            "the sample home must be scoreable or this test proves nothing",
+            AnalysisQuality.INSUFFICIENT, asDrawn.quality,
+        )
+
+        val kinds = listOf(
+            RoomType.BEDROOM,          // 1.5 — as drawn
+            RoomType.MASTER_BEDROOM,   // 3.0 — the "which one is the master?" question, answerable now
+            RoomType.CORRIDOR,         // unruled: NOT_SCORED, drops out of both sums entirely
+            RoomType.TOILET,           // 2.5
+        )
+        val results = kinds.associateWith(::analysisFor)
+        val bases = results.mapValues { it.value.base }
+        val scores = results.mapValues { it.value.score }
+
+        // Asserted on the PRE-ROUNDING weighted average: moving a room between 1.5, 3.0, 2.5 and
+        // "excluded" must move it as a matter of arithmetic, whereas two rounded scores could in
+        // principle collide by luck — and a test that fails for a reason that is not a defect costs
+        // a cloud round-trip. The scores are carried in the message so a failure is readable.
         assertTrue(
-            "a retype that cannot move the score is not worth building — got $scores",
-            scores.values.toSet().size > 1,
+            "a retype that cannot move the score is not worth building — bases $bases, scores $scores",
+            bases.values.toSet().size > 1,
         )
     }
 
