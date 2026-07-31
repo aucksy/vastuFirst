@@ -26,6 +26,7 @@
 // Rung 5 is unchanged behaviour for a single 1×1 cell, which genuinely has room for nothing.
 package com.vastufirst.app.ui.grid
 
+import com.vastufirst.app.ui.common.label
 import com.vastufirst.shared.RoomType
 
 /** A room name as it will actually be drawn: which words, and which way up. */
