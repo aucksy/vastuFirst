@@ -37,7 +37,9 @@ class RoomLabelsTest {
         assertEquals("BEDROOM", RoomLabels.clean("BEDROOM-1"))
         assertEquals("TOILET", RoomLabels.clean("TOILET-1"))
         assertEquals("BEDROOM", RoomLabels.clean("BEDROOM 2"))
-        assertEquals("WIDE BALCONY", RoomLabels.clean("5'-0\" WIDE BALCONY"))
+        // Was "WIDE BALCONY", which only half-matched and so arrived asking the user to check a
+        // caption that could not be clearer. WIDE is a descriptor, not part of a room's name.
+        assertEquals("BALCONY", RoomLabels.clean("5'-0\" WIDE BALCONY"))
     }
 
     @Test
@@ -128,9 +130,12 @@ class RoomLabelsTest {
         assertIs<LabelMatch.Room>(exact)
         assertFalse(exact.loose)
 
-        // "ATT. TOILET" is in the table verbatim, so it is exact. This one is not.
-        val loose = RoomLabels.resolve("5'-0\" WIDE BALCONY")
+        // "ATT. TOILET" is in the table verbatim, so it is exact. This one is not: it resolves only
+        // because TOILET appears inside it, and MASTER is excluded from substring matching precisely
+        // so that a master toilet cannot be read as a master bedroom (3.0 against 2.5).
+        val loose = RoomLabels.resolve("MASTER TOILET")
         assertIs<LabelMatch.Room>(loose)
+        assertEquals(RoomType.TOILET, loose.type)
         assertTrue(loose.loose)
     }
 
