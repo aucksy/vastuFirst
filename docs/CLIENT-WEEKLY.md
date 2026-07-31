@@ -33,6 +33,9 @@ These are the things only you can decide, and they need to be settled before the
 
 ### Friday 31 July — you can now correct a room the app got wrong
 
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.20/vastufirst-v0.3.20.apk
+This one installs straight over the previous version — your saved homes are kept.
+
 When you scan a plan, the app reads the room names off it. It is very good at that, but not perfect —
 and until now, if it read a room wrongly there was no way to tell it so. Your Gurgaon flat is the
 example: the biggest room in it, printed "LOBBY", was read as a corridor.
