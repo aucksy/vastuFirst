@@ -263,12 +263,24 @@ private fun ReadRoomRow(room: ScannedRoom) {
     }
 }
 
+/**
+ * ⚠ The label is `textSecondary`, not the accent colour the tint is made from.
+ *
+ * Measured: accent-on-accent-tint reads **3.71 : 1** against the card, where the accessibility check
+ * requires 4.5 for text this size. `textSecondary` on the same tint is **5.82 : 1** (6.68 on a raised
+ * card) and keeps the pill's colour identity in the background.
+ *
+ * It had been failing since the pill was written and only surfaced when a flagged room moved above
+ * the screenshot fold. That makes it the second contrast defect on this screen, both on the copy that
+ * matters most: this pill is the app asking the user to check a specific room, and a "CHECK" nobody
+ * can read is the same as no flag at all.
+ */
 @Composable
 private fun CheckPill() {
     VText(
         "CHECK",
         style = VastuTheme.type.caption,
-        color = VastuTheme.colors.provenanceMod,
+        color = VastuTheme.colors.textSecondary,
         modifier = Modifier
             .clip(VastuTheme.shapes.full)
             .background(VastuTheme.colors.provenanceMod.copy(alpha = 0.14f))
