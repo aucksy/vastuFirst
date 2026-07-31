@@ -67,7 +67,13 @@ object RoomLabels {
     private val EXACT: Map<String, RoomType> = buildMap {
         fun put(type: RoomType, vararg names: String) = names.forEach { put(it, type) }
 
-        put(RoomType.ENTRANCE, "ENTRANCE", "ENTRY", "FOYER", "VESTIBULE", "PORCH ENTRY", "MAIN ENTRANCE")
+        put(
+            RoomType.ENTRANCE,
+            "ENTRANCE", "ENTRY", "FOYER", "VESTIBULE", "PORCH ENTRY", "MAIN ENTRANCE",
+            // ⚠ Must be matched EXACTLY, ahead of the plan-aware LOBBY rule — an entrance lobby is a
+            // foyer whatever else the plan contains. `ENT. LOBBY` is how the corpus prints it.
+            "ENTRANCE LOBBY", "ENTRY LOBBY", "ENT LOBBY",
+        )
         put(RoomType.KITCHEN, "KITCHEN", "KIT", "MODULAR KITCHEN", "OPEN KITCHEN", "KITCHEN AREA")
         put(
             RoomType.MASTER_BEDROOM,
@@ -86,6 +92,8 @@ object RoomLabels {
             RoomType.LIVING,
             "LIVING", "LIVING ROOM", "HALL", "DRAWING", "DRAWING ROOM", "LOUNGE", "FAMILY ROOM",
             "LIVING DINING", "LIVING AND DINING", "LIVING CUM DINING", "DRAWING DINING",
+            // ⭐ LOBBY. On an Indian flat plan this is the main room, not a passage — see [AMBIGUOUS].
+            "LOBBY",
         )
         put(RoomType.DINING, "DINING", "DINING ROOM", "DINING SPACE", "DINING AREA")
         put(RoomType.STAIRCASE, "STAIR", "STAIRS", "STAIRCASE", "STAIR CASE", "STEPS")
@@ -100,7 +108,67 @@ object RoomLabels {
         put(RoomType.BASEMENT, "BASEMENT", "CELLAR")
         put(RoomType.COURTYARD, "COURTYARD", "COURT YARD", "ATRIUM", "OPEN TO SKY")
         put(RoomType.UTILITY, "UTILITY", "WASH AREA", "WASH", "LAUNDRY", "SERVICE AREA", "UTILITY AREA")
-        put(RoomType.CORRIDOR, "CORRIDOR", "PASSAGE", "LOBBY", "HALLWAY", "GALLERY", "CIRCULATION")
+        put(RoomType.CORRIDOR, "CORRIDOR", "PASSAGE", "HALLWAY", "GALLERY", "CIRCULATION")
+    }
+
+    /**
+     * Captions that map to a real type but are genuinely ambiguous, so the user is asked to confirm
+     * them. They come back [LabelMatch.Room] with `loose = true`, which puts a "CHECK" against that
+     * room on the confirmation screen — the same treatment as a caption we only half-recognised.
+     *
+     * ⭐ **LOBBY is why this exists, and it is a scoring decision, not a wording one** — the engine
+     * weights LIVING 1.5 against CORRIDOR 0.8.
+     *
+     * The owner scanned a Gurgaon 2BHK where `LOBBY 10'-3½"X14'-10½"` is the largest room in the flat,
+     * drawn with sofas and a dining table, on a sheet whose own legend calls the unit *"2 Bedroom +
+     * Drawing cum Dining Room"*. Calling that a corridor was plainly wrong.
+     *
+     * ⚠ **But the obvious fix — LOBBY means LIVING — was measured against the 30-plan corpus and is
+     * wrong more often than the bug was.** Six of those plans print a lobby, and **four of the six also
+     * print a separate living room**: `LOBBY 5100X1800` next to `LIVING 3925X5000` is a 5.1 m × 1.8 m
+     * passage, exactly what the word usually means. Mapping every lobby to LIVING would have invented
+     * a second living room in four plans out of six.
+     *
+     * ⭐ **What actually separates them is the rest of the plan**, which is why this needs
+     * [LabelContext]: a lobby is the living room when the plan names no other one, and circulation
+     * when it does. On the corpus that reads six of seven cases correctly, and the seventh — a plan
+     * with both a living room and an unusually large lobby — is genuinely ambiguous to a human too,
+     * and arrives flagged for the user either way.
+     */
+    private val AMBIGUOUS = setOf("LOBBY")
+
+    /**
+     * What the *rest* of the plan says, for the handful of captions that cannot be resolved alone.
+     *
+     * Built once per reply by [contextOf]. Keeping it explicit means [resolve] stays a pure function
+     * of its inputs rather than reaching for hidden state — a caption resolves the same way every time
+     * it is given the same plan around it.
+     */
+    data class LabelContext(val hasDedicatedLivingRoom: Boolean = false) {
+        companion object {
+            /**
+             * Nothing known about the rest of the plan. A lone lobby then reads as the living room,
+             * which is the right default for a single-room question: a plan that names a lobby and
+             * nothing else has named its main room.
+             */
+            val NONE = LabelContext()
+        }
+    }
+
+    /** Read the whole caption list once, so an ambiguous caption can be resolved against its plan. */
+    fun contextOf(labels: List<String>): LabelContext {
+        val hasLiving = labels.any { raw ->
+            val cleaned = clean(raw)
+            cleaned !in AMBIGUOUS && livingByName(cleaned)
+        }
+        return LabelContext(hasDedicatedLivingRoom = hasLiving)
+    }
+
+    /** True when this caption names a living room outright, by either matching strategy. */
+    private fun livingByName(cleaned: String): Boolean {
+        EXACT[cleaned]?.let { return it == RoomType.LIVING }
+        if (cleaned in DROP_EXACT || DROP_CONTAINS.any { cleaned.contains(it) }) return false
+        return CONTAINS.firstOrNull { cleaned.contains(it.first) }?.second == RoomType.LIVING
     }
 
     /**
@@ -126,8 +194,46 @@ object RoomLabels {
     private val DIMENSION_X = Regex("(?<=[0-9])[ ]*X[ ]*(?=[0-9])")
     private val FEET_INCH_MARKS = Regex("['\"‘’“”′″]")
     private val PARENTHETICAL = Regex("\\([^)]*\\)")
+
+    /**
+     * ⭐ An abbreviation full stop is DELETED, not turned into a space — and that one character was a
+     * real bug.
+     *
+     * A plan prints the second toilet as `W.C`. Replacing the stop with a space made that `W C`, which
+     * matches nothing, so the caption resolved to "unrecognised" and the room was dropped. On the
+     * owner's Gurgaon 2BHK that silently removed one of the flat's two toilets from a paid score —
+     * and a toilet is weighted 2.5, with its zone among the most consequential in Vastu.
+     *
+     * Deleting the stop instead is strictly better: `W.C` becomes `WC`, which is already in the table,
+     * while `ATT. TOILET` still becomes `ATT TOILET` because the space after the stop is its own
+     * character and survives.
+     */
+    private val ABBREVIATION_DOT = Regex("\\.")
+
     private val NON_ALPHANUMERIC = Regex("[^0-9A-Z]")
-    private val ALL_DIGITS = Regex("^[0-9]+$")
+
+    /**
+     * A token that is only a measurement: `1500`, `1500MM`, `12FT`. Dropped so it cannot stop a
+     * caption matching by name.
+     *
+     * The unit suffixes are here because `BALCONY 1500MM WIDE` (seen in the corpus) otherwise cleans
+     * to `BALCONY 1500MM`, which matches nothing exactly, resolves through the substring path, and
+     * arrives asking the user to check a caption that could not be clearer.
+     *
+     * ⚠ ASCII classes only, never `\d` and never `(?U)` — this is tested on the JVM and runs on
+     * Android, and a Unicode-aware digit class is exactly what silently broke number capture in
+     * another app for five releases.
+     */
+    private val MEASUREMENT_TOKEN = Regex("^[0-9]+(MM|CM|M|FT|SQFT|SQM)?$")
+
+    /**
+     * Words that describe a room's caption without naming a room. Only what has actually been seen
+     * printed: `BALCONY 5'-0" WIDE` was resolving through the substring path and arriving with a
+     * "CHECK" flag against a caption that is perfectly clear.
+     *
+     * ⚠ Deliberately tiny. `AREA` is NOT here — `WASH AREA` and `DINING AREA` are real room names.
+     */
+    private val DESCRIPTOR_WORDS = setOf("WIDE")
 
     /**
      * Strip a printed caption back to its words: drop the parenthetical aside, the feet/inch marks,
@@ -144,10 +250,11 @@ object RoomLabels {
         var s = raw.uppercase()
         s = PARENTHETICAL.replace(s, " ")
         s = FEET_INCH_MARKS.replace(s, " ")
+        s = ABBREVIATION_DOT.replace(s, "")
         s = DIMENSION_X.replace(s, " ")
         s = NON_ALPHANUMERIC.replace(s, " ")
         return s.split(' ')
-            .filter { it.isNotEmpty() && !ALL_DIGITS.matches(it) }
+            .filter { it.isNotEmpty() && !MEASUREMENT_TOKEN.matches(it) && it !in DESCRIPTOR_WORDS }
             .joinToString(" ")
     }
 
@@ -168,14 +275,24 @@ object RoomLabels {
      * room match. Nothing is ever guessed — an unmatched caption comes back [LabelMatch.Unknown] and
      * is surfaced to the user rather than typed at random.
      */
-    fun resolve(raw: String): LabelMatch {
+    fun resolve(raw: String, context: LabelContext = LabelContext.NONE): LabelMatch {
         val cleaned = clean(raw)
         if (cleaned.isEmpty()) return LabelMatch.Unknown
+
+        // Resolved against the plan around it, and always flagged so the user has the last word.
+        if (cleaned in AMBIGUOUS) return LabelMatch.Room(ambiguousType(context), loose = true)
+
         EXACT[cleaned]?.let { return LabelMatch.Room(it, loose = false) }
         if (cleaned in DROP_EXACT) return LabelMatch.NotHabitable
         if (DROP_CONTAINS.any { cleaned.contains(it) }) return LabelMatch.NotHabitable
-        CONTAINS.firstOrNull { cleaned.contains(it.first) }
-            ?.let { return LabelMatch.Room(it.second, loose = true) }
+        CONTAINS.firstOrNull { cleaned.contains(it.first) }?.let { (key, type) ->
+            // A caption that only half-matched an ambiguous word ("LOBBY AREA") gets the same
+            // plan-aware treatment as the bare word, so the two cannot disagree with each other.
+            return LabelMatch.Room(if (key in AMBIGUOUS) ambiguousType(context) else type, loose = true)
+        }
         return LabelMatch.Unknown
     }
+
+    private fun ambiguousType(context: LabelContext): RoomType =
+        if (context.hasDedicatedLivingRoom) RoomType.CORRIDOR else RoomType.LIVING
 }

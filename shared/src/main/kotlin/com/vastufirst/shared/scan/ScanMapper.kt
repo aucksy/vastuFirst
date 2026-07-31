@@ -162,8 +162,13 @@ object ScanMapper {
         // ---- 4. captions → room types (L1: the model's 95 %-accurate skill) --------------------
         val typed = ArrayList<Candidate>(clean.size)
         var unknownLabels = 0
+        // A couple of captions can only be read against the rest of the plan — "LOBBY" is the living
+        // room when nothing else is, and circulation when the plan already names a living room.
+        // Measured on the 30-plan corpus: four of the six plans printing a lobby also print a living
+        // room, so a fixed mapping is wrong either way round.
+        val context = RoomLabels.contextOf(clean.map { it.first.label })
         for ((box, flags) in clean) {
-            when (val m = RoomLabels.resolve(box.label)) {
+            when (val m = RoomLabels.resolve(box.label, context)) {
                 is LabelMatch.Room -> {
                     if (m.loose) flags += RoomFlag.LOOSE_LABEL_MATCH
                     typed += Candidate(box, m.type, flags)

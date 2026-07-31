@@ -1321,3 +1321,89 @@ still the only one that takes an image.
 ⭐ **And CI going green is now the proof that the owner's new secret is valid**, without the key ever
 being seen, printed or logged. That is the useful property: the question "did the key get set
 correctly?" is answered by the build instead of by the client's first scan.
+
+---
+
+## ⭐⭐ The first real user scan — three label defects (2026-07-30)
+
+The owner scanned a Gurgaon 2BHK (Green Court, Sector 90 — a builder unit plan) and sent the result
+alongside the source. Comparing them caption by caption found three defects, two of which move a paid
+score. **All three are in label reading, none in the model**: the model read every caption on that
+sheet correctly.
+
+### 1. ⭐ A full stop deleted a toilet
+
+The plan prints its second toilet as `W.C 4'-11"X6'-4½"`. The cleaner replaced the abbreviation stop
+with a **space**, so the caption became `W C` — and `WC` is in the table while `W C` is not. It
+resolved to "unrecognised" and the room was dropped. **The flat has two toilets and the app placed
+one.** A toilet is weighted 2.5 and its zone is among the most consequential in Vastu, so this
+silently changed the number the customer pays for.
+
+Deleting the stop instead of spacing it is strictly better: `W.C` → `WC`, while `ATT. TOILET` still
+becomes `ATT TOILET` because the space after the stop is its own character.
+
+⚠ **Honest measurement of the blast radius**: across the 30-plan corpus this recovers exactly **one**
+caption, because only `plan-016` prints a dotted `W.C`. So it is not a widespread reading failure — it
+is a rare one that silently deletes a scored room when it happens, and it has now happened on two real
+plans out of thirty-one.
+
+### 2. ⭐⭐ "Lobby" — and the fix that measurement rejected
+
+The owner's complaint: `LOBBY 10'-3½"X14'-10½"` became a **Corridor**. On his plan that is plainly
+wrong — it is the largest room in the flat, drawn with sofas and a dining table, on a sheet whose own
+legend describes the unit as *"2 Bedroom + Drawing cum Dining Room"*. LIVING is weighted 1.5 against
+CORRIDOR's 0.8.
+
+**The obvious fix was to map LOBBY to LIVING. Measuring it against the corpus showed that would be
+wrong more often than the bug was.** Six of the 30 plans print a lobby, and **four of those six also
+print a separate living room**:
+
+| Plan | Its lobby | Its living room |
+|---|---|---|
+| plan-002 | `LOBBY 5100X1800` — a 5.1 m × 1.8 m passage | `LOUNGE`, `LIVING 3925X5000` |
+| plan-003 | `LOBBY 5600X7700` | `LIVING ROOM 3500X6700` |
+| plan-004 | `LIFT LOBBY` (already dropped) | `LIVING ROOM` |
+| plan-020 | `LOBBY/DINING` | `DRAWING ROOM` |
+| plan-022 | `ENTRANCE LOBBY` | `LIVING RM.` |
+| plan-026 | `LOBBY/DINING 17'1"X9'10"` | none |
+| **Green Court** | `LOBBY 10'-3½"X14'-10½"` | **none** |
+
+⭐ **The signal is not the caption, it is the rest of the plan.** A lobby is the living room when the
+plan names no other one, and circulation when it does. That reads six of the seven correctly; the
+seventh (plan-003, which has both a living room and an unusually large lobby) is ambiguous to a human
+too. So `RoomLabels.resolve` now takes a `LabelContext` built once per reply, and **either way the
+room arrives flagged "CHECK"** — the word is genuinely ambiguous and the user has the last word.
+
+`LIFT LOBBY` still drops as a service core, and `ENTRANCE LOBBY` / `ENT. LOBBY` now match exactly as
+an entrance before the ambiguous rule is consulted.
+
+### 3. A clear caption was asking to be checked
+
+`BALCONY 5'-0" WIDE` cleaned to `BALCONY WIDE`, matched nothing exactly, resolved through the
+substring path and arrived with a "CHECK" against it — asking the user to verify something obvious,
+which spends the one thing that flag is for. `WIDE` is now a descriptor word and a token that is only
+a measurement (`1500`, `1500MM`, `12FT`) is dropped, so `BALCONY 1500MM WIDE` also reads cleanly.
+Across the corpus, 6 % of captions now carry a check flag.
+
+⚠ `AREA` is deliberately **not** a descriptor — `WASH AREA` and `DINING AREA` are real room names.
+
+### What was NOT changed, and why
+
+- **The room positions.** The balcony should span the north edge and was placed top-right; the rooms
+  leave large gaps. That is the measured limit of the model's spatial reading (§3h), it is why the user
+  confirms every room, and no label fix touches it.
+- **The selected-room chip covers the top row of the grid.** Visible in the owner's screenshot — the
+  "Corridor · 3×4 · South-East" pill sits over the Balcony. It is real, it is in the guided-grid editor,
+  and the editor is on hold by his instruction. **Surfaced, not touched.**
+- **Neither bedroom is a master bedroom.** The plan labels both `BED ROOM`; the engine weights
+  MASTER_BEDROOM 3.0 against BEDROOM 1.5, so which one is the master materially moves the score, and
+  nothing asks. Guessing would be a Vastu judgement the model must never make (S1). **Owner decision.**
+
+### Proof
+
+- Every caption on the owner's actual plan is now a test, so that scan cannot silently read differently
+  again. Plus the corpus's real lobby captions, both `LOBBY/DINING` forms, `ENT. LOBBY`, and the
+  reverse case where a lobby beside a living room must stay a corridor.
+- The whole resolver was mirrored in Python **by parsing the tables out of the Kotlin itself**, so the
+  mirror cannot drift from the source, and all 22 expectations were checked before pushing — including
+  the ones I might have broken (`MASTER TOILET`, `PUJA SPACE`, `SER ROOM`, `DRESSING`, `PASSAGE`).

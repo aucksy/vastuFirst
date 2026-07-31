@@ -205,10 +205,15 @@ it entirely.
       return to the beginning rather than resume; tell me if that's annoying in practice.
 
 - [ ] **G8 — ⭐ Room-name translations.** Whichever plan you scan, check the names it read against what
-      the plan actually prints. We rename some on purpose: LOBBY becomes "Corridor", SIT-OUT becomes
-      "Balcony", LOUNGE becomes "Living", STUDY-ROOM becomes "Study", a servant's room becomes a
-      bedroom. Dressing areas, ducts and lifts are dropped on purpose and listed under "we also saw".
-      Are any of those wrong for how your customers talk?
+      the plan actually prints. We rename some on purpose: SIT-OUT becomes "Balcony", LOUNGE becomes
+      "Living", STUDY-ROOM becomes "Study", a servant's room becomes a bedroom. Dressing areas, ducts
+      and lifts are dropped on purpose and listed under "we also saw". Are any of those wrong for how
+      your customers talk?
+- [ ] **G15 — "Lobby", both ways round.** This one now depends on the rest of the plan. On a plan that
+      names no living room, a lobby is read as the **living room** (your Gurgaon plan). On a plan that
+      already has a living room, a lobby stays a **corridor**, because there it really is a passage.
+      Either way it is marked "CHECK" for you. Try one of each if you have them, and tell me if the
+      rule ever picks wrong.
 
 ### Rows that only exist now the reading is real (v0.3.16)
 
