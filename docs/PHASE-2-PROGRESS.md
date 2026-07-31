@@ -1532,3 +1532,37 @@ joins the accessibility pass for the first time.
 ⚠ **A new screen name is AUTO-ADOPTED by both ratchets**, so a defect on a brand-new golden is
 baselined rather than failed. The numbers these adopt have to be looked at, not trusted — the CHECK
 pill was baselined unlooked-at exactly once already.
+
+### The geometry ratchet fired, and one baseline moved: `scan-assisted` 3 → 11
+
+Adopted **only after downloading the run's artifacts and reading the manifests**, not on the strength
+of the failure text. In all eleven configurations the finding is the *same shape*: exactly one row is
+partially visible, and its bottom edge equals the screen height to the pixel —
+
+| config | screen | the one clipped node sits at |
+|---|---|---|
+| baseline / dark | 412 × 915 | y 893, bottom **915** |
+| w320 | 320 × 711 | y 699, bottom **711** |
+| font2_0 | 412 × 915 | y 859.5, bottom **915** |
+| landscape | 480 × 854 | y 810, bottom **854** |
+
+Everything past it reports `y=0, h=0` — never laid out, because it is off the capture window. That is
+the documented below-the-fold capture artifact, and the screen scrolls, so it is all reachable. It
+went from 3 configurations to 11 not because rows got worse but because one extra line of copy
+("Tap any room to change what kind of room it is") shifts the list down far enough that *some* row now
+lands on the fold in every configuration rather than in three of them.
+
+**Looked at `scan-assisted` and `editor-selected` and `editor-retype` at baseline before adopting.**
+The scan list renders correctly — room kind, the plan's own printed caption beneath it, CHECK where
+we are unsure, "Change" at the right — and the lobby row shows exactly the case this all started
+from: `LOBBY 5100X1800` read as **Corridor**, flagged, and now correctable.
+
+⭐ **The accessibility pass came back 0 findings on both new states.** That is not luck: the "Change"
+affordance was contrast-measured before it was pushed, which is the only reason it is not the sage
+accent at 3.64 : 1.
+
+⚠ **And the first rendering of the selected-room panel immediately showed a known open question in
+the flesh** — the dark chip naming the selected room (`Pooja · 2×2 · North-West`) sits directly over
+the Bedroom in the top row. That is the owner's own "the small grey tag covers the top row" report,
+now reproduced in a golden rather than only in a screenshot he sent. **Not touched** — it is an editor
+change beyond the room-type work he unfroze, and it is his call.
