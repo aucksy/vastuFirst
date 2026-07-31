@@ -1607,3 +1607,87 @@ Change — the exact case this build exists to make correctable.
 Final state: **193 pure tests green**, six fuzz suites clean, render ratchet no-regression, ATF
 no-regression with the scan list back to **0** findings, and the APK signature check passed so this
 build installs over the last one without erasing saved homes.
+
+---
+
+## ⭐⭐ Rooms are shaped to the sizes their plans print — v0.3.21 (2026-07-31)
+
+Owner, looking at his own scan: *"can we not match the proportions of each section to match with
+plan… the corridor is a horizontal rectangle but in the floor plan it's vertical — the direction will
+place itself incorrectly over a room placed with incorrect orientation."* Both halves correct.
+
+### The measurement
+
+| room | printed | app drew | printed w/d | drawn w/d |
+|---|---|---|---|---|
+| LOBBY | 10'-0" × 12'-9" | 6 × 2 | 0.78 | 3.00 |
+| KITCHEN | 6'-11" × 9'-7" | 4 × 1 | 0.72 | 4.00 |
+| PASSAGE | 2'-3" × 9'-6" | 3 × 1 | **0.24** | 3.00 |
+| BED ROOM | 10'-0" × 10'-6" | 6 × 4 | 0.95 | 1.50 |
+
+**Four of the six dimensioned rooms had their orientation inverted.** The cause: `RoomLabels`'
+cleaner deletes every measurement token, so the reader read `LOBBY 10'-0"X12'-9"` perfectly and the
+size was thrown away, leaving each room's shape to come from the rectangle the reader *guessed* — the
+one thing measured at 40–70 % against ~95 % for reading text.
+
+The printed numbers are trustworthy: on that sheet they total **353 sq ft against a stated 336** of
+carpet area, the 5 % being wall thickness.
+
+### Three things this got wrong first, each caught before CI
+
+1. ⭐ **Orientation was resolved against the reader's own rectangle** — and that quietly defeated the
+   entire feature. The reader had called the passage three times wider than tall, so matching its
+   sense kept it horizontal and merely restated the error at a new ratio. Trusting the **printed
+   order** (first number is the width) corrects four of six; deferring to the drawing corrected
+   **none**. This is now the fuzz suite's `PRINTED-ORIENTATION` invariant, and injecting the old rule
+   back fires it 1 122 times.
+2. **Choosing a width and then clamping the height to the grid INVERTS a tall room in a shallow
+   grid** — a 2 950 × 4 200 kitchen came out 6 wide × 5 deep. Found by the new invariant on its first
+   run. It now shrinks to fit *proportionally*: when area and proportion conflict, proportion wins,
+   because proportion is what decides the direction.
+3. **Re-shaping could bury a small room inside a grown neighbour and drop it.** A lost room changes
+   the footprint the engine scores and cannot be re-added by someone who never saw it, so the read
+   shape is tried before a room is given up. Exactly what happens to the owner's passage.
+
+### ⚠ Tried, measured, and REVERTED: taking the grid from the home rather than the picture
+
+Re-framing every box onto the rooms' bounding box reads well for a branded sheet — his devotes its
+left third to a logo. It was reverted for two reasons, both found rather than reasoned:
+
+- it makes every room's size depend on every other room's, so one stray rectangle over a title block
+  shrinks the whole home; and
+- ⭐ **it silently removed an existing safety check's bite.** The fuzz suite's `no-clamp` injection
+  stopped failing, because after re-framing nothing can be out of bounds by construction. A change
+  that disarms a proven invariant without saying so is exactly what the injections exist to catch.
+
+It is a separate question from the one that was measured, so it is not in this build.
+
+### Proof
+
+- **214 pure tests, 0 failed** (up from 193): `RoomDimensionsTest` (13 — every real caption form in
+  the corpus, both conventions, fractions, and the many shapes that are *not* a size: one dimension,
+  a lift capacity, an index) and `ScanReshapeTest` (8 — the owner's flat end to end through the real
+  mapper and the real synonym table).
+- All twenty parser cases were **verified numerically in Python before any Kotlin was written**,
+  20/20, per the standing rule.
+- **Six fuzz suites clean at 20 000**, and **nine fault injections all bite**, including the two new
+  ones (`printed-follows-model` 1 122 · `no-printed-sizes` 1 153) and — importantly — the pre-existing
+  `repack` (4 213) and `no-clamp` (10 150), which confirms the anti-relocation and out-of-bounds
+  guarantees still hold after the change.
+- ⚠ **Expectations for real captions live in Kotlin, not in the mirror.** Pinning the owner's plan in
+  `sim.mjs` failed immediately: the mirror carries a deliberately cut-down synonym table, so `W.C`,
+  `LOBBY` and `PASSAGE` do not resolve there. Same lesson the recorded-reply pins already learned, and
+  it was re-learned the same way.
+
+### ⭐ And a golden that had to be added, because nothing rendered the change
+
+**Not one existing golden moved.** The recorded scan fixtures are synthetic or route to Assisted, so
+none of them prints a room dimension — the whole feature would have shipped with nothing drawing it.
+`editor-scanned` renders the owner's flat through the real mapper into the real editor.
+
+**Looked at it.** The kitchen and the living room are now vertical, as the sheet says; the toilet and
+bath are small instead of full-width bars; relative sizes are right, with the living room plainly the
+largest room. **Honest limits visible in the same picture:** the bedroom is trimmed where it meets the
+grown living room, and the passage keeps its read shape because the living room now covers where the
+reader had placed it. Positions are still the model's guess — this fixes shape, not placement, and the
+user confirms every room.

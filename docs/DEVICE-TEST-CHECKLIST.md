@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.20 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.20/vastufirst-v0.3.20.apk)
+**Latest build to test:** v0.3.21 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.21/vastufirst-v0.3.21.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -167,6 +167,22 @@ before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-P
 
 Nothing yet — this section fills up as you report results, so we never re-test something twice or
 lose a verdict.
+
+## I · Room shapes matching the plan  *(new in this build)*
+
+Where your plan prints a room's size beside its name, the app now shapes the room to that size
+instead of to the AI's guess.
+
+- [ ] **I1 — ⭐ Re-scan your Gurgaon plan.** The lobby and the kitchen should now come out **taller
+      than wide**, matching how the plan draws them. Before this build they were flat wide bars.
+- [ ] **I2 — Relative sizes.** The biggest room on the plan should now be the biggest on the grid, and
+      a small toilet should look small. Previously a toilet could be drawn as wide as a kitchen.
+- [ ] **I3 — A plan with no sizes printed on it.** Should look exactly as it did before — this only
+      does anything where the plan actually prints the numbers.
+- [ ] **I4 — Rooms marked "CHECK".** Where a room's true shape won't fit where the AI placed it, the
+      app keeps the room and marks it rather than dropping it. Does that read as helpful or confusing?
+- [ ] **I5 — Millimetre plans.** Many plans print sizes like "2950X4200" rather than feet and inches.
+      If you have one, check those rooms are shaped sensibly too.
 
 ## H · Changing what kind of room something is  *(new in this build)*
 

@@ -31,6 +31,33 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Friday 31 July, later — rooms now match the shape printed on your plan
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.21/vastufirst-v0.3.21.apk
+
+You spotted that the passage on your Gurgaon plan came out as a wide flat box when the plan clearly
+draws it as a tall narrow strip — and asked whether that throws the score off. It does, and you were
+right to push on it.
+
+Checked properly against your sheet: **four of the six rooms that print their size came out the wrong
+way round.** The lobby, the kitchen, the bedroom and the passage were all drawn wider than deep when
+the plan says the opposite. That matters because a room's Vastu direction is decided by where it sits
+in the home, so a room of the wrong shape sits in the wrong direction.
+
+The cause was daft, and now fixed: your plan prints the sizes right next to the room names, we read
+them perfectly, and then threw them away — leaving each room's shape to come from the AI's guess,
+which is the one thing it is genuinely bad at. Those printed numbers are reliable: on your sheet they
+add up to 353 sq ft against the 336 the sheet states, and the difference is just the wall thickness.
+
+Now the kitchen and the living room come out tall, as your plan draws them, and the toilet and bath
+come out small instead of full-width bars.
+
+⚠ **Two honest limits.** Only about a quarter of plans print sizes on every room; yours does, many
+don't, and where they're missing nothing changes. And this fixes each room's **shape**, not **where**
+it sits — the AI's sense of position is still a guess, so on your plan the passage still ends up in
+the wrong spot and is marked for you to check. You still confirm every room, as before.
+
+
 ### Friday 31 July — you can now correct a room the app got wrong
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.20/vastufirst-v0.3.20.apk
