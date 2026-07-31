@@ -1557,9 +1557,37 @@ The scan list renders correctly — room kind, the plan's own printed caption be
 we are unsure, "Change" at the right — and the lobby row shows exactly the case this all started
 from: `LOBBY 5100X1800` read as **Corridor**, flagged, and now correctable.
 
-⭐ **The accessibility pass came back 0 findings on both new states.** That is not luck: the "Change"
-affordance was contrast-measured before it was pushed, which is the only reason it is not the sage
-accent at 3.64 : 1.
+⚠ **Correction to the line I first wrote here.** I said the accessibility pass returned 0 findings on
+both new states. It did not — I read the wrong key out of the manifest JSON (`count`, not `findings`).
+The pass returned **11 on the scan list and 8 on the selected-room panel**, and both are worth stating
+properly because they are different kinds of thing.
+
+**The scan list's 11 were mine, and a genuine defect.** Every room row tripped ATF's
+`RedundantDescriptionCheck`, because I ended each row's description with *"Double tap to change what
+kind of room it is."* TalkBack already announces the role and the gesture, so the user hears "double
+tap" twice. The action belongs in the click-action **label**, which is what `onClickLabel` is for and
+what ATF does not flag — so `clickableTap` gained that parameter (additive, defaulted, every existing
+caller uses named arguments) and TalkBack now says *"…, button, double tap to change the room type."*
+
+**The panel's 8 are almost entirely pre-existing, and only visible now because nothing had ever
+rendered this panel.** Measured against the card (`#F2EEE4`):
+
+| Element | Ratio | Needs |
+|---|---|---|
+| `2 × 2 · North-West`, and the `MOVE` / `SIZE` / `ROOM TYPE` labels (`textTertiary`) | **4.39** | 4.5 |
+| the move arrows and size steppers (`primaryDark` on a 14 % `primary` tint) | **3.25** | 4.5 |
+| `W 2` / `H 2` (`textSecondary`) | 6.90 | ✓ |
+| the `Change room type` button | 13.63 | ✓ |
+
+Exactly one of those eight is new — the `ROOM TYPE` label — and it is styled identically to the `MOVE`
+and `SIZE` labels directly beneath it. Singling it out for a darker colour would fix one of three
+identical labels and look like a mistake. **So it stays consistent and the finding is surfaced rather
+than silently absorbed:** the small grey labels and the arrow glyphs in this panel have been below the
+contrast bar since they were written, on every build, and the fix is a design-token change affecting
+several screens — an owner call, not something to slip into a room-naming build.
+
+⭐ **What the pre-push measurement did buy** was the "Change" affordance: it would have shipped as the
+sage accent at **3.64 : 1**, and it is `textSecondary` at 6.90 instead.
 
 ⚠ **And the first rendering of the selected-room panel immediately showed a known open question in
 the flesh** — the dark chip naming the selected room (`Pooja · 2×2 · North-West`) sits directly over

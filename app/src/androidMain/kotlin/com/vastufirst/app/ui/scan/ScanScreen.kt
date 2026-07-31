@@ -297,16 +297,22 @@ private fun ReadRoomRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = VastuTheme.sizes.minTouch)   // a11y: the row is now a tap target
-                .clickableTap(role = Role.Button) { onExpandedChange(!expanded) }
+                // ⚠ The action goes in onClickLabel, NOT in the description below. Writing
+                // "double tap to…" into a contentDescription is an accessibility defect: TalkBack
+                // already announces the role and the gesture, so the user hears it twice, and ATF's
+                // RedundantDescriptionCheck fired once per room row when it was written that way.
+                // Here TalkBack says "…, button, double tap to change the room type."
+                .clickableTap(
+                    role = Role.Button,
+                    onClickLabel = "change the room type",
+                ) { onExpandedChange(!expanded) }
                 .padding(vertical = VastuTheme.spacing.s2)
                 // One node per room for a screen reader, phrased as what we did, not as a fact:
-                // "we read X as Y" invites the correction §6.2b requires — and now names the action
-                // that answers it, because an invitation with no way to accept it is not an invitation.
+                // "we read X as Y" invites the correction §6.2b requires.
                 .semantics(mergeDescendants = true) {
                     this.contentDescription =
                         "We read \"${room.label}\" as ${room.type.label()}" +
-                            (if (needsCheck) ". Please check this one." else "") +
-                            ". Double tap to change what kind of room it is."
+                            (if (needsCheck) ". Please check this one." else "")
                 },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),

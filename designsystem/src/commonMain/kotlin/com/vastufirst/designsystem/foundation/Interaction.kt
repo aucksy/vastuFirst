@@ -31,6 +31,17 @@ private const val PRESSED_ALPHA = 0.55f
 fun Modifier.clickableTap(
     enabled: Boolean = true,
     role: Role? = null,
+    /**
+     * What activating this control will DO, for a screen reader — TalkBack speaks it as
+     * "double tap to <label>". Say the outcome ("change the room type"), never the gesture.
+     *
+     * ⚠ This exists because putting the gesture in a `contentDescription` instead is an
+     * accessibility DEFECT, not merely a style choice: Google's ATF `RedundantDescriptionCheck`
+     * flags it, since TalkBack already announces the role and the gesture, so the user hears
+     * "double tap" twice. It fired eleven times — once per room row — the first time a row on the
+     * scan confirmation list was made tappable.
+     */
+    onClickLabel: String? = null,
     pressEffect: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     onClick: () -> Unit,
@@ -48,6 +59,7 @@ fun Modifier.clickableTap(
             interactionSource = interactionSource,
             indication = null,
             enabled = enabled,
+            onClickLabel = onClickLabel,
             role = role,
             onClick = { haptics.tap(); onClick() },
         )
