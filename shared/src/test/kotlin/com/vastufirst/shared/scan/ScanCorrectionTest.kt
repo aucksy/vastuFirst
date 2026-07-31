@@ -40,7 +40,7 @@ class ScanCorrectionTest {
 
         val rooms = (out as ScanOutcome.Assisted).rooms
         assertEquals(RoomType.LIVING, rooms[0].type)
-        assertEquals("the neighbour must be untouched", RoomType.KITCHEN, rooms[1].type)
+        assertEquals(RoomType.KITCHEN, rooms[1].type, "the neighbour must be untouched")
     }
 
     @Test
@@ -73,8 +73,8 @@ class ScanCorrectionTest {
             ),
         ).withRoomType(0, RoomType.LIVING)
         assertTrue(
-            "a CHECK the user has already answered must stop asking",
             (out as ScanOutcome.Assisted).rooms[0].flags.isEmpty(),
+            "a CHECK the user has already answered must stop asking",
         )
     }
 

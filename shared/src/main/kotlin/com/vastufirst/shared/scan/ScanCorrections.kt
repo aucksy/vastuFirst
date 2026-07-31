@@ -26,8 +26,17 @@ import com.vastufirst.shared.RoomType
  * already has is a no-op the screen should not treat as an edit.
  */
 fun ScanOutcome.withRoomType(index: Int, type: RoomType): ScanOutcome = when (this) {
-    is ScanOutcome.Placed -> rooms.corrected(index, type)?.let { copy(rooms = it) } ?: this
-    is ScanOutcome.Assisted -> rooms.corrected(index, type)?.let { copy(rooms = it) } ?: this
+    // Spelled out rather than folded into `?.let { copy(...) }`: inside a lambda the `copy` would be
+    // resolving against a smart-cast outer receiver, which is a needless thing to be clever about in
+    // a module whose only compiler is a cloud runner five minutes away.
+    is ScanOutcome.Placed -> {
+        val fixed = rooms.corrected(index, type)
+        if (fixed == null) this else copy(rooms = fixed)
+    }
+    is ScanOutcome.Assisted -> {
+        val fixed = rooms.corrected(index, type)
+        if (fixed == null) this else copy(rooms = fixed)
+    }
     is ScanOutcome.Refused -> this
 }
 
