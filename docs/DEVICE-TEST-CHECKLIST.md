@@ -284,3 +284,25 @@ it entirely.
 - [ ] **G14 — A photo taken at an angle.** Photograph a printed plan deliberately tilted. It should
       still read the room names; it will probably hand them to you unplaced. Confirm it doesn't
       pretend to know where they go.
+
+## J · The plan filling the drawing area, and room names  *(new in this build)*
+
+Two things you reported, and one you asked me to make production-grade.
+
+- [ ] **J1 — ⭐ Re-scan the Green Court 2BHK.** Your home should now fill the drawing area instead of
+      sitting in one corner at about half size. The empty margin on the left should be gone.
+- [ ] **J2 — ⭐ Small rooms keep their names.** The narrow toilet should now show the word "Toilet"
+      running down the room, the way a printed plan labels a narrow space. Does that read naturally
+      to you, or does it look odd on a phone?
+- [ ] **J3 — Nothing lost.** Count the rooms on your plan against the rooms on the grid. Small rooms
+      used to disappear silently when they were drawn too small; that should now be impossible.
+- [ ] **J4 — The tag no longer covers the top row.** Tap a room: the little dark label with the room
+      name and direction should NOT appear over the plan any more. It only shows while your finger is
+      actually moving a room, and it jumps to the bottom if you are dragging something in the top row.
+      Is the information still there when you want it?
+- [ ] **J5 — Faint text.** The small grey lettering (NORTH/WEST/SOUTH/EAST, MOVE, SIZE) and the arrow
+      buttons should be a little easier to read. Check in daylight and at your usual brightness.
+- [ ] **J6 — Very large text.** If you use a big font size, check room names still fit or drop out
+      cleanly rather than being cut off mid-word.
+- [ ] **J7 — A plan with no printed sizes.** Should behave as before; this build only changes how big
+      the home is drawn, not how the rooms are read.

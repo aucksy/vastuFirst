@@ -310,3 +310,29 @@ We also ran the harshest automated testing yet — every way of building a home,
 ---
 
 *Kept up to date as we build. Detailed technical notes live separately; this page is the plain-English view.*
+
+### 31 July — the plan now fills the drawing area, and small rooms keep their names
+
+Two things came out of testing a second real flat plan.
+
+**The home was being drawn too small, in a corner.** Builder plans put a logo and a title block down
+one side of the sheet, and the app was treating the whole sheet as the drawing area — so a home that
+took up part of the page also took up only part of the grid. On the flat we tested, a 526 sq ft home
+was being drawn as though the plot were forty feet square. The app now measures the drawing area from
+the home itself. Across thirty real plans the home went from filling about seven-tenths of the area to
+filling nearly all of it.
+
+**Something we found while fixing it, which matters more.** Rooms that came out very small were being
+dropped altogether before they ever reached the screen — ten of them across the test plans, nearly all
+toilets, which are one of the more important rooms for a Vastu score. That can no longer happen: a
+room can be drawn small, but it cannot disappear.
+
+**Small rooms now keep their names.** A narrow toilet used to show "To…". The name is now turned on
+its side and runs down the room, the way a printed architectural plan labels a narrow space.
+
+**Two smaller polish items**, both reported earlier: the little label showing a room's name and
+direction no longer sits on top of the plan when you select a room (it only appears while you are
+actually moving one), and the faintest grey lettering and the arrow buttons have been darkened enough
+to meet the accessibility standard for readable text.
+
+Room *positions* are still the AI's best guess and are confirmed by the user, unchanged.

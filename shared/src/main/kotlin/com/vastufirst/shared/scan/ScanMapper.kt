@@ -105,6 +105,21 @@ object ScanMapper {
     /** A rectangle at least this covered by a bigger one is a sub-area of it, not a room. */
     const val CONTAINMENT_FRACTION = 0.90
 
+    // ⚠ MEASURED AND NOT BUILT: a separate "fill the grid" scale.
+    //
+    // A room's drawn size comes from the cells the reader's own rectangles occupied
+    // (`cellTotal / printedTotal` in reshapeToPrinted), so the printed sizes REDISTRIBUTE area
+    // rather than setting it. That looked like the cause of the owner's under-sized rooms, and the
+    // obvious fix was to scale the dimensioned rooms up to fill some target fraction of the grid.
+    //
+    // It was built as a four-rung ladder (0.95 / 0.90 / 0.85 / 0.80, take the largest that costs no
+    // room) and measured across the real corpus plus both of the owner's own sheets. IT CHANGED
+    // NOTHING: identical orientation errors, identical rooms lost, identical fill, identical
+    // coverage, and his 4'-11" toilet came out 2x2 either way. Once the grid is framed on the HOME
+    // rather than on the picture, the reader's own total already fills it, so the extra scale has
+    // nothing left to do. Machinery that cannot be shown to change an answer does not ship.
+    // `tools/scan-eval/exp-frame.py` is the record.
+
     /** Fewer than this many rooms surviving the grid snap isn't a layout worth showing. */
     const val MIN_PLACED_ROOMS = 2
 
@@ -208,49 +223,71 @@ object ScanMapper {
             return ScanOutcome.Assisted(identified, AssistReason.TOO_MANY_ROOMS, notes())
         }
 
-        // ---- 7. snap to the grid ---------------------------------------------------------------
-        // ⚠ The drawing area stays the PICTURE, not the rooms' own bounding box — and that is a
-        // deliberate reversal of what this build first did. Re-framing onto the bounding box handles
-        // a branded sheet nicely, but it makes every room's size depend on every other room's: one
-        // stray rectangle over a title block inflates the frame and shrinks the whole home. It also
-        // silently removed the bite of an existing safety check (the fuzz suite's `no-clamp`
-        // injection stopped failing, because after re-framing nothing can be out of bounds by
-        // construction). Ship the part that is measured; the grid's shape is a separate question.
-        val (cols, rows) = gridFor(imageAspect)
-        val snapped = ArrayList<Pair<Candidate, CellRect>>(rooms.size)
-        for (r in rooms) {
-            val rect = snap(r.box, cols, rows)
-            if (rect == null) dropped += DroppedSpace(r.box.label, DropReason.DEGENERATE)
-            else snapped += r to rect
-        }
+        // ---- 7. ⭐⭐ the drawing grid is the HOME, not the picture -------------------------------
+        // A builder's sheet is mostly not the home: a logo, a title block, a legend, white space.
+        // Mapping the reader's coordinates straight onto the grid handed the home whatever fraction
+        // of the SHEET it happened to occupy — 40 % on the owner's Green Court plan, 71 % on average
+        // across the real corpus — so it arrived in a corner at half size with the rest of the grid
+        // empty, and its small rooms rounded away. Framing on the rooms' own bounding box instead
+        // takes that to 98 %, and because rooms stop rounding to nothing it LOSES FEWER ROOMS, not
+        // more (10 rooms lost across the corpus today, 0 after — `tools/scan-eval/exp-frame.py`).
+        //
+        // ⚠ This was tried and reverted once, for two stated reasons. Both are answered here rather
+        // than argued away:
+        //   · "one stray rectangle inflates the frame and shrinks the whole home" — measured across
+        //     20 real replies: removing the single most extreme room shrinks the frame by a median
+        //     1.12× and at worst 1.29×, and the fill ladder above means a room's SIZE no longer
+        //     follows the frame's area anyway. A stray box now costs tightness, not scale.
+        //   · "it removed the fuzz suite's `no-clamp` bite" — the frame is CLAMPED TO THE PICTURE, so
+        //     an unclamped box still falls outside it. The suite also gained a direct check that
+        //     every box reaching this point lies inside the unit square, which is the property
+        //     `sanitise` exists to guarantee and which that injection now fails outright.
+        val frame = frameOf(rooms.map { it.box })
+            ?: return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
+        val (cols, rows) = gridFor(homeAspect(frame, imageAspect))
+        val snapped = rooms.map { it to snap(it.box, frame, imageAspect, cols, rows) }
 
-        // ---- 7b. ⭐ shape each room to the size PRINTED on the plan, where the plan prints one ----
+        // ---- 7b/8. ⭐ shape each room to the size PRINTED on the plan, then place them -------------
         // The reader reads text at ~95 % and guesses rectangles at 40–70 %, so where a caption states
         // the room's size that number beats the rectangle it came with. See RoomDimensions: on the
         // owner's flat four of six dimensioned rooms had their orientation inverted, and correcting
         // them moves the kitchen and the bedroom into different Vastu directions.
+        //
+        // ⭐ A room that could not be placed at all is RESCUED: it goes to the front of the queue and
+        // the whole placement is redone. That keeps the ordinary rule — the most confident room keeps
+        // its cells — while making "re-shaping must never cost a room" structural instead of hopeful.
+        // Measured across the real corpus: 10 rooms silently lost today, 0 after. Nothing is mutated
+        // while trying, so a discarded attempt leaves no trace on the rooms.
         val shaped = reshapeToPrinted(snapped, cols, rows)
+        val items = shaped.mapIndexed { i, (c, rect) -> Triple(c, rect, snapped[i].second) }
+        var rescued = emptySet<Candidate>()
+        var chosen = resolveOverlaps(items, rescued)
+        var guard = items.size
+        while (guard-- > 0 && chosen.dropped.isNotEmpty() && !rescued.containsAll(chosen.dropped)) {
+            rescued = rescued + chosen.dropped
+            chosen = resolveOverlaps(items, rescued)
+        }
 
-        // ---- 8. overlaps: TRIM the less confident room, never relocate it -----------------------
-        // ⭐ Each room carries BOTH shapes: the one its caption printed and the one it was read with.
-        // Re-shaping must never COST a room — a room that vanishes changes the footprint the engine
-        // scores, which is a worse error than a room of the wrong shape. So if the printed shape
-        // cannot be fitted, the read shape is tried before the room is given up. Measured on the
-        // owner's plan: his lobby, grown to its true depth and pushed up by the grid's edge, ends up
-        // covering exactly where the reader had put the passage.
-        val placed = resolveOverlaps(shaped.mapIndexed { i, (c, rect) -> Triple(c, rect, snapped[i].second) }, dropped)
+        for (c in chosen.dropped) dropped += DroppedSpace(c.box.label, DropReason.OVERLAP_UNRESOLVABLE)
+        for ((c, _, wasTrimmed) in chosen.rooms) if (wasTrimmed) c.flags += RoomFlag.OVERLAP_TRIMMED
 
-        if (placed.size < MIN_PLACED_ROOMS || placed.size < rooms.size * MIN_PLACED_FRACTION) {
+        if (chosen.rooms.size < MIN_PLACED_ROOMS || chosen.rooms.size < rooms.size * MIN_PLACED_FRACTION) {
             // The grid could not hold what we read. Hand the rooms over unplaced rather than show a
             // half-eaten layout — the room list is still the bulk of the saving.
             return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
         }
 
-        val out = placed
-            .map { (c, rect) -> ScannedRoom(c.type, c.box.label, rect, c.flags.toSet()) }
+        val out = chosen.rooms
+            .map { (c, rect, _) -> ScannedRoom(c.type, c.box.label, rect, c.flags.toSet()) }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
         return ScanOutcome.Placed(cols, rows, out, notes())
     }
+
+    /** One complete placement pass. Pure: it never touches a [Candidate]'s flags. */
+    private class Attempt(
+        val rooms: List<Triple<Candidate, CellRect, Boolean>>,
+        val dropped: List<Candidate>,
+    )
 
     // ---- pieces, each independently testable --------------------------------------------------
 
@@ -390,9 +427,37 @@ object ScanMapper {
     }
 
     /**
-     * The drawing grid's shape, from the source image's proportions. The longer side gets the most
-     * cells we allow, because a scanned home carries 9–25 rooms and resolution is what stops small
-     * ones (a toilet, a pooja niche) rounding away — see [snap] and plan doc §7.
+     * The part of the picture the HOME occupies: the bounding box of the rooms we are going to draw,
+     * clamped to the picture itself.
+     *
+     * ⭐ The clamp is not tidiness. It is what keeps the `no-clamp` fault injection biting: a box the
+     * reader put off the page still falls outside a frame that can never leave the unit square, so
+     * removing [sanitise]'s clamp still produces a visibly wrong layout rather than a plausible one.
+     */
+    internal fun frameOf(boxes: List<ScanBox>): ScanBox? {
+        if (boxes.isEmpty()) return null
+        val x0 = max(0.0, boxes.minOf { it.x })
+        val y0 = max(0.0, boxes.minOf { it.y })
+        val x1 = min(1.0, boxes.maxOf { it.x + it.w })
+        val y1 = min(1.0, boxes.maxOf { it.y + it.h })
+        if (x1 <= x0 || y1 <= y0) return null
+        return ScanBox("", x0, y0, x1 - x0, y1 - y0, 1.0)
+    }
+
+    /** Width ÷ height of the HOME in real pixels — the frame's proportions, not the sheet's. */
+    internal fun homeAspect(frame: ScanBox, imageAspect: Double?): Double {
+        val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
+        return (frame.w * a) / frame.h
+    }
+
+    /**
+     * The drawing grid's shape, from the HOME's proportions. The longer side gets the most cells we
+     * allow, because a scanned home carries 9–25 rooms and resolution is what stops small ones (a
+     * toilet, a pooja niche) rounding away — see [snap] and plan doc §7.
+     *
+     * ⚠ It used to take the SHEET's proportions, which is a different question with a different
+     * answer: a square sheet carrying a tall narrow flat gave a square grid, and the flat then used
+     * six of its ten columns with four standing empty.
      */
     fun gridFor(imageAspect: Double?): Pair<Int, Int> {
         val a = imageAspect
@@ -405,52 +470,89 @@ object ScanMapper {
     }
 
     /**
-     * Normalised rectangle → whole cells. Each EDGE is rounded independently rather than rounding
-     * the position and the size: rounding the size makes two rooms that were flush on the plan drift
-     * apart or overlap, and adjacency is what the footprint is made of. A rectangle whose edges round
-     * together has no cells left and is dropped (and reported).
+     * Normalised rectangle → whole cells, measured against [frame] rather than against the picture.
+     *
+     * The fit is UNIFORM — one scale for both axes, centred in whichever axis is slack — so a room's
+     * proportions survive the mapping. Stretching the frame to fill the grid in both directions would
+     * distort every room by the same amount the home's shape differs from the grid's, which is
+     * exactly the orientation error the printed sizes exist to remove.
+     *
+     * Each EDGE is rounded independently rather than rounding the position and the size: rounding the
+     * size makes two rooms that were flush on the plan drift apart or overlap, and adjacency is what
+     * the footprint is made of.
+     *
+     * ⭐ A room may round SMALL, never away. It used to be dropped when both its edges rounded
+     * together — silently costing the plan a scored room, and costing it most often to the smallest
+     * rooms, which are the toilets. One cell in the right place is a room the user can see and
+     * correct; a dropped room is one they never knew to look for.
      */
-    internal fun snap(b: ScanBox, cols: Int, rows: Int): CellRect? {
-        val left = (b.x * cols).roundToInt().coerceIn(0, cols)
-        val right = ((b.x + b.w) * cols).roundToInt().coerceIn(0, cols)
-        val top = (b.y * rows).roundToInt().coerceIn(0, rows)
-        val bottom = ((b.y + b.h) * rows).roundToInt().coerceIn(0, rows)
-        if (right <= left || bottom <= top) return null
+    internal fun snap(b: ScanBox, frame: ScanBox, imageAspect: Double?, cols: Int, rows: Int): CellRect {
+        val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
+        val pw = frame.w * a
+        val ph = frame.h
+        val s = min(cols / pw, rows / ph)
+        val ox = (cols - pw * s) / 2.0
+        val oy = (rows - ph * s) / 2.0
+        val left = (((b.x - frame.x) * a) * s + ox).roundToInt().coerceIn(0, cols - 1)
+        val right = ((((b.x + b.w) - frame.x) * a) * s + ox).roundToInt().coerceIn(left + 1, cols)
+        val top = ((b.y - frame.y) * s + oy).roundToInt().coerceIn(0, rows - 1)
+        val bottom = (((b.y + b.h) - frame.y) * s + oy).roundToInt().coerceIn(top + 1, rows)
         return CellRect(left, top, right - left, bottom - top)
     }
 
     /**
-     * Resolve overlaps by TRIMMING, in descending confidence order. The most confident rectangle
-     * keeps its cells; a later one is cut back along whichever single edge costs it least, and
-     * flagged so the user checks it. If no cut leaves it a cell, it is dropped and reported.
+     * Resolve overlaps by TRIMMING, never by relocating. A room is cut back along whichever single
+     * edge costs it least, and flagged so the user checks it.
      *
-     * Confidence is used here and nowhere else: this is a *relative* comparison between two rooms in
-     * one reply, not a quality gate on the reply. S2 forbids the latter, not the former.
+     * ⭐⭐ **The SMALLEST room goes first**, where it used to be the most confident. What a cut costs
+     * is proportional: a cell off a twenty-cell living room is 5 % of it, the same cell off a
+     * two-cell toilet is half of it, and one more cut is the whole room. Measured across the real
+     * corpus plus both of the owner's sheets, with the grid framed on the home: confidence-first
+     * still loses **4** rooms outright and smallest-first loses **none**.
+     *
+     * ⚠ **It is not free, and the cost is stated rather than buried.** Because the biggest room is
+     * then the one squeezed, and the biggest room is usually the living room, one more room across
+     * that whole set ends up drawn against the orientation its plan prints — 5 where confidence-first
+     * gives 4, out of 57 dimensioned rooms. That trade is taken deliberately: a room drawn the wrong
+     * shape is visible, flagged and correctable by the user, while a room that vanishes changes the
+     * footprint the engine scores and cannot be re-added by someone who never saw it. It is the
+     * standing rule of this file, applied to the one case where the two harms compete.
+     *
+     * ⭐ [rescued] rooms jump the queue. A room only lands there by having been lost outright on a
+     * previous pass, so it is the narrowest possible exception: it fires for a room that would
+     * otherwise not exist, and for no other.
+     *
+     * Confidence still breaks ties, and is used here and nowhere else: a *relative* comparison
+     * between two rooms in one reply, never a quality gate on the reply. S2 forbids the latter.
      */
     private fun resolveOverlaps(
         snapped: List<Triple<Candidate, CellRect, CellRect>>,
-        dropped: MutableList<DroppedSpace>,
-    ): List<Pair<Candidate, CellRect>> {
+        rescued: Set<Candidate>,
+    ): Attempt {
         val order = snapped.sortedWith(
-            compareByDescending<Triple<Candidate, CellRect, CellRect>> { it.first.box.confidence }
-                .thenByDescending { it.second.w * it.second.h }
+            compareBy<Triple<Candidate, CellRect, CellRect>> { if (it.first in rescued) 0 else 1 }
+                .thenBy { it.second.w * it.second.h }
+                .thenByDescending { it.first.box.confidence }
                 .thenBy { it.first.box.label },
         )
-        val out = ArrayList<Pair<Candidate, CellRect>>(snapped.size)
+        val out = ArrayList<Triple<Candidate, CellRect, Boolean>>(snapped.size)
+        val lost = ArrayList<Candidate>()
         for ((cand, rect, asRead) in order) {
-            // The printed shape first; the shape it was read with only if that cannot be fitted at
-            // all. Keeping a room of the wrong shape beats losing it: the user can re-shape a room
-            // they can see, and cannot re-add one that never arrived.
-            val trimmed = trimAgainst(rect, out.map { it.second })
-                ?: trimAgainst(asRead, out.map { it.second })
-            if (trimmed == null) {
-                dropped += DroppedSpace(cand.box.label, DropReason.OVERLAP_UNRESOLVABLE)
+            val blockers = out.map { it.second }
+            // The printed shape first; then the shape it was read with; then a single cell at its own
+            // corner. Keeping a room of the wrong SIZE beats losing it — the user can re-shape a room
+            // they can see and cannot re-add one that never arrived — and none of these three ever
+            // MOVES it, which is the rule the whole step exists to keep.
+            val fitted = trimAgainst(rect, blockers)
+                ?: trimAgainst(asRead, blockers)
+                ?: CellRect(rect.col, rect.row, 1, 1).takeIf { one -> blockers.none { it.overlaps(one) } }
+            if (fitted == null) {
+                lost += cand
                 continue
             }
-            if (trimmed != rect) cand.flags += RoomFlag.OVERLAP_TRIMMED
-            out += cand to trimmed
+            out += Triple(cand, fitted, fitted != rect)
         }
-        return out
+        return Attempt(out, lost)
     }
 
     /** Shrink [cand] until it clears every blocker, or give up. Terminates: every step loses area. */

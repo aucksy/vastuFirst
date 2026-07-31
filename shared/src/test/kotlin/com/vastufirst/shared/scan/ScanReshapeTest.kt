@@ -49,31 +49,40 @@ class ScanReshapeTest {
             ?: throw AssertionError("$caption did not survive: ${rooms.map { it.label }}")
 
     @Test
-    fun `the lobby is deeper than it is wide, as the plan says`() {
-        // Printed 10'-0" x 12'-9". Drawn 6 wide x 2 deep — the room this whole complaint began with.
+    fun `the lobby is no longer drawn as a wide bar`() {
+        // Printed 10'-0" x 12'-9", so slightly deeper than wide. The app first drew it 6 wide x 2
+        // deep — three times wider than deep, the room this whole complaint began with.
+        //
+        // ⚠ Stated honestly rather than asserted prettily: it now comes out SQUARE, not deeper. The
+        // bedroom directly above it, drawn at its own printed depth, occupies the cells the lobby
+        // needs to reach its full depth, and the lobby is the room that gives way because it is the
+        // biggest. That is not a shaping failure — it is the two rooms' true sizes not fitting the
+        // positions the reader guessed for them, which is a placement question and is open.
+        //
+        // What must never come back is the wide bar, so that is what this pins.
         val r = placed().room("LOBBY").rect!!
-        assertTrue(r.h > r.w, "LOBBY printed 10'x12'9\" must be deeper than wide, got ${r.w}x${r.h}")
+        assertTrue(r.h >= r.w, "LOBBY printed 10'x12'9\" must never be wider than deep, got ${r.w}x${r.h}")
+        assertTrue(r.w * r.h >= 6, "and it must stay one of the bigger rooms, got ${r.w}x${r.h}")
     }
 
     @Test
-    fun `the passage survives even though its printed shape will not fit where it was read`() {
-        // ⚠ The honest case, and worth spelling out rather than asserting something prettier.
+    fun `⭐ the passage now KEEPS its printed shape instead of being squashed to fit`() {
+        // ⚠ This used to be the honest-limits case: the passage is printed 2'-3" x 9'-6", over four
+        // times taller than wide, and the lobby beside it — grown to its own true depth and pushed
+        // upward by the bottom of the grid — covered exactly the cells the reader had put it in. The
+        // room survived only by falling back to the shape it was READ with, arriving flagged.
         //
-        // The passage is printed 2'-3" x 9'-6" — over four times taller than wide. Its true shape is
-        // a tall thin strip, but the lobby beside it, grown to ITS true depth and pushed upward by
-        // the bottom of the grid, ends up covering exactly the cells the reader had put the passage
-        // in. The printed shape therefore cannot be honoured here without burying the room.
-        //
-        // What must NOT happen is the room disappearing: a lost room changes the footprint the engine
-        // scores, and the user cannot re-add something they never saw. So the read shape is used
-        // instead, and the room arrives flagged for checking. A room of the wrong shape is a problem
-        // the user can see and fix; a missing room is not.
+        // It no longer needs the fallback. The smallest room is placed first, so the 2'-3" strip takes
+        // its printed shape and the lobby, which can absorb a cut, is the one that gives way. A strip
+        // this thin is exactly the kind of room that used to be lost altogether.
         val p = placed()
         val passage = p.room("PASSAGE")
-        assertTrue(passage.rect != null, "the passage must reach the grid")
+        val r = passage.rect!!
+        assertTrue(r.h > r.w, "PASSAGE printed 2'3\" x 9'6\" must be far deeper than wide, got ${r.w}x${r.h}")
+        assertEquals(1, r.w, "a 2'-3\" strip is one cell across")
         assertTrue(
-            RoomFlag.OVERLAP_TRIMMED in passage.flags,
-            "a passage that could not take its printed shape must be flagged, not silently reshaped",
+            RoomFlag.OVERLAP_TRIMMED !in passage.flags,
+            "it takes its printed shape outright now, so nothing should be flagged",
         )
     }
 

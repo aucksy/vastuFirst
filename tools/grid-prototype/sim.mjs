@@ -1064,20 +1064,50 @@ function scanGridFor(aspect, inject) {
   return aspect >= 1 ? [MAX_GRID, fit(MAX_GRID / aspect)] : [fit(MAX_GRID * aspect), MAX_GRID];
 }
 
-/** Each EDGE rounded independently, so rooms flush on the plan stay flush on the grid. */
-function scanSnap(b, cols, rows, inject) {
-  // FAULT INJECTION 'no-clamp' also removes the grid clamp, so an off-page box lands off-grid.
-  const fit = (v, hi) => (inject === 'no-clamp' ? Math.round(v) : clampInt(Math.round(v), 0, hi));
-  const left = fit(b.x * cols, cols);
-  const rightE = fit((b.x + b.w) * cols, cols);
-  const top = fit(b.y * rows, rows);
-  const bottomE = fit((b.y + b.h) * rows, rows);
-  // FAULT INJECTION 'keep-degenerate': keep a room that rounded away rather than dropping it, the
-  // well-meaning "don't lose the user's toilet" fix. It emits a zero- or negative-size rectangle,
-  // which renders as nothing at all.
-  if (rightE <= left || bottomE <= top) {
-    return inject === 'keep-degenerate' ? { col: left, row: top, w: rightE - left, h: bottomE - top } : null;
+/**
+ * ⭐ The drawing area is the HOME (the rooms' own bounding box, clamped to the picture), not the
+ * picture. Mirrors ScanMapper.frameOf / homeAspect.
+ */
+function scanFrameOf(boxes) {
+  if (!boxes.length) return null;
+  const x0 = Math.max(0, Math.min(...boxes.map((b) => b.x)));
+  const y0 = Math.max(0, Math.min(...boxes.map((b) => b.y)));
+  const x1 = Math.min(1, Math.max(...boxes.map((b) => b.x + b.w)));
+  const y1 = Math.min(1, Math.max(...boxes.map((b) => b.y + b.h)));
+  if (x1 <= x0 || y1 <= y0) return null;
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+function scanHomeAspect(frame, imageAspect) {
+  const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
+  return (frame.w * a) / frame.h;
+}
+
+/**
+ * Each EDGE rounded independently, so rooms flush on the plan stay flush on the grid — but measured
+ * against the FRAME, and with a one-cell floor so a small room rounds SMALL rather than away.
+ */
+function scanSnap(b, frame, imageAspect, cols, rows, inject) {
+  const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
+  const pw = frame.w * a, ph = frame.h;
+  const s = Math.min(cols / pw, rows / ph);
+  const ox = (cols - pw * s) / 2, oy = (rows - ph * s) / 2;
+  const L = ((b.x - frame.x) * a) * s + ox;
+  const R = (((b.x + b.w) - frame.x) * a) * s + ox;
+  const T = (b.y - frame.y) * s + oy;
+  const B = ((b.y + b.h) - frame.y) * s + oy;
+  // FAULT INJECTION 'no-clamp' removes the grid clamp too, so a box the reader put off the page —
+  // which the frame can never cover, because the frame is clamped to the picture — lands off-grid.
+  if (inject === 'no-clamp') {
+    return { col: Math.round(L), row: Math.round(T), w: Math.round(R) - Math.round(L), h: Math.round(B) - Math.round(T) };
   }
+  // FAULT INJECTION 'round-away': drop a room whose edges round together instead of keeping one
+  // cell — the behaviour that silently deleted 10 rooms across the 30 real plans, nearly all toilets.
+  const left = clampInt(Math.round(L), 0, cols - 1);
+  const top = clampInt(Math.round(T), 0, rows - 1);
+  if (inject === 'round-away' && (Math.round(R) <= Math.round(L) || Math.round(B) <= Math.round(T))) return null;
+  const rightE = clampInt(Math.round(R), left + 1, cols);
+  const bottomE = clampInt(Math.round(B), top + 1, rows);
   return { col: left, row: top, w: rightE - left, h: bottomE - top };
 }
 
@@ -1226,14 +1256,25 @@ function scanMap(draft, imageAspect, opts = {}) {
     return { kind: 'assisted', reason: 'TOO_MANY_ROOMS', rooms: identified, notes: notes() };
   }
 
-  // ⚠ The drawing area stays the PICTURE. Re-framing onto the rooms' bounding box was tried and
-  // reverted: it makes every room's size depend on every other room's, and it removed this suite's
-  // `no-clamp` bite entirely, because after re-framing nothing can be out of bounds by construction.
-  const [cols, rows] = scanGridFor(imageAspect, inject);
+  // ⭐ The drawing area is the HOME, not the picture — a builder's sheet is mostly logo, title block
+  // and blank paper, and mapping the reader's coordinates straight onto the grid handed the home
+  // whatever fraction of the PAPER it happened to occupy. The frame is CLAMPED to the picture, which
+  // is what keeps `no-clamp` biting: an off-page box still falls outside a frame that can never leave
+  // the unit square.
+  // ⚠ `--inject=frame-picture` restores the old behaviour and this suite stays GREEN, which is the
+  // honest position: framing on the picture is not ILLEGAL, only worse. It is measured instead, on
+  // the 30 real replies — the home goes from filling 71 % of the grid to 97 %, and rooms lost to
+  // rounding from 10 to 0 (tools/scan-eval/exp-frame.py). Not claimed as fuzz-proven.
+  const frame = inject === 'frame-picture'
+    ? { x: 0, y: 0, w: 1, h: 1 }
+    : scanFrameOf(rooms.map((c) => c.box));
+  if (!frame) return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
+  const roundedAway = [];
+  const [cols, rows] = scanGridFor(scanHomeAspect(frame, imageAspect), inject);
   let snapped = [];
   for (const c of rooms) {
-    const rect = scanSnap(c.box, cols, rows, inject);
-    if (!rect) dropped.push({ label: c.box.label, reason: 'DEGENERATE' });
+    const rect = scanSnap(c.box, frame, imageAspect, cols, rows, inject);
+    if (!rect) { roundedAway.push(c.box.label); dropped.push({ label: c.box.label, reason: 'DEGENERATE' }); }
     // The printed size is attached here, NOT inside reshapeToPrinted, so that deleting the
     // reshaping (--inject=no-printed-sizes) still leaves the invariant something to judge. An
     // injection that removes a feature has to go red; one that merely stops recording it would not.
@@ -1241,35 +1282,70 @@ function scanMap(draft, imageAspect, opts = {}) {
   }
   snapped = reshapeToPrinted(snapped, cols, rows, inject);
 
-  const order = snapped.slice().sort((a, b) =>
-    b.c.box.confidence - a.c.box.confidence || (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h)
-    || String(a.c.box.label).localeCompare(String(b.c.box.label)));
-  const placed = [];
-  for (const s of order) {
-    // ⚠ FAULT INJECTION 'repack' reuses the editor's relocating packer here — the thing this suite
-    // exists to forbid. It produces a legal-looking layout that TRIMMED-MOVED catches.
-    // 'no-trim' is the cruder version: just take what the model said.
-    // The printed shape first, then the shape it was READ with. Re-shaping must never cost a room:
-    // a room that vanishes changes the footprint the engine scores, which is worse than a room of
-    // the wrong shape (which the user can see and fix).
-    let trimmed, basis = s.rect;
-    if (inject === 'repack') {
-      trimmed = (fitWithoutOverlap([...placed.map((p) => p.rect), s.rect], cols, rows) || []).slice(-1)[0] || null;
-    } else if (inject === 'no-trim') {
-      trimmed = s.rect;
-    } else {
-      trimmed = scanTrimAgainst(s.rect, placed.map((p) => p.rect));
-      if (!trimmed) {           // the printed shape will not fit here; fall back to the read shape
-        basis = s.asReadRaw || s.rect;
-        trimmed = scanTrimAgainst(basis, placed.map((p) => p.rect));
+  // ⭐ SMALLEST first: what a cut costs is proportional, so the room that cannot absorb one goes
+  // ahead of the room that can, and a room lost outright is RESCUED — it jumps the queue and the
+  // whole placement is redone.
+  // ⚠ `--inject=confidence-first` and `--inject=no-rescue` both leave this suite GREEN, and that is
+  // stated rather than dressed up: losing a room is REPORTED, so it is legal, and random replies do
+  // not reliably reproduce the case. Both are measured on the 30 real replies instead — 4 rooms lost
+  // against 0. What IS fuzz-proven here is `no-onecell`, which fires LOST-WITH-ROOM-TO-SPARE.
+  function placeAll(rescued) {
+    const rank = (x) => (rescued.has(x.c) ? 0 : 1);
+    const order = snapped.slice().sort((a, b) =>
+      rank(a) - rank(b) || (inject === 'confidence-first'
+        ? (b.c.box.confidence - a.c.box.confidence || (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h))
+        : ((a.rect.w * a.rect.h) - (b.rect.w * b.rect.h) || b.c.box.confidence - a.c.box.confidence))
+      || String(a.c.box.label).localeCompare(String(b.c.box.label)));
+    const placed = [], lost = [];
+    for (const s2 of order) {
+      // ⚠ FAULT INJECTION 'repack' reuses the editor's relocating packer here — the thing this suite
+      // exists to forbid. It produces a legal-looking layout that TRIMMED-MOVED catches.
+      // 'no-trim' is the cruder version: just take what the model said.
+      // The printed shape first, then the shape it was READ with, then one cell at its own corner.
+      // Re-shaping must never cost a room: a room that vanishes changes the footprint the engine
+      // scores, which is worse than a room of the wrong shape (which the user can see and fix).
+      let trimmed, basis = s2.rect;
+      if (inject === 'repack') {
+        trimmed = (fitWithoutOverlap([...placed.map((p) => p.rect), s2.rect], cols, rows) || []).slice(-1)[0] || null;
+      } else if (inject === 'no-trim') {
+        trimmed = s2.rect;
+      } else {
+        trimmed = scanTrimAgainst(s2.rect, placed.map((p) => p.rect));
+        if (!trimmed) {         // the printed shape will not fit here; fall back to the read shape
+          basis = s2.asReadRaw || s2.rect;
+          trimmed = scanTrimAgainst(basis, placed.map((p) => p.rect));
+        }
       }
+      if (!trimmed && inject !== 'no-onecell') {
+        const one = { col: s2.rect.col, row: s2.rect.row, w: 1, h: 1 };
+        if (!placed.some((p) => overlaps(p.rect, one))) { trimmed = one; basis = s2.rect; }
+      }
+      if (!trimmed) { lost.push(s2.c); continue; }
+      // `asRead` is the rectangle this placement was actually DERIVED from, so the anti-relocation
+      // check compares like with like whether the printed shape or the read shape was used. It still
+      // catches a relocating packer, which moves a room to a free slot unrelated to either.
+      placed.push({ c: s2.c, rect: trimmed, asRead: basis, printed: s2.printed || null, shaped: s2.rect });
     }
-    if (!trimmed) { dropped.push({ label: s.c.box.label, reason: 'OVERLAP_UNRESOLVABLE' }); continue; }
-    // `asRead` is the rectangle this placement was actually DERIVED from, so the anti-relocation
-    // check compares like with like whether the printed shape or the read shape was used. It still
-    // catches a relocating packer, which moves a room to a free slot unrelated to either.
-    placed.push({ c: s.c, rect: trimmed, asRead: basis, printed: s.printed || null, shaped: s.rect });
+    return { placed, lost };
+  }
 
+  let rescued = new Set();
+  let attempt = placeAll(rescued);
+  for (let guard = snapped.length; guard-- > 0 && inject !== 'no-rescue';) {
+    if (!attempt.lost.length || attempt.lost.every((c) => rescued.has(c))) break;
+    attempt.lost.forEach((c) => rescued.add(c));
+    attempt = placeAll(rescued);
+  }
+  const placed = attempt.placed;
+  // ⭐ Why each loss happened, so the suite can judge it. The ONLY legitimate reason left is that
+  // another room already holds the very cell this one starts in — two rectangles read in the same
+  // place. Anything else means a room was given up while somewhere of its own was still free.
+  const lostWithFreeCorner = [];
+  for (const c of attempt.lost) {
+    dropped.push({ label: c.box.label, reason: 'OVERLAP_UNRESOLVABLE' });
+    const src = snapped.find((x) => x.c === c);
+    const one = src && { col: src.rect.col, row: src.rect.row, w: 1, h: 1 };
+    if (one && !placed.some((pp) => overlaps(pp.rect, one))) lostWithFreeCorner.push(c.box.label);
   }
 
   if (placed.length < MIN_PLACED_ROOMS || placed.length < rooms.length * MIN_PLACED_FRACTION) {
@@ -1277,7 +1353,7 @@ function scanMap(draft, imageAspect, opts = {}) {
   }
   const out = placed.slice().sort((a, b) => a.rect.row - b.rect.row || a.rect.col - b.rect.col)
     .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped }));
-  return { kind: 'placed', cols, rows, rooms: out, notes: notes() };
+  return { kind: 'placed', cols, rows, rooms: out, notes: notes(), sanitised: clean, roundedAway, lostWithFreeCorner };
 }
 
 /** Every invariant the editor guarantees, asserted on what the mapper emits. */
@@ -1287,6 +1363,24 @@ function scanInvariants(out) {
     for (const r of out.rooms || []) if (r.rect) problems.push('ASSISTED-HAS-GEOMETRY');
     return problems;
   }
+  // ⭐ SANITISED-IN-PAGE. sanitise() exists to guarantee every box lies inside the picture, and the
+  // frame is clamped to the picture, so this is the property that keeps the `no-clamp` injection
+  // biting now that the grid is framed on the home. Checked directly rather than inferred from an
+  // off-grid rectangle, which is strictly stronger: the old check only noticed when rounding happened
+  // to carry the error all the way through.
+  for (const b of out.sanitised || []) {
+    if (b.x < 0 || b.y < 0 || b.x + b.w > 1 + 1e-9 || b.y + b.h > 1 + 1e-9) {
+      problems.push(`SANITISED-IN-PAGE ${b.label} ${b.x.toFixed(2)},${b.y.toFixed(2)} ${b.w.toFixed(2)}x${b.h.toFixed(2)}`);
+    }
+  }
+  // ⭐ NO-ROUNDING-LOSS. A room may round SMALL, never away. Ten rooms across the thirty real plans
+  // used to vanish here — almost all toilets, each one a scored input silently absent from a paid
+  // score, with only a line in "we also saw" to show for it.
+  for (const label of out.roundedAway || []) problems.push(`ROUNDED-AWAY ${label}`);
+  // ⭐ LOST-WITH-ROOM-TO-SPARE. A room may only be given up when another room already holds the cell
+  // it starts in. Anywhere else free means it should have been kept — one cell in the right place is
+  // a room the user can see and resize, and a room that never arrives is one they cannot re-add.
+  for (const label of out.lostWithFreeCorner || []) problems.push(`LOST-WITH-ROOM-TO-SPARE ${label}`);
   const { cols, rows, rooms } = out;
   if (!(cols >= MIN_GRID && cols <= MAX_GRID && rows >= MIN_GRID && rows <= MAX_GRID)) {
     problems.push(`PLOT-RANGE ${cols}x${rows}`);

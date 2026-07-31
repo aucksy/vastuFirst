@@ -30,6 +30,12 @@ const ACCEPTED = {
     'Never faux-bold a real face.',
   'radius.radius-full':
     'Design records 999dp; implemented as RoundedCornerShape(percent = 50) — identical for a pill.',
+  'color.text-tertiary':
+    'Design records #6B7064, which MEASURES 4.39:1 against the card surface #F2EEE4 where WCAG AA ' +
+    'requires 4.5 — so every small grey label in the app was below the legibility bar. Implemented ' +
+    'as #686C61: same hue and saturation, lightness down three values, 4.64:1 on the card and 4.97 ' +
+    'on paper. Still clearly the quietest tier (4.64 against textSecondary 6.90). A contrast floor ' +
+    'is not a matter of taste, so the code wins over the swatch here.',
 };
 
 /* ── accent colours the design itself audits BELOW their floor ────────────────────────────

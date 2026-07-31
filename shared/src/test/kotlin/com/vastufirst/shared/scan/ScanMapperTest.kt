@@ -1,6 +1,7 @@
 package com.vastufirst.shared.scan
 
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.CellRect
 import com.vastufirst.shared.editor.overlaps
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -188,9 +189,15 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `a room no trim can rescue is dropped and reported`() {
-        // The toilet straddles the seam between two bigger, more confident rooms: cutting it clear of
-        // one pushes it into the other, and there is no single edge left to give.
+    fun `⭐ a small room squeezed between two bigger ones is KEPT, and they give way instead`() {
+        // The toilet straddles the seam between two bigger, more confident rooms. This used to cost
+        // the plan its toilet outright: cutting it clear of one pushed it into the other, there was no
+        // single edge left to give, and it was dropped — a scored room, weight 2.5, gone from a paid
+        // score with only a line in "we also saw" to show for it.
+        //
+        // The smallest room is now placed FIRST, so the cost lands where it can be absorbed: a cell
+        // off a forty-cell living room is nothing, the same cell off a four-cell toilet is a quarter
+        // of it. Across the 30 real plans this is the difference between 10 rooms lost and none.
         val out = ScanMapper.map(
             draft(
                 box("LIVING ROOM", 0.0, 0.0, 0.5, 1.0, c = 0.95),
@@ -199,7 +206,31 @@ class ScanMapperTest {
             ),
         )
         val placed = assertIs<ScanOutcome.Placed>(out)
-        assertEquals(2, placed.rooms.size)
+        assertEquals(3, placed.rooms.size, "the toilet must survive")
+        assertTrue(placed.notes.dropped.isEmpty(), "nothing may be reported as lost: ${placed.notes.dropped}")
+        val toilet = placed.rooms.single { it.type == RoomType.TOILET }
+        assertEquals(CellRect(4, 4, 2, 2), toilet.rect, "it keeps exactly the cells it was read in")
+        assertTrue(RoomFlag.OVERLAP_TRIMMED !in toilet.flags, "and it is not the one that gave way")
+        val living = placed.rooms.single { it.type == RoomType.LIVING }
+        assertTrue(RoomFlag.OVERLAP_TRIMMED in living.flags, "the big room absorbs the cut and is flagged")
+        assertEditorInvariants(placed)
+    }
+
+    @Test
+    fun `a room drawn on top of another of the same size is dropped and reported`() {
+        // What is left of the unresolvable case once the small room goes first: two rectangles in
+        // exactly the same place. One of them can be placed and the other has nowhere to go — not a
+        // cut, not a single free cell at its own corner — so it is dropped and SAID, never silently.
+        val out = ScanMapper.map(
+            draft(
+                box("LIVING ROOM", 0.0, 0.0, 0.5, 1.0, c = 0.95),
+                box("KITCHEN", 0.5, 0.0, 0.5, 1.0, c = 0.90),
+                box("BATH", 0.4, 0.4, 0.2, 0.2, c = 0.50),
+                box("TOILET", 0.4, 0.4, 0.2, 0.2, c = 0.10),
+            ),
+        )
+        val placed = assertIs<ScanOutcome.Placed>(out)
+        assertEquals(3, placed.rooms.size)
         assertTrue(placed.notes.dropped.any { it.label == "TOILET" && it.reason == DropReason.OVERLAP_UNRESOLVABLE })
         assertEditorInvariants(placed)
     }
@@ -343,6 +374,16 @@ class ScanMapperTest {
         val a = assertIs<ScanOutcome.Placed>(ScanMapper.map(draft(*tiling.toTypedArray())))
         val b = assertIs<ScanOutcome.Placed>(ScanMapper.map(draft(*sparse.toTypedArray())))
         assertEquals(a.rooms.map { it.type }, b.rooms.map { it.type })
+        // ⭐ And now they are the SAME LAYOUT, cell for cell, not merely the same rooms. That is what
+        // framing the grid on the home rather than on the picture buys: how much of the sheet the
+        // drawing happens to occupy — a builder's logo, a title block, white paper — stops deciding
+        // how big the home is drawn. This is the owner's report, as a property.
+        assertEquals(
+            a.rooms.map { it.type to it.rect },
+            b.rooms.map { it.type to it.rect },
+            "the same home read at half the scale must draw identically",
+        )
+        assertEquals(a.cols to a.rows, b.cols to b.rows)
     }
 
     // ---- overlaps: TRIM, never relocate ----------------------------------------------------------
@@ -359,18 +400,22 @@ class ScanMapperTest {
             ),
         )
         val placed = assertIs<ScanOutcome.Placed>(out)
-        val kitchen = placed.rooms.single { it.type == RoomType.KITCHEN }
-        assertTrue(RoomFlag.OVERLAP_TRIMMED in kitchen.flags, "the trim must be flagged for the user")
+        // The LIVING ROOM is the one that gives way here — it is the biggest, so it goes last and it
+        // is the one that can afford the cut. Read across the whole plan: 0..6 wide by the full depth.
+        val living = placed.rooms.single { it.type == RoomType.LIVING }
+        assertTrue(RoomFlag.OVERLAP_TRIMMED in living.flags, "the trim must be flagged for the user")
 
-        // It kept its own top-right corner — it was cut back, not relocated.
-        val asRead = ScanMapper.snap(ScanBox("KITCHEN", 0.5, 0.0, 0.5, 0.5), placed.cols, placed.rows)!!
-        assertTrue(kitchen.rect!!.overlaps(asRead), "a trimmed room must still sit where it was read")
-        assertEquals(asRead.right, kitchen.rect!!.right)
-        assertEquals(asRead.row, kitchen.rect!!.row)
+        // ⭐ It kept its own top-LEFT corner and lost a strip off its east side — cut back, not moved.
+        // This is the anti-relocation assertion: a room that travels silently misreports where it is,
+        // and a room's position is what decides its Vastu direction.
+        assertEquals(CellRect(0, 0, 5, 10), living.rect, "cut on one edge, anchored where it was read")
     }
 
     @Test
-    fun `the more confident room keeps its cells`() {
+    fun `⭐ the smaller room keeps its cells, whatever its confidence`() {
+        // The kitchen is the LEAST confident rectangle in this reply (0.40 against 0.95) and it still
+        // keeps every cell, because it is smaller than the living room. Confidence only breaks ties
+        // between rooms of equal size now; what a cut actually costs is proportional to the room.
         val out = ScanMapper.map(
             draft(
                 box("LIVING ROOM", 0.0, 0.0, 0.6, 1.0, c = 0.95),
@@ -379,10 +424,9 @@ class ScanMapperTest {
             ),
         )
         val placed = assertIs<ScanOutcome.Placed>(out)
-        val living = placed.rooms.single { it.type == RoomType.LIVING }
-        val asRead = ScanMapper.snap(ScanBox("LIVING ROOM", 0.0, 0.0, 0.6, 1.0), placed.cols, placed.rows)!!
-        assertEquals(asRead, living.rect)
-        assertTrue(RoomFlag.OVERLAP_TRIMMED !in living.flags)
+        val kitchen = placed.rooms.single { it.type == RoomType.KITCHEN }
+        assertEquals(CellRect(5, 0, 5, 5), kitchen.rect)
+        assertTrue(RoomFlag.OVERLAP_TRIMMED !in kitchen.flags)
     }
 
     // ---- the invariants the editor downstream depends on ------------------------------------------
@@ -396,7 +440,7 @@ class ScanMapperTest {
     // ---- the grid ---------------------------------------------------------------------------------
 
     @Test
-    fun `the grid follows the image's proportions and stays in the editor's range`() {
+    fun `the grid follows the HOME's proportions and stays in the editor's range`() {
         assertEquals(ScanMapper.DEFAULT_GRID to ScanMapper.DEFAULT_GRID, ScanMapper.gridFor(null))
         assertEquals(ScanMapper.DEFAULT_GRID to ScanMapper.DEFAULT_GRID, ScanMapper.gridFor(0.0))
         assertEquals(ScanMapper.DEFAULT_GRID to ScanMapper.DEFAULT_GRID, ScanMapper.gridFor(Double.NaN))
@@ -413,19 +457,29 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `a room too small to round to a cell is dropped and reported, not silently lost`() {
+    fun `⭐ a room too small to round to a cell is drawn as ONE cell, never rounded away`() {
+        // This used to be a drop. A rectangle whose edges rounded together had no cells left and was
+        // reported as DEGENERATE — and because the grid was framed on the whole PICTURE, a home
+        // occupying a third of a builder's sheet made every room a third of its proper size, so the
+        // rooms this happened to were the small ones: toilets, pooja niches, utilities. Ten rooms
+        // across the thirty real plans, every one of them silently absent from a paid score.
+        //
+        // Framing on the home removes most of it; this floor removes the rest. A room may round SMALL
+        // — one cell in the right place, which the user can see and resize — but it cannot vanish.
         val out = ScanMapper.map(
             draft(
                 box("LIVING ROOM", 0.0, 0.0, 1.0, 0.5),
                 box("KITCHEN", 0.0, 0.5, 0.6, 0.48),
                 box("MASTER BEDROOM", 0.6, 0.5, 0.4, 0.48),
-                // In the sliver along the bottom wall, so it is genuinely too small rather than a
-                // sub-area of the room above it: ~0.16 of a cell each way.
+                // In the sliver along the bottom wall: ~0.16 of a cell each way.
                 box("TOILET", 0.40, 0.985, 0.02, 0.012),
             ),
         )
         val placed = assertIs<ScanOutcome.Placed>(out)
-        assertTrue(placed.notes.dropped.any { it.label == "TOILET" && it.reason == DropReason.DEGENERATE })
+        val toilet = placed.rooms.single { it.type == RoomType.TOILET }
+        assertEquals(CellRect(4, 9, 1, 1), toilet.rect, "a sliver becomes one cell where it was read")
+        assertTrue(placed.notes.dropped.none { it.reason == DropReason.DEGENERATE }, "nothing rounds away")
+        assertEditorInvariants(placed)
     }
 
     // ---- helpers ------------------------------------------------------------------------------------

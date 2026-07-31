@@ -41,7 +41,13 @@ val SageGold = VastuColors(
     paper = Color(0xFFF8F6F0), surface = Color(0xFFF2EEE4), surfaceRaised = Color(0xFFFFFFFF),
     primary = Color(0xFF7A9E7E), primaryDark = Color(0xFF5F8465), onPrimary = Color(0xFF232A22),
     secondary = Color(0xFFC9A227), secondaryText = Color(0xFF6F5410),
-    textPrimary = Color(0xFF232A22), textSecondary = Color(0xFF4B5347), textTertiary = Color(0xFF6B7064),
+    // ⭐ textTertiary is 0xFF686C61, three values darker than the design's 0xFF6B7064. MEASURED, not
+    // preferred: the design value contrasts 4.39 : 1 against the card surface where WCAG AA requires
+    // 4.5, so every small grey label in the app — the compass letters, MOVE / SIZE / ROOM TYPE, the
+    // selected room's "2 × 2 · North-West" — has been below the legibility bar on every build. Hue and
+    // saturation are untouched and only the lightness moves, so the tier still reads as the quietest
+    // of the three (4.64 : 1 against textSecondary's 6.90). Declared in check-design-fidelity.mjs.
+    textPrimary = Color(0xFF232A22), textSecondary = Color(0xFF4B5347), textTertiary = Color(0xFF686C61),
     borderDefault = Color(0xFFDDDED3), borderStrong = Color(0xFFB6BBA8), borderFocus = Color(0xFF4C7355),
     zoneN = Color(0xFF2E8B8B), zoneNE = Color(0xFF2F6FBF), zoneE = Color(0xFFE0A21E), zoneSE = Color(0xFFE0662F),
     zoneS = Color(0xFFC83B32), zoneSW = Color(0xFF8A6A45), zoneW = Color(0xFF6A5FB0), zoneNW = Color(0xFF4E9A55), zoneCentre = Color(0xFF9A57B0),

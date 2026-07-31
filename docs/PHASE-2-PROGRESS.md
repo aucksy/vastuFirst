@@ -1691,3 +1691,131 @@ largest room. **Honest limits visible in the same picture:** the bedroom is trim
 grown living room, and the passage keeps its read shape because the living room now covers where the
 reader had placed it. Positions are still the model's guess — this fixes shape, not placement, and the
 user confirms every room.
+
+---
+
+## ⭐⭐ The grid belongs to the home, not to the sheet — v0.3.22 (2026-07-31)
+
+Owner, scanning a second Green Court unit: *"I can see the problem of not using the whole grid is
+back and I feel the proportion may be right but not dimensions — Toilet is not built correctly to
+show the word Toilet."* Both halves correct, and both turned out to be one cause.
+
+### The measurement, taken from his two screenshots alone
+
+Working backwards through `snap` and `reshapeToPrinted` from the rectangles the app drew reproduces
+the arithmetic exactly: **one cell was standing for 16.5 sq ft, so his 526 sq ft flat was drawn as
+though the grid were a 41 ft × 41 ft plot.** Five of the six dimensioned rooms match that scale to
+the cell; the sixth differs by exactly one trim, which is visible in the picture.
+
+The cause is single. `ScanMapper` mapped the reader's coordinates — which are against the whole
+PICTURE — straight onto the grid, and the scale came from the cells those rectangles already used.
+A builder's sheet is about 40 % logo, title block and blank paper, so **the home only ever got the
+share of the grid it happened to occupy on the page.** Small home ⇒ every room small ⇒ a 4'-11"
+toilet rounds to one cell ⇒ "To…".
+
+⚠ The proportions were already right. His instinct was exactly correct, and the table proves it:
+printed width÷depth against drawn width÷depth agreed on every room.
+
+### What changed
+
+| | |
+|---|---|
+| **The drawing area is the HOME** | the rooms' bounding box, *clamped to the picture*, fitted uniformly so proportions survive, with the grid's shape taken from the home's proportions rather than the sheet's |
+| **A room may round SMALL, never away** | both edges rounding together used to drop it |
+| **The smallest room is placed first** | what a cut costs is proportional |
+| **A room lost outright is rescued** | it jumps the queue and the placement is redone |
+
+### Measured on the 30 real replies plus both of the owner's own sheets
+
+`tools/scan-eval/exp-frame.py` — every table parsed out of `RoomLabels.kt` so the mirror cannot drift.
+
+| | before | after |
+|---|---|---|
+| home fills the grid | 71 % (his sheet: 40 %) | **97 %** (his: 100 %) |
+| rooms cover the grid | 49 % | 69 % |
+| rooms too narrow to print a name | 37 | 30 |
+| rooms cut back | 11 | 15 |
+| **rooms silently lost** | **10** | **0** |
+
+⭐ The last row was not the goal and is the most valuable thing here. Ten rooms across twelve plans
+— almost all toilets, a scored input at weight 2.5 — were rounding away before they reached a
+screen. Nobody had counted them.
+
+### ⚠ Two objections that reverted this in v0.3.21, and how each is answered
+
+- *"one stray rectangle inflates the frame and shrinks the whole home"* — measured across 20 real
+  replies: removing the single most extreme room shrinks the frame by a **median 1.12×, worst
+  1.29×**. Real, bounded, and not the catastrophe the note implied.
+- *"it removed the fuzz suite's `no-clamp` bite"* — the frame is **clamped to the picture**, so an
+  off-page box still falls outside it. The suite also gained `SANITISED-IN-PAGE`, which checks the
+  property `sanitise` exists to guarantee directly rather than inferring it from a rounded
+  rectangle. `--inject=no-clamp` fires it.
+
+### ⚠ Built, measured, and NOT shipped
+
+A four-rung "fill the grid" ladder (0.95/0.90/0.85/0.80, take the largest that costs no room).
+Across the corpus and both sheets it produced **identical** orientation errors, rooms lost, fill and
+coverage, and his toilet came out the same either way. Once the frame is the home the reader's own
+total already fills it. Machinery that cannot be shown to change an answer does not ship; the
+reasoning is recorded in `ScanMapper` so it is not re-derived.
+
+### ⚠ Honest costs, stated not buried
+
+- **Orientation goes 4 wrong → 5**, out of 57 dimensioned rooms. Because the biggest room is now the
+  one squeezed, and the biggest room is usually the living room. Taken deliberately: a room of the
+  wrong shape is visible, flagged and correctable; a room that vanishes changes the footprint the
+  engine scores and cannot be re-added by someone who never saw it. That is this file's standing
+  rule applied where the two harms compete.
+- On the Cat-II sheet the **lobby now comes out square** rather than deeper than wide, and the
+  bedroom and passage become right where they were wrong. Net 2 wrong → 1 on that plan.
+- **One plan (`plan-014`) moves from Assisted to Placed**, because it was only landing in Assisted
+  by losing rooms to rounding. Under the designed gate — 11 rooms, under `MAX_TRUSTED_ROOMS` — it
+  belongs in Placed.
+- `--inject=frame-picture`, `--inject=confidence-first` and `--inject=no-rescue` all leave the fuzz
+  suite **green**, and that is said plainly rather than dressed up: losing a room is *reported*, so
+  it is legal. They are corpus-measured, not fuzz-proven. `no-onecell` and `round-away` do fire.
+
+---
+
+## ⭐ Production-grade UI, same build — v0.3.22
+
+Owner: *"I want you figure out the best, safe and most stable solution to keep UI/UX production
+grade including this issue of names not showing up correctly."* Three defects, all previously
+surfaced and parked, all closed here.
+
+### 1. ⭐ A room too narrow for its name now turns the name on its side
+
+`RoomTileLabel.kt`. Shrinking the text was refused — this app is read by older users looking for
+directions — and blanket abbreviation was refused too, because "Corr", "Util" and "Base" are not
+words anyone reads at a glance. What solves it is what architects have always done on a narrow room:
+**turn the label**. Rungs, each measured rather than guessed: full name across → full name turned →
+short word across → short word turned → nothing.
+
+The choice is a pure function taking an injected measurer, so it is unit-tested at every font scale
+without rendering. ⚠ The trap it exists for: at 200 % font a *line box* is taller than a one-cell
+room is wide, so a turned label would hang out of its own tile — the rotated rung checks the swapped
+axis too. Short forms are real words only (`WC`, `Bath`, `Bed`, `Entry`, `Court`); where no natural
+one exists the full name is kept and the rung is simply skipped.
+
+### 2. The readout no longer sits on the plan at rest
+
+It appeared whenever a room was selected and covered the top row — the owner's screenshot, later
+reproduced in our own `editor-selected` golden. It was also **redundant** there: the selected-room
+panel below the grid already prints the same kind · size · direction line. It now appears only while
+a finger is actually moving something, which is the one moment that panel cannot help, and it moves
+to the bottom edge when the room being dragged is itself in the top row.
+
+### 3. Contrast — the small grey text and the arrow glyphs
+
+Measured, not eyeballed:
+
+| | was | now |
+|---|---|---|
+| `textTertiary` on the card (compass letters, MOVE/SIZE/ROOM TYPE, "2 × 2 · North-West") | **4.39 : 1** | **4.64 : 1** (`#686C61`) |
+| move arrows and size steppers on the 14 % primary tint | **3.25 : 1** | **6.15 : 1** (`textSecondary`) |
+
+The token moves three values of lightness with hue and saturation untouched, so the tier still reads
+as the quietest of the three (4.64 against textSecondary's 6.90). Declared in
+`check-design-fidelity.mjs` with its reason — a contrast floor is not a matter of taste. The arrows
+needed no token change at all: the tint already carries the "this is a control" signal, so the glyph
+moved to `textSecondary`, the same call made for the Change affordance in v0.3.20.

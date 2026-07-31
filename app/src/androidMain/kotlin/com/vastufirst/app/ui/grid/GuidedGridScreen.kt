@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -53,13 +54,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -71,11 +74,11 @@ import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.spoken
 import com.vastufirst.app.ui.newplan.GRID
-import com.vastufirst.app.ui.newplan.doorForTap
-import com.vastufirst.app.ui.newplan.doorMarkerCell
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.app.ui.newplan.doorForTap
+import com.vastufirst.app.ui.newplan.doorMarkerCell
 import com.vastufirst.app.ui.newplan.retypeRoom
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
@@ -392,12 +395,19 @@ fun GuidedGridContent(
         // fixed spot the hand never covers while dragging a room (§4.4) — not floating near the shape.
         // (Never name a local `drag` in this function: it would shadow the gestures `drag()` below.)
         val dragNow = activeDrag
+        // ⭐ ONLY while a finger is actually moving something. At rest it used to sit over the plan
+        // describing the selected room — and the owner's own screenshot shows it covering the room in
+        // the top row, which our goldens then reproduced. It was also redundant there: the selected-
+        // room panel below the grid already prints the same "kind · size · direction" line, with more
+        // space and no plan underneath it. During a drag that panel cannot help — the value is
+        // changing under the finger — so that is the one moment the overlay earns its place.
         val chipText = when {
             dragNow != null && dragNow.blocked -> "Rooms can’t overlap"
             dragNow != null -> describe(dragNow.type, dragNow.rect, cols, rows)
-            selected != null -> describe(selected.type, selected.rect(), cols, rows)
             else -> null
         }
+        // …and even then it moves out of the way of the room being dragged rather than sitting on it.
+        val chipAtBottom = dragNow != null && dragNow.rect.row == 0
         // The size/zone chip is NOT a reserved row here any more — an always-on 48 dp band left a big
         // blank strip above the grid at rest (owner report #1), and collapsing it made the grid lurch
         // down the instant a move began. It is now drawn as an overlay pinned to the TOP of the plan
@@ -700,8 +710,11 @@ fun GuidedGridContent(
                     color = colors.paper,
                     maxLines = 1,
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = VastuTheme.spacing.s2)
+                        .align(if (chipAtBottom) Alignment.BottomCenter else Alignment.TopCenter)
+                        .then(
+                            if (chipAtBottom) Modifier.padding(bottom = VastuTheme.spacing.s2)
+                            else Modifier.padding(top = VastuTheme.spacing.s2),
+                        )
                         .clip(VastuTheme.shapes.full)
                         .background(if (dragNow?.blocked == true) badColor else colors.textPrimary)
                         .padding(horizontal = VastuTheme.spacing.s3, vertical = VastuTheme.spacing.s2),
@@ -874,11 +887,39 @@ private fun BoxScope.RoomTile(
             },
         contentAlignment = Alignment.Center,
     ) {
-        // A single cell has no room for a word at any font scale; the chip and TalkBack name it.
-        if (rect.w * rect.h >= 2) {
+        // ⭐ The name is MEASURED into the tile rather than ellipsised down to "To…" — full name
+        // across, else the full name turned on its side the way a plan labels a narrow room, else the
+        // short word, else nothing. See RoomTileLabel.
+        val style = VastuTheme.type.bodySm
+        val measurer = rememberTextMeasurer(cacheSize = 32)
+        val density = LocalDensity.current
+        val inset = VastuTheme.spacing.s2                       // the tile's own padding, both sides
+        val innerW = cell * rect.w - inset
+        val innerH = cell * rect.h - inset
+        // `density` is a key because it carries the font scale: at 200 % the same room falls to a
+        // different rung, which is exactly the configuration the render harness checks.
+        val chosen = remember(room.type, rect.w, rect.h, cell, style, density) {
+            with(density) {
+                chooseTileLabel(
+                    full = room.type.label(),
+                    short = room.type.shortLabel(),
+                    widthPx = innerW.toPx(),
+                    heightPx = innerH.toPx(),
+                ) { text ->
+                    val m = measurer.measure(AnnotatedString(text), style, maxLines = 1).size
+                    m.width.toFloat() to m.height.toFloat()
+                }
+            }
+        }
+        if (chosen != null) {
             VText(
-                room.type.label(), style = VastuTheme.type.bodySm,
+                chosen.text, style = style,
                 color = colors.textPrimary, maxLines = 1, align = TextAlign.Center,
+                modifier = if (!chosen.rotated) Modifier else Modifier
+                    // Measured against the tile's LENGTH, then turned. Without the explicit width the
+                    // text is still laid out against the tile's narrow side and clips before it turns.
+                    .requiredWidth(innerH)
+                    .graphicsLayer { rotationZ = -90f },
             )
         }
     }
@@ -1059,6 +1100,11 @@ private fun EditorKey(glyph: String, description: String, onClick: () -> Unit) {
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        VText(glyph, style = VastuTheme.type.body, color = colors.primaryDark, maxLines = 1)
+        // ⭐ textSecondary, not the sage accent. MEASURED: primaryDark on this 14 % primary tint is
+        // 3.25 : 1 where 4.5 is required, so the move arrows and the size steppers — the controls a
+        // keyboard or non-drag user depends on entirely — were the least legible glyphs on the screen.
+        // textSecondary on the same tint is 6.15 : 1. The tint keeps the "this is a control" signal;
+        // it never needed to come from the glyph. Same call, same reason, as the Change affordance.
+        VText(glyph, style = VastuTheme.type.body, color = colors.textSecondary, maxLines = 1)
     }
 }
