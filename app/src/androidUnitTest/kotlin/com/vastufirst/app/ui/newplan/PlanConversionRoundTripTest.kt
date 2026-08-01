@@ -8,6 +8,9 @@ import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.Room
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.Severity
+import com.vastufirst.shared.Zone
+import com.vastufirst.shared.editor.Cell
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -313,5 +316,173 @@ class PlanConversionRoundTripTest {
     @Test
     fun `a tap with no rooms yields no door`() {
         assertNull(doorForTap(4.5f, 4.5f, emptyList()))
+    }
+
+    // ── ⭐ THE HOME'S TRUE SHAPE (docs/SCORE-ACCURACY-CAVEATS.md #1) ─────────────────────────────
+    //
+    // An L-shaped or notched home used to be handed to the engine as the filled bounding box around
+    // its rooms, so the missing corner was scored as though it were there — silently, too generously,
+    // on the commonest real Indian home shape. The engine was never the problem: it has always been
+    // able to attribute a missing corner to a zone. It was never given one.
+
+    /** An 8×8 home with its whole north-east 3×3 corner missing — the textbook L. */
+    private val lShaped = listOf(
+        GridRoom("a", RoomType.LIVING, 0, 0, 5, 8),
+        GridRoom("b", RoomType.KITCHEN, 5, 3, 3, 5),
+    )
+    private val neCorner: Set<Cell> =
+        (5..7).flatMap { c -> (0..2).map { r -> Cell(c, r) } }.toSet()
+
+    private fun planWithCut(
+        rooms: List<GridRoom>, cut: Set<Cell>, north: Int = 0,
+    ): Plan = buildEnginePlan(
+        rooms, null, Intent.BUILDING, PropertyType.INDEPENDENT_HOUSE, north, "t", cut,
+    )!!
+
+    @Test
+    fun `with nothing cut out the outline is byte-for-byte what it always was`() {
+        // ⭐ THE SAFETY PROPERTY OF THE WHOLE CHANGE. Every existing home, every bundled sample and
+        // the §15 worked example go down this path, so if this ever stops holding, scores move for
+        // people who changed nothing. Same points, same order, same winding.
+        for (sample in SamplePlans.all) {
+            val before = plan(sample.rooms, sample.door).levels.first().outline
+            val after = planWithCut(sample.rooms, emptySet()).levels.first().outline
+            assertEquals("outline drifted for ${sample.id}", before, after)
+            assertEquals("a rectangle must stay four corners for ${sample.id}", 4, after.size)
+        }
+        assertEquals(
+            "the L-shaped fixture with nothing cut out is still a plain rectangle",
+            plan(lShaped, null).levels.first().outline,
+            planWithCut(lShaped, emptySet()).levels.first().outline,
+        )
+    }
+
+    @Test
+    fun `an L-shaped home is finally given to the engine as an L`() {
+        val outline = planWithCut(lShaped, neCorner).levels.first().outline
+        assertEquals("an L has six corners", 6, outline.size)
+        // 64 cells minus the 9 cut away, by the shoelace rule.
+        var twice = 0.0
+        for (i in outline.indices) {
+            val p = outline[i]
+            val q = outline[(i + 1) % outline.size]
+            twice += p.x * q.y - q.x * p.y
+        }
+        assertEquals("the nine cut cells must be gone from the enclosed area", 55.0, twice / 2.0, 1e-9)
+    }
+
+    @Test
+    fun `the missing north-east corner now fires the checks it always slipped past`() {
+        val filled = engine.analyze(planWithCut(lShaped, emptySet()))
+        val real = engine.analyze(planWithCut(lShaped, neCorner))
+
+        assertTrue("a filled rectangle reports no cut — this is the old, too-generous answer", filled.cuts.isEmpty())
+        assertTrue("the real shape must report a cut", real.cuts.isNotEmpty())
+        assertEquals(
+            "the largest cut is the north-east corner — the worst missing corner in Vastu",
+            Zone.NE, real.cuts.first().zone,
+        )
+        assertEquals(
+            "a corner this size is a major cut",
+            Severity.MAJOR, real.cuts.first().severity,
+        )
+        assertTrue(
+            "the north-east cut defect X-04 must appear in the report",
+            real.defects.any { it.id == "X-04" },
+        )
+        assertTrue("an L is a rectangle-family shape, not an 'unusual' one", !real.shapeIrregular)
+        assertTrue(
+            "scoring the real shape must not flatter it: ${real.score} should be below ${filled.score}",
+            real.score < filled.score,
+        )
+    }
+
+    @Test
+    fun `the pada grid is untouched by a cut, so only the shape penalty moves`() {
+        // The grid is laid on the footprint's bounding box, which a cut corner does not change — so
+        // every room keeps the exact zone and verdict it had. That is what makes the score difference
+        // above attributable to the missing corner and nothing else.
+        val filled = engine.analyze(planWithCut(lShaped, emptySet()))
+        val real = engine.analyze(planWithCut(lShaped, neCorner))
+        assertEquals(
+            "room verdicts must not move",
+            filled.roomResults.map { it.roomId to (it.zone to it.verdict) },
+            real.roomResults.map { it.roomId to (it.zone to it.verdict) },
+        )
+        assertEquals("the pre-penalty base must not move", filled.base, real.base, 1e-9)
+    }
+
+    @Test
+    fun `a home's shape survives being saved and reopened`() {
+        val saved = planWithCut(lShaped, neCorner)
+        val rooms = gridRoomsFromPlan(saved)
+        assertEquals("rooms must come back unchanged", lShaped, rooms)
+        assertEquals("the cut corner must come back", neCorner, cutOutFromPlan(saved, rooms))
+        // And re-running the reopened home gives the identical score, not a quietly different one.
+        assertEquals(
+            engine.analyze(saved).score,
+            engine.analyze(planWithCut(rooms, cutOutFromPlan(saved, rooms))).score,
+        )
+    }
+
+    @Test
+    fun `a saved rectangle reopens with nothing cut out`() {
+        for (sample in SamplePlans.all) {
+            val p = plan(sample.rooms, sample.door)
+            assertTrue(
+                "a plain rectangle must not come back looking cut for ${sample.id}",
+                cutOutFromPlan(p, gridRoomsFromPlan(p)).isEmpty(),
+            )
+        }
+    }
+
+    @Test
+    fun `an L is still read as an L when the home sits at an angle to the compass`() {
+        // ⚠ NOT a score-equality test. Turning the home relative to North genuinely moves its rooms
+        // into different directions and SHOULD change the score — the engine's own rotation-invariance
+        // case turns the plan and North together, which is a different claim. What must hold here is
+        // that the corner never stops being a corner: an angled L is judged in the building's own
+        // frame, so it stays a rectangle-family shape with a real missing piece at every angle.
+        for (north in listOf(0, 30, 45, 90, 180, 270, 315)) {
+            val a = engine.analyze(planWithCut(lShaped, neCorner, north))
+            assertTrue("score out of range at $north°: ${a.score}", a.score in 0..100)
+            assertTrue("an angled L must not be called an unusual shape at $north°", !a.shapeIrregular)
+            assertTrue("the missing corner vanished at $north°", a.cuts.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `a cut that would split the home in two is refused, not scored`() {
+        // pruneCutOut is the gate: the editor can never hand the engine a shape with no honest outline.
+        val rooms = listOf(GridRoom("a", RoomType.LIVING, 0, 0, 5, 1), GridRoom("b", RoomType.BEDROOM, 0, 2, 5, 1))
+        val splitting = (0..4).map { Cell(it, 1) }.toSet()
+        assertTrue(
+            "cutting the whole middle row would leave two separate homes and must be refused",
+            pruneCutOut(rooms, null, splitting, 8, 8).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `a cut under a room lapses instead of punching a hole`() {
+        val rooms = listOf(GridRoom("a", RoomType.LIVING, 0, 0, 4, 4))
+        val inside = setOf(Cell(3, 0))
+        assertTrue(pruneCutOut(rooms, null, inside, 8, 8).isEmpty())
+        assertEquals(
+            "a room's own cells always belong to the home",
+            4, planWithCut(rooms, inside).levels.first().outline.size,
+        )
+    }
+
+    @Test
+    fun `the cell the front door stands on can never be cut away`() {
+        val door = GridDoor(DoorSide.N, 6)      // north wall, in the corner that would be cut
+        assertTrue(
+            "cutting the wall the door stands on would leave the entrance floating off the house",
+            pruneCutOut(lShaped, door, neCorner, 8, 8).isEmpty(),
+        )
+        assertTrue(
+            "and the editor must not even offer it",
+            gapsFor(lShaped, door, 8, 8).none { it.removable },
+        )
     }
 }

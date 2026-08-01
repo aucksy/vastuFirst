@@ -13,6 +13,9 @@ import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.Cell
+import com.vastufirst.shared.editor.Footprint
+import com.vastufirst.shared.editor.Gap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
@@ -80,6 +83,17 @@ class NewPlanViewModel(
         private set
     var north by mutableStateOf(0)
         private set
+    // ⭐ The cells of the home's bounding box that are NOT part of the home — the missing corner of an
+    // L, a notch. Empty means "a full rectangle", which is exactly what every home scored as before
+    // this existed. NOT stored as a column of its own: it is re-derived from the saved outline on
+    // reopen (see load()), so no saved home needs migrating and an older build reading a newer row
+    // still gets a valid plan.
+    var cutOutCells by mutableStateOf<Set<Cell>>(emptySet())
+        private set
+    // Cells the user has explicitly confirmed ARE part of their home, so the app stops asking about
+    // that gap. Purely a record of answered questions — it never reaches the engine.
+    var keptCells by mutableStateOf<Set<Cell>>(emptySet())
+        private set
     var planId by mutableStateOf<String?>(null)
         private set
     // The home's display name. Null until the draft is first saved, when it's assigned the next free
@@ -129,9 +143,48 @@ class NewPlanViewModel(
         // the door already sits inside the footprint, so normal editing doesn't nudge it.
         val clampedDoor = clampDoorToRooms(door, list)
         if (clampedDoor != door) door = clampedDoor
+        // A room edit can invalidate a cut — the corner is now covered by a room, or outside the new
+        // outline, or the shape it leaves is no longer one solid home. Prune rather than carry a
+        // shape the app cannot draw (and re-ask about anything that lapsed).
+        cutOutCells = pruneCutOut(list, door, cutOutCells, gridCols, gridRows)
+        keptCells = keptCells.intersect(Footprint.boundingCells(list.map { it.cellRect() }))
         markDirty()
     }
-    fun updateDoor(d: GridDoor?) { door = d; markDirty() }
+
+    fun updateDoor(d: GridDoor?) {
+        door = d
+        cutOutCells = pruneCutOut(rooms, d, cutOutCells, gridCols, gridRows)
+        markDirty()
+    }
+
+    /** The user says a gap is NOT part of their home — the missing corner of an L. */
+    fun cutOutGap(cells: Set<Cell>) {
+        val next = pruneCutOut(rooms, door, cutOutCells + cells, gridCols, gridRows)
+        if (next == cutOutCells) return          // refused (it would not leave one solid home)
+        cutOutCells = next
+        keptCells = keptCells - cells
+        markDirty()
+    }
+
+    /** The user says a gap IS part of their home — stop asking about it. Changes no geometry. */
+    fun keepGap(cells: Set<Cell>) {
+        cutOutCells = pruneCutOut(rooms, door, cutOutCells - cells, gridCols, gridRows)
+        keptCells = keptCells + cells
+        markDirty()
+    }
+
+    /** Forget every answer about the home's shape and go back to a full rectangle. */
+    fun resetShape() {
+        if (cutOutCells.isEmpty() && keptCells.isEmpty()) return
+        cutOutCells = emptySet()
+        keptCells = emptySet()
+        markDirty()
+    }
+
+    /** Gaps still waiting on an answer — the questions the editor puts to the user, in a fixed order. */
+    fun undecidedGaps(): List<Gap> =
+        gapsFor(rooms, door, gridCols, gridRows)
+            .filter { gap -> gap.cells.none { it in keptCells || it in cutOutCells } }
     fun updateNorth(deg: Int) { north = ((deg % 360) + 360) % 360; markDirty() }
 
     /** Resize the drawing plot. Existing rooms are re-packed to fit the new bounds (shrunk/moved,
@@ -149,6 +202,8 @@ class NewPlanViewModel(
         // state writes (no spurious recompute) — a pure grow leaves the score untouched (review F2).
         rooms = res.rooms
         door = res.door
+        cutOutCells = pruneCutOut(res.rooms, res.door, cutOutCells, res.cols, res.rows)
+        keptCells = keptCells.intersect(Footprint.boundingCells(res.rooms.map { it.cellRect() }))
         if (res.changed) markDirty()
         return res.honoured
     }
@@ -218,6 +273,11 @@ class NewPlanViewModel(
         // its rooms/door back — the inverse of buildPlan(), exact for the integer grid geometry.
         rooms = gridRoomsFromPlan(saved.plan)
         door = gridDoorFromPlan(saved.plan, rooms)
+        // The home's SHAPE comes back from the outline that was saved with it, so a home the user told
+        // us is L-shaped reopens L-shaped and re-scores identically. Every cell of a reopened home is
+        // an answered question, so the editor does not interrogate them about it a second time.
+        cutOutCells = cutOutFromPlan(saved.plan, rooms)
+        keptCells = Footprint.boundingCells(rooms.map { it.cellRect() }) - cutOutCells
         // The plot shape isn't stored on the Plan (the engine doesn't need it); re-derive the
         // tightest grid that encloses the reopened rooms so a further edit keeps its proportions
         // (pure gridSizeForRooms — see its ⚠ KNOWN LIMITATION note about lost outer margin, UAT S2).
@@ -250,5 +310,5 @@ class NewPlanViewModel(
      * — this delegate is the ViewModel's binding of it to the live draft state.
      */
     fun buildPlan(): Plan? =
-        buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft")
+        buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft", cutOutCells)
 }

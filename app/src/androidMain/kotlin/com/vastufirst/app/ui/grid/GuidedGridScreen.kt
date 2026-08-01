@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,18 +78,24 @@ import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.app.ui.newplan.cellRect
 import com.vastufirst.app.ui.newplan.doorForTap
 import com.vastufirst.app.ui.newplan.doorMarkerCell
+import com.vastufirst.app.ui.newplan.gapsFor
 import com.vastufirst.app.ui.newplan.retypeRoom
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
+import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.CellRect
+import com.vastufirst.shared.editor.Footprint
+import com.vastufirst.shared.editor.Gap
 import com.vastufirst.shared.editor.Handle
 import com.vastufirst.shared.editor.anyOverlap
 import com.vastufirst.shared.editor.bandBoundaries
@@ -245,6 +252,11 @@ fun GuidedGridScreen(
         onRoomsChange = vm::updateRooms,
         onDoorChange = vm::updateDoor,
         onGridChange = vm::updateGrid,
+        cutOutCells = vm.cutOutCells,
+        keptCells = vm.keptCells,
+        onCutGap = vm::cutOutGap,
+        onKeepGap = vm::keepGap,
+        onResetShape = vm::resetShape,
         onNext = onNext,
     )
 }
@@ -279,6 +291,13 @@ fun GuidedGridContent(
     startSelectedId: String? = null,
     /** Open with the room-type list already unfolded, for the same reason: a golden cannot tap. */
     startTypeListOpen: Boolean = false,
+    /** Cells the user has said are NOT part of their home — drawn cut away, and cut away in the score. */
+    cutOutCells: Set<Cell> = emptySet(),
+    /** Cells the user has confirmed ARE part of their home, so the app stops asking about that gap. */
+    keptCells: Set<Cell> = emptySet(),
+    onCutGap: (Set<Cell>) -> Unit = {},
+    onKeepGap: (Set<Cell>) -> Unit = {},
+    onResetShape: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -295,6 +314,10 @@ fun GuidedGridContent(
     // for the placement ghost) and in the deeper primary, so it reads as the wall rather than as
     // another room border, and contrasts with the gold door marker sitting on it.
     val outlineColor = colors.primaryDark
+    // A cut-away cell is painted back to the PAGE colour and struck through: it stops being part of
+    // the plan surface, which is exactly what the user just said about it.
+    val cutFill = colors.paper
+    val cutStroke = colors.borderStrong
     val density = LocalDensity.current
     val linePx = with(density) { VastuTheme.borders.regular.toPx() }
     val bandPx = with(density) { VastuTheme.borders.strong.toPx() }
@@ -328,6 +351,26 @@ fun GuidedGridContent(
     // old `vm.rooms` read gave, without the ViewModel.
     val roomsState = rememberUpdatedState(rooms)
     val selected = rooms.firstOrNull { it.id == selectedId }
+
+    // ⭐ THE HOME'S TRUE SHAPE (docs/SCORE-ACCURACY-CAVEATS.md #1). Every empty patch inside the
+    // home's outline is a question the app must ASK rather than answer for itself: it is either a
+    // part of the home nobody has drawn a room on, or the missing corner of an L. Answering it
+    // silently — which is what shipping a bounding box did — makes an L-shaped home score as a full
+    // rectangle, too generously and with no warning at all.
+    val gaps = remember(rooms, door, cols, rows) { gapsFor(rooms, door, cols, rows) }
+    val undecided = gaps.filter { g -> g.cells.none { it in keptCells || it in cutOutCells } }
+    // One question at a time, and only about gaps that CAN be cut away. A gap enclosed by rooms would
+    // punch a hole through the outline, and one under the front door would leave the door off the
+    // wall — those get told, not asked.
+    val pendingGap = undecided.firstOrNull { it.removable }
+    val enclosedGap = undecided.firstOrNull { it.enclosed }
+    // The outline as it now stands, for drawing. Null ⇒ a plain rectangle, drawn as one.
+    val homeRing = remember(rooms, cutOutCells) {
+        if (cutOutCells.isEmpty()) null
+        else rooms.map { it.cellRect() }.let { rects ->
+            Footprint.trace(Footprint.homeCells(rects, cutOutCells))
+        }
+    }
 
     /**
      * A tap in door mode. All the arithmetic is the pure, tested [doorForTap]; this is only the
@@ -651,22 +694,58 @@ fun GuidedGridContent(
             Canvas(Modifier.matchParentSize()) {
                 val cp = size.width / cols
                 val d = activeDrag
-                // ⭐ THE HOUSE'S OUTLINE, shown only during the door step. The step says "tap the wall
-                // of your home", and the wall the engine scores the door against is the rooms'
-                // footprint — which was never drawn, so with a plot bigger than the house the user had
-                // to guess which line was "the outer wall" (UAT S8). Drawn only here: the rooms' own
-                // borders carry the boundary well enough while placing rooms, and an always-on outline
-                // would add a second frame competing with them.
-                if (doorMode && rooms.isNotEmpty()) {
-                    val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
-                    val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
-                    drawRoundRect(
-                        color = outlineColor,
-                        topLeft = Offset(fMinC * cp, fMinR * cp),
-                        size = Size((fMaxC - fMinC) * cp, (fMaxR - fMinR) * cp),
-                        cornerRadius = CornerRadius(cornerPx),
-                        style = Stroke(width = strokePx),
+                // ⭐ Cells the user has told us are NOT part of their home are struck THROUGH the plan
+                // and left un-filled, so the L is visible as an L rather than only implied by a
+                // sentence. Drawn before the outline so the outline reads as the wall in front of it.
+                cutOutCells.forEach { c ->
+                    val x = c.col * cp
+                    val y = c.row * cp
+                    drawRect(color = cutFill, topLeft = Offset(x, y), size = Size(cp, cp))
+                    drawLine(cutStroke, Offset(x, y), Offset(x + cp, y + cp), strokeWidth = linePx)
+                    drawLine(cutStroke, Offset(x + cp, y), Offset(x, y + cp), strokeWidth = linePx)
+                }
+                // The gap currently being asked about, so "this corner" points at something visible.
+                pendingGap?.cells?.forEach { c ->
+                    drawRect(
+                        color = ghostColor.copy(alpha = 0.16f),
+                        topLeft = Offset(c.col * cp, c.row * cp), size = Size(cp, cp),
                     )
+                    drawRect(
+                        color = ghostColor, topLeft = Offset(c.col * cp, c.row * cp), size = Size(cp, cp),
+                        style = Stroke(
+                            width = strokePx,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashOnPx, dashOffPx)),
+                        ),
+                    )
+                }
+                // ⭐ THE HOUSE'S OUTLINE. Drawn during the door step — the step says "tap the wall of
+                // your home", and the wall the engine scores the door against is the rooms' footprint,
+                // which was never drawn, so with a plot bigger than the house the user had to guess
+                // which line was "the outer wall" (UAT S8) — and ALSO whenever the home is no longer a
+                // plain rectangle, because then the outline is the thing that has just changed and it
+                // has to be visible to be believed. It is still not drawn on an ordinary rectangle
+                // while placing rooms: the rooms' own borders carry the boundary well enough, and a
+                // second permanent frame would compete with them.
+                if (rooms.isNotEmpty() && (doorMode || homeRing != null)) {
+                    val ring = homeRing
+                    if (ring != null) {
+                        val path = Path()
+                        ring.forEachIndexed { i, p ->
+                            if (i == 0) path.moveTo(p.x * cp, p.y * cp) else path.lineTo(p.x * cp, p.y * cp)
+                        }
+                        path.close()
+                        drawPath(path, color = outlineColor, style = Stroke(width = strokePx))
+                    } else {
+                        val fMinC = rooms.minOf { it.col }; val fMaxC = rooms.maxOf { it.col + it.w }
+                        val fMinR = rooms.minOf { it.row }; val fMaxR = rooms.maxOf { it.row + it.h }
+                        drawRoundRect(
+                            color = outlineColor,
+                            topLeft = Offset(fMinC * cp, fMinR * cp),
+                            size = Size((fMaxC - fMinC) * cp, (fMaxR - fMinR) * cp),
+                            cornerRadius = CornerRadius(cornerPx),
+                            style = Stroke(width = strokePx),
+                        )
+                    }
                 }
                 if (d != null && (d.roomId == null || d.blocked)) {
                     val r = d.attempted
@@ -731,6 +810,22 @@ fun GuidedGridContent(
         } // end LTR lock (compass never mirrors)
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+
+        // ⭐ The shape question. Placed here — directly under the plan, above every other control —
+        // because it is the one thing on this screen that changes the score without the user having
+        // touched anything, and it must be answered while they can still see what it is pointing at.
+        if (!doorMode && rooms.isNotEmpty()) {
+            ShapeSection(
+                pending = pendingGap,
+                enclosed = enclosedGap,
+                cutCount = cutOutCells.size,
+                cutZones = remember(cutOutCells, rooms) { cutZoneNames(rooms, cutOutCells) },
+                onCut = onCutGap,
+                onKeep = onKeepGap,
+                onReset = onResetShape,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s4))
+        }
 
         // Context toolbar. `armed` is a local val so the branch below smart-casts it.
         val armed = armedType
@@ -834,6 +929,122 @@ fun GuidedGridContent(
         )
     }
 }
+
+/** The directions the cut-away parts of the home sit in, in plain words ("North-East", "South"). */
+private fun cutZoneNames(rooms: List<GridRoom>, cut: Set<Cell>): String {
+    if (cut.isEmpty()) return ""
+    val rects = rooms.map { it.cellRect() }
+    val box = Footprint.boundingCells(rects)
+    if (box.isEmpty()) return ""
+    val minC = box.minOf { it.col }; val maxC = box.maxOf { it.col }
+    val minR = box.minOf { it.row }; val maxR = box.maxOf { it.row }
+    // Group the cut cells by direction so two separate cuts read as two places, not one average.
+    return cut.groupBy { Footprint.zoneOfCells(setOf(it), minC, maxC + 1, minR, maxR + 1) }
+        .keys.sortedBy { it.ordinal }
+        .joinToString(" and ") { it.short().lowercase() }
+}
+
+/**
+ * ⭐ THE HOME'S SHAPE — the single biggest accuracy fix in the product
+ * (docs/SCORE-ACCURACY-CAVEATS.md #1).
+ *
+ * An L-shaped or notched home used to be scored as a filled rectangle, silently and too generously,
+ * because the app handed the engine the bounding box around the rooms. The engine could always score
+ * an L correctly; nobody had ever given it one.
+ *
+ * The design decision worth recording is that this is **a question, not a drawing tool.** Tracing an
+ * outline with a fingertip is hard for the person this app is for, and cutting cells out one tap at a
+ * time is worse. But the app can already SEE every empty patch inside the home, and each patch has
+ * exactly one honest answer: it is part of the home, or it is not. So the app asks — one whole patch
+ * at a time, in full words, with two full-width buttons and the patch highlighted on the plan above.
+ * That also makes the whole thing reachable with a screen reader for free, which a grid of 40 dp
+ * tappable cells would not have been.
+ */
+@Composable
+private fun ShapeSection(
+    pending: Gap?,
+    enclosed: Gap?,
+    cutCount: Int,
+    cutZones: String,
+    onCut: (Set<Cell>) -> Unit,
+    onKeep: (Set<Cell>) -> Unit,
+    onReset: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    when {
+        pending != null -> VastuCard(accent = colors.primary) {
+            VText(
+                "Is this part of your home?",
+                style = VastuTheme.type.h3, color = colors.textPrimary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                "The ${squares(pending.cells.size)} marked on the plan " +
+                    "${if (pending.cells.size == 1) "is" else "are"} in the " +
+                    "${pending.zone.short().lowercase()} and ${if (pending.cells.size == 1) "has" else "have"} " +
+                    "no room on ${if (pending.cells.size == 1) "it" else "them"} yet. " +
+                    "If your home is cut off there — an L-shape, or a corner that isn't yours — say so " +
+                    "and we'll score the real shape instead of a full rectangle.",
+                style = VastuTheme.type.body, color = colors.textSecondary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s4))
+            VastuButton(
+                "Yes — it's part of my home",
+                onClick = { onKeep(pending.cells) },
+                large = false,
+                modifier = Modifier.testTag("shape.keep"),
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VastuButton(
+                "No — my home is cut off there",
+                onClick = { onCut(pending.cells) },
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
+                modifier = Modifier.testTag("shape.cut"),
+            )
+        }
+
+        cutCount > 0 -> VastuCard {
+            VText(
+                "Your home is cut off in the $cutZones",
+                style = VastuTheme.type.h3, color = colors.textPrimary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                "We're scoring that real shape, so the missing-corner checks can run.",
+                style = VastuTheme.type.body, color = colors.textSecondary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            VastuButton(
+                "Start the shape again", onClick = onReset,
+                style = VastuButtonStyle.SECONDARY, large = false,
+            )
+        }
+
+        // A gap that rooms surround completely can't be cut away — the outline would have a hole in
+        // it. Say what to do instead, rather than offering a button that has to refuse.
+        enclosed != null -> VastuCard {
+            VText(
+                "There's an empty space inside your home",
+                style = VastuTheme.type.h3, color = colors.textPrimary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                "It's surrounded by rooms, so it's part of your home either way. If it's an open " +
+                    "courtyard, add it as a Courtyard — the centre of a home matters in Vastu.",
+                style = VastuTheme.type.body, color = colors.textSecondary,
+            )
+        }
+
+        else -> VText(
+            "We're treating your home as a full rectangle. If a corner of your home is missing, " +
+                "leave that part of the grid empty and we'll ask about it.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
+        )
+    }
+}
+
+private fun squares(n: Int) = if (n == 1) "1 square" else "$n squares"
 
 /**
  * One placed room. It carries the semantics for the whole tile but NOT a `clickable` — a clickable

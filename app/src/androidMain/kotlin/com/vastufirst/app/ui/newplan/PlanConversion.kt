@@ -7,6 +7,11 @@ import com.vastufirst.shared.Plan
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.Room
+import com.vastufirst.shared.editor.Cell
+import com.vastufirst.shared.editor.CellRect
+import com.vastufirst.shared.editor.Footprint
+import com.vastufirst.shared.editor.Gap
+import com.vastufirst.shared.editor.GridPoint
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -29,6 +34,9 @@ fun buildEnginePlan(
     propertyType: PropertyType,
     north: Int,
     planId: String,
+    /** Cells of the bounding box the user has told us are NOT part of their home — the missing corner
+     *  of an L, a notch. Empty (the default) reproduces the bounding-box footprint byte for byte. */
+    cutOut: Set<Cell> = emptySet(),
 ): Plan? {
     val theIntent = intent ?: return null
     if (rooms.isEmpty()) return null
@@ -48,15 +56,21 @@ fun buildEnginePlan(
         )
     }
 
-    // Footprint = bounding box of the placed rooms.
     val minC = rooms.minOf { it.col }
     val maxC = rooms.maxOf { it.col + it.w }
     val minR = rooms.minOf { it.row }
     val maxR = rooms.maxOf { it.row + it.h }
-    val outline = listOf(
-        Point(ex(minC), ey(maxR)), Point(ex(maxC), ey(maxR)),
-        Point(ex(maxC), ey(minR)), Point(ex(minC), ey(minR)),
-    )
+    // ⭐ The footprint is the home's TRUE outline — the bounding box MINUS whatever the user told us
+    // is not their home (docs/SCORE-ACCURACY-CAVEATS.md #1). With nothing cut out this produces
+    // exactly the four points, in exactly the order, the app has always produced — proven by
+    // PlanConversionRoundTripTest, and the reason the §15 worked example cannot move. With a corner
+    // cut out the engine finally sees an L and its cut / missing-corner checks fire, which they never
+    // could before. The engine itself is untouched: it has always been able to score this shape.
+    val outline = cutOutlineOrNull(rooms, cutOut)?.map { Point(ex(it.x), ey(it.y)) }
+        ?: listOf(
+            Point(ex(minC), ey(maxR)), Point(ex(maxC), ey(maxR)),
+            Point(ex(maxC), ey(minR)), Point(ex(minC), ey(minR)),
+        )
 
     val doors = door?.let { d ->
         val (centre, ws, we) = doorGeometry(d, minC, maxC, minR, maxR)
@@ -70,6 +84,63 @@ fun buildEnginePlan(
         levels = listOf(Level(index = 0, outline = outline, rooms = engineRooms, doors = doors)),
         northOffsetDegrees = north,
     )
+}
+
+/** A grid room as the pure geometry sees it — id and type stripped, because shape doesn't need them. */
+fun GridRoom.cellRect() = CellRect(col, row, w, h)
+
+/**
+ * The home's outline in GRID corners, ordered so that mapping it through the north-flip lands on the
+ * SAME winding the bounding-box rectangle has always used. Null when nothing is cut out, or when the
+ * cut would leave a shape with no single honest outline — both of which fall back to the rectangle.
+ *
+ * ⚠ The reversal is not cosmetic. [Footprint.trace] walks the ring with the interior on one side in
+ * SCREEN coordinates, where rows grow downward; the flip to engine space (`ey = GRID − row`) mirrors
+ * the shape and therefore reverses its winding. Reversing here means a home with nothing cut out
+ * produces the identical four points in the identical order it always did — which is precisely why
+ * no engine test needed opening for this change.
+ */
+private fun cutOutlineOrNull(rooms: List<GridRoom>, cutOut: Set<Cell>): List<GridPoint>? {
+    if (cutOut.isEmpty()) return null
+    val rects = rooms.map { it.cellRect() }
+    val cells = Footprint.homeCells(rects, cutOut)
+    if (cells == Footprint.boundingCells(rects)) return null      // every cut lapsed under a room
+    return Footprint.trace(cells)?.asReversed()
+}
+
+/** The gaps the app must ask the user about, with the front door's own cell held back as uncuttable. */
+fun gapsFor(rooms: List<GridRoom>, door: GridDoor?, cols: Int, rows: Int): List<Gap> =
+    Footprint.gaps(rooms.map { it.cellRect() }, protectedCells = protectedCells(rooms, door, cols, rows))
+
+/** Cells that must remain part of the home: today, the cell the front-door marker stands on. */
+fun protectedCells(rooms: List<GridRoom>, door: GridDoor?, cols: Int, rows: Int): Set<Cell> {
+    if (door == null || rooms.isEmpty()) return emptySet()
+    val (c, r) = doorMarkerCell(door, rooms, cols, rows)
+    return setOf(Cell(c, r))
+}
+
+/**
+ * Drop cut-out cells that no longer make sense after a room edit — ones now outside the home's
+ * bounding box, ones a room has grown over, and (as a whole) any set that would no longer leave a
+ * single solid home. Editing rooms must never leave the plan holding a shape the app cannot draw.
+ */
+fun pruneCutOut(rooms: List<GridRoom>, door: GridDoor?, cutOut: Set<Cell>, cols: Int, rows: Int): Set<Cell> {
+    if (cutOut.isEmpty()) return cutOut
+    val rects = rooms.map { it.cellRect() }
+    val box = Footprint.boundingCells(rects)
+    val occupied = Footprint.occupiedCells(rects)
+    val guarded = protectedCells(rooms, door, cols, rows)
+    val kept = cutOut.filter { it in box && it !in occupied && it !in guarded }.toSet()
+    if (kept.isEmpty()) return emptySet()
+    return if (Footprint.trace(box - kept) != null) kept else emptySet()
+}
+
+/** Rebuild which cells were cut out from a reopened home's stored outline (the inverse of the above). */
+fun cutOutFromPlan(plan: Plan, rooms: List<GridRoom>): Set<Cell> {
+    val level = plan.levels.firstOrNull() ?: return emptySet()
+    if (level.outline.size < 5) return emptySet()          // a rectangle has four corners: nothing cut
+    val ring = level.outline.map { GridPoint(it.x.roundToInt(), (GRID - it.y).roundToInt()) }
+    return Footprint.cutOutFromOutline(rooms.map { it.cellRect() }, ring)
 }
 
 /**

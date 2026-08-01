@@ -12,6 +12,7 @@ import com.vastufirst.app.ui.scan.gridForOutcome
 import com.vastufirst.app.ui.scan.scannedRooms
 import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.scan.PlanImageType
 import com.vastufirst.shared.scan.ScanBox
 import com.vastufirst.shared.scan.ScanDraft
@@ -44,6 +45,10 @@ import org.robolectric.annotation.GraphicsMode
 class EditorScreenshotTest {
 
     private val sample = SamplePlans.all.first()
+
+    /** The north-east 3×3 corner of an 8×8 home — the cells the L-shaped fixture below cuts away. */
+    private val NE_CORNER: Set<Cell> =
+        (5..7).flatMap { c -> (0..2).map { r -> Cell(c, r) } }.toSet()
 
     @Test
     fun editor_withRooms() {
@@ -225,6 +230,49 @@ class EditorScreenshotTest {
             onNext = {},
             cols = cols,
             rows = rows,
+        )
+    }
+
+    /**
+     * ⭐⭐ THE HOME'S SHAPE — the state the biggest accuracy fix in the product lives in.
+     *
+     * An L-shaped home used to be handed to the engine as a filled rectangle, so its missing corner
+     * was scored as though it were there. The app now asks about every empty patch instead of
+     * assuming. Two goldens, because they are two different screens:
+     *
+     *  - `editor-shape-ask` — the question, with the corner in question highlighted on the plan. This
+     *    is the one that has to survive 200 % font on a 320 dp phone: it is a heading, three lines of
+     *    body and two full-width buttons appearing between the plan and the room palette.
+     *  - `editor-shape-cut` — the answer taken. The corner is struck through, the home's real outline
+     *    is stroked as an L, and the card names the direction. If the outline ever stops being drawn
+     *    as an L, this picture says so.
+     */
+    @Test
+    fun editor_shape_question() {
+        captureAcrossMatrix("editor-shape-ask") { LShapedHome() }
+        writeManifestAcrossMatrix("editor-shape-ask") { LShapedHome() }
+    }
+
+    @Test
+    fun editor_shape_cut() {
+        captureAcrossMatrix("editor-shape-cut") { LShapedHome(cut = true) }
+        writeManifestAcrossMatrix("editor-shape-cut") { LShapedHome(cut = true) }
+    }
+
+    /** An 8×8 home whose whole north-east 3×3 corner has no room on it — the textbook L. */
+    @Composable
+    private fun LShapedHome(cut: Boolean = false) {
+        GuidedGridContent(
+            rooms = listOf(
+                GridRoom("L1", RoomType.LIVING, 0, 0, 5, 4),
+                GridRoom("L2", RoomType.MASTER_BEDROOM, 0, 4, 5, 4),
+                GridRoom("L3", RoomType.KITCHEN, 5, 3, 3, 5),
+            ),
+            door = GridDoor(DoorSide.S, 2),
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cutOutCells = if (cut) NE_CORNER else emptySet(),
         )
     }
 
