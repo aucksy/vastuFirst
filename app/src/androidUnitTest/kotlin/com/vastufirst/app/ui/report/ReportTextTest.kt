@@ -234,6 +234,24 @@ class ReportTextTest {
         }
     }
 
+    /**
+     * ⚠ The screenshot that shows "Not ideal" and "Already right" only works if that fixture really
+     * has no problems — one defect and both sections drop below the fold again, unseen, which is the
+     * state this release exists to end. So the fixture's shape is asserted rather than assumed.
+     */
+    @Test
+    fun the_fixture_that_shows_the_lower_sections_really_has_no_problems() {
+        val clean = com.vastufirst.app.render.RenderFixtures.cleanAnalysis
+        assertTrue("the clean fixture must raise no problems, or both sections fall below the fold: " +
+            clean.defects.map { it.id }, clean.defects.isEmpty())
+        assertTrue("it must exercise the not-ideal band", clean.roomResults.any { it.verdict == Verdict.SUBOPTIMAL })
+        assertTrue(
+            "it must exercise the already-right section too",
+            clean.roomResults.any { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE },
+        )
+        assertNotNull("and the favourable door reading", clean.doorResult)
+    }
+
     @Test
     fun directions_are_listed_in_words() {
         assertEquals("the North or the East", zoneList(listOf(Zone.N, Zone.E)))

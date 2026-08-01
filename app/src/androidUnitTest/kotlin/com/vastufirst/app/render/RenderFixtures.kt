@@ -85,6 +85,41 @@ object RenderFixtures {
             )!!,
         )
 
+    /**
+     * ⭐ A HOME WITH NO PROBLEMS, so the report's LOWER sections can actually be looked at.
+     *
+     * ⚠ The reason this fixture exists is a real gap in the gate. A golden is a viewport, not a whole
+     * document — the report is long, so "Not ideal" and "Already right" sit far below the fold on the
+     * bundled sample and **no screenshot in the harness has ever shown them**. Those two sections are
+     * the heart of this release (rooms rated not ideal used to appear nowhere at all), so shipping
+     * them unseen would repeat the exact mistake UI-POLISH exists to prevent.
+     *
+     * Every room here is in a direction its own rule calls ideal, except the kitchen: the West is
+     * neither ideal (South-East), acceptable (North-West) nor prohibited for a kitchen, so it lands
+     * in the SUBOPTIMAL band — which is precisely the band that had no section. With no defects to
+     * rank, both sections rise to the top of the screen where a picture can catch them.
+     */
+    private val cleanRooms: List<GridRoom> = listOf(
+        GridRoom("c-living", com.vastufirst.shared.RoomType.LIVING, 3, 0, 2, 2),        // North — ideal
+        GridRoom("c-kitchen", com.vastufirst.shared.RoomType.KITCHEN, 0, 3, 2, 2),      // West  — NOT IDEAL
+        GridRoom("c-bed", com.vastufirst.shared.RoomType.BEDROOM, 6, 3, 2, 2),          // East  — acceptable
+        GridRoom("c-master", com.vastufirst.shared.RoomType.MASTER_BEDROOM, 0, 6, 3, 2), // South-West — ideal
+    )
+
+    val cleanAnalysis: Analysis =
+        VastuEngine().analyze(
+            buildEnginePlan(
+                rooms = cleanRooms,
+                // Cell 5 on the north wall lands on a favourable door position — the bundled sample's
+                // door is unfavourable, so between them the two goldens show both readings.
+                door = com.vastufirst.app.ui.newplan.GridDoor(com.vastufirst.app.ui.newplan.DoorSide.N, 5),
+                intent = Intent.BUILDING,
+                propertyType = PropertyType.INDEPENDENT_HOUSE,
+                north = 0,
+                planId = "fixture-clean",
+            )!!,
+        )
+
     /** The "plan too sparse to read" state — the app degrades to a friendly guidance card here, never
      *  a bare red 0 ([[vastufirst-no-error-states]]). Derived from the real analysis so every other
      *  field is valid; only the quality + note change. */

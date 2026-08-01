@@ -138,6 +138,21 @@ fun padaStanding(v: PadaVerdict): String = when (v) {
     PadaVerdict.INAUSPICIOUS -> "one the tradition counts unfavourable"
 }
 
+/**
+ * The word on the door card's badge.
+ *
+ * ⚠ NOT the room verdict vocabulary. The door card first carried a red "✕ Defect" pill — but only a
+ * South-West corner door raises an actual defect, so on every other unfavourable door the reader was
+ * shown the word "Defect" for something that appeared in no problems list and had no fix attached.
+ * The door is read on its own scale, so it says so in its own words.
+ */
+fun padaBadge(v: PadaVerdict): String = when (v) {
+    PadaVerdict.AUSPICIOUS -> "Favourable"
+    PadaVerdict.MODERATE -> "Middling"
+    PadaVerdict.MIXED -> "Read both ways"
+    PadaVerdict.INAUSPICIOUS -> "Unfavourable"
+}
+
 /** The door card's heading — the wall spelled out, never a bare letter. */
 fun doorTitle(d: DoorResult): String = "Front door — ${d.pada.side.short().lowercase()} wall"
 

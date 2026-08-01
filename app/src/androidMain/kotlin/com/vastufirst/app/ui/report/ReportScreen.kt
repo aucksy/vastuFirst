@@ -305,7 +305,8 @@ private fun RoomVerdictCard(
 private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
     val colors = VastuTheme.colors
     VastuCard(accent = padaAccent(d.verdict)) {
-        VerdictPill(padaVerdict(d.verdict))
+        // A TagPill in the door's own words, not a VerdictPill — see [padaBadge].
+        TagPill(text = padaBadge(d.verdict), color = padaAccent(d.verdict))
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(doorTitle(d), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -321,13 +322,6 @@ private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(doorExplanation(d), style = VastuTheme.type.bodySm, color = colors.textSecondary)
     }
-}
-
-private fun padaVerdict(v: PadaVerdict): VastuVerdict = when (v) {
-    PadaVerdict.AUSPICIOUS -> VastuVerdict.IDEAL
-    PadaVerdict.MODERATE -> VastuVerdict.ACCEPTABLE
-    PadaVerdict.MIXED -> VastuVerdict.SUBOPTIMAL
-    PadaVerdict.INAUSPICIOUS -> VastuVerdict.DEFECT
 }
 
 @Composable

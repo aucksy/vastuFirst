@@ -135,4 +135,18 @@ class ScoreDrivenScreensScreenshotTest {
     fun report_living() = render("report-living") {
         ReportContent(analysis = analysis, intent = Intent.LIVING)
     }
+
+    /**
+     * ⭐ THE TWO SECTIONS NO PICTURE HAS EVER SHOWN.
+     *
+     * ⚠ A golden is a viewport, not a whole document. On the bundled sample the report's "Not ideal"
+     * and "Already right" sections sit far below the fold, so they have never appeared in a
+     * screenshot — and "rooms rated not ideal appear nowhere" is the very defect this release exists
+     * to fix. Rendering a home with NO problems lifts both sections to the top of the screen, where
+     * the harness can capture them and the geometry gate can measure them.
+     */
+    @Test
+    fun report_no_problems() = render("report-clean") {
+        ReportContent(analysis = RenderFixtures.cleanAnalysis, intent = Intent.BUILDING)
+    }
 }
