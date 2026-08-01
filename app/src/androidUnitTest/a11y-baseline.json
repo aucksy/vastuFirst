@@ -8,11 +8,12 @@
   "home-rename": 2,
   "legal": 4,
   "marknorth": 5,
+  "privacy": 0,
   "report": 9,
   "scan-assisted": 0,
   "scan-consent": 0,
   "scan-idle": 0,
-  "score": 6,
+  "score": 3,
   "settings": 1,
   "unlock": 4,
   "welcome": 0
