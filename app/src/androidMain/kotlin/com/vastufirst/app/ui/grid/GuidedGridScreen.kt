@@ -1262,28 +1262,28 @@ private fun SelectedRoomTools(
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
     ) {
         VText(room.type.label(), style = VastuTheme.type.h3, color = colors.textPrimary)
-        VText(
-            "${room.w} × ${room.h} · ${zoneOfRect(room.rect(), cols, rows).short()}",
-            style = VastuTheme.type.bodySm, color = colors.textTertiary,
-        )
-
         // ⭐ ON THE LINE (docs/SCORE-ACCURACY-CAVEATS.md #2). The drawing grid is coarser than the
         // zones the engine judges against, so a room the user pictures as "north-east" can sit a hair
         // over the line and be scored as North instead — with nothing said about it. The two grids
         // genuinely do not line up, so this cannot be rounded away; the honest answer is to say when a
         // room is sitting on a line, at the one moment it can still be moved. Silent in the ordinary
         // case, where a room is comfortably inside one direction.
+        //
+        // ⚠ It is a CLAUSE ON THE EXISTING LINE, not a paragraph of its own. As a separate sentence it
+        // made this panel two lines taller, and the geometry gate caught what that cost: the move
+        // arrows and the Remove/Done buttons fell below the fold in two more configurations. Sitting
+        // next to the direction it qualifies is also where it reads best.
         val neighbours = remember(room.col, room.row, room.w, room.h, cols, rows) {
             neighbouringZones(room.rect(), cols, rows)
         }
-        if (neighbours.isNotEmpty()) {
-            VText(
-                "This room is right on the edge of the " +
-                    neighbours.joinToString(" and ") { it.short().lowercase() } +
-                    ". Nudge it if it belongs clearly in one direction.",
-                style = VastuTheme.type.bodySm, color = colors.verdictSuboptimal,
-            )
+        val zoneLine = buildString {
+            append("${room.w} × ${room.h} · ${zoneOfRect(room.rect(), cols, rows).short()}")
+            if (neighbours.isNotEmpty()) {
+                append(", close to ")
+                append(neighbours.joinToString(" and ") { it.short() })
+            }
         }
+        VText(zoneLine, style = VastuTheme.type.bodySm, color = colors.textTertiary)
 
         // ⭐ The correction this control exists for, directly under the name it corrects: a room read
         // as the wrong KIND is the one mistake the editor previously had no answer to. Removing the

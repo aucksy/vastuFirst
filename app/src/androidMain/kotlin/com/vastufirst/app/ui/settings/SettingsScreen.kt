@@ -162,8 +162,12 @@ fun SettingsContent(
         // three lines, which pushed the last row of the screen below the fold at 320 dp and at 200 %
         // font — the L1 ratchet caught it. The detail belongs on the consent screen, which is where
         // the user is actually deciding; this line only has to be true and readable.
+        // ⚠ Shortened AGAIN, and for the same measured reason it was shortened before: adding the
+        // Privacy row above cost a line, and the geometry gate immediately reported one more element
+        // pushed below the fold. The full explanation now has a screen of its own one tap away, so
+        // this only has to be true and short — it is a reassurance, not the policy.
         VText(
-            "No account. No phone number. Nothing leaves your phone except a plan you upload to be read.",
+            "No account, no phone number. Only a plan you upload ever leaves your phone.",
             style = VastuTheme.type.bodySm,
             color = colors.textTertiary,
         )
