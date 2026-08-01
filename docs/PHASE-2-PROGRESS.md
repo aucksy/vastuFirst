@@ -2454,3 +2454,29 @@ door readings are on record.
 
 `unlock` and `unlock-unreachable` returned to 1 after the seven-line list pushed their own button off
 the bottom of a 320 dp screen. The accessibility ratchet held on every screen.
+
+## Looked at before tagging (CLAUDE.md §2b)
+
+Downloaded and read, rather than asserted:
+
+| screen | what it proved |
+|---|---|
+| `report` at 412 dp | the door section, the position number, the unnamed-position sentence, nothing clipped |
+| `report` at **320 dp** | the same, wrapping cleanly on the narrowest phone we support |
+| `report-clean` at 412 dp and landscape | the **favourable** door badge in green, the position named (*Mukhya — Wealth*), the "Not ideal" heading and its honest intro |
+| `report-clean` at **200 % font** | every line wraps, nothing truncated — the state that was ellipsising before |
+| `report-notideal` | ⭐ the not-ideal card and the already-right cards with their bodies visible, which no golden had ever contained |
+| `score-covered` at 412 dp | the free preview is now one crisp headline per problem, with the source shown |
+| `score` at 320 dp | the score, the zone map and the honest coverage line, uncramped |
+| `unlock` at **320 dp** | ⭐ price, four things you get, the free button AND the payment notice — all on screen without scrolling, which is what the seven-line list had broken |
+
+⚠ **One thing deliberately not chased:** the "Traditional 8-zone" toggle clips its first character at 200 %
+font. It is a pre-existing behaviour of that component, already inside its ratchet, and untouched by
+this release — worth fixing, but not by a release whose subject is the report's words.
+
+⚠ **And the honest limit on all of this:** a golden is a viewport, not a document. The report is long,
+so most of it is below the fold in any single image. `report-notideal` exists precisely because the
+two sections this release is *about* were otherwise measured but never seen. Everything further down
+— the disputes and the "couldn't check" list — is measured by the geometry gate and covered by unit
+tests over the same text, but has not been photographed. Saying so is better than implying the whole
+document has been looked at.
