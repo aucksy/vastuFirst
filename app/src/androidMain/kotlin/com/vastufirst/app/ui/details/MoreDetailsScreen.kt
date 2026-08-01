@@ -72,7 +72,7 @@ fun MoreDetailsContent(
                 "we'll say it wasn't checked rather than guess.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
-        Spacer(Modifier.height(VastuTheme.spacing.s5))
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
 
         SiteItem.entries.forEach { item ->
             SiteQuestion(
