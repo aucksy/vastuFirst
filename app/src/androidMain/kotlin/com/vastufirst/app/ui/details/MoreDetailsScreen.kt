@@ -1,11 +1,13 @@
 package com.vastufirst.app.ui.details
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -22,7 +25,6 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
-import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Zone
@@ -104,7 +106,7 @@ private fun SiteQuestion(
     onDecline: () -> Unit,
 ) {
     val colors = VastuTheme.colors
-    VastuCard(accent = if (chosen != null || declined) colors.primary else null) {
+    QuestionCard(answered = chosen != null || declined) {
         VText(item.question, style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s1))
         VText(item.help, style = VastuTheme.type.bodySm, color = colors.textSecondary)
@@ -139,6 +141,38 @@ private fun SiteQuestion(
             )
         }
     }
+}
+
+/**
+ * ⚠ NOT VastuCard, and the reason is worth writing down because it will catch somebody again.
+ *
+ * `VastuCard` measures itself at `IntrinsicSize.Min` height so its accent stripe can fill the card.
+ * A `FlowRow` cannot be measured that way — asked for an intrinsic height it wraps against a width
+ * it does not really have, and the items that fall off the end come out **zero by zero**. The
+ * geometry gate caught it before it shipped: at 320 dp, "North-West" and "There isn't one" measured
+ * 0 × 0 dp, i.e. two answers the user could see nowhere and tap nowhere.
+ *
+ * It is specific to a row of NINE chips; the two-item FlowRow inside the score screen's defect cards
+ * is unaffected and stays as it is. Here the card is a plain Column, so the flow row is measured
+ * once, normally, against a real width — and "answered" is carried by a stronger border rather than
+ * a stripe that needed the intrinsic height in the first place.
+ */
+@Composable
+private fun QuestionCard(answered: Boolean, content: @Composable ColumnScope.() -> Unit) {
+    val colors = VastuTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VastuTheme.shapes.md)
+            .background(colors.surface)
+            .border(
+                if (answered) VastuTheme.borders.focus else VastuTheme.borders.regular,
+                if (answered) colors.primary else colors.borderDefault,
+                VastuTheme.shapes.md,
+            )
+            .padding(VastuTheme.spacing.s4),
+        content = content,
+    )
 }
 
 /** The one-line summary of what has and hasn't been answered, for the score screen. */
