@@ -90,18 +90,17 @@ fun SettingsScreen(
  * that actually handles email, so the chooser cannot offer to post the crash to a social app — which
  * is a thing ACTION_SEND does, and a thing nobody wants to discover after tapping.
  */
+/** A blank line in the email body, built from a character code so no editing pass can eat an escape. */
+private val LINE_BREAK: String = 10.toChar().toString()
+
 private fun sendCrashEmail(context: Context, body: String) {
     val intent = Intent(Intent.ACTION_SENDTO).apply {
         data = Uri.parse("mailto:simpleapps108@gmail.com")
         putExtra(Intent.EXTRA_SUBJECT, "VastuFirst — something went wrong")
         putExtra(
             Intent.EXTRA_TEXT,
-            "Anything you were doing when it happened (optional):
-
-
-" +
-                "--- technical detail, nothing personal ---
-" + body,
+            "Anything you were doing when it happened (optional):" + LINE_BREAK + LINE_BREAK +
+                LINE_BREAK + "--- technical detail, nothing personal ---" + LINE_BREAK + body,
         )
     }
     // No mail app on the device is a real case on a cheap phone; failing silently is better than
