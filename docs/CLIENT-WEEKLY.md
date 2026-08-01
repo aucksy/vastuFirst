@@ -19,17 +19,80 @@ You can install and try the latest version on an Android phone at any time — j
 
 ## 🙋 What we need from you
 
-These are the things only you can decide, and they need to be settled before the 4 August delivery. Nothing here is urgent-this-minute, but they're the last open questions.
+These are the things only you can decide. Everything else is done.
 
-1. **How should oddly-shaped (L-shaped or notched) homes be handled?** Right now the app treats every home as a full rectangle. For a home with a missing corner, that makes the score a little too generous. Two options: (a) we add a simple step where you trace the real outline, or (b) we clearly label the report "based on a rectangular shape" so the reader knows. Option (b) is quick and safe for 4 August; option (a) is more work.
-2. **Confirm the report price.** We currently show **₹699** for the paid report. Please confirm or change it.
-3. **The eight expert Vastu rulings.** There are eight points where Vastu experts disagree. We need your ruling on each so the score reflects your chosen tradition. Once you decide, they're quick for us to apply.
-4. **Should the free score carry a short honesty label?** e.g. "based on your rooms, door and shape." It sets fair expectations before someone pays for the full report.
-5. **Two quick "please glance at it on your phone" checks:** (a) do the little corner handles for resizing rooms look right to you, and (b) when you drag the North dial, it currently gives a small buzz for every degree — do you like that, or would you prefer a firmer click every 15 degrees? (Either is a one-line change.)
+1. **A Google Play developer account.** It costs **$25 (about ₹2,100), once**, at
+   `play.google.com/console`, on the Google account you want to own this app forever. Nothing can be
+   published until it exists and your ID is verified, and verification can take a few days — so this
+   is the one worth starting today. Tell us the email address on it and we'll take it from there.
+2. **A decision about how the ₹699 is collected.** Google does not allow other payment services for
+   something sold and read inside a Play Store app, so the checkout is built on Google's own — which
+   means Google keeps about ₹105 of each ₹699. The alternative is selling the report on a web page
+   instead, where you keep all of it but the customer has to pay on a website first. We have built
+   the first; say the word if you'd rather have the second.
+3. **The email address customers should write to.** It appears publicly on your store page and in the
+   app's privacy policy. We are using `simpleapps108@gmail.com` until you say otherwise.
+4. **Where the privacy policy should live on the web.** Google needs it at a public address. We can
+   put it up for free in about ten minutes — just say yes.
+5. **One ruling we have deliberately left to you: where the pooja room belongs.** The classical texts
+   put it in the centre of the home; modern practice puts it in the north-east, near-universally.
+   Turning either one on changes the score of every home already saved on a phone, so we have not
+   done it. Our recommendation is the modern north-east. It is a one-line change.
+6. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
+   way in your actual flat, and does the app come back with your half-drawn home intact after you
+   leave it in the background for an hour?
+
+**The other seven disputed Vastu questions are now decided** — the most widely attested classical
+position on each, written up with the reasoning. Any of them can be overturned in one line if your
+expert disagrees.
 
 ---
 
 ## Week of 28 July – 3 August 2026
+
+### Saturday 1 August, evening — the accuracy release
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.4.0/vastufirst-v0.4.0.apk
+
+This is the biggest single change to how accurate the app is, plus everything a paid app on the Play
+Store needs before it can be sold.
+
+**Homes that aren't a plain rectangle are finally scored properly.** This was the worst problem in
+the product. If your home has a missing corner — an L-shape, a notch, the commonest real shape in
+India — the app used to quietly treat it as a full rectangle and give it a better score than it
+deserved, with no warning at all. It now **asks**: leave part of the grid empty and a card appears
+saying "Is this part of your home?", with the corner highlighted, and two big buttons. Answer no and
+the missing-corner checks run for the first time. Answer yes, or say nothing, and your score is
+exactly what it was before — nobody's existing home moves.
+
+**Your phone's compass can now set North**, without asking you for any permission at all. And better
+than that: before it scores, the app now tells you **what your North actually means** — "your front
+door is on the west side, and your kitchen is in the south-east" — and the button that carries on is
+the one that agrees with it. "Are you sure?" is a question nobody can answer. "Is your kitchen in the
+south-east?" is one anybody can, standing in their own kitchen.
+
+**A half-drawn home now survives your phone closing the app.** It comes back, and it says it came
+back, with a way to start over. Before, ten minutes of drawing could vanish with no explanation.
+
+**One damaged saved home can no longer wipe out your whole list.** It used to be able to. Now the
+rest load and the screen says one couldn't be opened — and nothing is ever deleted.
+
+**The score now says what it looked at.** It has only ever come from your rooms, your front door and
+your home's shape, but it read like a complete verdict. There is now an optional step — the water
+tank, an underground tank, a big tree, a road pointing at the house — and answering any of them lets
+more of the checks run.
+
+**A room sitting exactly on the line between two directions now says so**, while you can still move
+it.
+
+**And everything a paid app needs:** the ₹699 checkout is built in full and switched off, saying in
+plain words that no payment is taken; there is a real privacy policy in the app; the app now records
+its own crashes and offers to email them to us — nothing is sent unless you press send; and the
+version we would upload to the store is now built and checked on every single change rather than
+being met for the first time on the day it matters.
+
+---
+
 
 ### Saturday 1 August, later — you can now add every kind of room, not just eleven of them
 

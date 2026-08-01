@@ -2021,3 +2021,206 @@ have not moved.
 palette wrap so all nineteen show at once is a genuine option, and it is the owner's call because it
 costs vertical space above the plan — it is on the device checklist as a question rather than
 decided here.
+
+---
+
+# ⭐⭐ v0.4.0 — the accuracy release (2026-08-01)
+
+The four highest-ranked accuracy holes in `SCORE-ACCURACY-CAVEATS.md`, closed; the two robustness
+items; the disputed rulings; and everything a paid Play Store app needs. Five gate failures on the
+way, every one of them real — recorded below rather than tidied away.
+
+## 1. ⭐⭐ An L-shaped home is finally scored as an L (caveat #1)
+
+**The engine was never the problem.** `AnomalyDetector` has always derived a reference rectangle from
+the footprint's modal edges and attributed the difference to cardinal zones, so a missing north-east
+corner fires X-04 exactly as it should. **It had simply never been given one.** `buildEnginePlan`
+handed it the bounding box of the placed rooms.
+
+So an L-shaped or notched home — the commonest real Indian home shape — was scored as a filled
+rectangle: silently, too generously, and with no "unusual shape" note either. Nothing in the engine
+changed here. Only what it is fed.
+
+### The model, and why it is cells
+
+The drawing grid is whole cells, so **the home is a set of cells and its outline is the boundary of
+that set.** Rectilinear by construction (real walls meet at right angles), exact in integers (no
+floating-point wall that nearly closes), and it turns "is this part of my home?" into a question about
+a patch rather than a trace drawn with a fingertip.
+
+### ⭐ It is a QUESTION, not a drawing tool
+
+This is the design decision worth recording. Tracing an outline with a fingertip is hard for the
+person this app is for, and tapping cells out one at a time is worse. But the app can already **see**
+every empty patch inside the home, and each patch has exactly one honest answer. So it asks — one
+whole patch at a time, in full words, with the patch highlighted on the plan and two full-width
+buttons. That also makes the whole feature reachable with a screen reader for free, which a grid of
+40 dp tappable cells would not have been.
+
+### ⚠ The safety property
+
+With nothing cut out the outline is **byte-for-byte what it always was** — same four points, same
+order, same winding. Proven for every bundled sample, not asserted. That is what let this ship without
+opening a single engine test, and it is why no existing home moves.
+
+| shape | what happens |
+|---|---|
+| a gap enclosed by rooms | refused — it would be a hole. Told to add a **Courtyard**, a real Vastu element |
+| a cut that would split the home in two | refused |
+| two blocks meeting only at a corner | refused |
+| the cell the front door stands on | refused — the entrance would float off the wall |
+| a cut a room later grows over | lapses quietly rather than punching through the room |
+
+A saved home's shape is re-derived from the outline stored with it, so **nothing needed migrating**.
+
+**Measured on a home with no problems of its own** (every room in a zone its own rule calls ideal or
+acceptable, an unruled corridor at the centre): cutting the north-east 3×3 corner takes the defect
+penalty from **0 to a real one**, fires **X-04 as MAJOR**, and leaves every room verdict and the
+pre-penalty base **identical** — so the drop is attributable to the corner and nothing else.
+
+⚠ The first fixture for that test was a home so bad it already sat at the penalty cap, scoring **0
+both ways**. The cap hid the very thing under test. Recorded because it is a general trap: a
+before/after test needs a fixture with room to move.
+
+## 2. ⭐ The compass, and the double-check (caveat #3)
+
+North is the one input nothing could verify, and the user set it from memory.
+
+**A compass that is WRONG is worse than no compass.** Setting North by hand at least leaves the user
+aware they were guessing; a confident "271°" that is ninety degrees out puts precise, authoritative,
+wrong directions on every room in a ₹699 report. So the sign convention was derived **twice** — from
+the North dial's own `atan2(dx, -dy)` and from the engine's rotation of the plan — and then pinned by
+**actually scoring** a home with one room against the top edge and reading back where the engine put
+it. Point the phone east, that room must come out East.
+
+**No permission is requested, and that is deliberate.** Motion sensors need none. True north would
+need the device's LOCATION to correct by under two degrees anywhere in India — far inside the error of
+a hand holding a phone. So it uses magnetic north and says so on screen.
+
+Bearings are smoothed as **vectors**, never as numbers: a plain average of 350° and 10° is 180°, due
+south, and it only misbehaves when the user happens to be facing north.
+
+### ⭐ The better half is the double-check
+
+"Are you sure your North is right?" is a question nobody can answer. Where your own kitchen is, is.
+So the card states what this North MEANS in the report's own words — *"your front door is on the west
+side, and your kitchen is in the south-east"* — and the button that continues is the one that agrees
+with it. No extra tap, and nobody walks past it without having read the claim.
+
+## 3. The score says what it looked at, and can be told more (caveat #4)
+
+The score has only ever come from rooms, the door and the shape, but it read as a complete verdict. It
+was really a **ceiling**: a home with its water tank in the worst possible corner scored exactly the
+same as one with it in the best, because nothing ever asked. Water storage, heavy trees and the road
+outside all have real engine rules, and all three sat permanently in "couldn't check these yet".
+
+Two halves: the score now **says** what it covers, and an optional step collects the four inputs.
+
+⚠ **Optional, and reached FROM the score.** Forcing four more questions on everyone would cost every
+user time to catch the minority who have something to report.
+
+⚠ **Every answer is a DIRECTION, not a position.** Every rule that uses these inputs asks only which
+of the nine zones the thing is in. Dragging a marker would demand far more precision than any rule can
+use, and would be the hardest thing in the app for the person it is built for.
+
+⚠ **The hard part, invisible on a square home.** The user names a TRUE-NORTH direction; the engine is
+handed plan coordinates and rotates them itself. A home drawn at an angle has a bigger analysis
+rectangle than its own footprint, so a fixture placed by naive fractions lands in the wrong zone —
+silently, and only for the users whose homes are not square to the compass, which in India is most of
+them. The placement mirrors the engine's own arithmetic and is checked by scoring real homes at eight
+angles and reading back which defect fired.
+
+Also closed: reopening a saved home could drop its extras entirely, because the plan was rebuilt from
+an empty answer sheet the moment anything was touched.
+
+## 4. A room on the line says so (caveat #2)
+
+The drawing grid is coarser than the zones the engine judges against. The two grids genuinely do not
+line up, so this cannot be rounded away — the honest answer is to say when a room is sitting on a
+line, at the one moment it can still be moved. Silent in the ordinary case, or a warning on every room
+is a warning on none.
+
+## 5 & 6. The two ways a user could lose data
+
+**A half-drawn home lived only in memory.** Android reclaims a backgrounded app whenever it wants the
+RAM; on a cheap phone, taking a call is enough. The draft is now written to disk continuously and
+brought back on the next launch — and **it says it did**. Restoring work silently would be worse than
+losing it: the user would be editing a home they thought they had abandoned, with no way back.
+
+A draft row is deleted the moment that home becomes a real saved row, which is what makes "a draft
+exists" mean exactly "you never finished this one", and therefore what makes restoring it
+unambiguously right rather than a guess.
+
+**One bad row used to empty the whole list.** Two enum lookups and a JSON decode, all inside the
+saved-homes flow. Any one throwing took down every home on the screen. Now a row that cannot be read
+is quarantined and **counted**, and never deleted. A home vanishing without a word looks exactly like
+a home the app deleted by itself.
+
+**And the database now has an upgrade path**, which it never had. The next schema change of any kind
+would have needed one, and the usual shortcut is to drop and recreate — which erases every saved home,
+silently, discovered by the customer. Exercised for real: a database built at the OLD schema, with
+homes in it, upgraded, every home still there.
+
+## 7. Everything a paid Play Store app needs
+
+⚠ **The plan said Razorpay. Google Play does not allow it here** — anything sold inside a Play Store
+app that the customer then reads inside the app must be sold through Google's own billing. The
+checkout is built on Play Billing; there is **nothing secret to paste**, because Play identifies the
+app by its own signature.
+
+⚠⚠ **The app must never show a screen that LOOKS like it takes payment when it does not.** That is why
+"off" is a real implementation rather than a disabled button, and why both sentences come from ONE
+pure function shared by the unlock screen and the score card. The negative cases are the ones pinned:
+with payments off the button must not contain "pay" or a price; with the store unreachable it must NOT
+quietly become free.
+
+Also: release builds are **shrunk and obfuscated**, and CI builds that variant on every push — R8
+breaks reflective code at runtime, so meeting the shrinker on the day of the store upload was not an
+option. Real release signing from the environment. A privacy policy in the app, offline. And crash
+reporting **without a crash-reporting service**: the app records its own crash and the next launch
+offers to email it, with the user reading it first.
+
+## 8. The disputed rulings
+
+Nine decided, one deliberately left open, all of them one-line reversible — `docs/EXPERT-RULINGS.md`.
+
+⭐ **Both score-moving rulings land on the value the app already runs**, and that is a finding rather
+than a convenience. For M-07 (how the door's pada is decided), the two readings give the **identical**
+answer on a square mandala, which is what the texts describe; they only diverge on a rectangle, where
+the texts are silent. What settles it is a case the texts never had: an L-shaped home has walls that
+turn back on themselves, so "how far along the wall" has no single answer there and the code already
+falls back to bearing-from-centre. Making the fallback the rule means a rectangle and its L-shaped
+neighbour are judged the same way.
+
+⚠ **W-12 (where the pooja room belongs) is NOT ruled, and a test now stops it being ruled by
+accident.** Applying either reading starts scoring every pooja room — changing the score of every home
+already saved on a phone, and the worked example with it.
+
+## The five gate failures, and what each was
+
+⭐ Every one was real. None was ratcheted away.
+
+| what failed | what it actually was |
+|---|---|
+| a test | the notch fixture put the cut **under a room**, where a cut lapses by design — it proved the lapse, not the trace |
+| a test | the L-shape fixture was a home so bad it sat at the penalty cap, scoring 0 both ways |
+| geometry gate | the compass reading measured **zero wide** at 200 % font — two unweighted children in a SpaceBetween row |
+| geometry gate | "North-West" and "There isn't one" measured **0 × 0** — a nine-chip FlowRow inside a card that measures at `IntrinsicSize.Min` |
+| geometry gate | the shape section pushed the selected-room panel's arrows and buttons **below the fold** |
+
+The last one produced the better design as well: the shape question is now hidden while a room is
+selected, because somebody holding a room is editing that room, not the outline.
+
+## Looked at before tagging (CLAUDE.md §2b)
+
+Rendered and read: the shape question and the shape cut (baseline), the extras step at **320 dp**, the
+compass helper, the unlock screen with payments off, and the score with everything answered.
+
+- The L is drawn as an actual L, with the cut corner struck through and the wall traced round it.
+- The nine direction chips wrap cleanly into two columns at 320 dp with nothing clipped.
+- The unlock screen says **"Unlock on this device — free"** with "No payment is taken in this version"
+  under it.
+
+**Both ratchets improved rather than held:** `editor` 17 → 14, `editor-margin` 20 → 16,
+`editor-scanned` 51 → 43, `marknorth` 18 → 16, `score` 7 → 5, and the accessibility baseline for
+`score` 6 → 3. Eleven new screens adopted. **255 pure tests, none failing.**

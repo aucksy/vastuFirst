@@ -314,3 +314,78 @@ Two things you reported, and one you asked me to make production-grade.
       cleanly rather than being cut off mid-word.
 - [ ] **J7 — A plan with no printed sizes.** Should behave as before; this build only changes how big
       the home is drawn, not how the rooms are read.
+
+---
+
+# ⭐ v0.4.0 — the checks that actually matter before you hand this over
+
+Everything below is something only a real phone can settle. The three marked ⭐⭐ are the ones I would
+not hand over without; the rest are worth ten minutes if you have them.
+
+## K · The three that matter most
+
+- [ ] **K1 — ⭐⭐ Does the compass point the right way in your actual flat?** Open a home, go to
+      "Which way is North?", tap **Use my phone's compass**. Hold the phone flat and turn until its
+      top edge points the same way as the top of your drawing. Press **Set North from this**. Now look
+      at the card above the button: it will say something like "your front door is on the west side,
+      and your kitchen is in the south-east". **Is that actually true of your flat?** If it is, the
+      compass is right. If it is ninety degrees out, tell me immediately — that is the one thing in
+      this build that would put confident wrong directions on every room.
+      *(Stand away from a fridge, a steel almirah or a laptop; they bend any phone compass.)*
+- [ ] **K2 — ⭐⭐ Does a half-drawn home survive?** Start a new home, place three or four rooms, then
+      press Home and leave the phone alone for an hour — or open a dozen other apps to push it out of
+      memory. Come back. You should land on your rooms, with a card at the top saying "We kept the
+      home you were drawing" and a button to start again. **If the grid is empty, that is the bug this
+      build exists to fix and I need to know.**
+- [ ] **K3 — ⭐⭐ Does this build install straight over the last one?** Install v0.4.0 on top of
+      v0.3.24 **without uninstalling**. Every home you had saved must still be there, with the same
+      scores. If Android refuses to install, or your homes are gone, stop and tell me.
+
+## L · The L-shaped home — the big accuracy change
+
+- [ ] **L1 — Leave a corner empty.** Draw a home but leave one corner of the grid with no room on it.
+      A card should appear under the plan: "Is this part of your home?", with that corner marked on
+      the plan. Is it obvious which part it is pointing at?
+- [ ] **L2 — Say no.** Press "No — my home is cut off there". The corner should be crossed out and the
+      home's real outline drawn as an L, and the card should say which direction it is cut off in.
+      Then look at the score: it should have gone **down**, and the report should now mention a
+      missing corner. *(That drop is the point — the old score was too generous.)*
+- [ ] **L3 — Say yes.** On another home, press "Yes — it's part of my home". Nothing should change at
+      all, and it should stop asking.
+- [ ] **L4 — Change your mind.** After cutting a corner, press "Start the shape again". The home should
+      go back to a full rectangle and ask again.
+- [ ] **L5 — A gap in the middle.** Leave an empty square surrounded by rooms on all four sides. It
+      should NOT offer to cut it out; it should say it's inside your home and suggest adding a
+      Courtyard. Does that read sensibly?
+- [ ] **L6 — Does it get in the way?** Draw a normal, gap-free home. You should see only a quiet grey
+      line about treating it as a rectangle — no card, no interruption. Tell me if it nags.
+
+## M · The rest
+
+- [ ] **M1 — The double-check on North.** Even without using the compass, the card above "Read my home"
+      should describe where your door and rooms ended up. Is it worded in a way you'd trust?
+- [ ] **M2 — A few more things.** From the score screen, press "Answer a few more and check more".
+      Answer the water-tank question with a direction and go back. The score should change and the
+      "What this covers" line should now count what you told it. Are the four questions clear?
+- [ ] **M3 — "There isn't one".** Answer one of them with "There isn't one". That should count as
+      answered, not skipped.
+- [ ] **M4 — A room on the line.** Select a room sitting near a boundary between two directions. Its
+      line under the name should read something like "2 × 2 · North-West, close to North". Does that
+      help, or is it noise?
+- [ ] **M5 — The unlock screen.** Open it. It must say plainly that **no payment is taken** and the
+      button must say "free". ⚠ **If anything on that screen looks like it would charge you, stop and
+      tell me** — that is the one thing this build must never do.
+- [ ] **M6 — Privacy.** Settings → Privacy. Read it as a customer would. Is anything on it something
+      you would rather not promise?
+- [ ] **M7 — Delete everything still works.** Settings → Delete all my data. Confirm your homes go.
+      *(Do this last, obviously.)*
+- [ ] **M8 — Big text.** Turn your phone's font size right up and walk the whole flow. Nothing should
+      be cut off mid-word or unreachable.
+- [ ] **M9 — In daylight.** Take the phone outside and read the score screen and the shape card at
+      your usual brightness.
+
+## N · Only if you have the patience
+
+- [ ] **N1 — Crash reporting.** There is no way to force a crash on purpose, so this is only checkable
+      if one happens. If the app ever closes by itself, open it again, go to Settings, and there
+      should be a "Something went wrong" section offering to email me what happened. Please do send it.
