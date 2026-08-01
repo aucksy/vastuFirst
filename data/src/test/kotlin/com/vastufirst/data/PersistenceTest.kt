@@ -85,6 +85,35 @@ class PersistenceTest {
         )
     }
 
+    // ── re-scoring a home after a Vastu ruling moves ───────────────────────────────────────────
+
+    /**
+     * ⭐ When we change a Vastu ruling, every home saved under the old rules is re-run and the owner
+     * is shown the old number, the new number and the reason — and only then is anything written
+     * back. This is that write.
+     *
+     * ⚠ `updatedAt` must NOT move. The saved-homes list is ordered by it and shows "updated today"
+     * next to each row. WE changed the rules; the user did not touch their home, and telling them
+     * they edited it — and shuffling their list — would be a second small dishonesty on top of a
+     * number they never asked to move.
+     */
+    @Test
+    fun `re-scoring after a ruling updates the score and the rule version, and nothing else`() = runTest {
+        repo.save(saved("h1", "Dwarka flat"), now = 1_000L)
+        val before = assertNotNull(repo.getPlan("h1"))
+
+        repo.setRescored("h1", score = 55, ruleSetVersion = "2026.08.01-1")
+
+        val after = assertNotNull(repo.getPlan("h1"))
+        assertEquals(55, after.score, "the new score is stored")
+        assertEquals("2026.08.01-1", after.ruleSetVersion, "and the version it was scored under")
+        assertEquals(before.updatedAt, after.updatedAt, "we changed the rules — the user did not edit this home")
+        assertEquals(before.createdAt, after.createdAt)
+        assertEquals(before.name, after.name)
+        assertEquals(before.unlocked, after.unlocked)
+        assertEquals(before.plan, after.plan, "the home itself is untouched — only how we read it changed")
+    }
+
     // ── one bad row must not take the others with it ───────────────────────────────────────────
 
     @Test

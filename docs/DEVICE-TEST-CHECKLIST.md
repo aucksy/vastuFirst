@@ -446,3 +446,10 @@ not hand over without; the rest are worth ten minutes if you have them.
 - [ ] **N1 — Crash reporting.** There is no way to force a crash on purpose, so this is only checkable
       if one happens. If the app ever closes by itself, open it again, go to Settings, and there
       should be a "Something went wrong" section offering to email me what happened. Please do send it.
+
+### Known, not chased in this build
+
+- **At the very largest text size, a long home name on your list of homes is cut short with "…".**
+  Pre-existing, on the saved-homes list only, and it affects no score and no report. Fixing it means
+  changing the row that every list in the app uses, which is not a change to make in the same build
+  as a Vastu ruling. Tell me if it bothers you on your own phone and it goes to the top of the list.

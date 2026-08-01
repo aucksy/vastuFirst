@@ -141,6 +141,32 @@ class ExpertRulingsTest {
     }
 
     @Test
+    fun `a prayer room in the classical CENTRE raises no defect — we decline that reading, not condemn it`() {
+        // ⭐ THE SUBTLEST PROMISE IN THE WHOLE RULING, and the reason nothing is prohibited.
+        // The classical school puts the shrine in the Brahmasthan. Every OTHER room rule prohibits
+        // the centre, so following the pattern would have printed "defect" on the exact position the
+        // same report shows two sections later as the other school's advice. Declining a reading is
+        // not the same as calling it a fault, and the data has to say what the prose says.
+        val base = Fixtures.sample01(0)
+        val level = base.levels[0]
+        val rooms = level.rooms
+            .filter { it.id != "stairs" }   // the staircase owns the centre in the worked example
+            .map { if (it.id == "pooja") it.copy(polygon = Fixtures.rect(38.0, 38.0, 24.0, 24.0)) else it }
+        val analysis = VastuEngine(shipped).analyze(base.copy(levels = listOf(level.copy(rooms = rooms))))
+
+        val pooja = assertNotNull(analysis.roomResults.firstOrNull { it.roomId == "pooja" })
+        assertEquals(Zone.BRAHMASTHAN, pooja.zone, "the fixture must really put the shrine in the centre")
+        assertTrue(
+            analysis.defects.none { it.roomId == "pooja" },
+            "a prayer room in the classical position must raise NO defect and cost NO penalty",
+        )
+        assertEquals(
+            Verdict.SUBOPTIMAL, pooja.verdict,
+            "not the place the reading we scored prefers — and nothing worse than that",
+        )
+    }
+
+    @Test
     fun `the prayer room is now really scored, and a North-West one is not-ideal rather than a defect`() {
         val analysis = VastuEngine(shipped).analyze(Fixtures.sample01(0))
         val pooja = assertNotNull(analysis.roomResults.firstOrNull { it.roomId == "pooja" })
