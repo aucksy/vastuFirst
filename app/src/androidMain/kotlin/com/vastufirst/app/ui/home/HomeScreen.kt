@@ -192,7 +192,9 @@ private fun ScoreChangeCard(notice: ScoreChangeNotice, onAcknowledge: () -> Unit
                 color = colors.textPrimary,
             )
         }
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        // s3 rather than s4, measured: at 200 % font the button was showing 33 dp of its 50.5 and
+        // losing the rest to the bottom of the list. Every dp above it is a dp of button.
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
         VastuButton(
             "Got it",
             onClick = onAcknowledge,

@@ -57,6 +57,37 @@ one, and it is not something we were willing to ship.
 
 ## Week of 28 July – 3 August 2026
 
+### Sunday 2 August — the prayer-room decision, applied
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.6.0/vastufirst-v0.6.0.apk
+
+**You decided where the prayer room belongs, and the app now follows it.** North-east is the right
+place, north and east are fine, and no position is treated as a fault — including the centre, which is
+where the old texts put it. That last part was deliberate: marking the centre as a fault would mean the
+report calling one school's advice a defect on the same page where it prints that advice. We decline
+that reading; we do not condemn it.
+
+**What it did to the numbers.** Prayer rooms were not scored at all before, so every home with one is
+now read differently. On the sample home you have been shown, the prayer room is in the north-west, and
+the score comes out at exactly the same number it had before — the new room pulls the average down by a
+quarter of a point and that rounds away. **That is a coincidence of the arithmetic, not a design goal.**
+A home with its prayer room in the north-east will score higher than it used to; a badly placed one will
+score lower.
+
+**Anyone who already saved a home is told.** The first thing they see is a card explaining what changed
+in ordinary words, with their old score and their new one side by side, and one button. Nothing is
+rewritten until they have read it. Homes whose number did not move are still listed, saying so — going
+quiet because the maths happened to land in the same place would not be honest.
+
+**Two things fixed by looking at the screens rather than by any automated check.** The "where the schools
+disagree" section — the part that admits the tradition contradicts itself — had never once appeared in a
+screenshot, because it sits at the bottom of a long report. When we finally photographed it, it read like
+our own private notes: *"Idols on W/SW wall"*, *"NE/N/E benign, S/SW/SE/NW harmful"*. Every line is
+rewritten in plain words with every direction spelled out. And the small "8 zones / 16 zones" switch at
+the top of the report was losing its first letter at large text sizes — a customer with big text saw a
+word with a chunk missing.
+
+
 ### Saturday 1 August, late — the report release
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.5.0/vastufirst-v0.5.0.apk
