@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 
@@ -87,11 +88,19 @@ fun VastuSegmented(
                         if (disabled) Modifier
                         else Modifier.clickableTap(role = Role.Tab, onClick = { onSelect(i) })
                     )
-                    .padding(vertical = VastuTheme.spacing.s3),
+                    // ⚠ Horizontal padding matters as much as vertical here. Without it a label
+                    // measured to the segment's exact width, and at 200 % font a long one was drawn
+                    // wider than its half of the row and CLIPPED AT BOTH ENDS by the centring — the
+                    // first character simply gone. Padding gives the text a narrower box to wrap
+                    // inside, so it breaks at the space instead of overflowing.
+                    .padding(vertical = VastuTheme.spacing.s3, horizontal = VastuTheme.spacing.s2),
                 contentAlignment = Alignment.Center,
             ) {
                 VText(
                     text = label,
+                    // Centred per LINE, not just as a block: a label that wraps to two lines used to
+                    // sit left-ragged inside a centred box, which reads as a layout mistake.
+                    align = TextAlign.Center,
                     style = VastuTheme.type.bodySm,
                     // A disabled segment reads the same muted tone as an inactive one (known to meet
                     // the contrast floor). Its "unavailable" meaning is carried by the "· soon" label

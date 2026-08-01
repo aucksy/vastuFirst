@@ -37,6 +37,13 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
 
     fun ruleSetVersion(): String = ruleSet.version
 
+    /**
+     * What changed in this version of the rules, in the reader's own words — shown to anyone whose
+     * saved home is re-scored because we moved a ruling. Null only if the dataset omits it, which
+     * the loader refuses to allow.
+     */
+    fun ruleSetChangeNote(): String? = ruleSet.changeNote
+
     fun analyze(plan: Plan): Analysis {
         return try {
             val san = PlanSanitizer.sanitize(plan)

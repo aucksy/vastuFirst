@@ -2480,3 +2480,104 @@ two sections this release is *about* were otherwise measured but never seen. Eve
 — the disputes and the "couldn't check" list — is measured by the geometry gate and covered by unit
 tests over the same text, but has not been photographed. Saying so is better than implying the whole
 document has been looked at.
+
+---
+
+# ⭐⭐ v0.6.0 — the prayer-room ruling (2026-08-01)
+
+The owner ruled on the one question deliberately left open: **the prayer room goes in the North-East,
+modern practice.** Everything below follows from that, plus the thing the ruling obliged us to build —
+telling anyone with a saved home that their score was recalculated, and why.
+
+## 1. The ruling as shipped, and why this shape
+
+| | |
+|---|---|
+| **Ideal** | North-East (Ishanya) |
+| **Acceptable** | North, East |
+| **Prohibited** | **nothing** |
+| **Provenance** | `MOD` — 20th-century modern practice, tagged as such, not as a classical verse |
+
+The owner proposed exactly this shape and asked whether we agreed. **We did, and the strongest reason
+is one the brief did not list:** prohibiting anything would have to include the Brahmasthan, because
+that is where every other room rule prohibits — and the classical reading *puts the shrine there*. The
+app would print "defect" on the exact position it shows two lines later as the other school's advice.
+The data has to say the same thing the prose says. The owner's own reasons (honest severity; no new
+defect definitions and therefore no invented remedies) hold as well.
+
+⚠ **The prayer-room rule was NOT scored at all before this**, because it carried a dispute link and
+the room evaluator returns "not scored" for any rule that has one. Removing that link is what starts
+it being scored.
+
+## 2. ⭐ The score, measured rather than calculated by hand
+
+**The worked example still scores exactly 31**, and every one of the seven assertions of that number
+across five test files was left untouched. That was not the expectation going in — the brief
+authorised the number to move.
+
+What actually happens: the worked example's prayer room is in the **North-West**, so it goes from *not
+scored* to *not ideal* — 45 points at weight 2.0, joining **both** sides of the weighted average. Base
+**47.27 → 47.03**; the penalty is untouched at 16; `round(47.03 − 16)` is 31.
+
+⚠ **That is a coincidence of arithmetic, not a design goal, and it does not generalise.** A saved home
+with a prayer room in the North-East goes up; one no better placed than the rest of its layout goes
+down. Every score in the app is now computed under a genuinely different rule. The bundled demo home
+is the same layout as the worked example, so the client's sample and its screenshots are unchanged.
+
+The rotation test still returns the same number at every angle, which is what distinguishes a scoring
+change from a geometry accident.
+
+## 3. ⭐ Both readings still reach the reader — and the card now says which one we use
+
+Removing the room rule's dispute link also removes the path that surfaced the dispute *through the
+rule*. It now arrives through the dispute's own room-type link instead, and **two tests pin that**,
+because scoring one school's reading while quietly dropping "the tradition is split" would break the
+product's whole promise.
+
+⭐ **And a new line on the card: what your score uses.** Showing both sides while staying silent about
+where the number stands is a half-truth. Every dispute we have *not* ruled on omits the line entirely,
+so it never claims a position we do not hold.
+
+## 4. ⚠ One test INVERTED, not deleted
+
+`the pooja ruling is deliberately still open` existed specifically to stop the ruling being applied by
+accident. It now asserts the opposite — that the ruling really is in the shipped data and has not
+silently reverted — with the original reasoning kept in the file. Two further tests were added: that
+both readings still surface, and that a North-West prayer room lands as "not ideal" with no defect.
+
+## 5. ⭐⭐ Telling existing users, which is the honest half of this release
+
+A saved home stores the rule version it was scored under — the database has carried that column since
+the first build for exactly this moment. When the version moves, the app re-runs every affected home
+and shows a card above the list: a heading that never overstates what happened, the reason in ordinary
+words, one line per home with both numbers, and one button.
+
+Four decisions worth recording:
+
+- **Nothing is written back until the card is read.** The list keeps showing the number the user last
+  saw. Changing a saved score and *then* mentioning it is not the same promise.
+- ⭐ **A home whose number did not move is still listed, saying "unchanged".** The bundled sample is
+  exactly this case. Staying quiet because the arithmetic landed where it started would be luck
+  presented as integrity — their *reading* changed, and their report now contains a room it never
+  mentioned before.
+- **The reason lives in the rule data, not in the app**, so a rule edit and its explanation cannot
+  ship apart. ⭐ **The loader now refuses a dataset that cannot say what changed in it** — a rule edit
+  is precisely the moment nobody remembers to write the sentence.
+- **A home this build cannot re-run is dropped from the card entirely** — old score, old version, no
+  claim made. Inventing a number for a home we could not read would be worse than a silent change.
+- **`updatedAt` is deliberately not touched.** We moved the rules; the user did not edit their home,
+  and reordering their list as though they had is a second small dishonesty on top of the first.
+
+## 6. Two new goldens, because a golden is a viewport
+
+Both of the things this release puts in front of a reader sit **far below the fold** on the bundled
+sample — the not-ideal prayer room, and the disputes card. Neither would ever have been photographed.
+
+- `report-prayer` — three rooms chosen so the whole report fits one screen: nothing to rank, one
+  not-ideal card, two already-right cards, then the disputes. The footprint is a full 8 × 8 square on
+  purpose; a narrower one trips the elongation rule, a defect appears, and everything below it drops
+  out of frame again. Its shape is asserted, not assumed.
+- `home-scorechange` — the "we changed a rule" card, carrying the **real** sentence from the shipped
+  rule data rather than a placeholder. One home moved and one did not, so both lines are on record in
+  one picture. It has the most text of anything on that screen, which is exactly the block that has
+  pushed its own button off a 320 dp screen before.

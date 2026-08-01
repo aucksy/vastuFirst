@@ -160,6 +160,30 @@ sighted testing never catches.
 
 ---
 
+## P · The prayer-room ruling  *(new in this build)*
+
+Prayer rooms used to be left out of the score altogether. They now count: the north-east is ideal,
+north and east are fine, and no position is a fault. Three things a phone has to prove.
+
+- [ ] **P1 · You are told your score was recalculated, before it changes.** ⭐ **The one that matters
+      most.** Save a home on the *previous* build, then install this one **without uninstalling** and
+      open your list of homes. A card should be at the top: a heading, a short paragraph explaining
+      the prayer-room decision, and one line per home with its old and new score. Tap "Got it" and it
+      goes away for good. **The number in your list must not have moved until you tapped it.** If a
+      score changed before you read the card — or if the card never appeared — tell me straight away.
+- [ ] **P2 · The card is readable in daylight at a large font size.** Turn the phone's text size up to
+      the biggest setting, then look at that card. Everything should wrap and nothing should be cut
+      off — especially the "Got it" button, which must not need scrolling to reach.
+- [ ] **P3 · The report explains the decision rather than hiding it.** Open the sample home's report
+      and scroll down to "Where the schools disagree". The prayer-room entry should show **both**
+      traditions — the old texts' centre and the modern north-east — *and* a third line saying which
+      one your score uses. If it shows only one reading, that is the thing we most wanted not to lose.
+- [ ] **P4 · A prayer room in the wrong corner is called "not ideal", never a defect.** The sample
+      home's prayer room is in the north-west. It should appear under "Not ideal — worth knowing"
+      with a reason, and should *not* be in the list of things to change.
+
+---
+
 ## Known gaps this list is deliberately probing
 
 These are already understood; the tests above exist to tell me whether they matter enough to fix

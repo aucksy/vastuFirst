@@ -37,6 +37,7 @@ import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.Defect
+import com.vastufirst.shared.Dispute
 import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PadaVerdict
@@ -119,8 +120,12 @@ fun ReportContent(
 
         // The 16-zone reading isn't built yet, so its segment is shown disabled ("· soon") and is not
         // tappable — no live-looking control that silently does nothing (E2E-ASSESSMENT §B10).
+        // Labels deliberately short and in ordinary words. "Traditional 8-zone" was drawn wider than
+        // its half of the row at 200 % font and lost its first character to the clip; "8 directions"
+        // is also plainer for a reader who has never heard the word "zone" used this way. The
+        // caption below carries the meaning either way.
         VastuSegmented(
-            options = listOf("Traditional 8-zone", "16-zone school · soon"),
+            options = listOf("8 directions", "16 zones · soon"),
             selectedIndex = 0,
             onSelect = {},
             disabledIndices = setOf(1),
@@ -172,29 +177,7 @@ fun ReportContent(
         }
 
         // Where schools disagree.
-        val disputes = a.disputes
-        if (disputes.isNotEmpty()) {
-            SectionHeader("Where the schools disagree")
-            Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-                disputes.forEach { disp ->
-                    VastuCard(accent = colors.provenanceDisp) {
-                        VText(disp.title, style = VastuTheme.type.h3, color = colors.textPrimary)
-                        Spacer(Modifier.height(VastuTheme.spacing.s2))
-                        ReadingRow(disp.readingA.label, disp.readingA.text)
-                        Spacer(Modifier.height(VastuTheme.spacing.s2))
-                        ReadingRow(disp.readingB.label, disp.readingB.text)
-                        // ⭐ Where the NUMBER stands, on the disputes we have ruled on. Showing both
-                        // readings and staying silent about which one moved the score would be a
-                        // half-truth — and this is the one product whose promise is that it does not
-                        // quietly pick a side. Absent on every dispute the score genuinely skips.
-                        disp.howWeScore?.let { scored ->
-                            Spacer(Modifier.height(VastuTheme.spacing.s2))
-                            ReadingRow("What your score uses", scored)
-                        }
-                    }
-                }
-            }
-        }
+        DisputesSection(a.disputes)
 
         // ⚠ Not assessed — in WORDS. This list used to print the app's internal rule codes ("· X-09")
         // straight to the customer.
@@ -396,6 +379,42 @@ private fun IntentBadge(intent: Intent) {
         Intent.LIVING -> "ALREADY LIVING HERE" to colors.secondary
     }
     TagPill(text = text, color = color)
+}
+
+/**
+ * ⭐ "WHERE THE SCHOOLS DISAGREE" — both readings, and now which one the number uses.
+ *
+ * ⚠ Public, and rendered on its own in the screenshot harness, for a reason. This section sits at the
+ * very bottom of a long document, so **no golden has ever contained it** — a golden is a viewport,
+ * not a document, and the fixtures that lift the other lower sections into frame still cannot reach
+ * this one. It is also the section that carries the product's whole promise: we have ruled on some of
+ * these questions, and we still show the reader both sides. Shipping it unphotographed would repeat
+ * the exact mistake the report release ended.
+ */
+@Composable
+fun DisputesSection(disputes: List<Dispute>) {
+    if (disputes.isEmpty()) return
+    val colors = VastuTheme.colors
+    SectionHeader("Where the schools disagree")
+    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+        disputes.forEach { disp ->
+            VastuCard(accent = colors.provenanceDisp) {
+                VText(disp.title, style = VastuTheme.type.h3, color = colors.textPrimary)
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                ReadingRow(disp.readingA.label, disp.readingA.text)
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                ReadingRow(disp.readingB.label, disp.readingB.text)
+                // ⭐ Where the NUMBER stands, on the disputes we have ruled on. Showing both readings
+                // and staying silent about which one moved the score would be a half-truth — and this
+                // is the one product whose promise is that it does not quietly pick a side. Absent on
+                // every dispute the score genuinely skips, so it never claims a position we lack.
+                disp.howWeScore?.let { scored ->
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    ReadingRow("What your score uses", scored)
+                }
+            }
+        }
+    }
 }
 
 @Composable

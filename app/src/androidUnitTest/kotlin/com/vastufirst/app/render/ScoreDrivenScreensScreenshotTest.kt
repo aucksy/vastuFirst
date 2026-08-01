@@ -1,15 +1,23 @@
 package com.vastufirst.app.render
 
 import android.app.Application
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.details.MoreDetailsContent
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
 import com.vastufirst.app.ui.marknorth.CompassQuality
 import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
+import com.vastufirst.app.ui.report.DisputesSection
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.score.ScoreContent
+import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Zone
 import org.junit.Test
@@ -165,14 +173,40 @@ class ScoreDrivenScreensScreenshotTest {
     /**
      * ⭐ THE PRAYER-ROOM RULING, ON SCREEN (1 August 2026).
      *
-     * ⚠ The same viewport trap, one release later. Ruling W-12 for the modern North-East puts two
-     * new things in front of the reader — a prayer room with a real verdict, and a "Where the schools
-     * disagree" card that now says **which reading the number uses**. Both sit far below the fold on
-     * the bundled sample, so neither would ever appear in a picture. A short home with no problems
-     * and no front door lifts the lot into one screen.
+     * ⚠ The same viewport trap, one release later. Ruling W-12 for the modern North-East puts a
+     * prayer room in front of the reader with a real verdict for the first time; on the bundled
+     * sample that card sits far below the fold. A short home with no problems and no front door
+     * lifts it to where a picture can catch it.
+     *
+     * ⚠ **What this golden does NOT reach, said out loud:** the disputes section still falls off the
+     * bottom, because the prayer room's own reason is long. That section has its own render below —
+     * assuming this one covered it would be exactly the mistake this comment exists to prevent.
      */
     @Test
     fun report_prayer_room_ruling_and_the_dispute_card() = render("report-prayer") {
         ReportContent(analysis = RenderFixtures.prayerRoomAnalysis.copy(doorResult = null), intent = Intent.BUILDING)
+    }
+
+    /**
+     * ⭐ "WHERE THE SCHOOLS DISAGREE", ON ITS OWN — because no whole-report golden can reach it.
+     *
+     * ⚠ Measured, not assumed: `report-prayer` was built to lift the lower sections into frame and
+     * still stops inside the not-ideal card, because the prayer room's reason is long. This section
+     * is the last block of a long document, so a viewport starting at the top will never contain it —
+     * and it is the section carrying the product's central promise: we ruled on this question, and we
+     * still show the reader both sides plus which one the number uses.
+     *
+     * Rendered through the report's own composable with the engine's own disputes, so it is the real
+     * thing, laid out exactly as it is in the document.
+     */
+    @Test
+    fun report_disputes_section() = render("report-disputes") {
+        Column(
+            Modifier.screenRoot(VastuTheme.colors.paper)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VastuTheme.spacing.s6),
+        ) {
+            DisputesSection(RenderFixtures.prayerRoomAnalysis.disputes)
+        }
     }
 }

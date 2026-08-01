@@ -137,7 +137,10 @@ fun SettingsContent(
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Group {
             RowItem("Language", trailing = "English")
-            RowItem("School profile", trailing = "Traditional 8-zone")
+            // "School profile / Traditional 8-zone" was our own jargon on a screen a customer opens.
+            // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
+            // label on a narrow phone at a large font.
+            RowItem("Vastu reading", trailing = "8 directions")
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))

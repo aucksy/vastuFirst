@@ -283,6 +283,24 @@ class ReportTextTest {
         )
     }
 
+    /**
+     * ⭐ A dispute we have NOT ruled on must not claim we scored it. The "what your score uses" line
+     * is drawn only when the rule data supplies one, so the eight surfaced-not-scored questions stay
+     * exactly what they were: both readings, no winner.
+     */
+    @Test
+    fun only_the_disputes_we_actually_ruled_on_say_what_the_score_uses() {
+        val ruleSet = com.vastufirst.rules.RuleSetLoader.loadDefault()
+        val ruled = ruleSet.disputes.filter { it.howWeScore != null }.map { it.id }
+        assertEquals("W-12 is the only ruling that moved into the score", listOf("W-12"), ruled)
+        ruleSet.disputes.filter { it.howWeScore == null }.forEach {
+            assertTrue(
+                "${it.id} is surfaced, not scored, so it must still carry both readings",
+                it.readingA.text.isNotBlank() && it.readingB.text.isNotBlank(),
+            )
+        }
+    }
+
     @Test
     fun directions_are_listed_in_words() {
         assertEquals("the North or the East", zoneList(listOf(Zone.N, Zone.E)))

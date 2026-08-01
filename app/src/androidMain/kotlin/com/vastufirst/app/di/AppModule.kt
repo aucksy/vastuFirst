@@ -66,7 +66,7 @@ val appModule = module {
     }
 
     // ViewModels.
-    viewModel { HomeViewModel(repo = get()) }
+    viewModel { HomeViewModel(repo = get(), engine = get()) }
     viewModel { NewPlanViewModel(engine = get(), repo = get()) }
     viewModel {
         ScanViewModel(

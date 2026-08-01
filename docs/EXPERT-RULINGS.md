@@ -60,6 +60,9 @@ app.
 These are shown to the reader as "the schools disagree", with both readings and which tradition each
 comes from. None of them silently moves the number.
 
+*(W-12, where the prayer room belongs, was the ninth of these until the owner ruled on it on
+1 August 2026. It is now scored — see the section below — and both readings are still shown.)*
+
 | | Question | Ruling | Why |
 |---|---|---|---|
 | **W-01** | Toilet in the East | **A defect** | The traditional position: East is the sun's quarter. The exception belongs to the 16-zone school, which this app does not use. |
@@ -74,24 +77,61 @@ comes from. None of them silently moves the number.
 
 ---
 
-## ⚠ The one ruling we have deliberately NOT applied
+## ⭐ W-12 · Where the pooja room belongs — RULED BY THE OWNER, 1 August 2026
 
-### W-12 · Where the pooja room belongs
+**This was the last open question, and the only one deliberately left unruled.** The owner ruled for
+**the modern North-East** on 1 August 2026. It is applied, and the app scores prayer rooms.
 
-**The classical position is the centre** (the family deity holds the Brahmasthan, per Manasara).
-**Modern practice is near-universally the North-East.** Both are seriously held, and they contradict
-each other about the most important square in the home.
+### The ruling as shipped
 
-**What we have done: nothing, on purpose.** The pooja room is currently *not scored at all* and both
-readings are shown to the reader.
+| | |
+|---|---|
+| **Ideal** | North-East (Ishanya) |
+| **Acceptable** | North, East |
+| **Prohibited** | **nothing** |
+| **Provenance tag** | `MOD` — 20th-century modern practice, not a classical verse |
 
-**Why not just rule it.** Applying either reading would immediately start scoring every pooja room —
-which changes the score of **every home already saved on a phone**, including the worked example the
-whole engine is checked against. That is not a change to make without the owner saying so.
+**Why the North-East.** It is what a customer in India will have been told by a consultant, and it is
+near-universal in modern practice. The classical alternative puts a room in the very square the same
+tradition insists must stay open and unbuilt — which is hard to defend to a reader who knows that.
 
-**Our recommendation if you want it ruled: the modern North-East.** It is what a customer in India
-will have been told by a consultant, and the classical reading puts a room in the very square the same
-tradition says must stay open and unbuilt — which is hard to defend to a reader who knows that.
+**⭐ Why nothing is prohibited, which is the part that took the thought.** Three reasons, in order of
+weight:
 
-**It is one line.** Say the word and the next build carries it. We would also, in that build, re-score
-every saved home and tell the user their score changed and why, rather than letting it move silently.
+1. **It would contradict the report's own facing page.** The classical reading places the shrine at
+   the centre. If the centre were prohibited, the app would print "defect" on the exact position it
+   shows two lines later as the other school's advice. We are *declining* the classical reading, not
+   *condemning* it — and the data has to say the same thing the prose does.
+2. **It is the honest severity.** A prayer room in the North-West is not a fault; it is simply not
+   where this tradition puts one. It now reads "not ideal", which is what it is.
+3. **It needs no new defect definitions.** Every prohibited (room, direction) pair must carry its own
+   reason and its own remedies. Inventing those for a room whose placement two schools disagree about
+   would mean inventing remedies — the exact thing this product exists not to do.
+
+### Effect on the score, measured rather than guessed
+
+**The worked example still scores 31.** Its prayer room is in the North-West, so it changed from
+*not scored at all* to *not ideal* — worth 45 points at weight 2.0. Joining both sides of the weighted
+average pulls the base from **47.27 to 47.03**, the penalty is untouched at 16, and the result rounds
+to the same 31. The bundled demo home is the same layout, so its score is unchanged too.
+
+**⚠ This is a coincidence of arithmetic, not a design goal, and it does not generalise.** A saved home
+with a prayer room in the North-East goes **up**; one in a direction no better than the rest of its
+layout goes **down**. Every score in the app is now computed under a genuinely different rule.
+
+**The rotation test still gives the same number at every angle**, which is the check that the change
+is a scoring change and not a geometry accident.
+
+### What the reader still sees
+
+⭐ **Both readings remain on the page.** Ruling on a dispute must never stop us saying the tradition is
+split. The "where the schools disagree" card still carries the classical centre and the modern
+North-East — and it now also carries a third line saying **which reading the number uses**. Showing
+both sides while staying silent about where the score stands would be a half-truth.
+
+### And everyone who had already saved a home was told
+
+Saved homes store the rule version they were scored under. This ruling moves that version, so the app
+re-runs every affected home and shows the old number, the new number and the reason — in the rule
+data's own plain words — **before** anything is written back. A home whose number did not move is
+still listed, saying so. The build now refuses a rule dataset that cannot explain what changed in it.

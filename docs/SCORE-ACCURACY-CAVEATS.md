@@ -117,12 +117,22 @@ Unplaced spaces (corridors, open areas) or wrong proportions shift the footprint
 
 ## GROUP 4 — Expert-judgment / by-construction (the number is a model)
 
-### 12. The 8 unresolved expert rulings run on default guesses
-Where schools genuinely disagree, the engine uses a mainstream default and shows "schools disagree"
-where it surfaces. **Two of the eight can shift the score**: M-05 (how big the Brahmasthan centre is)
-and M-07 (the hybrid square-grid-rooms + angular-door method). Until the client's expert rules, the
-number embeds our defaults. Disclosed where a dispute is relevant to the plan; the score-level effect
-(M-05/M-07) is not spelled out to the user.
+### 12. The expert rulings are the owner's choices, not facts — and two of them move the number
+Where schools genuinely disagree, the engine runs on a ruled position and shows "schools disagree"
+where it surfaces. **Two rulings shift the score**: M-05 (how big the Brahmasthan centre is) and M-07
+(the hybrid square-grid-rooms + angular-door method). Both are disclosed in `docs/EXPERT-RULINGS.md`
+with the alternative measured rather than guessed. The score-level effect is not spelled out to the
+user on screen.
+
+**Closed as an "unruled default" risk on 1 August 2026:** the prayer room (W-12) was the last question
+running unresolved, and it ran by *not scoring the room at all*. It is now ruled for the modern
+North-East, with nothing prohibited. What remains is not a hidden default but a stated choice between
+two living traditions — and the report shows both readings plus which one the number uses.
+
+⚠ **The residual honest caveat:** a prayer room is now scored on the modern reading. A customer whose
+consultant follows the classical centre reading will disagree with that part of the number. Nothing is
+called a defect on either reading, so the disagreement is bounded — but it is a real one, and the
+report says so rather than presenting the modern reading as the tradition.
 
 ### 13. The 0–100 score is VastuFirst's own construction
 Weights and points live in the rule JSON — a modelling choice. Two Vastu consultants would not

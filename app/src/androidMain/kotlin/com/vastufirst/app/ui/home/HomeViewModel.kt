@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.data.SavedPlans
 import com.vastufirst.engine.VastuEngine
-import com.vastufirst.rules.RuleSetLoader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -16,10 +17,11 @@ import kotlinx.coroutines.launch
  *
  *  Carries a count of rows that could not be read alongside the homes that could — a home that
  *  vanishes without a word looks exactly like a home the app deleted by itself. */
-class HomeViewModel(private val repo: PlanRepository) : ViewModel() {
-
-    private val ruleSet = RuleSetLoader.loadDefault()
-    private val engine = VastuEngine(ruleSet)
+class HomeViewModel(
+    private val repo: PlanRepository,
+    /** The app's single engine, from DI — not a second copy, which would re-parse the rule data. */
+    private val engine: VastuEngine,
+) : ViewModel() {
 
     val plans: StateFlow<SavedPlans> = repo.observePlans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SavedPlans())
@@ -35,19 +37,24 @@ class HomeViewModel(private val repo: PlanRepository) : ViewModel() {
         .map { saved ->
             scoreChangesFor(
                 plans = saved.plans,
-                currentVersion = ruleSet.version,
-                reason = ruleSet.changeNote,
+                currentVersion = engine.ruleSetVersion(),
+                reason = engine.ruleSetChangeNote(),
                 // Total on purpose: a home this build cannot re-run is dropped from the card
                 // entirely rather than reported with a made-up number.
                 rescore = { plan -> runCatching { engine.analyze(plan.plan).score }.getOrNull() },
             )
         }
+        // ⚠ Off the main thread. Re-scoring is a full engine run per saved home, and it would
+        // otherwise land on the UI thread — the saved-homes list is the first screen a returning
+        // user sees, and it must not stutter to tell them about a rule change.
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The user has read what changed. Write the new numbers back, so the card does not return. */
     fun acknowledgeScoreChanges(notice: ScoreChangeNotice) {
         viewModelScope.launch {
-            notice.changes.forEach { repo.setRescored(it.id, it.newScore, ruleSet.version) }
+            val version = engine.ruleSetVersion()
+            notice.changes.forEach { repo.setRescored(it.id, it.newScore, version) }
         }
     }
 

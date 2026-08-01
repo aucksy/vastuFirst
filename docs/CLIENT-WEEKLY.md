@@ -32,20 +32,26 @@ These are the things only you can decide. Everything else is done.
    the first; say the word if you'd rather have the second.
 3. **Where the privacy policy should live on the web.** Google needs it at a public address. We can
    put it up for free in about ten minutes — just say yes.
-4. **One ruling we have deliberately left to you: where the pooja room belongs.** The classical texts
-   put it in the centre of the home; modern practice puts it in the north-east, near-universally.
-   Turning either one on changes the score of every home already saved on a phone, so we have not
-   done it. Our recommendation is the modern north-east. It is a one-line change.
-5. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
+4. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
    way in your actual flat, and does the app come back with your half-drawn home intact after you
    leave it in the background for an hour?
 
 **Settled since last week:** the address customers write to is `contact@vastufirst.com`, and it is
 already in the app and the privacy policy.
 
-**The other seven disputed Vastu questions are now decided** — the most widely attested classical
-position on each, written up with the reasoning. Any of them can be overturned in one line if your
-expert disagrees.
+**✅ Where the prayer room belongs is now decided — the north-east.** This was the last open Vastu
+question, and it was yours to make. Prayer rooms used to be left out of the score altogether, because
+the old texts place the shrine at the centre of the home while almost every consultant working today
+places it in the north-east. We now follow the modern reading: **north-east is ideal, north and east
+are fine, and no position counts as a fault — including the centre.** A prayer room in, say, the
+north-west now reads as "not ideal", never as a defect, which is the honest way to describe a choice
+between two living traditions rather than a mistake. The report still shows you both traditions side
+by side, and now also says which one your score uses. **Every disputed Vastu question is now settled.**
+
+**And anyone who already saved a home is told their score was recalculated**, with the old number,
+the new number and the reason in ordinary words, before anything changes on their screen. A score
+that moves on its own with no explanation is the difference between an honest product and an unnerving
+one, and it is not something we were willing to ship.
 
 ---
 
