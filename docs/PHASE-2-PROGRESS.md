@@ -2608,3 +2608,22 @@ next person will read it, and `docs/UI-POLISH.md` §6.7b records the limitation 
 
 Two more of our own words went at the same time: the settings row said "School profile · Traditional
 8-zone" — jargon on a screen a customer opens — and now reads "Vastu reading · 8 zones".
+
+## 8. Looked at before tagging (CLAUDE.md §2b)
+
+Downloaded from the build and read, rather than asserted:
+
+| screen | what it proved |
+|---|---|
+| `report-prayer` at 412 dp | the prayer room's own card — the "Not ideal" badge, the **Modern practice** provenance tag, the direction's meaning and the full reason. The first picture of a scored prayer room. |
+| `report-prayer` at **200 % font** | ⚠ the toggle rendering **"Iraditional 9-zone"** — the defect no gate could see — and, after the fix, `8 zones` whole |
+| `report-disputes` at 412 dp | ⭐ both readings AND "What your score uses" — the section that had never once been photographed, and the one carrying the product's promise |
+| `report-disputes`, again after the rewrite | compass abbreviations gone: "Against the West or South-West wall", not "Idols on W/SW wall" |
+| `home-scorechange` at 412 dp | the whole card: heading, explanation, one line per home with both numbers, and the button |
+| `home-scorechange` at **200 % font** | ⚠ first: the button entirely off screen. Then: 33 dp of 50.5. Finally: all 50.5, with the explanation intact above it |
+| `score` at 412 dp | the demo home still reads **3.1**, and the zone map now colours the prayer room instead of leaving it blank |
+| the bundled report's own structure | the demo home now runs problems → **Not ideal (Pooja — North-West, Kitchen — West)** → already right → both prayer-room disputes → couldn't check. It reads sensibly end to end. |
+
+⚠ **The honest limit, again:** a golden is a viewport. `report-prayer` reaches the not-ideal card and no
+further, which is why the disputes section has a render of its own — and the comment on `report-prayer`
+now says so, so nobody assumes otherwise a release from now.
