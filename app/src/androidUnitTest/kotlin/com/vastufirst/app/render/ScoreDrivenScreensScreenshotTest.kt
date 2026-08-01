@@ -149,4 +149,16 @@ class ScoreDrivenScreensScreenshotTest {
     fun report_no_problems() = render("report-clean") {
         ReportContent(analysis = RenderFixtures.cleanAnalysis, intent = Intent.BUILDING)
     }
+
+    /**
+     * ⭐ The same home with **no front door flagged** — which lifts the not-ideal card and the
+     * already-right cards clear of the fold, so their bodies can be read rather than inferred.
+     *
+     * Not a contrivance: `doorResult` is genuinely null whenever no main entrance is marked, the
+     * report already branches on it, and that branch had never been rendered either.
+     */
+    @Test
+    fun report_not_ideal_and_already_right() = render("report-notideal") {
+        ReportContent(analysis = RenderFixtures.cleanAnalysis.copy(doorResult = null), intent = Intent.BUILDING)
+    }
 }

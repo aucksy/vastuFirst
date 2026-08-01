@@ -2362,3 +2362,95 @@ NE cut nor a SW extension.
   nine direction chips on the extras step). The verdict pill sits on its own line, which also reads
   better at 200 % font.
 - The report is now much longer, which is the point — it is a document, and it scrolls.
+
+## The gate failures on the way, and what each actually was
+
+⭐ Every one was real. None was ratcheted away without measuring it first.
+
+### 1. ⭐⭐ The reasons were ELLIPSISED mid-sentence — the paid text, unreadable
+
+At 200 % font and at 320 dp, the report's own reasons came back **truncated with "…"**. Not scrolled
+past — cut off. On a ₹699 report, on exactly the phones this app is built for.
+
+**The cause was the card, not the text.** `VastuCard` pinned its row to `IntrinsicSize.Min` for one
+reason: so the accent stripe could be a real child `Box` that called `fillMaxHeight()`. Everything
+inside the card therefore had to survive an intrinsic-height measurement first, and wrapping text
+does not.
+
+⚠ **That same constraint had already caused one shipped-class defect** — the nine direction chips on
+the extras step measuring 0 × 0. It was worked around then (that screen stopped using `VastuCard`)
+rather than fixed, so it came back wearing a different costume.
+
+**The fix removes the constraint rather than dodging it.** The stripe is now *drawn* behind the card
+with `drawBehind`, so the card is an ordinary `Column` that wraps its content. Visually identical —
+same width, same colour, same full height — and it still starts on the correct side in RTL, which the
+child `Box` got for free and a naive `drawRect` at x = 0 would not.
+
+Measured result: **every ellipsis finding disappeared**, and three screens *improved* on the ratchet
+rather than merely holding.
+
+### 2. The unlock screen pushed its own button below the fold
+
+Seven "what you get" lines measured taller than a 320 dp screen, so `unlock.action` — the button the
+whole screen exists for — was cut by the bottom edge. Four lines now. The screen is back to its
+baseline of 1.
+
+### 3. The paywall card pushed the payment notice below the fold
+
+Same class, worse consequence: the sentence saying whether money is taken is the one thing on that
+card that must never need scrolling to. The preview is capped at three lines, and a test pins the cap
+with the reason written next to it.
+
+### 4. ⭐ A 201-character opening sentence
+
+The free score screen shows a problem's **first sentence** and nothing else — that IS the free/paid
+split, and it is what stops the free screen tripling in height now that the reasons are long. One
+reason opened with a 201-character sentence, so "preview" became a wall of text that pushed
+everything under it down.
+
+Every reason now opens with a short headline saying what is wrong, with the detail following. ⭐ **The
+loader refuses a dataset that breaks it**, because a screen's layout now depends on a property of the
+text — and a dependency like that has to be enforced where the text lives, not hoped for.
+
+### 5. The remedies reached the page with no provenance
+
+Caught by re-reading rather than by a gate. `RemedyBlock` rendered `remedy.text` and dropped
+`remedy.provenance`, so a rock-salt bowl invented in the 20th century and a rite prescribed in the
+Mayamatam arrived looking exactly alike — in the one product whose entire differentiator is that it
+does not make Vastu up. Every remedy now carries its own tag, and within a single problem they
+genuinely differ.
+
+### 6. The front door wore a "Defect" badge it had not earned
+
+Found by looking at the rendered card, not by a gate. Only a South-West corner door raises an actual
+defect, so on every other unfavourable door the reader was shown a red "✕ Defect" for something that
+appeared in no problems list and had no fix attached. The door is judged on its own 32-position
+scale, so its badge now speaks that scale: Favourable, Middling, Read both ways, Unfavourable.
+
+### 7. ⚠ A golden is a viewport, not a document — and two whole sections were invisible
+
+The report is long. On the bundled sample, **"Not ideal" and "Already right" sit far below the fold**,
+so no screenshot in this harness has ever contained them — while "rooms rated not ideal appear
+nowhere" is the exact defect this release exists to fix. A render gate that has never seen the thing
+under repair is not a gate.
+
+A second report golden now renders a home with **no problems at all**, which lifts both sections to
+the top of the screen. Its shape is asserted rather than assumed: one defect in that fixture and both
+sections drop out of frame again, unseen. Its door is favourable, so between the two goldens both
+door readings are on record.
+
+## The measured result
+
+⭐ Every affected screen came out **better than before this release started**, not merely no worse:
+
+| screen | before | after |
+|---|---|---|
+| `report` | 9 | **4** |
+| `report-living` | 9 | **4** |
+| `score` | 5 | **2** |
+| `score-covered` | 13 | **8** |
+| `unlock-paid` | 2 | **1** |
+| `marknorth-compass` | 12 | **11** |
+
+`unlock` and `unlock-unreachable` returned to 1 after the seven-line list pushed their own button off
+the bottom of a 320 dp screen. The accessibility ratchet held on every screen.

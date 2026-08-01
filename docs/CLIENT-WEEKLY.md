@@ -110,6 +110,13 @@ exactly what it scored yesterday. This release only changes what the report *say
 **One thing set up for later:** when you have the Play Store account and send us the signing key,
 the release now picks it up by itself. Nothing to remember on the day.
 
+**And two things caught by looking at the screens rather than by any test.** The reasons were being
+cut off mid-sentence with "…" on a small phone at large text — the paid writing, unreadable, on
+exactly the phones this app is for. That is fixed at the root, and every screen we touched came out
+measurably tidier than it was before this release started. The front door was also wearing a red
+"Defect" badge it had not earned; it now says plainly whether the tradition counts that doorway
+favourable or not.
+
 ---
 
 ### Saturday 1 August, evening — the accuracy release
