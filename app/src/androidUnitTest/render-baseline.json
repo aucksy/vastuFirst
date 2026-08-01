@@ -25,6 +25,7 @@
   "report": 4,
   "report-clean": 4,
   "report-living": 4,
+  "report-notideal": 3,
   "scan-assisted": 11,
   "scan-busy": 0,
   "scan-consent": 10,
