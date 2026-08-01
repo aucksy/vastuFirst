@@ -52,7 +52,7 @@ expert disagrees.
 
 ### Saturday 1 August, evening — the accuracy release
 
-**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.4.0/vastufirst-v0.4.0.apk
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.4.1/vastufirst-v0.4.1.apk
 
 This is the biggest single change to how accurate the app is, plus everything a paid app on the Play
 Store needs before it can be sold.

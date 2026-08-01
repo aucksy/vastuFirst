@@ -317,7 +317,7 @@ Two things you reported, and one you asked me to make production-grade.
 
 ---
 
-# ⭐ v0.4.0 — the checks that actually matter before you hand this over
+# ⭐ v0.4.1 — the checks that actually matter before you hand this over
 
 Everything below is something only a real phone can settle. The three marked ⭐⭐ are the ones I would
 not hand over without; the rest are worth ten minutes if you have them.
@@ -337,7 +337,7 @@ not hand over without; the rest are worth ten minutes if you have them.
       memory. Come back. You should land on your rooms, with a card at the top saying "We kept the
       home you were drawing" and a button to start again. **If the grid is empty, that is the bug this
       build exists to fix and I need to know.**
-- [ ] **K3 — ⭐⭐ Does this build install straight over the last one?** Install v0.4.0 on top of
+- [ ] **K3 — ⭐⭐ Does this build install straight over the last one?** Install v0.4.1 on top of
       v0.3.24 **without uninstalling**. Every home you had saved must still be there, with the same
       scores. If Android refuses to install, or your homes are gone, stop and tell me.
 
