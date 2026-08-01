@@ -1085,10 +1085,13 @@ private fun ShapeSection(
         // corner to cut away — and saying nothing here left the app looking as though it had missed
         // something obvious. This says what is actually happening, and it is reassuring rather than
         // a warning, because for most homes it is simply correct.
+        // ⚠ Kept to the SAME LENGTH as the line it replaces. The first attempt ran to three long
+        // lines and the geometry gate reported ten more elements pushed below the fold on this
+        // screen — the room palette among them. A caption on the tallest screen in the app is not a
+        // free place to explain things.
         unaskableGap -> VText(
-            "The empty squares between your rooms count as part of your home — usually right, since " +
-                "real homes have walls and passages between the rooms. To mark a whole corner as not " +
-                "yours, clear the rooms around it and we'll ask about it.",
+            "The empty squares between your rooms count as part of your home — usually right, " +
+                "since homes have passages between rooms.",
             style = VastuTheme.type.caption, color = colors.textTertiary,
         )
 
