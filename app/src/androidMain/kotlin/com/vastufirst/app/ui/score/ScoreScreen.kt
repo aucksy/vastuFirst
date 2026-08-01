@@ -24,6 +24,9 @@ import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.toVastu
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.SiteItem
+import com.vastufirst.app.ui.details.coverageLine
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -63,6 +66,7 @@ fun ScoreScreen(
     onUnlock: () -> Unit,
     onFix: () -> Unit,
     onDone: () -> Unit,
+    onAddDetails: () -> Unit,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
     // "insufficient plan" states) renders headlessly from fixture state in the harness (UI-POLISH §6).
@@ -78,6 +82,8 @@ fun ScoreScreen(
         unlocked = vm.unlocked,
         cols = vm.gridCols,
         rows = vm.gridRows,
+        siteAnswers = vm.siteAnswers,
+        onAddDetails = onAddDetails,
     )
 }
 
@@ -96,6 +102,9 @@ fun ScoreContent(
     unlocked: Boolean = false,
     cols: Int = GRID,
     rows: Int = GRID,
+    /** The optional extras the user has answered — drives the honest "what this covers" line. */
+    siteAnswers: SiteAnswers = SiteAnswers(),
+    onAddDetails: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val a = analysis
@@ -135,13 +144,17 @@ fun ScoreContent(
             )
         }
 
-        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows)
+        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows, siteAnswers, onAddDetails)
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit, onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int) {
+private fun ScoreResult(
+    rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit,
+    onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int,
+    siteAnswers: SiteAnswers, onAddDetails: () -> Unit,
+) {
     val colors = VastuTheme.colors
     // buildZoneMapModel memoises its own heavy part internally (C14), keyed on rooms/analysis/grid/
     // theme, so repeated recompositions here reuse the room + wedge lists rather than rebuilding.
@@ -171,6 +184,25 @@ private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: A
                 modifier = Modifier.fillMaxWidth(0.62f),
                 showLabels = false,
                 contentDescription = "Your plan with Vastu zones, North at $north degrees, ${spokenScore(a.score, LocalDecimalMark.current)}.",
+            )
+        }
+
+        // ⭐ WHAT THE NUMBER ACTUALLY LOOKED AT (docs/SCORE-ACCURACY-CAVEATS.md #4). The score has only
+        // ever come from rooms, the front door and the shape — but it reads as a complete verdict, and
+        // it is really a CEILING: a home with its water tank in the worst possible corner scored
+        // exactly the same as one with it in the best, because nothing ever asked. Saying so is not
+        // optional for a paid product, and the sentence comes with the way to close the gap.
+        Divider()
+        SectionLabel("What this covers")
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(coverageLine(siteAnswers), style = VastuTheme.type.body, color = colors.textSecondary)
+        if (siteAnswers.answeredCount < SiteItem.entries.size) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            VastuButton(
+                "Answer a few more and check more",
+                onClick = onAddDetails,
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
             )
         }
 

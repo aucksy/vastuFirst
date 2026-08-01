@@ -291,4 +291,47 @@ class GridEditingTest {
         // A room covering the whole grid is centred on the Brahmasthan.
         assertEquals(Zone.BRAHMASTHAN, zoneOfRect(CellRect(0, 0, 8, 8), grid))
     }
+
+    // ── on the line between two directions (docs/SCORE-ACCURACY-CAVEATS.md #2) ─────────────────
+
+    @Test
+    fun `a room well inside one direction reports no neighbours`() {
+        // The ordinary case, and the one that must stay silent: a warning on every room is a warning
+        // on none.
+        assertTrue(neighbouringZones(CellRect(0, 0, 2, 2), grid).isEmpty(), "top-left corner room")
+        assertTrue(neighbouringZones(CellRect(6, 6, 2, 2), grid).isEmpty(), "bottom-right corner room")
+    }
+
+    @Test
+    fun `a room straddling a band boundary names the direction it could fall into`() {
+        // On an 8-cell grid the bands break at 3 and 5, so a room centred right on one is a cell away
+        // from being scored somewhere else.
+        val onTheLine = CellRect(2, 0, 2, 2)      // centre at column 3 — the north-west/north line
+        val neighbours = neighbouringZones(onTheLine, grid)
+        assertTrue(neighbours.isNotEmpty(), "a room on the line must say so: $neighbours")
+        assertTrue(
+            neighbours.all { it != zoneOfRect(onTheLine, grid) },
+            "it must only name directions DIFFERENT from the one it is in",
+        )
+    }
+
+    @Test
+    fun `a room against a wall does not report the direction it cannot move in`() {
+        // Nudging into a wall is a no-op, so offering it as a possibility would be a lie.
+        val hugging = CellRect(0, 3, 2, 2)
+        assertTrue(
+            neighbouringZones(hugging, grid).none { it == zoneOfRect(hugging, grid) },
+            "a wall-hugging room must not name its own direction as a neighbour",
+        )
+    }
+
+    @Test
+    fun `every room on the grid answers without throwing`() {
+        for (c in 0 until grid) for (r in 0 until grid) for (w in 1..3) for (h in 1..3) {
+            if (c + w > grid || r + h > grid) continue
+            val rect = CellRect(c, r, w, h)
+            val n = neighbouringZones(rect, grid)
+            assertTrue(n.none { it == zoneOfRect(rect, grid) }, "self-reported neighbour at $rect")
+        }
+    }
 }

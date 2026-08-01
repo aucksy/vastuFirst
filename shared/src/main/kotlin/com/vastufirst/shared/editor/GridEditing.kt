@@ -219,6 +219,31 @@ fun bandBoundaries(grid: Int): List<Int> {
     return (1 until grid).filter { bandOfCell(it - 1) != bandOfCell(it) }
 }
 
+/**
+ * ⭐ The zones a room would fall into if it moved ONE CELL (docs/SCORE-ACCURACY-CAVEATS.md #2).
+ *
+ * The editor snaps rooms to a grid of 8-ish cells; the engine judges them against a 9-pada grid. So
+ * the input is COARSER than the thing it feeds, and a room the user pictures as "in the north-east"
+ * can sit a hair over the line and be scored as North or East instead. Nothing warned about it.
+ *
+ * This cannot be fixed by rounding — the two grids genuinely do not line up — so the honest answer is
+ * to say when a room is sitting on a line, at the moment it can still be moved. Empty when the room
+ * is comfortably inside one zone, which is the ordinary case and shows nothing at all.
+ */
+fun neighbouringZones(rect: CellRect, cols: Int, rows: Int = cols): Set<Zone> {
+    val here = zoneOfRect(rect, cols, rows)
+    val out = LinkedHashSet<Zone>()
+    for ((dc, dr) in listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1)) {
+        val col = (rect.col + dc).coerceIn(0, (cols - rect.w).coerceAtLeast(0))
+        val row = (rect.row + dr).coerceIn(0, (rows - rect.h).coerceAtLeast(0))
+        val moved = rect.copy(col = col, row = row)
+        if (moved == rect) continue          // already against a wall in that direction
+        val there = zoneOfRect(moved, cols, rows)
+        if (there != here) out += there
+    }
+    return out
+}
+
 /** row 0 = North, col 0 = West. Identical to the engine's PadaGrid.ZONE_MAP. */
 private val ZONE_MAP = arrayOf(
     arrayOf(Zone.NW, Zone.N, Zone.NE),

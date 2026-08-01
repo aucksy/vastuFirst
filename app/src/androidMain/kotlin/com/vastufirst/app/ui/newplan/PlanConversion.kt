@@ -6,6 +6,10 @@ import com.vastufirst.shared.Level
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.PropertyType
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.fixturesFor
+import com.vastufirst.app.ui.details.siteAnswersFromPlan
+import com.vastufirst.app.ui.details.siteFor
 import com.vastufirst.shared.Room
 import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.CellRect
@@ -37,6 +41,8 @@ fun buildEnginePlan(
     /** Cells of the bounding box the user has told us are NOT part of their home — the missing corner
      *  of an L, a notch. Empty (the default) reproduces the bounding-box footprint byte for byte. */
     cutOut: Set<Cell> = emptySet(),
+    /** The optional extras — water tank, tree, road — that let the rest of the engine's rules run. */
+    siteAnswers: SiteAnswers = SiteAnswers(),
 ): Plan? {
     val theIntent = intent ?: return null
     if (rooms.isEmpty()) return null
@@ -77,13 +83,26 @@ fun buildEnginePlan(
         listOf(Door(id = "door-main", centre = centre, wallStart = ws, wallEnd = we, isMainEntrance = true))
     } ?: emptyList()
 
+    // The extras are positioned AGAINST THIS OUTLINE, so a home with a cut corner files its water
+    // tank against its real shape rather than a rectangle it never had.
+    val fixtures = fixturesFor(siteAnswers, outline, north)
+
     return Plan(
         id = planId,
         propertyType = propertyType,
         intent = theIntent,
-        levels = listOf(Level(index = 0, outline = outline, rooms = engineRooms, doors = doors)),
+        levels = listOf(
+            Level(index = 0, outline = outline, rooms = engineRooms, doors = doors, fixtures = fixtures),
+        ),
+        site = siteFor(siteAnswers, outline),
         northOffsetDegrees = north,
     )
+}
+
+/** Rebuild the optional extras from a saved home, so reopening it never drops what it was scored with. */
+fun siteAnswersFromSavedPlan(plan: Plan): SiteAnswers {
+    val level = plan.levels.firstOrNull() ?: return SiteAnswers()
+    return siteAnswersFromPlan(level.outline, plan.northOffsetDegrees, level.fixtures, plan.site)
 }
 
 /** A grid room as the pure geometry sees it — id and type stripped, because shape doesn't need them. */

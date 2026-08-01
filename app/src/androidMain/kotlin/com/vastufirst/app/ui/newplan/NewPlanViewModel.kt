@@ -12,7 +12,10 @@ import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.SiteItem
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.Zone
 import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.DraftDoor
 import com.vastufirst.shared.editor.DraftRoom
@@ -96,6 +99,10 @@ class NewPlanViewModel(
     // Cells the user has explicitly confirmed ARE part of their home, so the app stops asking about
     // that gap. Purely a record of answered questions — it never reaches the engine.
     var keptCells by mutableStateOf<Set<Cell>>(emptySet())
+        private set
+    // The optional extras — water tank, tree, road outside — that let the rest of the engine's rules
+    // run instead of sitting permanently in "couldn't check these yet".
+    var siteAnswers by mutableStateOf(SiteAnswers())
         private set
     var planId by mutableStateOf<String?>(null)
         private set
@@ -200,6 +207,24 @@ class NewPlanViewModel(
     fun keepGap(cells: Set<Cell>) {
         cutOutCells = pruneCutOut(rooms, door, cutOutCells - cells, gridCols, gridRows)
         keptCells = keptCells + cells
+        markDirty()
+    }
+
+    /** The user says where one of the optional extras is. Re-scores like any other change. */
+    fun setSiteAnswer(item: SiteItem, zone: Zone) {
+        siteAnswers = siteAnswers.copy(
+            answers = siteAnswers.answers + (item to zone),
+            declined = siteAnswers.declined - item,
+        )
+        markDirty()
+    }
+
+    /** The user says there isn't one. A real answer, not a skip — it lets the rule report "clear". */
+    fun declineSiteItem(item: SiteItem) {
+        siteAnswers = siteAnswers.copy(
+            answers = siteAnswers.answers - item,
+            declined = siteAnswers.declined + item,
+        )
         markDirty()
     }
 
@@ -310,6 +335,8 @@ class NewPlanViewModel(
         door = door?.let { DraftDoor(it.side.name, it.cell) },
         cutOut = cutOutCells.toList(),
         kept = keptCells.toList(),
+        siteAnswers = siteAnswers.answers.mapKeys { it.key.name },
+        siteDeclined = siteAnswers.declined.map { it.name },
     )
 
     /**
@@ -331,6 +358,13 @@ class NewPlanViewModel(
         door = clampDoorToRooms(door, rooms)
         cutOutCells = pruneCutOut(rooms, door, d.cutOut.toSet(), gridCols, gridRows)
         keptCells = d.kept.toSet()
+        // A key this build no longer knows is dropped rather than taking the draft down with it.
+        siteAnswers = SiteAnswers(
+            answers = d.siteAnswers.mapNotNull { (k, v) ->
+                SiteItem.entries.firstOrNull { it.name == k }?.let { it to v }
+            }.toMap(),
+            declined = d.siteDeclined.mapNotNull { k -> SiteItem.entries.firstOrNull { it.name == k } }.toSet(),
+        )
     }
 
     /**
@@ -342,6 +376,7 @@ class NewPlanViewModel(
         door = null
         cutOutCells = emptySet()
         keptCells = emptySet()
+        siteAnswers = SiteAnswers()
         name = null
         planId = null
         gridCols = GRID
@@ -367,6 +402,7 @@ class NewPlanViewModel(
         // us is L-shaped reopens L-shaped and re-scores identically. Every cell of a reopened home is
         // an answered question, so the editor does not interrogate them about it a second time.
         cutOutCells = cutOutFromPlan(saved.plan, rooms)
+        siteAnswers = siteAnswersFromSavedPlan(saved.plan)
         keptCells = Footprint.boundingCells(rooms.map { it.cellRect() }) - cutOutCells
         // The plot shape isn't stored on the Plan (the engine doesn't need it); re-derive the
         // tightest grid that encloses the reopened rooms so a further edit keeps its proportions
@@ -400,5 +436,5 @@ class NewPlanViewModel(
      * — this delegate is the ViewModel's binding of it to the live draft state.
      */
     fun buildPlan(): Plan? =
-        buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft", cutOutCells)
+        buildEnginePlan(rooms, door, intent, propertyType, north, planId ?: "draft", cutOutCells, siteAnswers)
 }

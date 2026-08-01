@@ -224,6 +224,7 @@ fun MarkNorthContent(
  * is written against exactly that sentence. Changing the wording without changing the maths would
  * put confident, precise, WRONG directions on every room in the report.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CompassHelper(
     compass: CompassState,
@@ -257,8 +258,17 @@ private fun CompassHelper(
             heading == null -> VText(
                 "Finding the compass…", style = VastuTheme.type.body, color = colors.textTertiary,
             )
-            else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                VText("The top of the phone points", style = VastuTheme.type.body, color = colors.textTertiary)
+            // ⚠ FlowRow, not a SpaceBetween Row. Two unweighted children in a SpaceBetween row are
+            // laid out at their own widths, so at 200 % font the label took the whole line and the
+            // READING — the only thing on this card that matters — measured ZERO WIDE. Caught by the
+            // geometry gate before it shipped, and it is the same trap already fixed on the score and
+            // report screens. FlowRow wraps the reading onto its own line instead.
+            else -> FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
+            ) {
+                VText("Pointing", style = VastuTheme.type.body, color = colors.textTertiary)
                 VText(
                     "${compassWord(heading)} · ${heading.roundToInt()}°",
                     style = VastuTheme.type.mono, color = colors.textPrimary,

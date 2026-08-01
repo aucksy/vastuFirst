@@ -103,6 +103,7 @@ import com.vastufirst.shared.editor.cellIndex
 import com.vastufirst.shared.editor.handleAnchor
 import com.vastufirst.shared.editor.handlesFor
 import com.vastufirst.shared.editor.moveBy
+import com.vastufirst.shared.editor.neighbouringZones
 import com.vastufirst.shared.editor.resizeBy
 import com.vastufirst.shared.editor.snapWithHysteresis
 import com.vastufirst.shared.editor.zoneOfRect
@@ -1265,6 +1266,24 @@ private fun SelectedRoomTools(
             "${room.w} × ${room.h} · ${zoneOfRect(room.rect(), cols, rows).short()}",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
+
+        // ⭐ ON THE LINE (docs/SCORE-ACCURACY-CAVEATS.md #2). The drawing grid is coarser than the
+        // zones the engine judges against, so a room the user pictures as "north-east" can sit a hair
+        // over the line and be scored as North instead — with nothing said about it. The two grids
+        // genuinely do not line up, so this cannot be rounded away; the honest answer is to say when a
+        // room is sitting on a line, at the one moment it can still be moved. Silent in the ordinary
+        // case, where a room is comfortably inside one direction.
+        val neighbours = remember(room.col, room.row, room.w, room.h, cols, rows) {
+            neighbouringZones(room.rect(), cols, rows)
+        }
+        if (neighbours.isNotEmpty()) {
+            VText(
+                "This room is right on the edge of the " +
+                    neighbours.joinToString(" and ") { it.short().lowercase() } +
+                    ". Nudge it if it belongs clearly in one direction.",
+                style = VastuTheme.type.bodySm, color = colors.verdictSuboptimal,
+            )
+        }
 
         // ⭐ The correction this control exists for, directly under the name it corrects: a room read
         // as the wrong KIND is the one mistake the editor previously had no answer to. Removing the

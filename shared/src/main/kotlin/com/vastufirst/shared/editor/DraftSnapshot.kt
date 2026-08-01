@@ -3,6 +3,7 @@ package com.vastufirst.shared.editor
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.Zone
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,6 +35,14 @@ data class DraftSnapshot(
     val cutOut: List<Cell> = emptyList(),
     /** Cells the user confirmed ARE part of the home, so the app does not ask about them again. */
     val kept: List<Cell> = emptyList(),
+    /**
+     * The optional extras — water tank, tree, road — keyed by NAME rather than by the enum itself,
+     * because that enum lives in the Android module. A key this build does not recognise is ignored
+     * on load rather than making the whole draft unreadable.
+     */
+    val siteAnswers: Map<String, Zone> = emptyMap(),
+    /** Extras the user said there isn't one of. A real answer, and not the same as never asked. */
+    val siteDeclined: List<String> = emptyList(),
 ) {
     /** Nothing drawn yet ⇒ nothing worth restoring, and nothing worth telling the user about. */
     val isEmpty: Boolean get() = rooms.isEmpty()

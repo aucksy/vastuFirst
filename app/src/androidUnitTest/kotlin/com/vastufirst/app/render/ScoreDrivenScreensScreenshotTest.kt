@@ -2,12 +2,16 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import com.vastufirst.app.ui.details.MoreDetailsContent
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.SiteItem
 import com.vastufirst.app.ui.marknorth.CompassQuality
 import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.shared.Intent
+import com.vastufirst.shared.Zone
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -80,6 +84,36 @@ class ScoreDrivenScreensScreenshotTest {
     @Test
     fun score() = render("score") {
         ScoreContent(rooms = rooms, north = north, intent = intent, analysis = analysis, onUnlock = {}, onFix = {})
+    }
+
+    /**
+     * ⭐ The optional "a few more things" step, in both the states that matter: nothing answered (the
+     * state everyone arrives in) and a couple answered. Four cards of eight direction chips each is a
+     * lot of wrapping, and 200 % font on a 320 dp phone is where that shatters.
+     */
+    @Test
+    fun more_details_empty() = render("more-details") {
+        MoreDetailsContent(answers = SiteAnswers(), onAnswer = { _, _ -> }, onDecline = {}, onDone = {}, onBack = {})
+    }
+
+    @Test
+    fun more_details_answered() = render("more-details-answered") {
+        MoreDetailsContent(
+            answers = SiteAnswers(
+                answers = mapOf(SiteItem.OVERHEAD_TANK to Zone.SW, SiteItem.HEAVY_TREE to Zone.NE),
+                declined = setOf(SiteItem.ROAD),
+            ),
+            onAnswer = { _, _ -> }, onDecline = {}, onDone = {}, onBack = {},
+        )
+    }
+
+    /** The score once the extras are in — the "what this covers" line has to change with them. */
+    @Test
+    fun score_with_details() = render("score-covered") {
+        ScoreContent(
+            rooms = rooms, north = north, intent = intent, analysis = analysis, onUnlock = {}, onFix = {},
+            siteAnswers = SiteAnswers(declined = SiteItem.entries.toSet()),
+        )
     }
 
     @Test

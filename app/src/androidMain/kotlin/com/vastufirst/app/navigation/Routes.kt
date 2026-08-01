@@ -28,6 +28,14 @@ object Routes {
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
     const val SCORE = "score"
+
+    /**
+     * The optional "a few more things" step — water tank, tree, the road outside. Reached from
+     * the score rather than placed before it: the free score is meant to be quick, and forcing
+     * four more questions on everyone would cost every user time to catch the minority who have
+     * something to report. The score screen says what it did and did not look at instead.
+     */
+    const val MORE_DETAILS = "more_details"
     const val UNLOCK = "unlock"
     const val REPORT = "report"
 }

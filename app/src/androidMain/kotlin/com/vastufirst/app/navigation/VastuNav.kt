@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.vastufirst.app.ui.addhome.AddHomeScreen
+import com.vastufirst.app.ui.details.MoreDetailsScreen
 import com.vastufirst.app.ui.grid.GuidedGridScreen
 import com.vastufirst.app.ui.home.HomeScreen
 import com.vastufirst.app.ui.legal.LegalScreen
@@ -188,8 +189,20 @@ fun VastuNavHost() {
                     onUnlock = { nav.go(if (vm.unlocked) Routes.REPORT else Routes.UNLOCK) },
                     onFix = { nav.go(Routes.GUIDED_GRID) },
                     onDone = { nav.goHome() },
+                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
                 )
             }
+            // The optional extras. Both ways out land back on the score, which re-reads the live
+            // analysis — so an answer given here shows up in the number immediately.
+            composable(Routes.MORE_DETAILS) { entry ->
+                val vm = sharedVm(nav, entry)
+                MoreDetailsScreen(
+                    vm = vm,
+                    onDone = { nav.popBackStack() },
+                    onBack = { nav.popBackStack() },
+                )
+            }
+
             composable(Routes.UNLOCK) { entry ->
                 val vm = sharedVm(nav, entry)
                 UnlockScreen(onUnlocked = {
