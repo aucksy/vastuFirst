@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.23 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.23/vastufirst-v0.3.23.apk)
+**Latest build to test:** v0.3.24 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.24/vastufirst-v0.3.24.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -151,6 +151,10 @@ sighted testing never catches.
       *(v0.2.9)*
 - [ ] **F3 · Fresh install → your list of homes** should be a friendly empty state, not a blank
       screen. *(v0.2.9)*
+- [ ] **F5 · Scroll the "Add a room" row all the way to the right.** Every kind should be there —
+      Entrance, Corridor, Utility, Bathroom, Guest, Courtyard, Garage, Basement after the familiar
+      eleven — and it should match the list you get when you change a room you've already placed.
+      Tell me if scrolling that far to reach Corridor is annoying enough to change. *(v0.3.24)*
 - [ ] **F4 · Anything that just looks wrong.** A screenshot is enough — I'd rather chase a vague
       "this looks off" than have you talk yourself out of reporting it.
 

@@ -31,6 +31,33 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Saturday 1 August, later — you can now add every kind of room, not just eleven of them
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.24/vastufirst-v0.3.24.apk
+
+You noticed that the list of room types when you *add* a room isn't the same as the list when you
+*change* a room you've already placed, and that Corridor was missing from the first one. Both true.
+
+Adding offered **eleven** kinds. Changing offered **nineteen**. The eight you could never add were
+Entrance, Corridor, Utility, Bathroom, Guest bedroom, Courtyard, Garage and Basement.
+
+**That mattered more than it looks.** When the app reads a scanned floor plan it can produce all
+nineteen kinds. So if it read one of your rooms as a Corridor and you deleted it, there was no way
+to put a corridor back — you'd have had to start that room again as something else and correct it
+afterwards. A one-way door, for eight kinds out of nineteen.
+
+Fixed properly rather than patched: there is now **one** list that both places read, so they can't
+drift apart again in future. The eleven you're used to stay in the same order, so nothing you
+already reach for has moved — the extra eight come after them, so you scroll a bit further along the
+row to reach Corridor.
+
+Nothing about scoring changed.
+
+**One honest note:** the extra kinds sit further along that left-to-right strip, so you do have to
+scroll to find them. If you'd rather the strip showed everything at once without scrolling, say so —
+it's a small change, but it makes the row of buttons taller and pushes the plan itself down the
+screen, which is why it isn't done by default.
+
 ### Saturday 1 August — the score now reads out of 10, not out of 100
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.23/vastufirst-v0.3.23.apk

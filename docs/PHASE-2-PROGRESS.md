@@ -1934,3 +1934,90 @@ description was added without merging the node away.
 ℹ Noted while looking, **not a defect and not ours**: at 200 % font the big score grows about 9 %
 while the caption beside it doubles. That is Android's non-linear font scaling — text that is
 already large is deliberately scaled less — and it behaved identically when the number was `31`.
+
+---
+
+## ⭐ One list of room kinds, not two — v0.3.24 (2026-08-01)
+
+Owner: *"Draw room on grid does not have same options as when you replace the room… should be
+consistent, corridor should be there too."* Correct on both counts, and the second half is the
+serious one.
+
+### The measurement
+
+| control | kinds offered |
+|---|---|
+| **Add a room** (editor palette) | **11** — Living, Kitchen, Master, Bedroom, Pooja, Toilet, Stairs, Study, Dining, Store, Balcony |
+| **Change room type** (a placed room) | **19** — the eleven above **plus** Entrance, Corridor, Utility, Bathroom, Guest, Courtyard, Garage, Basement |
+
+So the app answered "what kinds of room are there?" two different ways depending on which control
+the user happened to be standing in front of.
+
+### ⚠ Why this was a defect and not a tidiness item
+
+**The plan reader can produce all nineteen kinds** off a real scanned floor plan — a lobby, a foyer,
+a wash area, an attached bath and a servant's room all resolve to real types. A room read as one of
+the eight the palette lacked could be **deleted and then never placed again by hand**. "Delete it
+and draw a new one" was a one-way door for eight of the nineteen kinds.
+
+The repo already knew this. It is written down in `ALL_ROOM_TYPES`' own comment and pinned by a test
+called *"the palette alone cannot reach every kind"* — the gap was **documented and asserted rather
+than closed**, because the change-type control (v0.3.20) made every kind *reachable* and that was
+taken as sufficient. It was not: reachable-by-correcting is not the same as offered-when-adding, and
+the owner found the difference in about a minute of use.
+
+### What changed
+
+**Not** the eight missing kinds copied across. There is now **one list** that both controls read.
+Two lists is the mechanism that let this happen quietly, so the fix is to have one — the only way
+to add a kind to either control is now to add it to both.
+
+- The **eleven kinds already in the palette keep their order**, so nothing a returning user reaches
+  for has moved. The other eight are appended, commonest first.
+- Presentation is deliberately left alone: the palette stays a side-scrolling strip, the change-type
+  control stays a wrapping list behind a button. Making the palette wrap would park four or five
+  lines of chips permanently above the plan and push the move and size controls off a small screen —
+  the exact reason the change-type control is collapsed in the first place.
+- **No scoring change.** The engine is untouched, and every one of these kinds was already reachable
+  through the change-type control.
+
+### ⚠ Proof, and the honest limit on it
+
+**No screenshot can show this, and that is worth stating plainly.** The palette is a side-scrolling
+strip whose first eleven chips are untouched, so **every editor golden is byte-identical** and the
+new chips sit beyond the visible edge. A green render gate proves nothing here.
+
+The proof is a rendering test instead: it draws the real editor and asserts **all nineteen chips are
+present on the screen**, written against the rendered palette rather than the list constant — so it
+fails if the screen ever goes back to reading a shorter list of its own.
+
+The two tests that pinned the old gap were **inverted, not deleted**: what used to assert "the
+palette cannot reach every kind" now asserts that it can, and a new test pins that the familiar
+eleven have not been reordered.
+
+### Looked at before tagging (CLAUDE.md §2b) — and what "looking" had to mean here
+
+⚠ **This is a change no screenshot can show, so the usual gate proves nothing.** The palette is a
+side-scrolling strip whose first eleven chips are untouched, so **every editor golden came back
+byte-identical and the render check passed without re-recording a single image** — exactly as
+predicted, and exactly the kind of green that must not be reported as "verified".
+
+The evidence used instead is the **measured geometry manifest**, which records every node the editor
+actually rendered, including those scrolled past the visible edge. From this build's own run:
+
+| | |
+|---|---|
+| chips present in the rendered editor | **all nineteen** — Living, Kitchen, Master, Bedroom, Pooja, Toilet, Stairs, Study, Dining, Store, Balcony, Entrance, Corridor, Utility, Bathroom, Guest, Courtyard, Garage, Basement |
+| Corridor's laid-out size | **86.5 × 48 dp** — a real chip, on the 48 dp touch floor, not a zero-size ghost |
+| Corridor's *visible* size | **0 × 0** — i.e. beyond the right edge of the strip, which is why no picture moved |
+
+Both ratchets held: **no new clipping and no new accessibility finding on any screen.** That is the
+expected result and the reason it is expected is worth writing down — the layout gate excludes
+fully-scrolled-off items from its clipping count on purpose, so appending chips to a scroller cannot
+inflate it. The chip that sits *partly* cut at the edge is unchanged, because the leading eleven
+have not moved.
+
+ℹ Left deliberately: the eight added kinds are reached by scrolling the strip further. Making the
+palette wrap so all nineteen show at once is a genuine option, and it is the owner's call because it
+costs vertical space above the plan — it is on the device checklist as a question rather than
+decided here.
