@@ -844,7 +844,14 @@ fun GuidedGridContent(
         // ⭐ The shape question. Placed here — directly under the plan, above every other control —
         // because it is the one thing on this screen that changes the score without the user having
         // touched anything, and it must be answered while they can still see what it is pointing at.
-        if (!doorMode && rooms.isNotEmpty()) {
+        //
+        // ⚠ Hidden while a room is SELECTED or a new one is armed, and the geometry gate is why: the
+        // selected-room panel is the tallest thing in the editor, and this section above it pushed its
+        // move arrows and its Remove/Done buttons below the fold in two configurations. It is also the
+        // right call on its own terms — somebody who has a room in their hand is editing that room,
+        // not the outline, and two claims on their attention at once serves neither. The question does
+        // not go away; it is there the moment they let go.
+        if (!doorMode && rooms.isNotEmpty() && selected == null && armedType == null) {
             ShapeSection(
                 pending = pendingGap,
                 enclosed = enclosedGap,
