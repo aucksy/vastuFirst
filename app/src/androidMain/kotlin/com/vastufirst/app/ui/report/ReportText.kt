@@ -5,6 +5,8 @@ import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.NotChecked
 import com.vastufirst.shared.PadaVerdict
+import com.vastufirst.shared.Provenance
+import com.vastufirst.shared.Remedy
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Verdict
@@ -162,16 +164,48 @@ fun doorUnnamedNote(d: DoorResult): String? =
  * in the app since the first build and were never shown to anyone.
  */
 fun doorExplanation(d: DoorResult): String {
-    val base = "The tradition lays 32 named positions around the edge of the plan, eight to a wall, " +
-        "and judges the main entrance by which one it stands on. Yours is ${padaStanding(d.verdict)}. " +
-        "The front door carries more weight in this reading than any single room."
-    return if (d.spansTwoPadas) {
-        "$base Your doorway is wide enough to stand across two of these positions; it has been read " +
-            "on the one it mostly sits on."
-    } else {
-        base
+    val parts = mutableListOf(
+        "The tradition lays 32 named positions around the edge of the plan, eight to a wall, and " +
+            "judges the main entrance by which one it stands on. Yours is ${padaStanding(d.verdict)}. " +
+            "The front door carries more weight in this reading than any single room.",
+    )
+    // ⚠ A door can read unfavourably without raising a problem of its own — only the South-West
+    // corner arc does that. So the reader would otherwise be told the most important element in the
+    // report is unfavourable and given nothing to do about it.
+    if (d.verdict != PadaVerdict.AUSPICIOUS) {
+        parts += "Only two or three of the eight positions on any wall are counted favourable, so a " +
+            "door moved a few feet along the same wall can read quite differently. While the plan is " +
+            "still on paper, that is worth walking through with whoever is drawing it."
     }
+    if (d.spansTwoPadas) {
+        parts += "Your doorway is wide enough to stand across two of these positions; it has been " +
+            "read on the one it mostly sits on."
+    }
+    return parts.joinToString(" ")
 }
+
+// ---- remedies -------------------------------------------------------------------------------
+
+/** The provenance tag's own words, so a remedy can carry it inline rather than as a pill. */
+fun provenanceWords(p: Provenance): String = when (p) {
+    Provenance.TEXT -> "From classical text"
+    Provenance.DERIV -> "Traditional practice"
+    Provenance.MOD -> "Modern practice"
+    Provenance.DISP -> "Schools disagree"
+}
+
+/**
+ * ⭐ A remedy AND WHERE IT COMES FROM, in one line.
+ *
+ * ⚠ The report used to render `remedy.text` and throw the provenance away — so a rock-salt bowl
+ * invented in the 20th century and a rite prescribed in the Mayamatam arrived on the page looking
+ * exactly alike. Traceability is the whole product; it cannot be the one field that gets dropped on
+ * the way to the screen.
+ *
+ * Words rather than a coloured pill: the defect's own tag is already a pill above, five more would
+ * be noise, and a phrase reads better than a colour to someone holding a phone in daylight.
+ */
+fun remedyLine(r: Remedy): String = "${r.text} (${provenanceWords(r.provenance)})"
 
 // ---- the rules we could not run -------------------------------------------------------------
 

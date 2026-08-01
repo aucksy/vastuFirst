@@ -253,7 +253,10 @@ private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: Lis
         VText(d.explanation, style = VastuTheme.type.bodySm, color = colors.textSecondary)
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        val remedies = d.remedies.map { it.text }
+        // ⭐ Each remedy carries its OWN provenance, not the defect's. Within one problem they
+        // genuinely differ — a rite from the Mayamatam and a 20th-century rock-salt bowl can sit two
+        // lines apart, and the reader has to be able to tell which is which.
+        val remedies = d.remedies.map { remedyLine(it) }
         if (living) {
             RemedyBlock(remedies, d.remedyNote)
             d.layoutFix?.let { Spacer(Modifier.height(VastuTheme.spacing.s2)); RenovateBlock(it) }

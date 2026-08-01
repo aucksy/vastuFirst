@@ -77,6 +77,10 @@ That sentence appears above the remedies on the problems it applies to: the text
 belongs, and record no cure for putting it somewhere else. Not making Vastu up is the whole point of
 this product, so a remedy invented to fill a table would have been the worst thing we could ship.
 
+**Every remedy now says where it comes from** — from a classical text, from traditional practice, or
+modern 20th-century practice — right on the line. Before, a rock-salt bowl someone invented in the
+1900s and a rite prescribed in the Mayamatam arrived on the page looking exactly alike.
+
 **Rooms rated "not ideal" now appear in the report.** ⭐ This was the most serious of the lot. They
 fell between the problems list and the already-right list and appeared *nowhere* — while the free
 score screen counted them in "N more issues" to justify the ₹699. We were selling issues the report

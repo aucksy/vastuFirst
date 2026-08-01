@@ -67,6 +67,23 @@ class ReportTextTest {
         assertTrue("two different problems must not read identically: $sets", sets.size == sets.distinct().size)
     }
 
+    /**
+     * ⚠ The report rendered `remedy.text` and dropped the provenance — so a rock-salt bowl invented
+     * in the 20th century and a rite prescribed in the Mayamatam reached the page looking alike.
+     */
+    @Test
+    fun every_remedy_says_where_it_comes_from() {
+        val lines = analysis.defects.flatMap { d -> d.remedies.map { remedyLine(it) } }
+        assertTrue("the sample home must offer remedies", lines.isNotEmpty())
+        val allowed = listOf("(From classical text)", "(Traditional practice)", "(Modern practice)", "(Schools disagree)")
+        lines.forEach { line ->
+            assertTrue("'$line' reaches the reader with no provenance", allowed.any { line.endsWith(it) })
+        }
+        // And the tag must be the remedy's own, not the defect's — within one problem they differ.
+        val kinds = analysis.defects.first().remedies.map { it.provenance }.distinct()
+        assertTrue("a problem's remedies must not all share one provenance here", kinds.size > 1)
+    }
+
     @Test
     fun every_reason_explains_rather_than_restating_the_rule() {
         analysis.defects.forEach { d ->
@@ -156,7 +173,16 @@ class ReportTextTest {
         assertFalse("the wall must be a word, never a letter", Regex("\\b[NESW]\\b").containsMatchIn(title))
         assertTrue("the wall must be spelled out", title.contains("wall"))
         assertTrue("the reader must be told which of the 32 positions it is", doorPlaceLine(door).contains("of 32"))
-        assertTrue("the door's reading must explain the 32-position table", doorExplanation(door).contains("32 named positions"))
+        val explanation = doorExplanation(door)
+        assertTrue("the door's reading must explain the 32-position table", explanation.contains("32 named positions"))
+        // ⚠ Only the South-West corner arc raises a problem of its own, so a door can read
+        // unfavourably and appear in no problems list. It must not be a dead end for the reader.
+        if (door.verdict != com.vastufirst.shared.PadaVerdict.AUSPICIOUS) {
+            assertTrue(
+                "an unfavourable door must be given something to do about it",
+                explanation.contains("same wall"),
+            )
+        }
         // ⭐ The bundled sample's own door lands on one of the two positions the sources leave
         // unnamed, so this is the path a demo actually walks. It must SAY so, not show a blank.
         if (door.pada.name == null) {
@@ -197,10 +223,15 @@ class ReportTextTest {
 
     @Test
     fun the_free_screen_shows_the_opening_line_and_the_report_shows_the_rest() {
-        val full = analysis.defects.first().explanation
-        val opening = firstSentence(full)
-        assertTrue("the free preview must be shorter than the whole reason", opening.length < full.length)
-        assertTrue("the free preview must still be a whole sentence", opening.trim().endsWith("."))
+        analysis.defects.forEach { d ->
+            val opening = firstSentence(d.explanation)
+            assertTrue("${d.id}: the free preview must be shorter than the whole reason", opening.length < d.explanation.length)
+            assertTrue("${d.id}: the free preview must still be a whole sentence", opening.trim().endsWith("."))
+            // ⚠ One reason once opened with a 201-character sentence, and the free score screen —
+            // which shows the opening sentence and nothing else — became a wall of text that pushed
+            // the payment notice below the fold on a 320 dp phone.
+            assertTrue("${d.id}: the opening sentence is ${opening.length} chars, too long to headline", opening.length <= 120)
+        }
     }
 
     @Test

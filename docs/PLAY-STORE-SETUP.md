@@ -43,13 +43,18 @@ secret**. Exactly these four names, because that is what the build reads:
 
 ⚠ **The keystore is a binary file, and a GitHub secret only holds text** — so it goes in base64 and
 the build decodes it. **That decode step is now built and live.** It is deliberately conditional: if
-those four secrets are not set, the release builds and publishes exactly as it does today, signed
-with the committed test key. The moment you add them, the very next tag is signed with your real key
-instead — nothing else needs changing, and nobody has to remember to flip anything.
+those four secrets are not set, nothing changes at all and the build behaves exactly as it does
+today. The moment you add them, the very next tag produces a **store build signed with your real
+key** — nothing else needs changing, and nobody has to remember to flip anything.
 
-It also checks the key opens before the build depends on it, because a half-pasted secret otherwise
-fails much later with a message that says nothing useful. The decoded file is written outside the
-project, never into the repository, and deleted when the job ends whether it succeeded or not.
+⚠ **The test APK we send you keeps the shared test key on purpose**, even after your real key exists.
+That is what lets each new test build install straight over the last one without wiping your saved
+homes. Your real key signs the build that goes *to Google*, which is a different file.
+
+The step also checks the key opens before the build depends on it, because a half-pasted secret
+otherwise fails much later with a message that says nothing useful. The decoded file is written
+outside the project, never into the repository, and deleted when the job ends whether it succeeded
+or not.
 
 ⚠ **NOTHING GOES IN THE APP ITSELF, ever.** These four only ever exist on GitHub. An APK is a zip
 anybody can open, so a signing key inside one would be worthless.

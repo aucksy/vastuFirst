@@ -28,6 +28,9 @@ object RuleSetLoader {
 
     private const val DIR = "/ruleset"
 
+    /** The free score screen shows a reason's first sentence and nothing more (see §4c-ii). */
+    private const val MAX_OPENING_SENTENCE = 120
+
     /** Load the dataset bundled in this module's resources. Throws on any validation failure. */
     fun loadDefault(): RuleSet = load { path -> readResource(path) }
 
@@ -129,6 +132,24 @@ object RuleSetLoader {
                     errors += "${rule.roomType} is prohibited in $zone but no defect claims that pair — " +
                         "the reader would get the generic X-GEN text instead of a real reason."
                 }
+            }
+        }
+
+        // 4c-ii. ⭐ THE OPENING SENTENCE IS A HEADLINE, and its length is load-bearing. The free
+        //        score screen shows only the first sentence of a reason — that IS the free/paid
+        //        split. One reason opened with a 201-character sentence and the free screen turned
+        //        into a wall of text that pushed the payment notice below the fold on a 320 dp
+        //        phone. So the first sentence must say the problem in one breath.
+        rs.defects.forEach { d ->
+            val cut = d.explanation.indexOf(". ")
+            val opening = if (cut <= 0) d.explanation else d.explanation.substring(0, cut + 1)
+            if (opening.length > MAX_OPENING_SENTENCE) {
+                errors += "Defect ${d.id} opens with a ${opening.length}-character sentence; the free " +
+                    "screen shows only that, so it must be at most $MAX_OPENING_SENTENCE."
+            }
+            if (d.explanation.length <= opening.length) {
+                errors += "Defect ${d.id} is one sentence long — the paid report would add nothing to " +
+                    "the free preview."
             }
         }
 
