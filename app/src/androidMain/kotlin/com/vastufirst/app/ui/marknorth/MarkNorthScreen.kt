@@ -17,6 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +37,7 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
+import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.components.scoreBandColor
@@ -57,6 +61,10 @@ fun MarkNorthScreen(
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly from
     // fixture state (rooms + north + a live Analysis) in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
+    // The sensor runs ONLY while the helper is open, and is torn down the moment it closes or the
+    // screen goes away. rememberSaveable so rotating the phone mid-reading doesn't shut it.
+    var compassOpen by rememberSaveable { mutableStateOf(false) }
+    val compass = rememberCompassState(live = compassOpen)
     MarkNorthContent(
         rooms = vm.rooms,
         north = vm.north,
@@ -66,6 +74,13 @@ fun MarkNorthScreen(
         onBack = onBack,
         cols = vm.gridCols,
         rows = vm.gridRows,
+        compass = compass,
+        onCompassOpen = { compassOpen = true },
+        onCompassClose = { compassOpen = false },
+        onUseCompass = { heading ->
+            vm.updateNorth(northOffsetForHeading(heading))
+            compassOpen = false
+        },
     )
 }
 
@@ -80,6 +95,11 @@ fun MarkNorthContent(
     onBack: () -> Unit,
     cols: Int = GRID,
     rows: Int = GRID,
+    /** Passed in as plain data so this screen stays a pure function the render harness can draw. */
+    compass: CompassState = CompassState(),
+    onCompassOpen: () -> Unit = {},
+    onCompassClose: () -> Unit = {},
+    onUseCompass: (Float) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val model = buildZoneMapModel(rooms, analysis, north, cols, rows)
@@ -95,6 +115,21 @@ fun MarkNorthContent(
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText("Drag the N dial, or use the slider. Everything else follows from this.", style = VastuTheme.type.body, color = colors.textSecondary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+
+        // ⭐ The phone's own compass. Offered FIRST, before the dial, because it is by far the easiest
+        // way for someone who does not already know which way their home faces — and because a wrong
+        // North silently moves every room in the report (docs/SCORE-ACCURACY-CAVEATS.md #3). Nothing
+        // at all is shown on a phone without a compass: an entry point that cannot work is worse than
+        // none.
+        if (compass.supported) {
+            CompassHelper(
+                compass = compass,
+                onOpen = onCompassOpen,
+                onClose = onCompassClose,
+                onUse = onUseCompass,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s4))
+        }
 
         NorthDial(
             model = model,
@@ -145,11 +180,121 @@ fun MarkNorthContent(
         DegreeStepper(degrees = north, onChange = onNorthChange)
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
+
+        // ⭐ THE DOUBLE-CHECK. "Are you sure your North is right?" is a question nobody can answer.
+        // Where your own kitchen is, is. So the card states what this North MEANS, in the report's own
+        // words, and the button that continues is the one that agrees with it — no extra tap, and the
+        // user cannot walk past it without having read the claim.
+        val check = NorthCheck.sentence(analysis)
+        if (check.isNotEmpty()) {
+            VastuCard(accent = colors.primary) {
+                VText("Check this before we score", style = VastuTheme.type.h3, color = colors.textPrimary)
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VText(
+                    "With North where you have put it, $check.",
+                    style = VastuTheme.type.body, color = colors.textPrimary,
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VText(
+                    "If that is not how your home really is, turn the dial above until it is. " +
+                        "Every direction in your report depends on this one answer.",
+                    style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                )
+            }
+            Spacer(Modifier.height(VastuTheme.spacing.s4))
+        }
+
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             VastuButtonInline("Back", onClick = onBack, style = VastuButtonStyle.SECONDARY)
-            VastuButton("Read my home", onClick = onRead, modifier = Modifier.weight(1f))
+            VastuButton(
+                if (check.isNotEmpty()) "Yes — read my home" else "Read my home",
+                onClick = onRead,
+                modifier = Modifier.weight(1f),
+            )
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+    }
+}
+
+/**
+ * The phone's compass, as a helper rather than a replacement for the dial.
+ *
+ * ⚠ The instruction is the whole design. "Point the top of your phone the same way as the top of
+ * your plan" is the one sentence that makes the reading mean anything, and [northOffsetForHeading]
+ * is written against exactly that sentence. Changing the wording without changing the maths would
+ * put confident, precise, WRONG directions on every room in the report.
+ */
+@Composable
+private fun CompassHelper(
+    compass: CompassState,
+    onOpen: () -> Unit,
+    onClose: () -> Unit,
+    onUse: (Float) -> Unit,
+) {
+    val colors = VastuTheme.colors
+    if (!compass.live) {
+        VastuButton(
+            "Use my phone's compass",
+            onClick = onOpen,
+            style = VastuButtonStyle.SECONDARY,
+            large = false,
+        )
+        return
+    }
+
+    val heading = compass.headingDeg
+    VastuCard(accent = colors.primary) {
+        VText("Point your phone", style = VastuTheme.type.h3, color = colors.textPrimary)
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(
+            "Hold the phone flat, screen up. Stand in your home and turn until the TOP of the phone " +
+                "points the same way as the TOP of your plan — the wall you drew along the top edge.",
+            style = VastuTheme.type.body, color = colors.textPrimary,
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+
+        when {
+            heading == null -> VText(
+                "Finding the compass…", style = VastuTheme.type.body, color = colors.textTertiary,
+            )
+            else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                VText("The top of the phone points", style = VastuTheme.type.body, color = colors.textTertiary)
+                VText(
+                    "${compassWord(heading)} · ${heading.roundToInt()}°",
+                    style = VastuTheme.type.mono, color = colors.textPrimary,
+                )
+            }
+        }
+
+        if (compass.quality != CompassQuality.GOOD) {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                if (compass.quality == CompassQuality.UNRELIABLE)
+                    "Your phone can't read the compass here — move away from anything metal or magnetic, " +
+                        "or set North by hand with the dial below."
+                else
+                    "The compass needs settling. Wave the phone slowly in a figure of eight, then read it again.",
+                style = VastuTheme.type.bodySm, color = colors.verdictSuboptimal,
+            )
+        }
+
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        VastuButton(
+            "Set North from this",
+            onClick = { heading?.let(onUse) },
+            enabled = heading != null && compass.quality != CompassQuality.UNRELIABLE,
+            large = false,
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VastuButton("Close the compass", onClick = onClose, style = VastuButtonStyle.SECONDARY, large = false)
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        // Said plainly rather than buried: this is magnetic north, and in India that is within about a
+        // degree of true north — far inside the error of a hand holding a phone. Correcting it would
+        // need the device's location, i.e. a permission, for a difference nobody could measure.
+        VText(
+            "This is your phone's magnetic compass. In India that is within about a degree of true North.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
+        )
     }
 }
 

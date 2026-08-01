@@ -76,10 +76,21 @@ class FootprintTest {
 
     @Test
     fun `a notch in one wall is traced, not smoothed away`() {
-        val rooms = listOf(rect(0, 0, 4, 4))
+        // ⚠ The notched cell must be one NO ROOM covers. A cut under a room lapses by design (see
+        // "a stale cut under a room is ignored" below), so a fixture that puts one there proves
+        // nothing about tracing — it proves the lapse. This layout leaves exactly cell (1,0) bare.
+        val rooms = listOf(rect(0, 0, 1, 4), rect(1, 1, 3, 3), rect(2, 0, 2, 1))
         val ring = assertNotNull(Footprint.trace(Footprint.homeCells(rooms, setOf(Cell(1, 0)))))
         assertEquals(8, ring.size, "a single-cell notch adds four corners")
-        assertEquals(15, ringArea(ring))
+        assertEquals(15, ringArea(ring), "the notched cell must be gone from the enclosed area")
+        assertEquals(
+            listOf(
+                GridPoint(0, 0), GridPoint(1, 0), GridPoint(1, 1), GridPoint(2, 1),
+                GridPoint(2, 0), GridPoint(4, 0), GridPoint(4, 4), GridPoint(0, 4),
+            ),
+            ring,
+            "the notch must appear as a step in the north wall, not be smoothed into it",
+        )
     }
 
     // ── shapes that must be refused rather than guessed ────────────────────────────────────────

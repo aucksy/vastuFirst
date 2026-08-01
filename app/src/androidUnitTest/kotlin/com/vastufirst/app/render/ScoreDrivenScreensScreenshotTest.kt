@@ -2,6 +2,8 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import com.vastufirst.app.ui.marknorth.CompassQuality
+import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.score.ScoreContent
@@ -41,7 +43,38 @@ class ScoreDrivenScreensScreenshotTest {
 
     @Test
     fun markNorth() = render("marknorth") {
-        MarkNorthContent(rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {})
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            // A phone WITH a compass, helper closed — i.e. what almost every user sees on arrival: the
+            // one-line offer above the dial and the double-check card above the button.
+            compass = CompassState(supported = true),
+        )
+    }
+
+    /**
+     * ⭐ The compass helper OPEN — three lines of instruction, a live reading and two buttons, on a
+     * screen that already carries a dial, a slider, four chips and a stepper. It is the tallest state
+     * Mark North has ever had, and no screenshot can press the button that opens it, so it gets its
+     * own golden or it ships unseen (CLAUDE.md §2b).
+     */
+    @Test
+    fun markNorth_compass() = render("marknorth-compass") {
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            compass = CompassState(supported = true, live = true, headingDeg = 42f),
+        )
+    }
+
+    /** The same helper with the phone asking to be calibrated — the warning has to be readable too. */
+    @Test
+    fun markNorth_compass_calibrating() = render("marknorth-compass-calibrating") {
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            compass = CompassState(
+                supported = true, live = true, headingDeg = 187f,
+                quality = CompassQuality.NEEDS_CALIBRATION,
+            ),
+        )
     }
 
     @Test
