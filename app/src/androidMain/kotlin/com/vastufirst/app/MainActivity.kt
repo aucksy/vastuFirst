@@ -8,6 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import com.vastufirst.app.navigation.VastuNavHost
+import com.vastufirst.app.ui.common.deviceDecimalMark
+import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
 
@@ -28,7 +30,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Provide the app-wide haptics once at the root; every clickableTap and the North dial
             // read it from LocalVastuHaptics (VastuHaptics.None off-device keeps renders silent).
-            CompositionLocalProvider(LocalVastuHaptics provides rememberAndroidVastuHaptics()) {
+            //
+            // The decimal mark is provided here too, and ONLY here: the score is written "4.7" in
+            // this reader's own language, and this is the single place that asks the phone which
+            // mark that is. Every screen and the screenshot harness read it from LocalDecimalMark.
+            CompositionLocalProvider(
+                LocalVastuHaptics provides rememberAndroidVastuHaptics(),
+                LocalDecimalMark provides deviceDecimalMark(),
+            ) {
                 VastuTheme {
                     VastuNavHost()
                 }

@@ -35,7 +35,10 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuChip
+import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.components.scoreBandColor
+import com.vastufirst.designsystem.components.scoreOutOfTen
+import com.vastufirst.designsystem.components.spokenScore
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.screenRoot
 import kotlin.math.roundToInt
@@ -81,6 +84,7 @@ fun MarkNorthContent(
     val colors = VastuTheme.colors
     val model = buildZoneMapModel(rooms, analysis, north, cols, rows)
     val score = analysis?.score
+    val mark = LocalDecimalMark.current
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
@@ -95,7 +99,7 @@ fun MarkNorthContent(
         NorthDial(
             model = model,
             onNorthChange = onNorthChange,
-            contentDescription = "Floor plan compass. North at $north degrees. Score ${score ?: 0} of 100. Drag to set North.",
+            contentDescription = "Floor plan compass. North at $north degrees. ${spokenScore(score ?: 0, mark)}. Drag to set North.",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Legend()
@@ -120,7 +124,11 @@ fun MarkNorthContent(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 VText("Live score", style = VastuTheme.type.body, color = colors.textTertiary)
-                VText(if (score != null) "$score/100" else "…", style = VastuTheme.type.mono, color = if (score != null) scoreBandColor(score) else colors.textTertiary)
+                VText(
+                    if (score != null) "${scoreOutOfTen(score, mark)}/10" else "…",
+                    style = VastuTheme.type.mono,
+                    color = if (score != null) scoreBandColor(score) else colors.textTertiary,
+                )
             }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))

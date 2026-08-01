@@ -36,7 +36,9 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuListRow
 import com.vastufirst.designsystem.components.VastuTextField
+import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.components.scoreBandColor
+import com.vastufirst.designsystem.components.scoreOutOfTen
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.relativeUpdated
@@ -142,9 +144,13 @@ private fun PlanRow(plan: SavedPlan, now: Long, onOpen: (String) -> Unit, onRena
             // The pencil is a child tap target: it consumes its own tap, so tapping it renames while
             // tapping the rest of the row still opens the home.
             IconTapButton(glyph = "✎", contentDescription = "Rename ${plan.name}", onClick = onRename)
+            val mark = LocalDecimalMark.current
+            // ⚠ No contentDescription here, on purpose. The whole row is clickable, so it is already
+            // ONE merged node to a screen reader; a description added inside would be appended to
+            // the row's text rather than replacing it, and the row would read the score twice.
             Column(horizontalAlignment = Alignment.End) {
-                VText("${plan.score}", style = VastuTheme.type.h2, color = scoreBandColor(plan.score))
-                VText("/100", style = VastuTheme.type.caption, color = colors.textTertiary)
+                VText(scoreOutOfTen(plan.score, mark), style = VastuTheme.type.h2, color = scoreBandColor(plan.score))
+                VText("/10", style = VastuTheme.type.caption, color = colors.textTertiary)
             }
         },
     )

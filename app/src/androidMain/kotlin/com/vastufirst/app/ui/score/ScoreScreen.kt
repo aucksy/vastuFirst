@@ -29,8 +29,10 @@ import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
+import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.ScoreDisplay
+import com.vastufirst.designsystem.components.spokenScore
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
@@ -53,7 +55,7 @@ import com.vastufirst.app.ui.common.screenRoot
  *
  * Never a scary dead-end ([[vastufirst-no-error-states]]): while the engine computes we show a
  * calm loading line (never a bare red 0), and if a plan is too sparse to read we guide the user
- * back to add rooms instead of showing "0 / 100".
+ * back to add rooms instead of showing "0.0 / 10".
  */
 @Composable
 fun ScoreScreen(
@@ -164,7 +166,12 @@ private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: A
         SectionLabel("Zone map")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            ZoneMap(model = model, modifier = Modifier.fillMaxWidth(0.62f), showLabels = false, contentDescription = "Your plan with Vastu zones, North at $north degrees, score ${a.score} of 100.")
+            ZoneMap(
+                model = model,
+                modifier = Modifier.fillMaxWidth(0.62f),
+                showLabels = false,
+                contentDescription = "Your plan with Vastu zones, North at $north degrees, ${spokenScore(a.score, LocalDecimalMark.current)}.",
+            )
         }
 
         Divider()
@@ -210,8 +217,12 @@ private fun ScoreResult(rooms: List<GridRoom>, north: Int, intent: Intent?, a: A
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
+        // The scale is named in the sentence, so the caveat travels with the number wherever the
+        // number goes. "A summary, not a measurement" is new wording: a score with a decimal in it
+        // looks more precise than the same score written whole, and this is the one line that can
+        // say so plainly, for free, right under it.
         VText(
-            "The 0–100 score is VastuFirst's own way of summarising the report — it is not part of the tradition. Vastu is traditional guidance for your own decisions, not a guaranteed outcome.",
+            "The score out of 10 is VastuFirst's own way of summarising the report — a summary, not a measurement, and not part of the tradition. Vastu is traditional guidance for your own decisions, not a guaranteed outcome.",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
 
