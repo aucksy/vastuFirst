@@ -95,7 +95,7 @@ private val LINE_BREAK: String = 10.toChar().toString()
 
 private fun sendCrashEmail(context: Context, body: String) {
     val intent = Intent(Intent.ACTION_SENDTO).apply {
-        data = Uri.parse("mailto:simpleapps108@gmail.com")
+        data = Uri.parse("mailto:contact@vastufirst.com")
         putExtra(Intent.EXTRA_SUBJECT, "VastuFirst — something went wrong")
         putExtra(
             Intent.EXTRA_TEXT,

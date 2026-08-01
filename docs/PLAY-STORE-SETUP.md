@@ -27,7 +27,33 @@ customer would have to reinstall.
 When you create the app in Play Console, choose **"Use Google Play app signing"**. It is the default.
 Google keeps the master key in its own vault, and you cannot lose it.
 
-**Send me nothing.** I have already set the build up so it produces the file you upload.
+**Send me nothing yet.** I have already set the build up so it produces the file you upload.
+
+### ⭐ Where the key goes when you do have it — GitHub secrets, four of them
+
+At `github.com/aucksy/vastuFirst` → **Settings → Secrets and variables → Actions → New repository
+secret**. Exactly these four names, because that is what the build reads:
+
+| Secret name | What to paste |
+|---|---|
+| `RELEASE_STORE_FILE_BASE64` | the keystore file, base64-encoded (I will give you the one command) |
+| `RELEASE_STORE_PASSWORD` | the password you set when creating it |
+| `RELEASE_KEY_ALIAS` | the alias you set when creating it |
+| `RELEASE_KEY_PASSWORD` | the key password (usually the same one) |
+
+⚠ **The keystore is a binary file, and a GitHub secret only holds text** — so it goes in base64 and
+the build decodes it. The decode step is NOT built yet; it is one small addition to the release
+workflow and I will do it the moment you say the account exists. Until then the release builds with
+the committed test key, which is exactly what you are installing today.
+
+⚠ **NOTHING GOES IN THE APP ITSELF, ever.** These four only ever exist on GitHub. An APK is a zip
+anybody can open, so a signing key inside one would be worthless.
+
+### And the payment key? There isn't one.
+
+Google Play Billing recognises the app by its own signature and package name. There is **no key, no
+token and no secret to paste anywhere** for the ₹699 checkout. It goes live by creating the item in
+Play Console and flipping one build setting.
 
 ---
 
@@ -53,7 +79,9 @@ optional for an app sold on the Play Store — see the note at the bottom.
 
 I will write all of these for you to change or approve. What I need from you:
 
-- **The email address customers should write to.** It is shown publicly on your store page.
+- ~~The email address customers should write to.~~ **DECIDED: `contact@vastufirst.com`.** Already in
+  the app's privacy screen and in the crash-report email. ⚠ It must be RECEIVING mail before the
+  store listing goes live — Google shows it publicly and a bouncing address fails review.
 - **Whether the developer name shown to customers** should be your own name or a business name.
 
 I will supply: the short description, the full description, the screenshots (from the app's own

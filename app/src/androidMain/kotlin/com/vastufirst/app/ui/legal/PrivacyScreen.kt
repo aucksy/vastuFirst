@@ -119,4 +119,4 @@ const val PRIVACY_CHILDREN =
     "VastuFirst is not aimed at children and collects nothing from anyone, of any age."
 
 const val PRIVACY_CONTACT =
-    "Questions about privacy, or anything else: simpleapps108@gmail.com."
+    "Questions about privacy, or anything else: contact@vastufirst.com."
