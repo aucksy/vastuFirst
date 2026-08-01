@@ -370,6 +370,12 @@ fun GuidedGridContent(
     // wall — those get told, not asked.
     val pendingGap = undecided.firstOrNull { it.removable }
     val enclosedGap = undecided.firstOrNull { it.enclosed }
+    // ⚠ Rooms drawn with space between them leave ONE gap that wraps all the way round them, and
+    // cutting that would shatter the home into pieces — so it is neither askable nor a courtyard, and
+    // it used to fall through to a line inviting the user to "leave that part empty and we'll ask
+    // about it" while the app was visibly not asking. Found by looking at the rendered screen, which
+    // is the whole reason for looking. It now gets its own sentence.
+    val unaskableGap = undecided.any { !it.removable && !it.enclosed }
     // The outline as it now stands, for drawing. Null ⇒ a plain rectangle, drawn as one.
     val homeRing = remember(rooms, cutOutCells) {
         if (cutOutCells.isEmpty()) null
@@ -857,6 +863,7 @@ fun GuidedGridContent(
                 enclosed = enclosedGap,
                 cutCount = cutOutCells.size,
                 cutZones = remember(cutOutCells, rooms) { cutZoneNames(rooms, cutOutCells) },
+                unaskableGap = unaskableGap,
                 onCut = onCutGap,
                 onKeep = onKeepGap,
                 onReset = onResetShape,
@@ -1003,6 +1010,7 @@ private fun ShapeSection(
     enclosed: Gap?,
     cutCount: Int,
     cutZones: String,
+    unaskableGap: Boolean,
     onCut: (Set<Cell>) -> Unit,
     onKeep: (Set<Cell>) -> Unit,
     onReset: () -> Unit,
@@ -1072,6 +1080,17 @@ private fun ShapeSection(
                 style = VastuTheme.type.body, color = colors.textSecondary,
             )
         }
+
+        // Rooms with space between them. The empty squares wrap right around them, so there is no
+        // corner to cut away — and saying nothing here left the app looking as though it had missed
+        // something obvious. This says what is actually happening, and it is reassuring rather than
+        // a warning, because for most homes it is simply correct.
+        unaskableGap -> VText(
+            "The empty squares between your rooms count as part of your home — usually right, since " +
+                "real homes have walls and passages between the rooms. To mark a whole corner as not " +
+                "yours, clear the rooms around it and we'll ask about it.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
+        )
 
         else -> VText(
             "We're treating your home as a full rectangle. If a corner of your home is missing, " +
