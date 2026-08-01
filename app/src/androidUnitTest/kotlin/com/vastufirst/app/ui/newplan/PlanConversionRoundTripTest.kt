@@ -325,10 +325,24 @@ class PlanConversionRoundTripTest {
     // on the commonest real Indian home shape. The engine was never the problem: it has always been
     // able to attribute a missing corner to a zone. It was never given one.
 
-    /** An 8×8 home with its whole north-east 3×3 corner missing — the textbook L. */
+    /**
+     * An 8×8 home with its whole north-east 3×3 corner missing — the textbook L.
+     *
+     * ⚠ Every room is deliberately placed in a zone its own rule calls ideal or acceptable, and the
+     * centre is a corridor (an unruled type). So this home has **no defects of its own**: whatever
+     * penalty appears once the corner is cut away came from the corner and nothing else. A fixture
+     * that already scored badly would have hit the penalty cap and hidden the very thing under test —
+     * which is exactly what the first version of this fixture did, scoring 0 both ways.
+     */
     private val lShaped = listOf(
-        GridRoom("a", RoomType.LIVING, 0, 0, 5, 8),
-        GridRoom("b", RoomType.KITCHEN, 5, 3, 3, 5),
+        GridRoom("living", RoomType.LIVING, 0, 0, 3, 3),          // north-west  · acceptable
+        GridRoom("dining", RoomType.DINING, 3, 0, 2, 3),          // north       · acceptable
+        GridRoom("store-w", RoomType.STORE, 0, 3, 3, 2),          // west        · ideal
+        GridRoom("hall", RoomType.CORRIDOR, 3, 3, 2, 2),          // the centre  · not scored
+        GridRoom("master", RoomType.MASTER_BEDROOM, 0, 5, 3, 3),  // south-west  · ideal
+        GridRoom("store-s", RoomType.STORE, 3, 5, 2, 3),          // south       · ideal
+        GridRoom("kitchen", RoomType.KITCHEN, 5, 5, 3, 3),        // south-east  · ideal
+        GridRoom("dining-e", RoomType.DINING, 5, 3, 3, 2),        // east        · acceptable
     )
     private val neCorner: Set<Cell> =
         (5..7).flatMap { c -> (0..2).map { r -> Cell(c, r) } }.toSet()
@@ -391,6 +405,14 @@ class PlanConversionRoundTripTest {
             real.defects.any { it.id == "X-04" },
         )
         assertTrue("an L is a rectangle-family shape, not an 'unusual' one", !real.shapeIrregular)
+        assertEquals(
+            "the fixture must have no problems of its own, or the penalty cap hides what is under test",
+            0, filled.defectPenalty,
+        )
+        assertTrue(
+            "the missing corner must actually cost something: penalty went ${filled.defectPenalty} → ${real.defectPenalty}",
+            real.defectPenalty > filled.defectPenalty,
+        )
         assertTrue(
             "scoring the real shape must not flatter it: ${real.score} should be below ${filled.score}",
             real.score < filled.score,

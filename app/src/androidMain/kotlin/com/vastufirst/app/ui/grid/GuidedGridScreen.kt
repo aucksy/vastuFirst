@@ -257,6 +257,8 @@ fun GuidedGridScreen(
         onCutGap = vm::cutOutGap,
         onKeepGap = vm::keepGap,
         onResetShape = vm::resetShape,
+        restoredFromDraft = vm.restoredFromDraft,
+        onStartAgain = vm::startAgain,
         onNext = onNext,
     )
 }
@@ -298,6 +300,9 @@ fun GuidedGridContent(
     onCutGap: (Set<Cell>) -> Unit = {},
     onKeepGap: (Set<Cell>) -> Unit = {},
     onResetShape: () -> Unit = {},
+    /** True when what is on screen was brought back after Android reclaimed the app in the background. */
+    restoredFromDraft: Boolean = false,
+    onStartAgain: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -432,6 +437,30 @@ fun GuidedGridContent(
             },
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
+
+        // ⭐ Work brought back after Android reclaimed the app. Restoring it silently would be worse
+        // than losing it: the user would be editing a home they thought they had abandoned, with no
+        // way back to a blank grid. So it is said, and there is a way out in the same breath.
+        if (restoredFromDraft && rooms.isNotEmpty()) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            VastuCard(accent = colors.primary) {
+                VText(
+                    "We kept the home you were drawing",
+                    style = VastuTheme.type.h3, color = colors.textPrimary,
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VText(
+                    "Your phone closed the app before you finished. Carry on from here, or clear it " +
+                        "and start this home again.",
+                    style = VastuTheme.type.body, color = colors.textSecondary,
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                VastuButton(
+                    "Start this home again", onClick = onStartAgain,
+                    style = VastuButtonStyle.SECONDARY, large = false,
+                )
+            }
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
         // The live size/zone readout. Drawn as an overlay pinned to the TOP of the plan (below), a

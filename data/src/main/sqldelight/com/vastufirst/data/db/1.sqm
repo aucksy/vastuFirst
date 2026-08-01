@@ -1,0 +1,17 @@
+-- Version 1 → 2. The FIRST migration this app has ever had, and the reason it exists is worth
+-- stating: until now the database had no upgrade path at all. The next schema change of any kind
+-- would have needed one, and the usual shortcut when there isn't one — drop and recreate — erases
+-- every home the user has saved. That failure is silent, permanent, and discovered by the customer.
+--
+-- What it does: adds the single-row table that holds a home while it is still being drawn.
+-- Nothing about planEntity is touched, so no saved home is read, rewritten or at risk here.
+--
+-- ⚠ Every future schema change gets its own numbered file next to this one, and NEVER an edit to
+-- this one — a phone that has already run this migration will not run it again, so changing it
+-- changes only what NEW installs get, and the two silently diverge.
+
+CREATE TABLE draftEntity (
+    id        TEXT    NOT NULL PRIMARY KEY,
+    draftJson TEXT    NOT NULL,
+    updatedAt INTEGER NOT NULL
+);

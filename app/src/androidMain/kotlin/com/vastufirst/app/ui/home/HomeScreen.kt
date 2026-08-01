@@ -60,9 +60,10 @@ fun HomeScreen(
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the list below renders headlessly
     // from a fixture in the screenshot harness — including the empty state (UI-POLISH §6).
-    val plans by viewModel.plans.collectAsStateWithLifecycle()
+    val saved by viewModel.plans.collectAsStateWithLifecycle()
     HomeContent(
-        plans = plans,
+        plans = saved.plans,
+        unreadable = saved.unreadable,
         onAddHome = onAddHome,
         onOpenPlan = onOpenPlan,
         onSettings = onSettings,
@@ -80,6 +81,8 @@ fun HomeContent(
     onSettings: () -> Unit,
     onRename: (String, String) -> Unit = { _, _ -> },
     now: Long = System.currentTimeMillis(),
+    /** Saved rows this build could not read. Shown rather than hidden — see the note below. */
+    unreadable: Int = 0,
 ) {
     val colors = VastuTheme.colors
     // The home currently being renamed (null = no dialog). Held here so the dialog overlays the whole
@@ -102,6 +105,20 @@ fun HomeContent(
             ) { VText("⚙", style = VastuTheme.type.h3, color = colors.textSecondary) }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+
+        // ⭐ A home that could not be read is SAID, never silently skipped. One unreadable row used to
+        // throw inside this list's flow and empty the whole screen; now the rest load — but a home
+        // quietly missing from the list looks exactly like a home the app deleted on its own, which
+        // is the worst thing an app holding your data can appear to do. The row is still on disk.
+        if (unreadable > 0) {
+            VText(
+                if (unreadable == 1) "1 home couldn't be opened by this version. It's still saved — an update should bring it back."
+                else "$unreadable homes couldn't be opened by this version. They're still saved — an update should bring them back.",
+                style = VastuTheme.type.bodySm,
+                color = colors.verdictSuboptimal,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+        }
 
         if (plans.isEmpty()) {
             EmptyState(

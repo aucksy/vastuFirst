@@ -1,0 +1,271 @@
+package com.vastufirst.data
+
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.vastufirst.data.db.VastuDatabase
+import com.vastufirst.shared.Intent
+import com.vastufirst.shared.Level
+import com.vastufirst.shared.Plan
+import com.vastufirst.shared.Point
+import com.vastufirst.shared.PropertyType
+import com.vastufirst.shared.RoomType
+import com.vastufirst.shared.editor.Cell
+import com.vastufirst.shared.editor.DraftDoor
+import com.vastufirst.shared.editor.DraftRoom
+import com.vastufirst.shared.editor.DraftSnapshot
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * ⭐ THE TWO WAYS A USER LOSES DATA, both proven against a REAL SQLite database rather than a mock.
+ *
+ *  1. **One bad row used to empty the whole list.** Every read went through `Intent.valueOf`,
+ *     `PropertyType.valueOf` and a JSON decode, all inside the saved-homes flow. Any one of them
+ *     throwing — a rule rename, a field a newer build wrote, a row half-written by a phone that
+ *     died mid-save — took down every home on the screen. Appearing to have deleted all of
+ *     somebody's homes is the end of their trust in an app they paid for.
+ *
+ *  2. **A half-drawn home lived only in memory.** Android reclaims a backgrounded app whenever it
+ *     wants the RAM; on a cheap phone, taking a call is enough.
+ *
+ * And the migration path, which had never existed, is exercised here for real: a database created
+ * at the OLD schema version, with homes in it, is upgraded and every home is still there.
+ */
+class PersistenceTest {
+
+    private lateinit var driver: SqlDriver
+    private lateinit var repo: PlanRepository
+
+    @BeforeTest fun setUp() {
+        driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        VastuDatabase.Schema.create(driver)
+        repo = PlanRepository(VastuDatabaseFactory.create(driver), Dispatchers.Unconfined)
+    }
+
+    @AfterTest fun tearDown() {
+        driver.close()
+    }
+
+    private fun plan(id: String) = Plan(
+        id = id,
+        propertyType = PropertyType.INDEPENDENT_HOUSE,
+        intent = Intent.BUILDING,
+        levels = listOf(
+            Level(
+                index = 0,
+                outline = listOf(Point(0.0, 0.0), Point(8.0, 0.0), Point(8.0, 8.0), Point(0.0, 8.0)),
+            ),
+        ),
+        northOffsetDegrees = 0,
+    )
+
+    private fun saved(id: String, name: String) = SavedPlan(
+        id = id, name = name, intent = Intent.BUILDING, propertyType = PropertyType.INDEPENDENT_HOUSE,
+        plan = plan(id), score = 42, ruleSetVersion = "t", unlocked = false, createdAt = 1L, updatedAt = 1L,
+    )
+
+    /** Write a row straight past the repository, so it can hold something the repository would never write. */
+    private fun writeRawRow(id: String, intent: String, propertyType: String, planJson: String) {
+        driver.execute(
+            null,
+            """
+            INSERT OR REPLACE INTO planEntity
+              (id, name, intent, propertyType, northOffset, planJson, score, ruleSetVersion, unlocked, createdAt, updatedAt)
+            VALUES ('$id', 'Broken home', '$intent', '$propertyType', 0, '$planJson', 10, 't', 0, 1, 1)
+            """.trimIndent(),
+            0,
+        )
+    }
+
+    // ── one bad row must not take the others with it ───────────────────────────────────────────
+
+    @Test
+    fun `a row with an unknown intent is quarantined, and the good homes still load`() = runTest {
+        repo.save(saved("good-1", "Kitchen flat"), now = 10L)
+        repo.save(saved("good-2", "Site plot"), now = 20L)
+        writeRawRow("bad", intent = "RENOVATING_LATER", propertyType = "INDEPENDENT_HOUSE", planJson = "{}")
+
+        val result = repo.observePlans().first()
+        assertEquals(2, result.plans.size, "the readable homes must still be there")
+        assertEquals(1, result.unreadable, "and the app must know one is missing, so it can say so")
+        assertEquals(setOf("good-1", "good-2"), result.plans.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `a row with unreadable plan JSON is quarantined`() = runTest {
+        repo.save(saved("good", "Fine"), now = 10L)
+        writeRawRow("bad", intent = "BUILDING", propertyType = "FLAT", planJson = "not json at all {{{")
+        val result = repo.observePlans().first()
+        assertEquals(1, result.plans.size)
+        assertEquals(1, result.unreadable)
+    }
+
+    @Test
+    fun `a row with an unknown property type is quarantined`() = runTest {
+        repo.save(saved("good", "Fine"), now = 10L)
+        writeRawRow("bad", intent = "BUILDING", propertyType = "HOUSEBOAT", planJson = "{}")
+        assertEquals(1, repo.observePlans().first().unreadable)
+    }
+
+    @Test
+    fun `a plan written with an unknown extra field still opens`() = runTest {
+        // ⭐ The forward-compatibility half: a home saved by a NEWER build must open in an older one
+        // rather than being declared corrupt, or every user who downgrades loses everything.
+        val json = """
+            {"id":"future","propertyType":"FLAT","intent":"BUYING",
+             "levels":[{"index":0,"outline":[{"x":0.0,"y":0.0},{"x":4.0,"y":0.0},{"x":4.0,"y":4.0},{"x":0.0,"y":4.0}],
+             "rooms":[],"doors":[],"fixtures":[]}],
+             "northOffsetDegrees":0,"somethingWeHaveNotInventedYet":{"a":1}}
+        """.trimIndent().replace("\n", " ")
+        writeRawRow("future", intent = "BUYING", propertyType = "FLAT", planJson = json)
+        val result = repo.observePlans().first()
+        assertEquals(0, result.unreadable, "an unknown field must not make a home unreadable")
+        assertEquals("future", result.plans.single().id)
+    }
+
+    @Test
+    fun `opening a single bad home by id returns nothing instead of throwing`() = runTest {
+        writeRawRow("bad", intent = "BUILDING", propertyType = "FLAT", planJson = "{")
+        assertNull(repo.getPlan("bad"))
+        assertNull(repo.observePlan("bad").first())
+    }
+
+    @Test
+    fun `a quarantined row is never deleted`() = runTest {
+        writeRawRow("bad", intent = "NOPE", propertyType = "FLAT", planJson = "{}")
+        repo.observePlans().first()
+        val stillThere = driver.executeQuery(
+            null, "SELECT COUNT(*) FROM planEntity WHERE id = 'bad'", { c -> app.cash.sqldelight.db.QueryResult.Value(if (c.next().value) c.getLong(0) else 0L) }, 0,
+        ).value
+        assertEquals(1L, stillThere, "a home we cannot read today may be readable after an update — never delete it")
+    }
+
+    // ── the unfinished home survives being killed ──────────────────────────────────────────────
+
+    private val draft = DraftSnapshot(
+        name = "Home 3",
+        intent = Intent.BUYING,
+        propertyType = PropertyType.FLAT,
+        north = 137,
+        gridCols = 9,
+        gridRows = 6,
+        rooms = listOf(
+            DraftRoom("r1", RoomType.KITCHEN, 0, 0, 2, 2),
+            DraftRoom("r2", RoomType.POOJA, 3, 1, 1, 1),
+        ),
+        door = DraftDoor("S", 4),
+        cutOut = listOf(Cell(7, 0), Cell(8, 0)),
+        kept = listOf(Cell(5, 5)),
+    )
+
+    @Test
+    fun `a half-drawn home comes back exactly as it was`() = runTest {
+        repo.saveDraft(draft, now = 99L)
+        assertEquals(draft, repo.loadDraft(), "every part of the draft must survive, not just the rooms")
+    }
+
+    @Test
+    fun `there is no draft until one is written, and none after it is cleared`() = runTest {
+        assertNull(repo.loadDraft())
+        repo.saveDraft(draft, now = 1L)
+        assertNotNull(repo.loadDraft())
+        repo.clearDraft()
+        assertNull(repo.loadDraft(), "finishing a home must leave no draft behind to be restored later")
+    }
+
+    @Test
+    fun `only ever one draft is kept`() = runTest {
+        repo.saveDraft(draft, now = 1L)
+        repo.saveDraft(draft.copy(name = "Home 4", north = 5), now = 2L)
+        assertEquals("Home 4", repo.loadDraft()?.name)
+        assertEquals(5, repo.loadDraft()?.north)
+    }
+
+    @Test
+    fun `an unreadable draft is treated as no draft, never as a crash`() = runTest {
+        driver.execute(null, "INSERT INTO draftEntity(id, draftJson, updatedAt) VALUES ('current','{{{',1)", 0)
+        assertNull(repo.loadDraft(), "a draft is a convenience; a broken one must not stop a new home")
+    }
+
+    @Test
+    fun `a draft written by an older build still loads`() = runTest {
+        // Every field has a default precisely so this works. A draft holding only rooms — all that an
+        // early version wrote — must still come back rather than being thrown away.
+        driver.execute(
+            null,
+            """INSERT INTO draftEntity(id, draftJson, updatedAt) VALUES ('current',
+               '{"rooms":[{"id":"r1","type":"KITCHEN","col":1,"row":1,"w":2,"h":2}]}', 1)""".trimIndent(),
+            0,
+        )
+        val loaded = assertNotNull(repo.loadDraft())
+        assertEquals(1, loaded.rooms.size)
+        assertEquals(0, loaded.north)
+        assertNull(loaded.door)
+    }
+
+    @Test
+    fun `an empty draft knows it is empty`() {
+        assertTrue(DraftSnapshot().isEmpty, "nothing drawn means nothing worth restoring")
+        assertTrue(!draft.isEmpty)
+    }
+
+    // ── ⭐ THE UPGRADE PATH, which until now did not exist ─────────────────────────────────────
+
+    @Test
+    fun `the schema is versioned, so a future change has somewhere to go`() {
+        assertEquals(
+            2L, VastuDatabase.Schema.version,
+            "the numbered migration is not being picked up — without it, the next schema change has " +
+                "no upgrade path and the usual shortcut is to drop the table, which erases every " +
+                "home the user has saved",
+        )
+    }
+
+    @Test
+    fun `a phone holding the old database upgrades without losing a single home`() = runTest {
+        val old = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        try {
+            // The version-1 schema, written out exactly as it shipped — NOT generated from today's
+            // .sq files, which would make this test agree with itself no matter what changed.
+            old.execute(
+                null,
+                """
+                CREATE TABLE planEntity (
+                    id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, intent TEXT NOT NULL,
+                    propertyType TEXT NOT NULL, northOffset INTEGER NOT NULL, planJson TEXT NOT NULL,
+                    score INTEGER NOT NULL, ruleSetVersion TEXT NOT NULL,
+                    unlocked INTEGER NOT NULL DEFAULT 0, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL
+                )
+                """.trimIndent(),
+                0,
+            )
+            val before = PlanRepository(VastuDatabaseFactory.create(old), Dispatchers.Unconfined)
+            before.save(saved("keep-1", "Gurgaon flat"), now = 1L)
+            before.save(saved("keep-2", "Site in Jaipur"), now = 2L)
+
+            VastuDatabase.Schema.migrate(old, 1L, VastuDatabase.Schema.version)
+
+            val after = PlanRepository(VastuDatabaseFactory.create(old), Dispatchers.Unconfined)
+            val plans = after.observePlans().first()
+            assertEquals(2, plans.plans.size, "the upgrade must not lose a saved home")
+            assertEquals(0, plans.unreadable)
+            assertEquals(
+                setOf("Gurgaon flat", "Site in Jaipur"), plans.plans.map { it.name }.toSet(),
+                "and it must not quietly rewrite them either",
+            )
+            // The thing the upgrade added actually works afterwards.
+            after.saveDraft(draft, now = 3L)
+            assertEquals(draft, after.loadDraft(), "the new draft table must exist after the upgrade")
+        } finally {
+            old.close()
+        }
+    }
+}

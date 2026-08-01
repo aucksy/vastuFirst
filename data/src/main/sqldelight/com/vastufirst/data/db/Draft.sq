@@ -1,0 +1,28 @@
+-- The ONE home currently being drawn but not yet saved.
+--
+-- Until this existed, a half-drawn home lived only in memory. Android reclaims a backgrounded app
+-- whenever it needs the RAM — on a cheap phone, taking a phone call is enough — so ten minutes of
+-- placing rooms could vanish with no explanation and nothing to recover.
+--
+-- Exactly one row, id = 'current'. A draft is written continuously while the home is being drawn and
+-- DELETED the moment that home becomes a real saved row in planEntity, so a draft that exists is
+-- always a home that was never finished — which makes "restore it" the obviously correct thing to do
+-- rather than a guess.
+--
+-- The body is opaque JSON (com.vastufirst.shared.editor.DraftSnapshot) so the editor can gain fields
+-- without a schema migration; every field there carries a default so an older draft still loads.
+
+CREATE TABLE draftEntity (
+    id        TEXT    NOT NULL PRIMARY KEY,
+    draftJson TEXT    NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+selectDraft:
+SELECT * FROM draftEntity WHERE id = ?;
+
+upsertDraft:
+INSERT OR REPLACE INTO draftEntity(id, draftJson, updatedAt) VALUES (?, ?, ?);
+
+deleteDraft:
+DELETE FROM draftEntity WHERE id = ?;

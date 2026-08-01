@@ -62,7 +62,7 @@ fun VastuNavHost() {
             val repo = koinInject<PlanRepository>()
             var target by remember { mutableStateOf<String?>(null) }
             LaunchedEffect(Unit) {
-                val hasPlans = repo.observePlans().first().isNotEmpty()
+                val hasPlans = repo.observePlans().first().plans.isNotEmpty()
                 target = if (hasPlans) Routes.HOME else Routes.NEWPLAN_GRAPH
             }
             LaunchedEffect(target) {

@@ -18,8 +18,15 @@
 package com.vastufirst.shared.editor
 
 import com.vastufirst.shared.Zone
+import kotlinx.serialization.Serializable
 
-/** One cell of the drawing grid. [col] grows EAST; [row] grows SOUTH, so row 0 is the North edge. */
+/**
+ * One cell of the drawing grid. [col] grows EAST; [row] grows SOUTH, so row 0 is the North edge.
+ *
+ * Serializable because the home's shape is part of an unfinished draft written to disk
+ * ([DraftSnapshot]). Serialization is metadata only and changes no behaviour.
+ */
+@Serializable
 data class Cell(val col: Int, val row: Int)
 
 /** An integer CORNER of the drawing grid — where cell edges meet. Cell (c,r) spans x c..c+1, y r..r+1. */

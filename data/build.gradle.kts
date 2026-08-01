@@ -29,4 +29,9 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.turbine)
+    // A REAL SQLite database in the JVM tests. Without it the only proof a migration works is that
+    // it compiles — and the failure mode of a bad migration is a customer's saved homes, gone, found
+    // days later on a phone. This runs the actual upgrade path against an actual file.
+    testImplementation(libs.sqldelight.sqlite.driver)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

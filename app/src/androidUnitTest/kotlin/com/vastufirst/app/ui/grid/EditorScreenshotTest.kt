@@ -276,6 +276,31 @@ class EditorScreenshotTest {
         )
     }
 
+    /**
+     * ⭐ Work brought back after Android reclaimed the app in the background. Restoring it silently
+     * would be worse than losing it — the user would be editing a home they thought they had
+     * abandoned — so it is said, with a way out in the same breath. It is a card at the very top of
+     * the editor, pushing the plan down, which is exactly the sort of change that shatters a layout
+     * at 200 % font on a 320 dp phone. No screenshot can get here by tapping.
+     */
+    @Test
+    fun editor_restored_draft() {
+        captureAcrossMatrix("editor-restored") { RestoredDraft() }
+        writeManifestAcrossMatrix("editor-restored") { RestoredDraft() }
+    }
+
+    @Composable
+    private fun RestoredDraft() {
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            restoredFromDraft = true,
+        )
+    }
+
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
     // nodes, clipped text, tiny touch targets and unreachable CTAs (UI-POLISH §6.5).
     @Test

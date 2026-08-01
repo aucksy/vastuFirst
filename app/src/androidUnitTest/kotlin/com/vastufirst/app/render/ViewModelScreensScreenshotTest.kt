@@ -64,6 +64,24 @@ class ViewModelScreensScreenshotTest {
         writeManifestAcrossMatrix("home-empty", content)
     }
 
+    /**
+     * ⭐ A saved home this build cannot read. Until now one such row threw inside the list's flow and
+     * emptied the whole screen; the other homes now load and the missing one is SAID rather than
+     * silently skipped — because a home that vanishes without a word looks exactly like a home the
+     * app deleted by itself. No screenshot could ever reach this state by tapping, so it gets one.
+     */
+    @Test
+    fun home_unreadable() {
+        val content: @Composable () -> Unit = {
+            HomeContent(
+                plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW, unreadable = 1,
+            )
+        }
+        captureAcrossMatrix("home-unreadable", content)
+        writeManifestAcrossMatrix("home-unreadable", content)
+    }
+
     @Test
     fun home_rename() {
         // The rename box (B12) rendered as its own screen so it is actually SEEN before shipping

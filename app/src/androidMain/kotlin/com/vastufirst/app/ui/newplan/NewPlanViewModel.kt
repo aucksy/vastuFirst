@@ -14,6 +14,9 @@ import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.editor.Cell
+import com.vastufirst.shared.editor.DraftDoor
+import com.vastufirst.shared.editor.DraftRoom
+import com.vastufirst.shared.editor.DraftSnapshot
 import com.vastufirst.shared.editor.Footprint
 import com.vastufirst.shared.editor.Gap
 import kotlinx.coroutines.Dispatchers
@@ -109,9 +112,36 @@ class NewPlanViewModel(
 
     private val dirty = MutableSharedFlow<Unit>(extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
+    /**
+     * ⭐ True when what is on screen was brought back from a half-finished draft rather than started
+     * fresh — so the editor can say so, and offer to start again. Silently restoring work is right;
+     * silently restoring it without saying so is how a user ends up editing a home they thought they
+     * had abandoned.
+     */
+    var restoredFromDraft by mutableStateOf(false)
+        private set
+
     init {
+        // Bring back the home that was being drawn when Android last reclaimed the app. A draft row
+        // only ever exists for a home that was NEVER saved (it is deleted the moment one becomes a
+        // real saved home), so "there is a draft" always means "you were in the middle of this", and
+        // restoring it is the obviously right answer rather than a guess.
+        viewModelScope.launch {
+            val draft = repo.loadDraft() ?: return@launch
+            if (draft.isEmpty || rooms.isNotEmpty() || planId != null) return@launch
+            applyDraft(draft)
+            restoredFromDraft = true
+            markDirty()
+        }
+
         viewModelScope.launch {
             dirty.debounce(50).collectLatest {
+                // ⚠ The draft is written BEFORE the engine runs, not after. Scoring is the slow part,
+                // and the whole point of this row is to survive being killed at an arbitrary moment —
+                // including during that computation.
+                if (planId == null) {
+                    withContext(NonCancellable) { repo.saveDraft(snapshot(), now()) }
+                }
                 val plan = buildPlan() ?: run { _analysis.value = null; return@collectLatest }
                 val result = withContext(Dispatchers.Default) { engine.analyze(plan) }
                 _analysis.value = result
@@ -246,6 +276,11 @@ class NewPlanViewModel(
                     updatedAt = now(),
                 )
                 repo.save(saved, now())
+                // ⭐ This home is now a real saved row, so the draft has done its job. Dropping it
+                // here is what makes "a draft exists" mean exactly "you never finished this one" —
+                // and therefore what makes restoring it on the next launch unambiguously right.
+                repo.clearDraft()
+                restoredFromDraft = false
             }
         }
     }
@@ -259,6 +294,61 @@ class NewPlanViewModel(
     /** Reopen a saved home by id (from the saved-plans list). */
     fun loadById(id: String) {
         viewModelScope.launch { repo.getPlan(id)?.let(::load) }
+    }
+
+    // --- the in-progress draft ---
+
+    /** The current draft, in the shape that goes to disk. */
+    fun snapshot(): DraftSnapshot = DraftSnapshot(
+        name = name,
+        intent = intent,
+        propertyType = propertyType,
+        north = north,
+        gridCols = gridCols,
+        gridRows = gridRows,
+        rooms = rooms.map { DraftRoom(it.id, it.type, it.col, it.row, it.w, it.h) },
+        door = door?.let { DraftDoor(it.side.name, it.cell) },
+        cutOut = cutOutCells.toList(),
+        kept = keptCells.toList(),
+    )
+
+    /**
+     * Put a stored draft back on screen. Tolerant on purpose: a door whose wall name this build no
+     * longer knows is dropped rather than taking the whole home down with it, and the cut-out cells
+     * are re-pruned so a draft can never restore a shape the editor would refuse to create.
+     */
+    private fun applyDraft(d: DraftSnapshot) {
+        name = d.name
+        intent = d.intent
+        propertyType = d.propertyType
+        north = ((d.north % 360) + 360) % 360
+        gridCols = d.gridCols.coerceIn(MIN_GRID, MAX_GRID)
+        gridRows = d.gridRows.coerceIn(MIN_GRID, MAX_GRID)
+        rooms = d.rooms.map { GridRoom(it.id, it.type, it.col, it.row, it.w, it.h) }
+        door = d.door?.let { stored ->
+            DoorSide.entries.firstOrNull { it.name == stored.side }?.let { GridDoor(it, stored.cell) }
+        }
+        door = clampDoorToRooms(door, rooms)
+        cutOutCells = pruneCutOut(rooms, door, d.cutOut.toSet(), gridCols, gridRows)
+        keptCells = d.kept.toSet()
+    }
+
+    /**
+     * Throw away the restored draft and start this home from nothing. The only way back to an empty
+     * grid once a draft has been brought back — without it, "we kept your home" would be a trap.
+     */
+    fun startAgain() {
+        rooms = emptyList()
+        door = null
+        cutOutCells = emptySet()
+        keptCells = emptySet()
+        name = null
+        planId = null
+        gridCols = GRID
+        gridRows = GRID
+        restoredFromDraft = false
+        _analysis.value = null
+        viewModelScope.launch { withContext(NonCancellable) { repo.clearDraft() } }
     }
 
     /** Load an existing saved home into the flow (reopen from the saved-plans list). */
