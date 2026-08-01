@@ -66,7 +66,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
-import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
+import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
 import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
@@ -794,11 +794,15 @@ fun GuidedGridContent(
                 }
 
                 SectionLabel("Add a room")
+                // ⭐ The SAME list the "Change room type" control offers (ALL_ROOM_TYPES). It used to
+                // be a shorter, separate one, so the app named eleven kinds here and nineteen there.
+                // The eleven commonest still come first, so nothing a user already knows has moved;
+                // the other eight — Corridor and Entrance among them — are further along the strip.
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(paletteScroll),
                     horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
                 ) {
-                    GRID_ROOM_TYPES.forEach { t ->
+                    ALL_ROOM_TYPES.forEach { t ->
                         VastuChip(
                             text = t.label(),
                             selected = false,

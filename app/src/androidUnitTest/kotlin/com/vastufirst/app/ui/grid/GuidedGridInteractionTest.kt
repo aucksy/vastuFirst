@@ -11,6 +11,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
+import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
+import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.resolveGridResize
@@ -253,10 +255,7 @@ class GuidedGridInteractionTest {
     }
 
     @Test
-    fun `the picker offers kinds the add-a-room palette never has`() = runComposeUiTest {
-        // ⭐ The gap this control closes. A room read as a Corridor could be deleted, and then no
-        // palette chip could put a corridor back — so "delete it and place a new one" was a one-way
-        // door for eight of the nineteen kinds. Here it is reachable.
+    fun `a room can be changed to any kind, Corridor included`() = runComposeUiTest {
         val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)))
         setContent { Editor(h) }
         selectRoom("Bedroom, 3 by 3 cells")
@@ -264,6 +263,24 @@ class GuidedGridInteractionTest {
         tapDescPart("Change room type")
         tapDesc("Change to Corridor")
         assertEquals(RoomType.CORRIDOR, h.rooms.value.single().type)
+    }
+
+    @Test
+    fun `the add-a-room palette offers exactly the same kinds as changing a room`() = runComposeUiTest {
+        // ⭐ The owner's report: "Draw room on grid does not have same options as when you replace
+        // the room… should be consistent, corridor should be there too." It was true — the palette
+        // offered eleven kinds and the change-type control nineteen, so the app answered "what kinds
+        // of room are there?" differently depending on which control you were looking at, and eight
+        // kinds a scanned plan can produce could be deleted and never placed again by hand.
+        //
+        // Asserted on the RENDERED palette, not on the list constant, so this fails if the screen
+        // ever goes back to reading a shorter list of its own. An empty home is used so the only
+        // place a room name can appear is a palette chip.
+        val h = Harness(emptyList())
+        setContent { Editor(h) }
+        ALL_ROOM_TYPES.forEach { type ->
+            onNodeWithText(type.label()).assertExists()
+        }
     }
 
     @Test

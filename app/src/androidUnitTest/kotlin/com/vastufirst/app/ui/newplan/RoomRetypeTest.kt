@@ -1,7 +1,6 @@
 package com.vastufirst.app.ui.newplan
 
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
-import com.vastufirst.app.ui.common.GRID_ROOM_TYPES
 import com.vastufirst.engine.VastuEngine
 import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Intent
@@ -109,27 +108,35 @@ class RoomRetypeTest {
     // ── the picker offers every kind the app can hold ────────────────────────────────────────────
 
     @Test
-    fun `the picker offers all nineteen kinds, once each`() {
-        // ⭐ The reason this control exists at all. The plan reader can produce every RoomType, but
-        // the "add a room" palette offers only eleven — so a room read as one of the other eight
-        // could be removed and never put back. If a kind is ever added to the engine, this fails
-        // until it is offered here too.
+    fun `both controls offer all nineteen kinds, once each`() {
+        // If a kind is ever added to the engine, this fails until someone decides where it sits in
+        // the one list that both "Add a room" and "Change room type" read.
         assertEquals("no duplicates", ALL_ROOM_TYPES.size, ALL_ROOM_TYPES.toSet().size)
         assertEquals(RoomType.entries.toSet(), ALL_ROOM_TYPES.toSet())
     }
 
     @Test
-    fun `the picker starts with the palette, in palette order`() {
-        assertEquals(GRID_ROOM_TYPES, ALL_ROOM_TYPES.take(GRID_ROOM_TYPES.size))
+    fun `every kind can be ADDED, not only changed to`() {
+        // ⭐ The owner's report: "Draw room on grid does not have same options as when you replace
+        // the room… corridor should be there too." It was true — the palette had eleven kinds and
+        // the change-type control nineteen, so eight kinds could be read off a scanned plan,
+        // deleted, and never placed again by hand. There is now ONE list, so the two can only
+        // disagree if someone deliberately reintroduces a second one.
+        assertTrue("a corridor must be placeable from the palette", RoomType.CORRIDOR in ALL_ROOM_TYPES)
+        assertTrue("and so must an entrance", RoomType.ENTRANCE in ALL_ROOM_TYPES)
+        assertEquals("nothing the app can hold may be unreachable", emptySet<RoomType>(), RoomType.entries.toSet() - ALL_ROOM_TYPES.toSet())
     }
 
     @Test
-    fun `the palette alone cannot reach every kind`() {
-        // Pins the gap this feature closes, so the claim in ALL_ROOM_TYPES' comment stays true or
-        // this test tells us it stopped being true.
-        val unreachable = RoomType.entries.toSet() - GRID_ROOM_TYPES.toSet()
-        assertTrue("the palette gap has closed — update the comment", unreachable.isNotEmpty())
-        assertTrue("a corridor must be unreachable from the palette", RoomType.CORRIDOR in unreachable)
+    fun `the eleven kinds people already know have not moved`() {
+        // Extending the palette must not shuffle what a returning user reaches for. These are the
+        // eleven the palette offered before, in the order it offered them.
+        val wasOffered = listOf(
+            RoomType.LIVING, RoomType.KITCHEN, RoomType.MASTER_BEDROOM, RoomType.BEDROOM,
+            RoomType.POOJA, RoomType.TOILET, RoomType.STAIRCASE, RoomType.STUDY,
+            RoomType.DINING, RoomType.STORE, RoomType.BALCONY,
+        )
+        assertEquals(wasOffered, ALL_ROOM_TYPES.take(wasOffered.size))
     }
 
     // ── and it really does move the score ────────────────────────────────────────────────────────

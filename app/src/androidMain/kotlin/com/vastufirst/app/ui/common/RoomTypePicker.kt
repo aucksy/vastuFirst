@@ -18,11 +18,14 @@ import com.vastufirst.shared.RoomType
  * "This is not a Corridor, it's the Living room" — the one control that lets a user overrule what the
  * app decided a room is.
  *
- * ⭐ **Why it is collapsed until asked for.** All nineteen kinds have to be reachable (see
- * [ALL_ROOM_TYPES]: eight of them can be read off a plan but have never been offered in the palette,
- * so without this they were unreachable for good). Nineteen chips is four or five wrapped lines, and
- * parking that permanently inside the selected-room panel would push the move and size controls off a
- * small screen for everyone, to serve a correction most rooms never need. Closed it costs one button.
+ * ⭐ **Why it is collapsed until asked for.** All nineteen kinds have to be reachable, and nineteen
+ * chips is four or five wrapped lines — parking that permanently inside the selected-room panel would
+ * push the move and size controls off a small screen for everyone, to serve a correction most rooms
+ * never need. Closed it costs one button.
+ *
+ * This and the editor's "Add a room" palette read the SAME [ALL_ROOM_TYPES]. They used to read two
+ * different lists — nineteen kinds here, eleven there — which is the inconsistency the owner
+ * reported; the shared list is what stops them drifting again.
  *
  * **A wrapping [FlowRow], never a side-scrolling strip.** The kind a room is *now* is shown selected,
  * and in a scrolling strip that chip is off-screen for anything past about the sixth kind — so the

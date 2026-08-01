@@ -81,27 +81,30 @@ private fun VastuVerdict.glyph(): String = when (this) {
     VastuVerdict.NOT_ASSESSED -> ""
 }
 
-/** The room types offered in the guided grid, in palette order. */
-val GRID_ROOM_TYPES: List<RoomType> = listOf(
+/**
+ * ⭐ **Every** kind of room the app can hold — and the SINGLE list behind both places a person
+ * chooses one: "Add a room" in the editor, and "Change room type" on a room already placed.
+ *
+ * ⚠ **These used to be two lists, and that was the bug.** The palette offered eleven kinds and the
+ * change-type control offered nineteen, so the same app answered "what kinds of room exist?" two
+ * different ways depending on which control you were standing in front of. Owner, plainly: *"Draw
+ * room on grid does not have same options as when you replace the room… should be consistent,
+ * corridor should be there too."* Both controls now read this list, so they cannot drift apart
+ * again — the only way to add a kind to one is to add it to both.
+ *
+ * The eight that the palette used to lack — Entrance, Corridor, Utility, Bathroom, Guest bedroom,
+ * Courtyard, Garage, Basement — are all kinds the plan reader can produce off a real floor plan, so
+ * before this a scanned room could be deleted and never put back by hand.
+ *
+ * Order is a DECISION, not the enum's: the eleven commonest first (unchanged, so anyone who has
+ * used the app finds them where they were), then the rest, commonest first. Spelled out rather than
+ * derived from `RoomType.entries` so adding a kind to the engine fails a test until someone decides
+ * where it belongs here.
+ */
+val ALL_ROOM_TYPES: List<RoomType> = listOf(
     RoomType.LIVING, RoomType.KITCHEN, RoomType.MASTER_BEDROOM, RoomType.BEDROOM,
     RoomType.POOJA, RoomType.TOILET, RoomType.STAIRCASE, RoomType.STUDY,
     RoomType.DINING, RoomType.STORE, RoomType.BALCONY,
-)
-
-/**
- * ⭐ **Every** kind of room the app can hold — what "change this room's kind" offers.
- *
- * It is deliberately LONGER than [GRID_ROOM_TYPES]. The plan reader can produce all nineteen kinds
- * (a lobby, a foyer, a wash area, an attached bath, a servant's room all resolve to real types), but
- * the palette above offers only eleven — so the eight below could be read off a plan and, once
- * removed, could never be put back. "Delete it and place a new one" was not merely slow for those; it
- * was a one-way door. That is the concrete reason this control exists rather than a convenience.
- *
- * Palette order first, so the kinds a user already knows sit where they expect them, then the eight
- * the palette has never offered, commonest first. [ALL_ROOM_TYPES] is spelled out rather than derived
- * from the enum so the order is a decision; a test fails if a kind is ever added and forgotten here.
- */
-val ALL_ROOM_TYPES: List<RoomType> = GRID_ROOM_TYPES + listOf(
     RoomType.ENTRANCE, RoomType.CORRIDOR, RoomType.UTILITY, RoomType.BATHROOM,
     RoomType.GUEST_BEDROOM, RoomType.COURTYARD, RoomType.GARAGE, RoomType.BASEMENT,
 )
