@@ -6,11 +6,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,15 +37,26 @@ import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.Defect
+import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.Intent
+import com.vastufirst.shared.PadaVerdict
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.Verdict
+import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Full report (§6.5/§6.6) — branches on intent (§2). BUILDING/BUYING lead with layout changes
  * ("still free to make"); ALREADY LIVING leads with remedies and demotes layout to "if you ever
  * renovate". Every rule carries its provenance tag. Disputes show both readings, no winner.
+ *
+ * ⭐ WHAT THIS SCREEN IS FOR, restated because it had drifted: it is the thing the customer pays
+ * ₹699 for, and it used to explain almost nothing. A problem was a room name, a direction and two
+ * remedies that were the same two remedies on almost every problem. A room that was already right
+ * carried no reason at all. And a room rated "not ideal" appeared NOWHERE — while the free score
+ * screen counted it in "N more issues" to justify the price. Every sentence added here comes out of
+ * the rule data with its provenance attached; nothing is written on the screen that the dataset
+ * cannot source ([ReportText]).
  */
 @Composable
 fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit) {
@@ -59,7 +67,6 @@ fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit) {
 }
 
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReportContent(
     analysis: Analysis?,
@@ -85,6 +92,8 @@ fun ReportContent(
         }
         return
     }
+
+    val zones = a.zoneInfo
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
@@ -118,45 +127,52 @@ fun ReportContent(
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText("The 16-zone school is a separate reading — coming in a later update.", style = VastuTheme.type.caption, color = colors.textTertiary)
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
 
-        val defects = a?.defects.orEmpty()
+        // ⭐ THE FRONT DOOR. It is the highest-weighted single element in the whole reading and it had
+        // no section at all — while the 32 named door positions, each with a meaning, sat unused in
+        // the rule data since the first build.
+        a.doorResult?.let { door ->
+            SectionHeader("Your front door")
+            DoorCard(door, zones)
+        }
+
+        SectionHeader(if (living) "What to do, most important first" else "What to change, most important first")
+        val defects = a.defects
         if (defects.isEmpty()) {
             VText("No defects to rank — the placements read well.", style = VastuTheme.type.body, color = colors.textSecondary)
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-                defects.forEachIndexed { i, d -> DefectCard(i + 1, d, a?.roomResults.orEmpty(), living) }
+                defects.forEachIndexed { i, d -> DefectCard(i + 1, d, a.roomResults, zones, living) }
             }
         }
 
-        // Already right.
-        val good = a?.roomResults.orEmpty().filter { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE }
-        if (good.isNotEmpty()) {
-            SectionHeader("Already right — leave alone")
-            Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
-                good.forEach { r ->
-                    VastuCard(accent = colors.verdictIdeal) {
-                        // FlowRow, not Row: a verdict pill AND a provenance tag flanking a weight(1f)
-                        // label are two unweighted-and-bounded children, so at 320 dp / font 2.0 they
-                        // consume the width and crush the label to ZERO (the label then wrapped one
-                        // char per line, 0×650 dp). FlowRow wraps a cramped item onto its own full-
-                        // width line instead of squeezing it to nothing (UI-POLISH §3.D).
-                        FlowRow(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                        ) {
-                            VerdictPill(r.verdict.toVastu())
-                            VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.body, color = colors.textPrimary)
-                            r.rule?.provenance?.let { ProvenanceTag(it.toVastu()) }
-                        }
-                    }
+        // ⭐ NOT IDEAL — the band that appeared nowhere. The free score screen counts these in
+        // "N more issues" to justify ₹699, so a report that omitted them was selling issues it never
+        // showed. They are not defects and the copy says so plainly.
+        val notIdeal = a.roomResults.filter { it.verdict == Verdict.SUBOPTIMAL }
+        if (notIdeal.isNotEmpty()) {
+            SectionHeader("Not ideal — worth knowing")
+            VText(NOT_IDEAL_INTRO, style = VastuTheme.type.bodySm, color = colors.textSecondary)
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                notIdeal.forEach { r ->
+                    RoomVerdictCard(r, zones, colors.verdictSuboptimal, whyNotIdeal(r))
                 }
             }
         }
 
+        // Already right — and now WITH a reason. Being told why something is right is worth as much
+        // to a reader as being told why something is wrong; this section used to be a tick.
+        val good = a.roomResults.filter { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE }
+        if (good.isNotEmpty()) {
+            SectionHeader("Already right — leave alone")
+            Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                good.forEach { r -> RoomVerdictCard(r, zones, colors.verdictIdeal, whyRight(r)) }
+            }
+        }
+
         // Where schools disagree.
-        val disputes = a?.disputes.orEmpty()
+        val disputes = a.disputes
         if (disputes.isNotEmpty()) {
             SectionHeader("Where the schools disagree")
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
@@ -172,14 +188,23 @@ fun ReportContent(
             }
         }
 
-        // Not assessed.
-        val notAssessed = a?.notAssessed.orEmpty()
-        if (notAssessed.isNotEmpty()) {
+        // ⚠ Not assessed — in WORDS. This list used to print the app's internal rule codes ("· X-09")
+        // straight to the customer.
+        val notChecked = a.notChecked
+        if (notChecked.isNotEmpty()) {
             SectionHeader("Couldn't check these yet")
-            VText("We didn't have the input to check these — they are neither passed nor failed. Add the details later and they'll be included.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
+            VText(
+                "We didn't have the details to check these, so they are neither passed nor failed.",
+                style = VastuTheme.type.bodySm, color = colors.textTertiary,
+            )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
-                notAssessed.forEach { VText("· $it", style = VastuTheme.type.bodySm, color = colors.textTertiary) }
+                notChecked.forEach {
+                    VText("· ${notCheckedLine(it)}", style = VastuTheme.type.bodySm, color = colors.textSecondary)
+                }
+                notCheckedHow(notChecked).forEach {
+                    VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+                }
             }
         }
 
@@ -200,8 +225,14 @@ fun ReportContent(
     }
 }
 
+/**
+ * One problem, with the whole of its reason.
+ *
+ * ⚠ The reason was not on this screen at all — the card went straight from the room's name to the
+ * fix. The free score screen showed a one-line version and the paid report showed none.
+ */
 @Composable
-private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, living: Boolean) {
+private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: List<ZoneInfo>, living: Boolean) {
     val colors = VastuTheme.colors
     VastuCard(accent = if (living) colors.secondary else colors.verdictDefect) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -212,15 +243,94 @@ private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, living: Bo
         VText(defectTitle(d, rooms), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         ProvenanceTag(d.provenance.toVastu())
+
+        // What that direction IS, before why this placement is wrong in it.
+        zoneMeaning(d.zone, zones)?.let {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        }
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(d.explanation, style = VastuTheme.type.bodySm, color = colors.textSecondary)
+
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         val remedies = d.remedies.map { it.text }
         if (living) {
-            RemedyBlock(remedies)
+            RemedyBlock(remedies, d.remedyNote)
             d.layoutFix?.let { Spacer(Modifier.height(VastuTheme.spacing.s2)); RenovateBlock(it) }
         } else {
             d.layoutFix?.let { LayoutBlock(it); Spacer(Modifier.height(VastuTheme.spacing.s2)) }
-            RemedyBlock(remedies)
+            RemedyBlock(remedies, d.remedyNote)
         }
+    }
+}
+
+/**
+ * One room with its verdict and its reason — used by both "not ideal" and "already right".
+ *
+ * ⚠ Deliberately NO FlowRow inside this card. `VastuCard` measures its row at `IntrinsicSize.Min`,
+ * and a wrapping row inside one has measured 0 × 0 on this codebase before (the nine direction chips
+ * on the extras step). The pill sits on its own line instead, which also reads better at 200 % font.
+ */
+@Composable
+private fun RoomVerdictCard(
+    r: RoomResult,
+    zones: List<ZoneInfo>,
+    accent: androidx.compose.ui.graphics.Color,
+    reason: String,
+) {
+    val colors = VastuTheme.colors
+    VastuCard(accent = accent) {
+        VerdictPill(r.verdict.toVastu())
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText("${r.type.label()} — ${r.zone.short()}", style = VastuTheme.type.h3, color = colors.textPrimary)
+        r.rule?.provenance?.let {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            ProvenanceTag(it.toVastu())
+        }
+        zoneMeaning(r.zone, zones)?.let {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        }
+        if (reason.isNotBlank()) {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(reason, style = VastuTheme.type.bodySm, color = colors.textSecondary)
+        }
+    }
+}
+
+/** The front door, read on the 32-position table the tradition actually uses. */
+@Composable
+private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
+    val colors = VastuTheme.colors
+    VastuCard(accent = padaAccent(d.verdict)) {
+        VerdictPill(padaVerdict(d.verdict))
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(doorNameLine(d), style = VastuTheme.type.h3, color = colors.textPrimary)
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(doorPlaceLine(d), style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        zoneMeaning(d.pada.side, zones)?.let {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        }
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(doorExplanation(d), style = VastuTheme.type.bodySm, color = colors.textSecondary)
+    }
+}
+
+private fun padaVerdict(v: PadaVerdict): VastuVerdict = when (v) {
+    PadaVerdict.AUSPICIOUS -> VastuVerdict.IDEAL
+    PadaVerdict.MODERATE -> VastuVerdict.ACCEPTABLE
+    PadaVerdict.MIXED -> VastuVerdict.SUBOPTIMAL
+    PadaVerdict.INAUSPICIOUS -> VastuVerdict.DEFECT
+}
+
+@Composable
+private fun padaAccent(v: PadaVerdict) = with(VastuTheme.colors) {
+    when (v) {
+        PadaVerdict.AUSPICIOUS -> verdictIdeal
+        PadaVerdict.MODERATE -> verdictAcceptable
+        PadaVerdict.MIXED -> verdictSuboptimal
+        PadaVerdict.INAUSPICIOUS -> verdictDefect
     }
 }
 
@@ -230,15 +340,20 @@ private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — f
 @Composable
 private fun RenovateBlock(text: String) = AdviceBlock("If you ever renovate", text, VastuTheme.colors.textTertiary)
 
+/**
+ * The remedies for THIS problem — and, where the classical texts record none, the sentence that says
+ * so. Filling the table with an invented remedy would destroy the one thing this product is for.
+ */
 @Composable
-private fun RemedyBlock(remedies: List<String>) {
+private fun RemedyBlock(remedies: List<String>, note: String?) {
     val colors = VastuTheme.colors
-    if (remedies.isEmpty()) return
+    if (remedies.isEmpty() && note.isNullOrBlank()) return
     Column(
         Modifier.fillMaxWidth().clip(VastuTheme.shapes.sm).background(colors.secondary.copy(alpha = 0.10f)).padding(VastuTheme.spacing.s3),
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
     ) {
         SectionLabel("If it cannot move — remedies", color = colors.secondaryText)
+        if (!note.isNullOrBlank()) VText(note, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         remedies.forEach { VText("· $it", style = VastuTheme.type.bodySm, color = colors.textSecondary) }
     }
 }

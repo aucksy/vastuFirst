@@ -174,6 +174,8 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             ruleSetVersion = ruleSet.version,
             quality = quality,
             notes = notes,
+            notChecked = outcome.notChecked,
+            zoneInfo = ruleSet.zones,
             footprintTiltDegrees = anomalies.tiltDegrees,
             aspectRatio = anomalies.aspectRatio,
         )
@@ -200,6 +202,7 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         ruleSetVersion = ruleSet.version,
         quality = AnalysisQuality.INSUFFICIENT,
         notes = notes,
+        zoneInfo = ruleSet.zones,
     )
 
     private fun buildDefect(def: DefectDefinition, zone: Zone): Defect = Defect(
@@ -212,6 +215,7 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         provenance = def.provenance,
         explanation = def.explanation,
         layoutFix = def.layoutFix,
+        remedyNote = def.remedyNote,
         remedies = ruleSet.remediesFor(def),
     )
 

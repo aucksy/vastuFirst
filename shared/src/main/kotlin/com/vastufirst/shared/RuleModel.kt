@@ -29,6 +29,12 @@ data class RoomRule(
     val sourceId: String,                       // "R-02" -> knowledge base
     val citation: String? = null,               // only when provenance == TEXT
     val note: String? = null,
+    /**
+     * WHY this room wants those directions, in the reader's own language — the sentence a paying
+     * customer gets when a room is already right, and when it is merely "not ideal". It carries this
+     * rule's own [provenance] and [sourceId], so it is as traceable as the placement itself.
+     */
+    val rationale: String? = null,
     val disputeId: String? = null,              // non-null => NOT_SCORED (§4.4.1)
     /** True for rooms scored elsewhere or pending a ruling (ENTRANCE via door; BASEMENT R-15). */
     val excludeFromScore: Boolean = false,
@@ -88,6 +94,16 @@ data class DefectDefinition(
     val tier: DefectTier,
     val explanation: String,
     val layoutFix: String? = null,
+    /**
+     * ⭐ The honest line above the remedies when the classical texts record no cure for this defect
+     * that leaves the element where it is. The product's whole differentiator is that it does not
+     * make Vastu up — so where nothing exists we say so instead of filling the table.
+     */
+    val remedyNote: String? = null,
+    /** Tier C/D only: what we could not check, in the reader's words — never the raw defect id. */
+    val notCheckedLabel: String? = null,
+    /** Tier C/D only: how the reader gets it checked. */
+    val notCheckedHow: String? = null,
     val remedyIds: List<String> = emptyList(),  // must be non-empty (loader validates)
     /** Room-derived triggers: a DEFECT-verdict room of this type in this zone raises it. */
     val appliesTo: List<RoomZoneMatch> = emptyList(),

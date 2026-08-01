@@ -44,11 +44,22 @@ class DefectFixtureTest {
         assertEquals(Severity.MAJOR, a.defects.first { it.id == "X-03" }.severity)
     }
 
+    /**
+     * ⭐ INVERTED on purpose. This test used to assert that garage-in-the-South-West fell through to
+     * the generic X-GEN — "this room sits in a zone its placement rule prohibits", with the same two
+     * remedies as everything else. That was the state of thirteen of fifteen problems in a ₹699
+     * report. Every ruled pair now carries its own reason and its own remedies.
+     */
     @Test
-    fun `a prohibited placement with no specific id falls back to X-GEN`() {
-        // GARAGE prohibits SW but §8.4 names no X-id for it → generic defect.
+    fun `a prohibited placement carries its own reason and its own remedies`() {
         val a = engine.analyze(planWith(listOf(Room("g", RoomType.GARAGE, Fixtures.rect(5.0, 5.0, 25.0, 25.0)))))
-        assertTrue(a.defects.any { it.id == "X-GEN" }, "expected a generic X-GEN for garage-in-SW")
+        assertFalse(a.defects.any { it.id == "X-GEN" }, "garage-in-SW must not reach the reader as the generic text")
+        val d = a.defects.first { it.id == "X-33" }
+        assertTrue(d.explanation.length > 120, "the reason must actually explain, not restate the rule")
+        assertTrue(
+            d.remedies.any { it.id != "structural-correction" && it.id != "vastu-shanti" },
+            "a defect must offer more than the two universal answers",
+        )
     }
 
     @Test

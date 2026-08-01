@@ -17,8 +17,19 @@ data class Defect(
     val provenance: Provenance,
     val explanation: String,
     val layoutFix: String? = null,             // null when nothing can move
+    /** Said out loud when the texts record no cure that leaves the element where it is. */
+    val remedyNote: String? = null,
     val remedies: List<Remedy> = emptyList(),
 )
+
+/**
+ * A rule we could not run, in the reader's words rather than as a code.
+ *
+ * ⚠ The report used to print the raw rule id — "X-09" — to a paying customer. [label] is the plain
+ * sentence and [how] is what they can do about it; the [id] is kept only so tests and logs can still
+ * name the rule.
+ */
+data class NotChecked(val id: String, val label: String, val how: String? = null)
 
 data class RoomResult(
     val roomId: String,
@@ -63,12 +74,20 @@ data class Analysis(
     val cuts: List<ZoneAnomaly>,
     val extensions: List<ZoneAnomaly>,
     val shapeIrregular: Boolean,                 // footprint is not rectangle-family (rare)
-    val notAssessed: List<String>,               // rules skipped for missing input
+    val notAssessed: List<String>,               // rules skipped for missing input (ids — for tests/logs)
     val disputes: List<Dispute>,                 // relevant to THIS plan only
     val ruleSetVersion: String,                  // e.g. "2026.07.19-1" — mandatory (§5)
     // --- production robustness / transparency ---
     val quality: AnalysisQuality = AnalysisQuality.OK,
     val notes: List<AnalysisNote> = emptyList(),
+    /** The same rules as [notAssessed], written for a reader instead of for a log. */
+    val notChecked: List<NotChecked> = emptyList(),
+    /**
+     * What each direction is, in the tradition's own terms — Sanskrit name, presiding deity, element
+     * and the domain it governs. Carried on the result so the report can explain a placement without
+     * needing the rule dataset; it is reference material, never a scoring term.
+     */
+    val zoneInfo: List<ZoneInfo> = emptyList(),
     val footprintTiltDegrees: Double = 0.0,      // building's own tilt vs true north (0..90)
     val aspectRatio: Double = 1.0,               // long side / short side of the footprint
 )

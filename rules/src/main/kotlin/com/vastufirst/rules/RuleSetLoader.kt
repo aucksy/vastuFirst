@@ -101,6 +101,51 @@ object RuleSetLoader {
         }
         if (rs.defects.none { it.id == "X-GEN" }) errors += "Dataset must define the fallback defect 'X-GEN'."
 
+        // 4b. ⭐ EVERY defect must offer something beyond the two universal answers ("move it" and
+        //     Vastu Shanti) — or say IN WORDS why it cannot. Thirteen of fifteen problems once
+        //     offered the customer the identical two lines, which is what a ₹699 report must never do.
+        //     The honest escape is `remedyNote`, not an invented remedy: where the classical texts
+        //     record no cure, saying so IS the answer.
+        val universal = setOf("structural-correction", "vastu-shanti")
+        rs.defects.forEach { d ->
+            val specific = d.remedyIds.any { it !in universal }
+            if (!specific && d.remedyNote.isNullOrBlank()) {
+                errors += "Defect ${d.id} offers only the universal remedies and gives no remedyNote " +
+                    "explaining why nothing more specific exists."
+            }
+        }
+
+        // 4c. ⭐ EVERY (room type, prohibited zone) pair must resolve to its OWN defect definition.
+        //     X-GEN stays as the last-resort fallback for anomalies, but a room the app rules on must
+        //     never reach the reader as "this room sits in a zone its placement rule prohibits".
+        val claimed = HashMap<Pair<RoomType, com.vastufirst.shared.Zone>, MutableList<String>>()
+        rs.defects.forEach { d -> d.appliesTo.forEach { m -> claimed.getOrPut(m.roomType to m.zone) { mutableListOf() } += d.id } }
+        claimed.filterValues { it.size > 1 }.forEach { (pair, ids) ->
+            errors += "More than one defect claims ${pair.first} in ${pair.second}: $ids."
+        }
+        rs.rooms.forEach { rule ->
+            rule.prohibited.forEach { zone ->
+                if ((rule.roomType to zone) !in claimed) {
+                    errors += "${rule.roomType} is prohibited in $zone but no defect claims that pair — " +
+                        "the reader would get the generic X-GEN text instead of a real reason."
+                }
+            }
+        }
+
+        // 4d. A rule with no rationale leaves the "already right" and "not ideal" sections with a
+        //     room name, a direction and nothing else — which is the state the report was in.
+        rs.rooms.forEach { r ->
+            if (r.rationale.isNullOrBlank()) errors += "Room rule ${r.roomType} has no rationale."
+        }
+
+        // 4e. A Tier C/D rule with no plain label printed its raw id ("X-09") to a paying customer.
+        rs.defects.forEach { d ->
+            val needsLabel = d.requiresFixtureTypes.isNotEmpty() || d.requiresSite
+            if (needsLabel && d.notCheckedLabel.isNullOrBlank()) {
+                errors += "Defect ${d.id} can land in the 'couldn't check' list but has no notCheckedLabel."
+            }
+        }
+
         // 5. The Brahmasthan extent must be one the engine actually implements — the config knob
         //    must not silently fall back to 3×3 (M-05 is unresolved; only CENTRAL_3X3 is built).
         if (rs.config.brahmasthanExtent != "CENTRAL_3X3") {

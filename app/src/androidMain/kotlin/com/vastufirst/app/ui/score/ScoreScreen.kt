@@ -34,6 +34,9 @@ import com.vastufirst.app.ui.details.coverageLine
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
+import com.vastufirst.app.ui.report.firstSentence
+import com.vastufirst.app.ui.report.remainingLine
+import com.vastufirst.app.ui.report.unlockPreviewLines
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.LocalDecimalMark
@@ -52,7 +55,6 @@ import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Intent
-import com.vastufirst.shared.Verdict
 import com.vastufirst.app.ui.common.screenRoot
 import org.koin.compose.koinInject
 
@@ -242,7 +244,12 @@ private fun ScoreResult(
                         Spacer(Modifier.height(VastuTheme.spacing.s2))
                         VText(defectTitle(d, a.roomResults), style = VastuTheme.type.h3, color = colors.textPrimary)
                         Spacer(Modifier.height(VastuTheme.spacing.s1))
-                        VText(d.explanation, style = VastuTheme.type.bodySm, color = colors.textSecondary)
+                        // ⭐ The OPENING SENTENCE only. The reasons are now several sentences long —
+                        // which direction, which element, which deity, what the tradition holds and
+                        // where the thing belongs instead — and that whole reason is what the paid
+                        // report gives. Printing it in full here would both give the paid part away
+                        // and make the free screen three times taller than it is designed to be.
+                        VText(firstSentence(d.explanation), style = VastuTheme.type.bodySm, color = colors.textSecondary)
                     }
                 }
             }
@@ -254,8 +261,7 @@ private fun ScoreResult(
         if (unlocked) {
             VastuButton("See the full report", onClick = onUnlock)
         } else {
-            val remaining = remainingIssueCount(a)
-            UnlockCard(remaining = remaining, onUnlock = onUnlock, billingState = billingState)
+            UnlockCard(a = a, shownFree = top.size, onUnlock = onUnlock, billingState = billingState)
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -287,14 +293,16 @@ private fun verdictLine(score: Int, intent: Intent?): String {
     }
 }
 
-private fun remainingIssueCount(a: Analysis): Int {
-    val moreDefects = (a.defects.size - 3).coerceAtLeast(0)
-    val suboptimal = a.roomResults.count { it.verdict == Verdict.SUBOPTIMAL }
-    return moreDefects + suboptimal
-}
-
+/**
+ * ⭐ The paywall, previewing what is really behind it.
+ *
+ * ⚠ This card used to offer one number — "N more issues" — where N quietly added the problems it had
+ * not shown to the rooms rated "not ideal"… which the paid report did not contain at all. So the free
+ * screen sold issues the report never showed. Every line here is now counted off this home's own
+ * analysis and names a section the reader will actually find (`unlockPreviewLines`).
+ */
 @Composable
-private fun UnlockCard(remaining: Int, onUnlock: () -> Unit, billingState: BillingState) {
+private fun UnlockCard(a: Analysis, shownFree: Int, onUnlock: () -> Unit, billingState: BillingState) {
     val colors = VastuTheme.colors
     Column(
         modifier = Modifier
@@ -307,16 +315,18 @@ private fun UnlockCard(remaining: Int, onUnlock: () -> Unit, billingState: Billi
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 VText("Unlock the full report & remedies", style = VastuTheme.type.bodyLg, color = colors.textPrimary)
-                VText(
-                    if (remaining > 0) "$remaining more issues · every fix & remedy, ranked" else "Every fix & remedy, ranked",
-                    style = VastuTheme.type.bodySm, color = colors.textTertiary,
-                )
+                VText(remainingLine(a, shownFree), style = VastuTheme.type.bodySm, color = colors.textTertiary)
             }
             Column(horizontalAlignment = Alignment.End) {
                 // The STORE'S price when the store has answered, the owner's decided price
                 // otherwise — never a number typed twice in two places.
                 VText(billingState.price ?: FALLBACK_PRICE, style = VastuTheme.type.h2, color = colors.textPrimary)
                 VText("ONE-TIME", style = VastuTheme.type.caption, color = colors.textTertiary)
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
+            unlockPreviewLines(a, shownFree).forEach {
+                VText("· $it", style = VastuTheme.type.bodySm, color = colors.textSecondary)
             }
         }
         VastuButton("See the full report", onClick = onUnlock)

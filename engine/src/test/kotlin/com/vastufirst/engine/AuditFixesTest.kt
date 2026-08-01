@@ -96,7 +96,11 @@ class AuditFixesTest {
         val kitchen = Room("k", RoomType.KITCHEN, Fixtures.rect(40.0, 40.0, 50.0, 50.0))
         val defects = engine.analyze(plan(listOf(kitchen))).defects.map { it.id }
         assertTrue("X-02" in defects, "kitchen in NE → X-02")
-        assertTrue("X-GEN" in defects, "kitchen in Brahmasthan → generic defect (no specific id)")
+        // ⭐ INVERTED on purpose. This used to assert the Brahmasthan half fell through to the
+        // generic "this room sits in a zone its placement rule prohibits" — which is exactly what a
+        // paying reader was being sold. Every ruled (room, zone) pair now carries its own reason.
+        assertTrue("X-21" in defects, "kitchen in the centre → its own defect, not the generic one")
+        assertFalse("X-GEN" in defects, "no ruled room may reach the reader as the generic text")
     }
 
     @Test

@@ -21,6 +21,14 @@ jobs:
       # than fail quietly, but the feature the release is FOR would be missing. Set it at
       # Settings → Secrets and variables → Actions → GROQ_API_KEY.
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      # ⭐ The Play Store signing key, in the only form a GitHub secret can hold: base64 text.
+      # Lifted to the job env so the decode step can ASK WHETHER IT EXISTS — the `secrets` context is
+      # not readable from a step `if:`, and without that test a repo with no key set would fail every
+      # release instead of quietly falling back to the committed test key.
+      RELEASE_STORE_FILE_BASE64: ${{ secrets.RELEASE_STORE_FILE_BASE64 }}
+      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,6 +97,36 @@ jobs:
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
 
+      # ⭐ THE STORE KEY, DECODED. A keystore is a binary file and a GitHub secret only holds text,
+      # so it is stored base64-encoded and turned back into a file here — into the runner's temp
+      # directory, never into the checkout, so it cannot be picked up by a later `git add`.
+      #
+      # ⚠ Deliberately CONDITIONAL and silent when absent: with no key set the release still builds
+      # and publishes, signed by the committed test key, exactly as it does today. Making this step
+      # mandatory would break every release until the owner's Play account exists.
+      #
+      # The path must be ABSOLUTE — Gradle resolves `file(...)` against the app module, not the repo
+      # root, so a relative path would silently point at the wrong place.
+      - name: Decode the release signing key (only when one has been supplied)
+        if: env.RELEASE_STORE_FILE_BASE64 != ''
+        run: |
+          set -euo pipefail
+          KEYSTORE="${RUNNER_TEMP}/vastufirst-release.jks"
+          printf '%s' "$RELEASE_STORE_FILE_BASE64" | base64 --decode > "$KEYSTORE"
+          # A truncated or mis-pasted secret decodes to garbage that only fails much later, at
+          # signing, with an unhelpful message. Prove the keystore opens before anything depends on it.
+          keytool -list -keystore "$KEYSTORE" -storepass "$RELEASE_STORE_PASSWORD" > /dev/null
+          echo "RELEASE_STORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "Release signing key decoded and verified."
+
+      - name: Say which key this release is signed with
+        run: |
+          if [ -n "${RELEASE_STORE_FILE:-}" ]; then
+            echo "Signed with the owner's Play Store key."
+          else
+            echo "No store key supplied — signed with the committed test key (installable, not publishable)."
+          fi
+
       # The shrunk build a store upload would be made from. Built on every release so the shrinker
       # can never be met for the first time on the day it matters.
       - name: Build the shrunk release
@@ -103,6 +141,11 @@ jobs:
         run: |
           mkdir -p release
           cp app/build/outputs/apk/debug/*.apk "release/vastufirst-${GITHUB_REF_NAME}.apk"
+
+      # The decoded key must not outlive the job even if a step above failed.
+      - name: Shred the decoded signing key
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/vastufirst-release.jks"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

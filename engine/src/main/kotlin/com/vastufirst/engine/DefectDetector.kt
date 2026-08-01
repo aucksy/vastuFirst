@@ -6,6 +6,7 @@ import com.vastufirst.shared.Defect
 import com.vastufirst.shared.DefectDefinition
 import com.vastufirst.shared.Fixture
 import com.vastufirst.shared.FixtureType
+import com.vastufirst.shared.NotChecked
 import com.vastufirst.shared.Point
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.RoomType
@@ -14,7 +15,12 @@ import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.Zone
 import com.vastufirst.shared.ZoneAnomaly
 
-internal data class DefectOutcome(val defects: List<Defect>, val notAssessed: List<String>)
+internal data class DefectOutcome(
+    val defects: List<Defect>,
+    val notAssessed: List<String>,
+    /** The same list written for a reader — never the raw ids (they used to reach the report). */
+    val notChecked: List<NotChecked> = emptyList(),
+)
 
 /**
  * Defect detection over the §8.4 table (Product PRD §4.6). A false positive damages trust more
@@ -73,16 +79,30 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
         if (site != null) detectRoadThrust(site, defects)
 
         // 7. notAssessed: Tier C/D defects whose input is absent (§4.6). Never report "clear".
+        //    ⚠ Collected TWICE on purpose: the ids for tests and logs, and the reader's sentence for
+        //    the report. The report used to print the id itself — "X-09" — to a paying customer.
         val notAssessed = mutableListOf<String>()
+        val notChecked = mutableListOf<NotChecked>()
         for (def in ruleSet.defects) {
-            if (def.requiresFixtureTypes.isNotEmpty()) {
-                val present = rotatedFixtures.any { it.first.type in def.requiresFixtureTypes }
-                if (!present) notAssessed += def.id
-            }
-            if (def.requiresSite && site == null) notAssessed += def.id
+            val missingFixture = def.requiresFixtureTypes.isNotEmpty() &&
+                rotatedFixtures.none { it.first.type in def.requiresFixtureTypes }
+            val missingSite = def.requiresSite && site == null
+            if (!missingFixture && !missingSite) continue
+            notAssessed += def.id
+            notChecked += NotChecked(
+                id = def.id,
+                // Falls back to the title, never to the id: a dataset that forgets the label still
+                // shows a sentence rather than a code. The loader also refuses such a dataset.
+                label = def.notCheckedLabel ?: def.title,
+                how = def.notCheckedHow,
+            )
         }
 
-        return DefectOutcome(dedupe(defects), notAssessed.distinct().sorted())
+        return DefectOutcome(
+            dedupe(defects),
+            notAssessed.distinct().sorted(),
+            notChecked.distinctBy { it.id }.sortedBy { it.id },
+        )
     }
 
     /** Collapse identical structural defects (e.g. a staircase room AND a stair fixture in the
@@ -186,6 +206,7 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
         provenance = def.provenance,
         explanation = def.explanation,
         layoutFix = def.layoutFix,
+        remedyNote = def.remedyNote,
         remedies = ruleSet.remediesFor(def),
     )
 }

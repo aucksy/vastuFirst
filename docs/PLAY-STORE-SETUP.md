@@ -42,9 +42,14 @@ secret**. Exactly these four names, because that is what the build reads:
 | `RELEASE_KEY_PASSWORD` | the key password (usually the same one) |
 
 ⚠ **The keystore is a binary file, and a GitHub secret only holds text** — so it goes in base64 and
-the build decodes it. The decode step is NOT built yet; it is one small addition to the release
-workflow and I will do it the moment you say the account exists. Until then the release builds with
-the committed test key, which is exactly what you are installing today.
+the build decodes it. **That decode step is now built and live.** It is deliberately conditional: if
+those four secrets are not set, the release builds and publishes exactly as it does today, signed
+with the committed test key. The moment you add them, the very next tag is signed with your real key
+instead — nothing else needs changing, and nobody has to remember to flip anything.
+
+It also checks the key opens before the build depends on it, because a half-pasted secret otherwise
+fails much later with a message that says nothing useful. The decoded file is written outside the
+project, never into the repository, and deleted when the job ends whether it succeeded or not.
 
 ⚠ **NOTHING GOES IN THE APP ITSELF, ever.** These four only ever exist on GitHub. An APK is a zip
 anybody can open, so a signing key inside one would be worthless.
