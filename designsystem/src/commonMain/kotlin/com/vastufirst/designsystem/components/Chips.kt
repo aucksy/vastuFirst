@@ -59,6 +59,17 @@ fun VastuChip(
  */
 @Composable
 fun VastuSegmented(
+    /**
+     * ⚠ KEEP EVERY WORD SHORT — no single word longer than about eight characters.
+     *
+     * Each segment gets half the row, and a word wider than that half is not wrapped: it is drawn
+     * centred and overflowing, so it loses characters off BOTH ends. At 200 % font "Traditional"
+     * did exactly that and the reader saw "Iraditional 9-zone".
+     *
+     * ⭐ And the geometry gate cannot see it. The text node reports the *box's* bounds, which are
+     * unclipped, so nothing is flagged — the only thing that catches this is a person looking at the
+     * rendered picture. That is why it survived a release.
+     */
     options: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
@@ -88,12 +99,11 @@ fun VastuSegmented(
                         if (disabled) Modifier
                         else Modifier.clickableTap(role = Role.Tab, onClick = { onSelect(i) })
                     )
-                    // ⚠ Horizontal padding matters as much as vertical here. Without it a label
-                    // measured to the segment's exact width, and at 200 % font a long one was drawn
-                    // wider than its half of the row and CLIPPED AT BOTH ENDS by the centring — the
-                    // first character simply gone. Padding gives the text a narrower box to wrap
-                    // inside, so it breaks at the space instead of overflowing.
-                    .padding(vertical = VastuTheme.spacing.s3, horizontal = VastuTheme.spacing.s2),
+                    // ⚠ Horizontal padding, so a label that needs two lines breaks at its space
+                    // instead of being drawn edge to edge. Deliberately the SMALLEST step: padding
+                    // narrows the room a word has to fit in, and the failure this component actually
+                    // had was a word too wide for its half of the row (see the note on `options`).
+                    .padding(vertical = VastuTheme.spacing.s3, horizontal = VastuTheme.spacing.s1),
                 contentAlignment = Alignment.Center,
             ) {
                 VText(

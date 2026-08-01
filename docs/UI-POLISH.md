@@ -369,6 +369,25 @@ Also invisible to screenshots, and therefore requiring code review or a device: 
 field, gesture and nested-scroll conflicts, flicker and layout shift as data lands, state loss on
 rotation or process death, double-tap duplicate navigation, and real TalkBack behaviour.
 
+### ⚠ 6.7b The gate measures BOXES, not GLYPHS — text can overflow and nothing fires
+
+**Found on 1 August 2026, by looking at a picture.** The report's reading toggle rendered
+"Iraditional 9-zone" at 200 % font: the word "Traditional" was wider than its half of the row, so it
+was drawn centred and overflowing, losing characters off **both** ends.
+
+**The geometry gate reported nothing at all.** It reads each node's clipped and unclipped bounds — and
+for that label both were the segment box's own 178 dp. The box is not clipped; the *ink* is. `ellipsized`
+was false too, because the text was never constrained into ellipsising, just drawn wider than its
+container. Every number the gate has is correct and the screen is still wrong.
+
+Two consequences, both binding:
+
+- **A fixed-width control containing text must keep every WORD short** — nothing that cannot fit the
+  control's narrowest configuration on its own line. A long word cannot wrap; it bleeds.
+- **This class is caught only by a human looking at the rendered image**, which is precisely why
+  §2b's "never hand over a screen I have not looked at" is a hard rule and not a nicety. It survived
+  a whole release, noted as a known blemish, because every gate was green.
+
 **The screenshots are uploaded as a CI artifact on every run.** Producing them is not optional and
 neither is looking at them.
 

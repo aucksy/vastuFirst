@@ -120,12 +120,11 @@ fun ReportContent(
 
         // The 16-zone reading isn't built yet, so its segment is shown disabled ("· soon") and is not
         // tappable — no live-looking control that silently does nothing (E2E-ASSESSMENT §B10).
-        // Labels deliberately short and in ordinary words. "Traditional 8-zone" was drawn wider than
-        // its half of the row at 200 % font and lost its first character to the clip; "8 directions"
-        // is also plainer for a reader who has never heard the word "zone" used this way. The
-        // caption below carries the meaning either way.
+        // ⚠ Short words, and that is a constraint not a preference. At 200 % font "Traditional" was
+        // wider than its half of the row and the reader saw "Iraditional 9-zone" — every word here
+        // must fit a half-width segment on its own. The caption below carries the full meaning.
         VastuSegmented(
-            options = listOf("8 directions", "16 zones · soon"),
+            options = listOf("8 zones", "16 zones · soon"),
             selectedIndex = 0,
             onSelect = {},
             disabledIndices = setOf(1),

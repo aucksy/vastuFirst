@@ -140,7 +140,7 @@ fun SettingsContent(
             // "School profile / Traditional 8-zone" was our own jargon on a screen a customer opens.
             // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
             // label on a narrow phone at a large font.
-            RowItem("Vastu reading", trailing = "8 directions")
+            RowItem("Vastu reading", trailing = "8 zones")
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))

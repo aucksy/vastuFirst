@@ -2565,6 +2565,11 @@ Four decisions worth recording:
   is precisely the moment nobody remembers to write the sentence.
 - **A home this build cannot re-run is dropped from the card entirely** — old score, old version, no
   claim made. Inventing a number for a home we could not read would be worse than a silent change.
+- ⚠ **Known and accepted:** until the card is acknowledged, the list shows the old number while
+  opening that home shows the new one, because the report is always computed live and the list is a
+  cached summary. The card sits above the list saying exactly that, so the report agreeing with the
+  card rather than with the stale row is the *consistent* outcome. Writing the score first and
+  explaining afterwards is the trade we refused.
 - **`updatedAt` is deliberately not touched.** We moved the rules; the user did not edit their home,
   and reordering their list as though they had is a second small dishonesty on top of the first.
 
@@ -2581,3 +2586,25 @@ sample — the not-ideal prayer room, and the disputes card. Neither would ever 
   rule data rather than a placeholder. One home moved and one did not, so both lines are on record in
   one picture. It has the most text of anything on that screen, which is exactly the block that has
   pushed its own button off a 320 dp screen before.
+
+## 7. ⚠ The defect the gate physically cannot see
+
+Looking at `report-prayer` at 200 % font showed the reading toggle rendering **"Iraditional 9-zone"**.
+The word "Traditional" was wider than its half of the row, so it was drawn centred and overflowing,
+losing characters off **both** ends.
+
+⭐ **Every gate was green, and correctly so.** The geometry checker compares each node's clipped and
+unclipped bounds; for that label both were the segment box's own 178 dp. The box is not clipped — the
+*ink* is. `ellipsized` was false too, because the text was never constrained into ellipsising, merely
+drawn wider than its container. **This class of defect is invisible to the harness and is caught only
+by a person opening the picture** — which is exactly why "never hand over a screen I have not looked
+at" is a hard rule. It had already survived a release, recorded as a known blemish, because CI was
+green every time.
+
+The fix is a constraint, not a workaround: a fixed-width control holding text must keep every **word**
+short enough to fit its narrowest configuration alone, because a long word cannot wrap — it bleeds.
+The segment labels are now `8 zones` / `16 zones · soon`, the component documents the rule where the
+next person will read it, and `docs/UI-POLISH.md` §6.7b records the limitation permanently.
+
+Two more of our own words went at the same time: the settings row said "School profile · Traditional
+8-zone" — jargon on a screen a customer opens — and now reads "Vastu reading · 8 zones".
