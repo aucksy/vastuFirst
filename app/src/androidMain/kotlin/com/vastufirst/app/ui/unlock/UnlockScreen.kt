@@ -114,17 +114,16 @@ fun UnlockContent(
         SectionLabel("What you get")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            // Each line names a section the report really has. "Layout change and remedy for each"
-            // was true and still hid the problem: the remedies were the same two lines on almost
-            // every problem, and the "not ideal" rooms were nowhere in the report at all.
+            // ⚠ FOUR LINES, AND THE COUNT IS THE POINT. Seven measured taller than the screen at
+            // 320 dp, pushing the unlock button itself below the fold — on the one screen where a
+            // button that has to be hunted for is worst. Each line is still a real section of the
+            // report ("Layout change and remedy for each" used to be true and still hid the problem:
+            // the remedies were the same two lines on almost every problem).
             listOf(
-                "Every problem ranked, not just the top three",
-                "The whole reason behind each one — the direction, its element, what the tradition holds",
-                "Remedies for that problem in that direction — and where no classical remedy exists, we say so",
+                "Every problem ranked, with the whole reason behind it",
+                "Remedies for that problem in that direction — and where none exists, we say so",
                 "The rooms rated not ideal, which the free score only counts",
-                "The rooms already right, and why",
-                "Your front door read by name on the 32-position table",
-                "Source & provenance on every rule, and both readings where the schools disagree",
+                "Your front door by name, and the source behind every rule",
             ).forEach { Feature(it) }
         }
 

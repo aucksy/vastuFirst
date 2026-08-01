@@ -55,6 +55,13 @@ was intentionally omitted** this phase, so there's no assist or cross-check.
 - Silent: yes. Moves number: yes. Fix path: add the compass-sensor helper (a Phase-3 candidate) and/or
   a "double-check your North" confirmation.
 
+### 4b. ⚠ The report used to SELL issues it never showed  — closed in v0.5.0
+Not an accuracy bug in the number, but the same family of dishonesty and worth recording next to
+them. Rooms rated SUBOPTIMAL ("not ideal") were counted by the free score screen into "N more issues"
+to justify the ₹699 — and then filtered out of the paid report entirely, falling between the problems
+list and the already-right list. The report now has a section for them, and a test asserts the number
+the free screen counts equals the number the report shows.
+
 ### 4. Only rooms + door + shape are scored — fixture/site rules are never collected
 The guided grid captures rooms, the front door, North, intent, property type. It does **not** collect
 fixtures or site data (septic tank, borewell/water, roads/Veedhi-shoola, staircase-under-fixture,
@@ -123,8 +130,10 @@ produce the same 0–100. Disclosed on the score screen ("our own way of summari
 tradition"). It's a consistent internal yardstick, not a canonical Vastu number.
 
 ### 14. Missing pada names (E7 / S7)
-Absent from the source knowledge base (left null). A door landing on those door-padas may show a
-blank/generic name. Display-only; doesn't move the number.
+Absent from the source knowledge base (left null). Display-only; doesn't move the number.
+**Closed as a display risk in v0.5.0:** the report's front-door section now states outright that the
+sources leave that position unnamed, rather than rendering a blank or inventing a name. The position
+number, the wall and the verdict are all still shown, so the reading is complete either way.
 
 ---
 

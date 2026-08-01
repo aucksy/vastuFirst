@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.24 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.24/vastufirst-v0.3.24.apk)
+**Latest build to test:** v0.5.0 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.5.0/vastufirst-v0.5.0.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -314,6 +314,39 @@ Two things you reported, and one you asked me to make production-grade.
       cleanly rather than being cut off mid-word.
 - [ ] **J7 — A plan with no printed sizes.** Should behave as before; this build only changes how big
       the home is drawn, not how the rooms are read.
+
+---
+
+# ⭐⭐ v0.5.0 — READ THE REPORT. That is the whole test.
+
+This build changed one thing: what the ₹699 report actually says. No screenshot check can tell us
+whether it reads well to a person, so this section is a reading job rather than a tapping job.
+
+**How to get there in one minute:** open the app → **Try a sample home** → the score screen → **See
+the full report**. The unlock is one tap and free in this build, so nothing is behind a wall.
+
+- [ ] **R1 — ⭐⭐ Read the whole report top to bottom, once, as a customer.** Not looking for bugs —
+      just: *would you pay ₹699 for this?* Tell me the first place your attention drops, and the first
+      sentence you would have to read twice. Those two answers are worth more than everything below.
+- [ ] **R2 — ⭐⭐ Are the reasons believable to somebody who knows Vastu?** Every problem now explains
+      which direction it is about, which deity and element the tradition gives that direction, and why
+      a room of that kind does not belong there. **If any one of them reads as wrong, or as made up,
+      tell me the exact sentence** — that is the one thing in this build that would damage trust, and
+      every line is one edit away from being changed.
+- [ ] **R3 — ⭐ The "not ideal" section — is it clear these are not faults?** This is the section that
+      did not exist at all before. It says plainly that nothing in it is a defect, but they do count
+      towards the score. Does that land, or does it read as a second list of problems?
+- [ ] **R4 — Does the front-door section make sense?** It names one of 32 traditional door positions
+      and what the tradition attaches to it. Is that interesting, or is it a paragraph you skipped?
+- [ ] **R5 — Is the report too long to read on a phone?** It is now much longer than it was, on
+      purpose. Scroll it on your own phone: does it feel like a document worth paying for, or like a
+      wall of text? If it needs breaking up, now is the time to say so.
+- [ ] **R6 — At the size you actually read at.** If you use large text on your phone, or if your
+      client will, check nothing is cut off and no line runs off the side. Machine checks cover this,
+      but they cannot tell whether it is comfortable to read in daylight.
+- [ ] **R7 — Does the free screen promise what the report delivers?** On the score screen, the unlock
+      card lists what you get, with real numbers off that home. Open the report and check each line is
+      really there. If it promises something the report does not have, that is a serious one.
 
 ---
 

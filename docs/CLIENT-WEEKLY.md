@@ -30,17 +30,18 @@ These are the things only you can decide. Everything else is done.
    means Google keeps about ₹105 of each ₹699. The alternative is selling the report on a web page
    instead, where you keep all of it but the customer has to pay on a website first. We have built
    the first; say the word if you'd rather have the second.
-3. **The email address customers should write to.** It appears publicly on your store page and in the
-   app's privacy policy. We are using `simpleapps108@gmail.com` until you say otherwise.
-4. **Where the privacy policy should live on the web.** Google needs it at a public address. We can
+3. **Where the privacy policy should live on the web.** Google needs it at a public address. We can
    put it up for free in about ten minutes — just say yes.
-5. **One ruling we have deliberately left to you: where the pooja room belongs.** The classical texts
+4. **One ruling we have deliberately left to you: where the pooja room belongs.** The classical texts
    put it in the centre of the home; modern practice puts it in the north-east, near-universally.
    Turning either one on changes the score of every home already saved on a phone, so we have not
    done it. Our recommendation is the modern north-east. It is a one-line change.
-6. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
+5. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
    way in your actual flat, and does the app come back with your half-drawn home intact after you
    leave it in the background for an hour?
+
+**Settled since last week:** the address customers write to is `contact@vastufirst.com`, and it is
+already in the app and the privacy policy.
 
 **The other seven disputed Vastu questions are now decided** — the most widely attested classical
 position on each, written up with the reasoning. Any of them can be overturned in one line if your
@@ -49,6 +50,63 @@ expert disagrees.
 ---
 
 ## Week of 28 July – 3 August 2026
+
+### Saturday 1 August, late — the report release
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.5.0/vastufirst-v0.5.0.apk
+
+The report is the thing a customer pays ₹699 for, and until today it explained almost nothing. This
+release is entirely about fixing that. **Open the report on the sample home and read it end to end —
+it is a different document.**
+
+**Every problem now has a reason you could repeat to somebody else.** Before, a problem was a room
+name, a direction and a single line — and the catch-all line said "this room sits in a zone its
+placement rule prohibits", which tells a paying reader nothing at all. Now each one says what that
+direction *is* in the tradition — its Sanskrit name, its presiding deity, its element, what the
+tradition attaches to it — why the tradition objects to that room being there, and where the room
+belongs instead.
+
+**Every problem now has remedies for that problem in that direction.** Before, thirteen of the
+fifteen problems offered the same two lines: move it, or do a Vastu Shanti puja. There were only six
+remedies in the whole app. There are now twenty-eight, and each problem draws the ones that actually
+apply to it — where to stand the cooking platform, which way to sleep, what to keep out of a
+north-east store, and so on.
+
+**And where the tradition genuinely has no remedy, the report says so** instead of inventing one.
+That sentence appears above the remedies on the problems it applies to: the texts say where a toilet
+belongs, and record no cure for putting it somewhere else. Not making Vastu up is the whole point of
+this product, so a remedy invented to fill a table would have been the worst thing we could ship.
+
+**Rooms rated "not ideal" now appear in the report.** ⭐ This was the most serious of the lot. They
+fell between the problems list and the already-right list and appeared *nowhere* — while the free
+score screen counted them in "N more issues" to justify the ₹699. We were selling issues the report
+never showed. They have their own section now, each with why it is not ideal and where the tradition
+would put that room, and the section says plainly that none of them is a defect.
+
+**Rooms that are already right now say why.** Being told why something is right is worth as much as
+being told why something is wrong, and that section used to be a room name, a direction and a tick.
+
+**Your front door has a section at last.** It is the single most important thing in the whole
+reading, and the app has always known which of the 32 named door positions it stands on — the names
+and their meanings have been sitting in the app since the first build and were never shown to
+anybody. The report now names the position, says what the tradition attaches to it, and explains why
+the door counts for more than any room.
+
+**The "couldn't check these yet" list stopped printing our internal codes at the customer.** It used
+to say things like "· X-09". It now says "Where your water tank and borewell sit", and tells the
+reader how to get it checked.
+
+**The free score screen now previews the paid report honestly** — it lists the real sections, with
+this home's own numbers, rather than one vague count. And in this build the unlock is one tap and
+free, so you can reach all of it without hunting.
+
+**Nothing about the score changed.** No weight, no rule, no direction moved. The sample home scores
+exactly what it scored yesterday. This release only changes what the report *says*.
+
+**One thing set up for later:** when you have the Play Store account and send us the signing key,
+the release now picks it up by itself. Nothing to remember on the day.
+
+---
 
 ### Saturday 1 August, evening — the accuracy release
 

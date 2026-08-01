@@ -152,10 +152,27 @@ class ReportTextTest {
     fun the_front_door_is_named_not_coded() {
         val door = analysis.doorResult
         assertNotNull("the sample home has a front door", door)
-        val place = doorPlaceLine(door!!)
-        assertFalse("the wall must be a word, never a letter", Regex("\\b[NESW]\\b").containsMatchIn(place))
-        assertTrue("the reader must be told which of the 32 positions it is", place.contains("of 32"))
+        val title = doorTitle(door!!)
+        assertFalse("the wall must be a word, never a letter", Regex("\\b[NESW]\\b").containsMatchIn(title))
+        assertTrue("the wall must be spelled out", title.contains("wall"))
+        assertTrue("the reader must be told which of the 32 positions it is", doorPlaceLine(door).contains("of 32"))
         assertTrue("the door's reading must explain the 32-position table", doorExplanation(door).contains("32 named positions"))
+        // ⭐ The bundled sample's own door lands on one of the two positions the sources leave
+        // unnamed, so this is the path a demo actually walks. It must SAY so, not show a blank.
+        if (door.pada.name == null) {
+            assertTrue("an unnamed position must be admitted, not left blank", !doorUnnamedNote(door).isNullOrBlank())
+        } else {
+            assertTrue("a named position needs no apology", doorUnnamedNote(door) == null)
+        }
+    }
+
+    @Test
+    fun the_paywall_preview_never_grows_past_three_lines() {
+        // Every extra line pushes the payment notice below the fold on a 320 dp phone at large font.
+        assertTrue(
+            "the unlock card's preview must stay within three lines",
+            unlockPreviewLines(analysis, shownFree = 3).size <= 3,
+        )
     }
 
     // ── nothing internal reaches the reader ────────────────────────────────────────────────────

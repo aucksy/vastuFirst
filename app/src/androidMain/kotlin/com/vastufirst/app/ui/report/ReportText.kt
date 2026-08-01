@@ -136,20 +136,26 @@ fun padaStanding(v: PadaVerdict): String = when (v) {
     PadaVerdict.INAUSPICIOUS -> "one the tradition counts unfavourable"
 }
 
-/** "On the north wall · position 3 of 32" — where the door stands, without a code. */
-fun doorPlaceLine(d: DoorResult): String =
-    "On the ${d.pada.side.short().lowercase()} wall · position ${d.pada.ordinal} of 32"
+/** The door card's heading — the wall spelled out, never a bare letter. */
+fun doorTitle(d: DoorResult): String = "Front door — ${d.pada.side.short().lowercase()} wall"
 
-/** The door position's own name and what the tradition attaches to it. */
-fun doorNameLine(d: DoorResult): String {
-    val name = d.pada.name
-    val domain = d.pada.domain
-    return when {
-        name == null -> "The sources leave this position unnamed — we say so rather than fill the gap."
-        domain == null -> name
-        else -> "$name — $domain"
-    }
+/** "Position 14 of 32 · Antariksha" — which of the 32 it stands on, and its name where one exists. */
+fun doorPlaceLine(d: DoorResult): String {
+    val base = "Position ${d.pada.ordinal} of 32"
+    val name = d.pada.name ?: return base
+    val domain = d.pada.domain ?: return "$base · $name"
+    return "$base · $name — $domain"
 }
+
+/**
+ * ⚠ Two of the 32 positions are left unnamed in the sources we work from, and the app knows which.
+ * Rather than render a blank or borrow a name from somewhere else, the report says so — and the
+ * bundled sample home's own door happens to land on one of them, so this is not a rare path.
+ */
+fun doorUnnamedNote(d: DoorResult): String? =
+    if (d.pada.name != null) null
+    else "The 32 positions come from the classical sources, and this one is left unnamed in them. " +
+        "We say so rather than invent a name for it; the reading itself is unaffected."
 
 /**
  * Why the door matters more than any room, in the reader's words. The 32 named positions have been
@@ -202,19 +208,23 @@ fun unlockPreviewLines(a: Analysis, shownFree: Int): List<String> {
     out += when {
         a.defects.isEmpty() -> "The full reading, with the reasoning behind every placement"
         more > 0 -> "All ${a.defects.size} problems — $more you haven't seen — each with the whole " +
-            "reason behind it and remedies for that problem in that direction"
+            "reason and remedies for that problem in that direction"
         else -> "The whole reason behind each problem, and remedies for that problem in that direction"
     }
     val notIdeal = a.roomResults.count { it.verdict == Verdict.SUBOPTIMAL }
     if (notIdeal > 0) {
         out += "$notIdeal ${plural(notIdeal, "room", "rooms")} rated not ideal — which, and why"
     }
+    // ⚠ THREE LINES IS A CEILING, not a coincidence. Every extra line here pushes the payment notice
+    // under the unlock button below the fold on a 320 dp phone at large font — and a notice about
+    // money that has to be scrolled to is the one thing this card must never do. So the remaining
+    // sections are named together rather than each getting a line of their own.
     val good = a.roomResults.count { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE }
-    if (good > 0) {
-        out += "$good ${plural(good, "room", "rooms")} already right, and why the tradition says so"
-    }
-    if (a.doorResult != null) out += "Your front door read by name on the 32-position table"
-    if (a.disputes.isNotEmpty()) out += "Where the schools disagree, with both readings"
+    val rest = mutableListOf<String>()
+    if (good > 0) rest += "the $good already right, and why"
+    if (a.doorResult != null) rest += "your front door by name"
+    if (a.disputes.isNotEmpty()) rest += "both readings where the schools disagree"
+    if (rest.isNotEmpty()) out += rest.joinToString(" · ").replaceFirstChar { it.uppercase() }
     return out
 }
 
@@ -224,8 +234,9 @@ fun remainingLine(a: Analysis, shownFree: Int): String {
     val notIdeal = a.roomResults.count { it.verdict == Verdict.SUBOPTIMAL }
     val bits = mutableListOf<String>()
     if (more > 0) bits += "$more more ${plural(more, "problem", "problems")}"
-    if (notIdeal > 0) bits += "$notIdeal rated not ideal"
-    return if (bits.isEmpty()) "Every fix and remedy, ranked" else bits.joinToString(" · ")
+    if (notIdeal > 0) bits += "$notIdeal ${plural(notIdeal, "room", "rooms")} rated not ideal"
+    bits += "every reason and remedy in full"
+    return bits.joinToString(" · ")
 }
 
 private fun plural(n: Int, one: String, many: String) = if (n == 1) one else many

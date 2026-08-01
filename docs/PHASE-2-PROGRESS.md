@@ -2224,3 +2224,141 @@ compass helper, the unlock screen with payments off, and the score with everythi
 **Both ratchets improved rather than held:** `editor` 17 → 14, `editor-margin` 20 → 16,
 `editor-scanned` 51 → 43, `marknorth` 18 → 16, `score` 7 → 5, and the accessibility baseline for
 `score` 6 → 3. Eleven new screens adopted. **255 pure tests, none failing.**
+
+---
+
+# ⭐⭐ v0.5.0 — the report release (2026-08-01)
+
+The report is the thing the customer pays ₹699 for. It explained almost nothing. This release is
+entirely about that, and it changes **no number anywhere**: no weight, no severity, no provenance, no
+ideal/acceptable/prohibited set. The worked example still scores exactly 31 and the three tests plus
+the rotation test that assert it were never opened.
+
+## What the owner found, paying for his own report
+
+Six findings, all verified against the data before a line was written. They are the section headings
+below.
+
+## 1. ⭐ Thirteen of fifteen problems offered the identical two remedies
+
+**The mechanism, and why it was invisible in the code.** Every `(room type, prohibited zone)` pair
+resolves to a defect definition. Six pairs had one of their own — toilet in the NE, kitchen in the
+NE, staircase in the centre, master bedroom in the NE or SE, toilet in the SW. **The other fifteen
+fell through to a single catch-all**, `X-GEN`, which carried two remedy ids. There were **six
+remedies in the entire dataset**, four of which were attached to almost nothing.
+
+**The fix is data, not code.** Fifteen new defect definitions, one per uncovered pair, using the
+`appliesTo` mechanism that already existed. Remedies went from **6 to 28**. Every one of the 21 pairs
+is now claimed by exactly one definition, and 29 of the 30 definitions have a distinct remedy set.
+
+⚠ **Severity and provenance were held constant at `MODERATE` / `DERIV`** — the two fields the scorer
+reads — precisely so this could not move the number. Some of the new pairs arguably deserve a harsher
+severity; that is a scoring decision and therefore the owner's, not a side effect of a text release.
+
+### ⭐ The guarantee is now mechanical, in the loader
+
+Three new validations, so this class of regression fails the build rather than reaching a customer:
+
+| the rule | what it stops |
+|---|---|
+| every ruled `(room, prohibited zone)` pair must be claimed by its own definition | a new room type quietly inheriting the catch-all's text |
+| every defect must offer a remedy beyond `structural-correction` + `vastu-shanti` **or carry a `remedyNote` saying why it cannot** | the exact state this release fixes |
+| every Tier C/D defect must carry a plain `notCheckedLabel` | the raw code reaching the reader (see §5) |
+
+⭐ **The escape hatch is the honest one.** A defect with nothing specific to offer must say so in
+words. It may not be padded with an invented remedy — which is the failure mode this whole product
+exists to avoid, and the one a table-shaped data file quietly invites.
+
+### Where no classical remedy exists, the report now says so
+
+Eight definitions carry a `remedyNote`, rendered above the remedies. The wording is careful about a
+real distinction: Vastu Shanti *is* a classical rite, but it is a **general pacification, not a cure
+for this defect in particular** — so the note says that, rather than the flatly-wrong "no classical
+remedy exists" while a `TEXT`-tagged remedy sits underneath it.
+
+## 2. The reasons were one line, and the catch-all was circular
+
+The catch-all read: *"This room sits in a zone its placement rule prohibits."* Fifty-two characters
+that restate the rule's existence and tell a paying reader nothing.
+
+Every reason is now three sentences and names, in order: **what that direction is** in the tradition
+(Sanskrit name, presiding deity, element, what it governs), **why the tradition objects** to that
+room being there, and **where the room belongs instead**. A test asserts every reason on the sample
+home is over 150 characters and does not contain the old circular sentence.
+
+⚠ **And the reason was not on the report screen at all.** The card went from the room's name straight
+to the fix. The one-line version was on the *free* score screen. So the free screen carried more
+explanation than the paid one.
+
+⭐ **The free/paid split is now a real one:** the free screen shows the **opening sentence** of each
+reason, the report shows the whole thing. That also stopped the free screen tripling in height when
+the reasons got longer.
+
+## 3. Rooms that were already right carried no reason
+
+A room name, a direction and a tick. Each room rule now carries a `rationale` — why that kind of room
+wants those directions — which reaches the reader alongside the direction's own meaning. The loader
+rejects a rule without one.
+
+## 4. ⭐⭐ Rooms rated "not ideal" appeared NOWHERE
+
+**The worst of the six, and the only one that was arguably dishonest rather than merely thin.**
+`SUBOPTIMAL` rooms are the leftover band — a zone in none of a rule's three sets. They fell between
+the problems list and the already-right list, and the report filtered them out of both.
+
+**Meanwhile the free score screen counted them.** `remainingIssueCount` added the unshown defects to
+the suboptimal rooms and offered the total as "N more issues" to justify ₹699. **So the app sold
+issues the report never showed.**
+
+They now have their own section: why the direction is neither called right nor ruled out for that
+room, where the tradition does put one, and a standing line that none of them is a defect but they do
+count towards the score. A test pins that the number the free screen counts equals the number the
+report shows.
+
+## 5. The "couldn't check these yet" list printed raw codes
+
+It printed `· X-09` at the customer. The engine now emits the list **twice** — the ids, unchanged,
+for tests and logs (five existing assertions depend on them), and a reader's sentence plus what to do
+about it. The additive shape is deliberate: rewriting `notAssessed` would have meant editing five
+test files to fix a display bug.
+
+## 6. Rich material was in the app and never shown
+
+Every direction has a Sanskrit name, a presiding deity, an element and a domain. Every one of the 32
+door positions has a name and a meaning. **None of it had ever reached a screen.**
+
+- Direction facts are now carried on the `Analysis` and appear on every problem card, every
+  already-right room and every not-ideal room.
+- ⭐ **The front door has a section for the first time.** It is the highest-weighted single element in
+  the reading — weight 3.0, more than any room — and the report had nothing about it at all. It now
+  names the position, gives its meaning, says how the tradition reads it, and explains why the door
+  counts for more than a room. A door spanning two positions says so.
+- A position the sources leave unnamed (E7, S7) says exactly that rather than showing a blank.
+
+## The paywall
+
+Unchanged in substance — one tap, free, and honest about taking no payment — but the preview was
+misleading. "N more issues" mixed unshown defects with a band the report did not contain. It is now
+built from the analysis itself: real section names with this home's real counts, and a test asserts
+it can never advertise a section this home does not have.
+
+## The release signing key
+
+The base64 decode step is built. Deliberately conditional on the secret existing, so a repo without
+the key still releases on the committed test key exactly as today; it verifies the keystore opens
+before anything depends on it, decodes outside the checkout, and shreds the file on the way out.
+
+## ⚠ Two tests were INVERTED, not deleted
+
+`kitchen in the Brahmasthan → generic defect` and `garage-in-SW → X-GEN` both asserted the very
+behaviour this release removes. They now assert the opposite, with the reason written in the test.
+`X-GEN` remains in the dataset — it is still the fallback for a cut or extension that is neither a
+NE cut nor a SW extension.
+
+## Layout notes
+
+- The new room cards deliberately contain **no `FlowRow`**. `VastuCard` measures its row at
+  `IntrinsicSize.Min`, and a wrapping row inside one has measured 0 × 0 on this codebase before (the
+  nine direction chips on the extras step). The verdict pill sits on its own line, which also reads
+  better at 200 % font.
+- The report is now much longer, which is the point — it is a document, and it scrolls.

@@ -144,18 +144,18 @@ private fun SiteQuestion(
 }
 
 /**
- * ⚠ NOT VastuCard, and the reason is worth writing down because it will catch somebody again.
+ * NOT VastuCard, and the history is worth keeping because it explains the shape of both.
  *
- * `VastuCard` measures itself at `IntrinsicSize.Min` height so its accent stripe can fill the card.
- * A `FlowRow` cannot be measured that way — asked for an intrinsic height it wraps against a width
- * it does not really have, and the items that fall off the end come out **zero by zero**. The
- * geometry gate caught it before it shipped: at 320 dp, "North-West" and "There isn't one" measured
- * 0 × 0 dp, i.e. two answers the user could see nowhere and tap nowhere.
+ * `VastuCard` used to measure itself at `IntrinsicSize.Min` height so its accent stripe could fill
+ * the card. A `FlowRow` cannot be measured that way — asked for an intrinsic height it wraps against
+ * a width it does not really have, and the items that fall off the end come out **zero by zero**.
+ * The geometry gate caught it before it shipped: at 320 dp, "North-West" and "There isn't one"
+ * measured 0 × 0 dp, i.e. two answers the user could see nowhere and tap nowhere.
  *
- * It is specific to a row of NINE chips; the two-item FlowRow inside the score screen's defect cards
- * is unaffected and stays as it is. Here the card is a plain Column, so the flow row is measured
- * once, normally, against a real width — and "answered" is carried by a stronger border rather than
- * a stripe that needed the intrinsic height in the first place.
+ * ⭐ That constraint is **gone** — the same measurement later ellipsised the report's reasons
+ * mid-sentence, so `VastuCard` now draws its stripe instead of laying one out and no longer bounds
+ * anything. This card stays a plain Column all the same: the "answered" state is carried by a
+ * stronger border, which suits a question better than a verdict stripe would.
  */
 @Composable
 private fun QuestionCard(answered: Boolean, content: @Composable ColumnScope.() -> Unit) {

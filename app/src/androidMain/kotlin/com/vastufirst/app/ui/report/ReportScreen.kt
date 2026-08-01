@@ -267,9 +267,8 @@ private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: Lis
 /**
  * One room with its verdict and its reason — used by both "not ideal" and "already right".
  *
- * ⚠ Deliberately NO FlowRow inside this card. `VastuCard` measures its row at `IntrinsicSize.Min`,
- * and a wrapping row inside one has measured 0 × 0 on this codebase before (the nine direction chips
- * on the extras step). The pill sits on its own line instead, which also reads better at 200 % font.
+ * The pill sits on its own line rather than sharing one with the title, which reads better at 200 %
+ * font on a narrow phone than a row that has to wrap.
  */
 @Composable
 private fun RoomVerdictCard(
@@ -305,9 +304,13 @@ private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
     VastuCard(accent = padaAccent(d.verdict)) {
         VerdictPill(padaVerdict(d.verdict))
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(doorNameLine(d), style = VastuTheme.type.h3, color = colors.textPrimary)
+        VText(doorTitle(d), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(doorPlaceLine(d), style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        VText(doorPlaceLine(d), style = VastuTheme.type.body, color = colors.textPrimary)
+        doorUnnamedNote(d)?.let {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        }
         zoneMeaning(d.pada.side, zones)?.let {
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
