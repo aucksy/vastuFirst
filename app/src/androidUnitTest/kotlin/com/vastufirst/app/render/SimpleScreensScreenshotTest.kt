@@ -3,7 +3,10 @@ package com.vastufirst.app.render
 import android.app.Application
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.legal.LegalScreen
-import com.vastufirst.app.ui.unlock.UnlockScreen
+import com.vastufirst.app.ui.legal.PrivacyScreen
+import com.vastufirst.app.billing.BillingMode
+import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.ui.unlock.UnlockContent
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -29,8 +32,34 @@ class SimpleScreensScreenshotTest {
 
     @Test
     fun unlock() {
-        captureAcrossMatrix("unlock") { UnlockScreen(onUnlocked = {}) }
-        writeManifestAcrossMatrix("unlock") { UnlockScreen(onUnlocked = {}) }
+        // ⭐ PAYMENTS OFF — what ships. The button and the notice both have to say so in plain
+        // words; a screen that LOOKS like it charges and does not is the one thing this feature must
+        // never do, so the state that ships gets the golden.
+        captureAcrossMatrix("unlock") { UnlockContent(state = BillingState()) }
+        writeManifestAcrossMatrix("unlock") { UnlockContent(state = BillingState()) }
+    }
+
+    /** ⭐ Payments ON, store answered — the screen the owner will see the day it goes live. */
+    @Test
+    fun unlock_paid() {
+        val paid = BillingState(mode = BillingMode.READY, price = "₹699.00")
+        captureAcrossMatrix("unlock-paid") { UnlockContent(state = paid) }
+        writeManifestAcrossMatrix("unlock-paid") { UnlockContent(state = paid) }
+    }
+
+    /** Payments ON but Google Play unreachable — must never quietly fall back to giving it away. */
+    @Test
+    fun unlock_unavailable() {
+        val down = BillingState(mode = BillingMode.UNAVAILABLE)
+        captureAcrossMatrix("unlock-unreachable") { UnlockContent(state = down) }
+        writeManifestAcrossMatrix("unlock-unreachable") { UnlockContent(state = down) }
+    }
+
+    /** The privacy policy, in the app — required by Play and by the DPDP Act, and never rendered. */
+    @Test
+    fun privacy() {
+        captureAcrossMatrix("privacy") { PrivacyScreen(onBack = {}) }
+        writeManifestAcrossMatrix("privacy") { PrivacyScreen(onBack = {}) }
     }
 
     @Test

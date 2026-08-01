@@ -20,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vastufirst.app.billing.Billing
+import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.billing.FALLBACK_PRICE
+import com.vastufirst.app.billing.billingNotice
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
@@ -50,6 +54,7 @@ import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Verdict
 import com.vastufirst.app.ui.common.screenRoot
+import org.koin.compose.koinInject
 
 /**
  * Score — free tier (§6.4). The big band-coloured number, the zone map, the top 3 problems, and
@@ -67,6 +72,7 @@ fun ScoreScreen(
     onFix: () -> Unit,
     onDone: () -> Unit,
     onAddDetails: () -> Unit,
+    billing: Billing = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
     // "insufficient plan" states) renders headlessly from fixture state in the harness (UI-POLISH §6).
@@ -84,6 +90,7 @@ fun ScoreScreen(
         rows = vm.gridRows,
         siteAnswers = vm.siteAnswers,
         onAddDetails = onAddDetails,
+        billingState = billing.state,
     )
 }
 
@@ -105,6 +112,9 @@ fun ScoreContent(
     /** The optional extras the user has answered — drives the honest "what this covers" line. */
     siteAnswers: SiteAnswers = SiteAnswers(),
     onAddDetails: () -> Unit = {},
+    /** Drives the price and the notice on the unlock card, so the score screen can never promise
+     *  a charge the unlock screen would not make. */
+    billingState: BillingState = BillingState(),
 ) {
     val colors = VastuTheme.colors
     val a = analysis
@@ -144,7 +154,7 @@ fun ScoreContent(
             )
         }
 
-        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows, siteAnswers, onAddDetails)
+        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows, siteAnswers, onAddDetails, billingState)
     }
 }
 
@@ -153,7 +163,7 @@ fun ScoreContent(
 private fun ScoreResult(
     rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit,
     onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int,
-    siteAnswers: SiteAnswers, onAddDetails: () -> Unit,
+    siteAnswers: SiteAnswers, onAddDetails: () -> Unit, billingState: BillingState,
 ) {
     val colors = VastuTheme.colors
     // buildZoneMapModel memoises its own heavy part internally (C14), keyed on rooms/analysis/grid/
@@ -245,7 +255,7 @@ private fun ScoreResult(
             VastuButton("See the full report", onClick = onUnlock)
         } else {
             val remaining = remainingIssueCount(a)
-            UnlockCard(remaining = remaining, onUnlock = onUnlock)
+            UnlockCard(remaining = remaining, onUnlock = onUnlock, billingState = billingState)
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -284,7 +294,7 @@ private fun remainingIssueCount(a: Analysis): Int {
 }
 
 @Composable
-private fun UnlockCard(remaining: Int, onUnlock: () -> Unit) {
+private fun UnlockCard(remaining: Int, onUnlock: () -> Unit, billingState: BillingState) {
     val colors = VastuTheme.colors
     Column(
         modifier = Modifier
@@ -303,12 +313,16 @@ private fun UnlockCard(remaining: Int, onUnlock: () -> Unit) {
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                VText("₹699", style = VastuTheme.type.h2, color = colors.textPrimary)
+                // The STORE'S price when the store has answered, the owner's decided price
+                // otherwise — never a number typed twice in two places.
+                VText(billingState.price ?: FALLBACK_PRICE, style = VastuTheme.type.h2, color = colors.textPrimary)
                 VText("ONE-TIME", style = VastuTheme.type.caption, color = colors.textTertiary)
             }
         }
         VastuButton("See the full report", onClick = onUnlock)
-        VText("Preview build: no payment is taken yet — the report unlocks on this device.", style = VastuTheme.type.caption, color = colors.textTertiary)
+        // ⭐ ONE source for this sentence, shared with the unlock screen. Two hand-written notices
+        // are how an app ends up promising a charge on one screen and not making it on the next.
+        VText(billingNotice(billingState), style = VastuTheme.type.caption, color = colors.textTertiary)
     }
 }
 

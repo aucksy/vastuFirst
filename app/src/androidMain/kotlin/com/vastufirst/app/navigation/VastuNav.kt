@@ -24,6 +24,7 @@ import com.vastufirst.app.ui.details.MoreDetailsScreen
 import com.vastufirst.app.ui.grid.GuidedGridScreen
 import com.vastufirst.app.ui.home.HomeScreen
 import com.vastufirst.app.ui.legal.LegalScreen
+import com.vastufirst.app.ui.legal.PrivacyScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
@@ -88,10 +89,17 @@ fun VastuNavHost() {
         }
 
         composable(Routes.SETTINGS) {
-            SettingsScreen(onLegal = { nav.go(Routes.LEGAL) }, onBack = { nav.popBackStack() })
+            SettingsScreen(
+                onLegal = { nav.go(Routes.LEGAL) },
+                onPrivacy = { nav.go(Routes.PRIVACY) },
+                onBack = { nav.popBackStack() },
+            )
         }
         composable(Routes.LEGAL) {
             LegalScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.PRIVACY) {
+            PrivacyScreen(onBack = { nav.popBackStack() })
         }
 
         navigation(startDestination = Routes.WELCOME, route = Routes.NEWPLAN_GRAPH) {

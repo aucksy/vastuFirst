@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
@@ -35,6 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.scan.PlanReadingConsent
+import com.vastufirst.app.CrashLog
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
@@ -45,6 +50,7 @@ import com.vastufirst.app.ui.common.screenRoot
 @Composable
 fun SettingsScreen(
     onLegal: () -> Unit,
+    onPrivacy: () -> Unit,
     onBack: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
     consent: PlanReadingConsent = koinInject(),
@@ -52,13 +58,55 @@ fun SettingsScreen(
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
     // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
     var allowed by remember { mutableStateOf(consent.isGranted()) }
+    val context = LocalContext.current
+    // ⭐ A crash the app recorded last time. Read once, so the offer does not flicker in and out as
+    // the screen recomposes, and cleared the moment the user acts either way — nobody should be
+    // asked twice about the same crash.
+    var crash by remember { mutableStateOf(CrashLog.lastCrash(context)) }
     SettingsContent(
         onLegal = onLegal,
+        onPrivacy = onPrivacy,
         onBack = onBack,
         onDeleteAll = homeViewModel::deleteAll,
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
+        hasCrashReport = crash != null,
+        onSendCrash = {
+            crash?.let { text -> sendCrashEmail(context, text) }
+            CrashLog.clear(context)
+            crash = null
+        },
+        onDismissCrash = {
+            CrashLog.clear(context)
+            crash = null
+        },
     )
+}
+
+/**
+ * Hand the crash text to the user's own mail app, with everything visible before they send.
+ *
+ * ⚠ ACTION_SENDTO with a mailto: URI, never ACTION_SEND. SENDTO can only be answered by something
+ * that actually handles email, so the chooser cannot offer to post the crash to a social app — which
+ * is a thing ACTION_SEND does, and a thing nobody wants to discover after tapping.
+ */
+private fun sendCrashEmail(context: Context, body: String) {
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:simpleapps108@gmail.com")
+        putExtra(Intent.EXTRA_SUBJECT, "VastuFirst — something went wrong")
+        putExtra(
+            Intent.EXTRA_TEXT,
+            "Anything you were doing when it happened (optional):
+
+
+" +
+                "--- technical detail, nothing personal ---
+" + body,
+        )
+    }
+    // No mail app on the device is a real case on a cheap phone; failing silently is better than
+    // crashing the settings screen while reporting a crash.
+    runCatching { context.startActivity(intent) }
 }
 
 /** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */
@@ -69,6 +117,11 @@ fun SettingsContent(
     onDeleteAll: () -> Unit,
     planReadingAllowed: Boolean = false,
     onSetPlanReading: (Boolean) -> Unit = {},
+    onPrivacy: () -> Unit = {},
+    /** True when the app recorded a crash last time it ran. */
+    hasCrashReport: Boolean = false,
+    onSendCrash: () -> Unit = {},
+    onDismissCrash: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     var showConfirm by remember { mutableStateOf(false) }
@@ -101,6 +154,7 @@ fun SettingsContent(
                 trailingColor = if (planReadingAllowed) colors.verdictIdeal else colors.textTertiary,
                 onClick = { onSetPlanReading(!planReadingAllowed) },
             )
+            RowItem("Privacy", trailing = "›", onClick = onPrivacy)
             RowItem("Honesty & sources", trailing = "›", onClick = onLegal)
             RowItem("Delete all my data", trailing = "›", labelColor = colors.error, trailingColor = colors.error, onClick = { showConfirm = true })
         }
@@ -114,6 +168,33 @@ fun SettingsContent(
             style = VastuTheme.type.bodySm,
             color = colors.textTertiary,
         )
+
+        // ⭐ The app closed unexpectedly last time. Offered here rather than as a pop-up on launch:
+        // interrupting somebody the moment they reopen an app that just crashed on them is adding
+        // insult to injury. Nothing is sent until they press send, and they can read it all first.
+        if (hasCrashReport) {
+            Spacer(Modifier.height(VastuTheme.spacing.s6))
+            SectionLabel("Something went wrong")
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            Group {
+                Column(Modifier.padding(VastuTheme.spacing.s4)) {
+                    VText(
+                        "The app closed unexpectedly last time you used it. Sending us what happened " +
+                            "helps us fix it. It opens your email app so you can read it first, and it " +
+                            "contains nothing about you or your homes.",
+                        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                    )
+                    Spacer(Modifier.height(VastuTheme.spacing.s3))
+                    VastuButton("Send what went wrong", onClick = onSendCrash, large = false)
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    VastuButton(
+                        "No thanks", onClick = onDismissCrash,
+                        style = VastuButtonStyle.SECONDARY, large = false,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 
     if (showConfirm) {

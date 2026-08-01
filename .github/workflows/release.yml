@@ -89,6 +89,11 @@ jobs:
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
 
+      # The shrunk build a store upload would be made from. Built on every release so the shrinker
+      # can never be met for the first time on the day it matters.
+      - name: Build the shrunk release
+        run: gradle :app:assembleRelease --stacktrace
+
       # ⭐ A release is exactly where this matters: a published APK signed by a new key costs every
       # tester their saved homes, and they find out by hitting "App not installed".
       - name: Signature check (the release must install over the previous one)

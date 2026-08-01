@@ -14,6 +14,10 @@ sqldelight = "2.0.2"             # KMP-native DB (Impl PRD §2) — applied from
 turbine = "1.2.0"
 androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2 screen graph
 androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
+# Google Play Billing — the ONLY payment route Play permits for digital content sold and read
+# inside a Play Store app. Built in full, shipped behind a flag (app/.../billing/Billing.kt).
+# 7.x is the minimum Play accepts for new releases; nothing secret goes in the APK.
+playBilling = "7.1.1"
 
 # --- UI render harness (UI-POLISH.md §6). PINS ARE LOAD-BEARING — read docs/UI-POLISH.md §6.1
 # before touching them. TWO independent ceilings, and 1.60.0 is the only version under both:
@@ -54,6 +58,7 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+play-billing = { module = "com.android.billingclient:billing-ktx", version.ref = "playBilling" }
 
 # DB (declared now, wired in Phase 2).
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }

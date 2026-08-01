@@ -212,8 +212,16 @@ jobs:
             app/build/a11y-manifest/**
           if-no-files-found: warn
 
-      - name: Build Android app (empty VastuTheme screen)
+      - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
+
+      # ⭐ THE SHRUNK BUILD, on every push. The release variant is minified and resource-shrunk, and
+      # R8 breaks reflective code at RUNTIME — a shrunk build compiles perfectly and then crashes on
+      # a phone. Building it here means the shrinker runs, its rules are parsed and any missing-class
+      # error is found now rather than on the day of the store upload. It does NOT prove the app runs
+      # shrunk; that is what the release-build check on the device list is for.
+      - name: Build the shrunk release (R8 runs on every push)
+        run: gradle :app:assembleRelease --stacktrace
 
       # An APK signed by a different key than the last one cannot be installed as an update, so every
       # tester has to uninstall — which erases every home they saved. That is what happened on every

@@ -12,12 +12,14 @@ import com.vastufirst.app.ui.grid.GuidedGridContent
 import com.vastufirst.app.ui.home.HomeContent
 import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.legal.LegalScreen
+import com.vastufirst.app.ui.legal.PrivacyScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.settings.SettingsContent
-import com.vastufirst.app.ui.unlock.UnlockScreen
+import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.ui.unlock.UnlockContent
 import com.vastufirst.app.ui.welcome.WelcomeContent
 import com.vastufirst.shared.Intent
 import org.junit.Test
@@ -48,7 +50,10 @@ class AccessibilityTest {
             "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },
             "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
             "legal" to { LegalScreen(onBack = {}) },
-            "unlock" to { UnlockScreen(onUnlocked = {}) },
+            // UnlockContent, not UnlockScreen: the screen now resolves the billing seam from Koin,
+            // and the harness deliberately boots a plain Application with no DI.
+            "unlock" to { UnlockContent(state = BillingState()) },
+            "privacy" to { PrivacyScreen(onBack = {}) },
             "addhome" to { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) },
             "scan-idle" to {
                 ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {})

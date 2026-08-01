@@ -13,6 +13,7 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val LEGAL = "legal"
+    const val PRIVACY = "privacy"
 
     const val NEWPLAN_GRAPH = "newplan"
     const val WELCOME = "welcome"

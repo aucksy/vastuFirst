@@ -42,6 +42,11 @@ kotlin {
             implementation(libs.koin.androidx.compose)
 
             implementation(libs.sqldelight.android.driver)
+
+            // The ₹699 checkout. Present in every build; reached only when payments are
+            // switched on (see paymentsEnabled above), because the code that touches it is
+            // behind an interface whose other implementation talks to no store at all.
+            implementation(libs.play.billing)
         }
 
         // JVM render harness — screenshot + measurement + accessibility, no emulator (UI-POLISH §6).
@@ -76,6 +81,36 @@ val groqApiKey: String = (project.findProperty("groqApiKey") as String?)
     ?: System.getenv("GROQ_API_KEY")
     ?: ""
 
+// ⭐⭐ PAYMENTS: BUILT IN FULL, SHIPPED SWITCHED OFF.
+//
+// The checkout is complete and goes live by setting this to true — there is no key to paste, because
+// Google Play Billing identifies the app by its own signature and package name. Nothing secret ever
+// enters the APK. (The plan originally said Razorpay; Play does not permit a third-party gateway for
+// digital content sold and consumed inside a Play Store app. See app/.../billing/Billing.kt.)
+//
+// ⚠ WITH THIS OFF, THE APP MUST SAY SO. It does — the unlock screen's own words come from
+// `billingNotice()`, which reads this flag and states plainly that no payment is taken. A screen
+// that LOOKS like it charges and does not is the one thing this feature must never do.
+val paymentsEnabled: Boolean =
+    ((project.findProperty("paymentsEnabled") as String?) ?: System.getenv("PAYMENTS_ENABLED"))
+        ?.equals("true", ignoreCase = true) ?: false
+
+// ⭐ THE PLAY STORE SIGNING KEY — supplied by the build environment, never committed.
+//
+// Absent (every ordinary build, and every CI run) the release variant falls back to the committed
+// test key, so `assembleRelease` still runs end to end and R8 is exercised on every push. Present —
+// a base64 keystore in a GitHub secret — the release is signed with the owner's real key. The two
+// are told apart deliberately: see the signature check script, which fails a build whose APK is
+// signed by something unexpected.
+val releaseStoreFile: String? =
+    (project.findProperty("releaseStoreFile") as String?) ?: System.getenv("RELEASE_STORE_FILE")
+val releaseStorePassword: String? =
+    (project.findProperty("releaseStorePassword") as String?) ?: System.getenv("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias: String? =
+    (project.findProperty("releaseKeyAlias") as String?) ?: System.getenv("RELEASE_KEY_ALIAS")
+val releaseKeyPassword: String? =
+    (project.findProperty("releaseKeyPassword") as String?) ?: System.getenv("RELEASE_KEY_PASSWORD")
+
 android {
     namespace = "com.vastufirst.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -84,13 +119,14 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 34
-        versionName = "0.3.24"
+        versionCode = 35
+        versionName = "0.4.0"
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.
         val escapedKey = groqApiKey.replace("\\", "\\\\").replace("\"", "\\\"")
         buildConfigField("String", "GROQ_API_KEY", "\"$escapedKey\"")
+        buildConfigField("boolean", "PAYMENTS_ENABLED", paymentsEnabled.toString())
     }
 
     buildFeatures {
@@ -129,10 +165,36 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // Created ONLY when the environment supplies a real key. Declaring it unconditionally with
+        // null paths makes every ordinary build fail at configuration time, which would make the
+        // project un-buildable for anyone without the store key — including CI.
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
         getByName("release") {
+            // ⭐ SHRUNK AND OBFUSCATED. Smaller download, faster start, and the rule data and scoring
+            // weights — which ARE the product — stop being readable by unzipping the APK. See
+            // proguard-rules.pro for exactly what must survive and why; the serializers in
+            // particular, because losing them means saved homes that will not open.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // The owner's key when the environment has one, the committed test key otherwise — so
+            // `assembleRelease` always runs and R8 is exercised on every single push, rather than
+            // first meeting the shrinker on the day of the store upload.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
+        getByName("debug") {
+            // Left unshrunk on purpose: the test builds the owner installs must carry readable stack
+            // traces, and the render harness runs against this variant.
             isMinifyEnabled = false
         }
     }

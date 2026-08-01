@@ -1,6 +1,10 @@
 package com.vastufirst.app.di
 
 import com.vastufirst.app.BuildConfig
+import com.vastufirst.app.CurrentActivity
+import com.vastufirst.app.billing.Billing
+import com.vastufirst.app.billing.NoBilling
+import com.vastufirst.app.billing.PlayBilling
 import com.vastufirst.app.platform.createAndroidSqlDriver
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -14,7 +18,9 @@ import com.vastufirst.shared.scan.GroqPlanReader
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.data.VastuDatabaseFactory
 import com.vastufirst.engine.VastuEngine
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -45,6 +51,19 @@ val appModule = module {
     single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.GROQ_API_KEY) }
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
     single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
+
+    // ⭐ The ₹699 checkout. Built in full, SWITCHED OFF by a build flag — and the "off" path is a
+    // real, honest implementation rather than a disabled button: NoBilling unlocks locally and the
+    // screen's own words (billingNotice) say plainly that no payment is taken. There is no key to
+    // paste to turn it on; Play Billing identifies the app by its signature (docs/PLAY-STORE-SETUP.md).
+    single<Billing> {
+        if (BuildConfig.PAYMENTS_ENABLED) {
+            PlayBilling(androidContext(), activityProvider = CurrentActivity::get)
+                .also { billing -> CoroutineScope(Dispatchers.Main).launch { billing.start() } }
+        } else {
+            NoBilling()
+        }
+    }
 
     // ViewModels.
     viewModel { HomeViewModel(repo = get()) }
