@@ -31,6 +31,9 @@ object RuleSetLoader {
     /** The free score screen shows a reason's first sentence and nothing more (see §4c-ii). */
     private const val MAX_OPENING_SENTENCE = 120
 
+    /** A real explanation of a rule change, not a label like "updated rules" (see §4f). */
+    private const val MIN_CHANGE_NOTE = 120
+
     /** Load the dataset bundled in this module's resources. Throws on any validation failure. */
     fun loadDefault(): RuleSet = load { path -> readResource(path) }
 
@@ -165,6 +168,21 @@ object RuleSetLoader {
             if (needsLabel && d.notCheckedLabel.isNullOrBlank()) {
                 errors += "Defect ${d.id} can land in the 'couldn't check' list but has no notCheckedLabel."
             }
+        }
+
+        // 4f. ⭐ THE DATASET MUST BE ABLE TO EXPLAIN ITSELF. Every saved home carries the rule
+        //     version it was scored under; when that version moves, the app re-scores those homes and
+        //     shows this sentence next to the old and new number. Without it the app would either
+        //     change somebody's score in silence or announce the change and refuse to say why — and
+        //     a rule edit is exactly the moment nobody remembers to write the sentence. So the build
+        //     asks for it here, where the rules live, rather than hoping.
+        val note = rs.meta.changeNote
+        if (note.isNullOrBlank()) {
+            errors += "meta.changeNote is missing — a rule change must ship with the plain-words " +
+                "explanation shown to anyone whose saved score it moves."
+        } else if (note.length < MIN_CHANGE_NOTE) {
+            errors += "meta.changeNote is ${note.length} characters; it is the only thing a user " +
+                "gets to read about their score moving, so it must be at least $MIN_CHANGE_NOTE."
         }
 
         // 5. The Brahmasthan extent must be one the engine actually implements — the config knob

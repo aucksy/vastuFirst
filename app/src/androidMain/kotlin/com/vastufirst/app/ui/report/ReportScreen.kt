@@ -183,6 +183,14 @@ fun ReportContent(
                         ReadingRow(disp.readingA.label, disp.readingA.text)
                         Spacer(Modifier.height(VastuTheme.spacing.s2))
                         ReadingRow(disp.readingB.label, disp.readingB.text)
+                        // ⭐ Where the NUMBER stands, on the disputes we have ruled on. Showing both
+                        // readings and staying silent about which one moved the score would be a
+                        // half-truth — and this is the one product whose promise is that it does not
+                        // quietly pick a side. Absent on every dispute the score genuinely skips.
+                        disp.howWeScore?.let { scored ->
+                            Spacer(Modifier.height(VastuTheme.spacing.s2))
+                            ReadingRow("What your score uses", scored)
+                        }
                     }
                 }
             }

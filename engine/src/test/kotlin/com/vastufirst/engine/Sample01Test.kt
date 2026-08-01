@@ -22,7 +22,9 @@ class Sample01Test {
 
     @Test
     fun `base and penalty match the worked example`() {
-        assertEquals(47.27, (analysis.base * 100).toInt() / 100.0, 0.01)
+        // 47.27 until 1 Aug 2026. The prayer room now joins both sums at 45 points × weight 2.0,
+        // which pulls the weighted average down a quarter of a point and leaves the penalty alone.
+        assertEquals(47.02, (analysis.base * 100).toInt() / 100.0, 0.01)
         assertEquals(16, analysis.defectPenalty)
     }
 
@@ -44,7 +46,10 @@ class Sample01Test {
     @Test
     fun `room verdicts match the §15 table`() {
         fun verdict(id: String) = analysis.roomResults.first { it.roomId == id }.verdict
-        assertEquals(Verdict.NOT_SCORED, verdict("pooja"))     // R-05 disputed (W-12)
+        // ⭐ Was NOT_SCORED until the owner ruled W-12 for the modern North-East on 1 Aug 2026. The
+        // worked example's prayer room is in the NORTH-WEST, so it is now scored — and because the
+        // rule prohibits nothing, it lands as "not ideal" rather than as a fault.
+        assertEquals(Verdict.SUBOPTIMAL, verdict("pooja"))      // R-05, NW — ruled 1 Aug 2026
         assertEquals(Verdict.ACCEPTABLE, verdict("bed2"))       // N
         assertEquals(Verdict.DEFECT, verdict("toilet"))         // NE
         assertEquals(Verdict.SUBOPTIMAL, verdict("kitchen"))    // W — Brahmasthan clip below threshold
@@ -55,6 +60,10 @@ class Sample01Test {
 
     @Test
     fun `disputes contain W-12, cuts and extensions empty, shape regular`() {
+        // ⭐ Still true AFTER the prayer room started being scored — that is the point. The dispute
+        // now reaches the reader through the dispute's own `appliesTo: POOJA` rather than through the
+        // room rule's `disputeId`, which the ruling removed. Scoring one school's reading must never
+        // stop us saying the tradition is split.
         assertTrue(analysis.disputes.any { it.id == "W-12" })
         assertTrue(analysis.cuts.isEmpty())
         assertTrue(analysis.extensions.isEmpty())
@@ -68,6 +77,6 @@ class Sample01Test {
 
     @Test
     fun `ruleSetVersion is stamped`() {
-        assertEquals("2026.07.19-1", analysis.ruleSetVersion)
+        assertEquals("2026.08.01-1", analysis.ruleSetVersion)
     }
 }

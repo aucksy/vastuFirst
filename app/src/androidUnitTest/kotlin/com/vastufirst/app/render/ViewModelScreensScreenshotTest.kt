@@ -82,6 +82,30 @@ class ViewModelScreensScreenshotTest {
         writeManifestAcrossMatrix("home-unreadable", content)
     }
 
+    /**
+     * ⭐ "WE CHANGED A RULE, AND HERE IS WHAT IT DID TO YOUR NUMBER."
+     *
+     * The card shown when a Vastu ruling re-scores a home that was already saved — the thing that
+     * stops a score moving behind somebody's back. It carries the most text of anything on this
+     * screen (a heading, a paragraph of explanation, one line per home and a button), so it is
+     * exactly the kind of block that has pushed its own button off the bottom of a 320 dp phone at
+     * 200 % font before. No screenshot could reach this state by tapping, so it gets its own.
+     *
+     * One home moved and one did not, on purpose: both lines are on record in one picture.
+     */
+    @Test
+    fun home_score_changed() {
+        val content: @Composable () -> Unit = {
+            HomeContent(
+                plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                scoreChanges = RenderFixtures.scoreChangeNotice,
+            )
+        }
+        captureAcrossMatrix("home-scorechange", content)
+        writeManifestAcrossMatrix("home-scorechange", content)
+    }
+
     @Test
     fun home_rename() {
         // The rename box (B12) rendered as its own screen so it is actually SEEN before shipping

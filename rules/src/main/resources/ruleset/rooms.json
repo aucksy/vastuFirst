@@ -26,10 +26,10 @@
   },
   {
     "roomType": "POOJA", "weight": 2.0,
-    "ideal": [], "acceptable": [], "prohibited": [],
-    "provenance": "DISP", "sourceId": "R-05", "disputeId": "W-12",
-    "note": "Classical = Brahmasthan (centre). Modern = NE. Never scored (§4.4.1).",
-    "rationale": "Where the prayer room belongs is the one question we have deliberately not ruled. The classical position puts the family deity at the centre, in Brahma's own square; near-universal modern practice puts it in the North-East. Both are seriously held and they contradict each other, so we show you both readings and score neither."
+    "ideal": ["NE"], "acceptable": ["N", "E"], "prohibited": [],
+    "provenance": "MOD", "sourceId": "R-05",
+    "note": "Ruled for the modern North-East on 1 August 2026 (W-12). Nothing prohibited — the classical centre reading is declined, not condemned, and is still shown to the reader.",
+    "rationale": "A prayer room belongs in the North-East, Ishanya — the quarter named for Ishana, and the one the tradition treats as the lightest and most sensitive part of a home. The North and the East are accepted next: they are Kubera's and Indra's quarters, the two the tradition also asks to be kept open, and a person at prayer still faces the rising sun from either. No direction is ruled out, because the classical texts place the shrine at the very centre — a reading we have chosen not to follow but will not call a defect."
   },
   {
     "roomType": "TOILET", "weight": 2.5,

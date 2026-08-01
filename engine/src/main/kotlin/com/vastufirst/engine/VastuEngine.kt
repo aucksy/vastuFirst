@@ -230,7 +230,9 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
 
     private fun surfaceDisputes(plan: Plan, roomResults: List<RoomResult>): List<Dispute> {
         val out = LinkedHashSet<Dispute>()
-        // Any room whose rule is itself disputed (e.g. POOJA → W-12).
+        // Any room whose rule is itself disputed — i.e. one we decline to score at all. (The prayer
+        // room was the last of these until the owner ruled W-12 on 1 Aug 2026; it now reaches the
+        // reader through the loop below instead, which is what keeps both readings on the page.)
         plan.levels.flatMap { it.rooms }.forEach { room ->
             ruleSet.ruleFor(room.type)?.disputeId?.let { id -> ruleSet.dispute(id)?.let(out::add) }
         }

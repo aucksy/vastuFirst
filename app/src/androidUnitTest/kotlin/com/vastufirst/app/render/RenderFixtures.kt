@@ -120,6 +120,57 @@ object RenderFixtures {
             )!!,
         )
 
+    /**
+     * ⭐ THE PRAYER-ROOM RULING, LIFTED INTO FRAME (1 August 2026).
+     *
+     * ⚠ Same trap as `cleanAnalysis`, one release later: a golden is a viewport, not a document. The
+     * prayer room was ruled for the modern North-East, which means two things reach the reader for
+     * the first time — a prayer room carrying a real verdict, and the "Where the schools disagree"
+     * card now saying **which reading the score uses**. On the bundled sample both sit far below the
+     * fold, so neither would ever be photographed, and the disputes card is the whole promise of the
+     * product: we ruled, and we still show you both sides.
+     *
+     * Three rooms, chosen so the report is SHORT enough for all of it to fit one screen: nothing to
+     * rank, one not-ideal card, two already-right cards, then the disputes. The prayer room is in the
+     * North-West on purpose — the same place the worked example and the bundled demo put it, so this
+     * is exactly what an existing customer will see when they reopen their home.
+     *
+     * The footprint is a full 8 × 8 square, which matters: a narrower bounding box trips the
+     * elongation rule, a defect appears, and everything below it drops out of frame again.
+     */
+    private val prayerRooms: List<GridRoom> = listOf(
+        GridRoom("p-pooja", com.vastufirst.shared.RoomType.POOJA, 0, 0, 2, 2),           // North-West — NOT IDEAL
+        GridRoom("p-master", com.vastufirst.shared.RoomType.MASTER_BEDROOM, 0, 6, 3, 2), // South-West — ideal
+        GridRoom("p-kitchen", com.vastufirst.shared.RoomType.KITCHEN, 6, 6, 2, 2),       // South-East — ideal
+    )
+
+    val prayerRoomAnalysis: Analysis =
+        VastuEngine().analyze(
+            buildEnginePlan(
+                rooms = prayerRooms,
+                door = com.vastufirst.app.ui.newplan.GridDoor(com.vastufirst.app.ui.newplan.DoorSide.N, 5),
+                intent = Intent.BUILDING,
+                propertyType = PropertyType.INDEPENDENT_HOUSE,
+                north = 0,
+                planId = "fixture-prayer",
+            )!!,
+        )
+
+    /**
+     * ⭐ The "we changed a rule and here is what it did to your number" card, with the REAL sentence
+     * from the shipped rule data — so the picture proves the words a customer actually reads, not a
+     * placeholder. One home moved and one did not, which is the honest shape of the prayer-room
+     * ruling: it re-scores every saved home, and on some of them the number lands where it started.
+     */
+    val scoreChangeNotice: com.vastufirst.app.ui.home.ScoreChangeNotice =
+        com.vastufirst.app.ui.home.ScoreChangeNotice(
+            reason = com.vastufirst.rules.RuleSetLoader.loadDefault().changeNote.orEmpty(),
+            changes = listOf(
+                com.vastufirst.app.ui.home.ScoreChange("p1", "Builder's draft — 2BHK", 31, 31),
+                com.vastufirst.app.ui.home.ScoreChange("p2", "Compact 2BHK flat", 68, 71),
+            ),
+        )
+
     /** The "plan too sparse to read" state — the app degrades to a friendly guidance card here, never
      *  a bare red 0 ([[vastufirst-no-error-states]]). Derived from the real analysis so every other
      *  field is valid; only the quality + note change. */

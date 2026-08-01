@@ -27,6 +27,9 @@ data class RuleSet(
 ) {
     val version: String get() = meta.version
 
+    /** What changed in this version of the rules, for a user whose saved score just moved. */
+    val changeNote: String? get() = meta.changeNote
+
     private val roomByType: Map<RoomType, RoomRule> = rooms.associateBy { it.roomType }
     private val remedyById: Map<String, Remedy> = remedies.associateBy { it.id }
     private val disputeById: Map<String, Dispute> = disputes.associateBy { it.id }

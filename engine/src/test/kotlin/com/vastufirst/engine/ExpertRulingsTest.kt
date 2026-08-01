@@ -2,9 +2,13 @@ package com.vastufirst.engine
 
 import com.vastufirst.rules.RuleSetLoader
 import com.vastufirst.shared.DoorLocationMethod
+import com.vastufirst.shared.Provenance
+import com.vastufirst.shared.Verdict
+import com.vastufirst.shared.Zone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -85,19 +89,70 @@ class ExpertRulingsTest {
         }
     }
 
+    // ── W-12 · where the prayer room belongs ──────────────────────────────────────────────────
+
     @Test
-    fun `the pooja ruling is deliberately still open, and the engine says so rather than guessing`() {
-        // ⚠ W-12 is the one ruling NOT applied. Applying it would start scoring every pooja room,
-        // which changes the worked example and every score already saved on a phone — so it stays a
-        // declared dispute until the owner says otherwise. That is a decision, not an oversight, and
-        // this test is what stops it being applied by accident.
+    fun `W-12 the prayer room is ruled for the modern North-East, and is therefore scored`() {
+        // ⭐ INVERTED on purpose, 1 August 2026. This test used to assert the OPPOSITE — that the
+        // pooja rule still carried its `disputeId` and so returned NOT_SCORED — precisely so the
+        // ruling could not be applied by accident. The owner has now ruled, so the same test guards
+        // the opposite state: that the ruling is really in the shipped data and has not silently
+        // reverted. Inverted rather than deleted, so the reasoning survives in the file.
         val pooja = assertNotNull(
             shipped.rooms.firstOrNull { it.roomType.name == "POOJA" },
-            "there must be a pooja rule to leave open",
+            "there must be a pooja rule",
+        )
+        assertNull(
+            pooja.disputeId,
+            "a rule that still carries a disputeId is NOT_SCORED — the ruling would not be applied",
+        )
+        assertEquals(setOf(Zone.NE), pooja.ideal, "the ruling: the modern North-East is ideal")
+        assertEquals(setOf(Zone.N, Zone.E), pooja.acceptable, "the two quarters accepted next")
+        assertTrue(
+            pooja.prohibited.isEmpty(),
+            "⭐ nothing is prohibited on purpose. The classical reading puts the shrine at the very " +
+                "centre, and prohibiting the centre would print 'defect' on the exact position the " +
+                "same report shows as the other school's advice. We decline that reading; we do not " +
+                "condemn it.",
         )
         assertEquals(
-            "W-12", pooja.disputeId,
-            "the pooja placement must stay a declared dispute until the owner rules on it",
+            Provenance.MOD, pooja.provenance,
+            "the ruling is modern practice, and must be tagged as modern rather than as classical text",
+        )
+    }
+
+    @Test
+    fun `ruling on the prayer room did NOT stop the reader being shown both readings`() {
+        // ⭐ The whole product promise. Removing the room rule's `disputeId` also removes the path
+        // that surfaced W-12 through the rule — the dispute now reaches the report only through its
+        // own `appliesTo: POOJA`. If that link were ever dropped, the app would score one school's
+        // reading and stop telling anyone the tradition is split, which is worse than not ruling.
+        val analysis = VastuEngine(shipped).analyze(Fixtures.sample01(0))
+        val w12 = assertNotNull(
+            analysis.disputes.firstOrNull { it.id == "W-12" },
+            "the prayer-room dispute must still reach a home that HAS a prayer room",
+        )
+        assertTrue(w12.readingA.text.isNotBlank() && w12.readingB.text.isNotBlank())
+        assertNotNull(
+            w12.howWeScore,
+            "⭐ a dispute we now score must ALSO say which reading the number uses. Showing both " +
+                "sides while staying silent about where the score stands is a half-truth.",
+        )
+    }
+
+    @Test
+    fun `the prayer room is now really scored, and a North-West one is not-ideal rather than a defect`() {
+        val analysis = VastuEngine(shipped).analyze(Fixtures.sample01(0))
+        val pooja = assertNotNull(analysis.roomResults.firstOrNull { it.roomId == "pooja" })
+        assertEquals(Zone.NW, pooja.zone, "the worked example's prayer room sits in the North-West")
+        assertEquals(
+            Verdict.SUBOPTIMAL, pooja.verdict,
+            "the honest severity: the North-West is not where the tradition puts a prayer room, but " +
+                "the rule prohibits nothing, so it is 'not ideal' and never a fault",
+        )
+        assertTrue(
+            analysis.defects.none { it.roomId == "pooja" },
+            "a not-ideal prayer room must raise no defect and therefore no penalty",
         )
     }
 }

@@ -252,6 +252,37 @@ class ReportTextTest {
         assertNotNull("and the favourable door reading", clean.doorResult)
     }
 
+    /**
+     * ⭐ The same guarantee for the picture that shows the PRAYER-ROOM ruling. If that fixture ever
+     * grows a defect, the not-ideal card and the disputes card fall below the fold and the ruling
+     * ships unphotographed — which is the exact failure the last release ended.
+     */
+    @Test
+    fun the_prayer_room_fixture_really_shows_the_ruling_and_both_readings() {
+        val a = com.vastufirst.app.render.RenderFixtures.prayerRoomAnalysis
+        assertTrue(
+            "no problems, or everything below them drops out of frame: " + a.defects.map { it.id },
+            a.defects.isEmpty(),
+        )
+        val pooja = a.roomResults.first { it.type == com.vastufirst.shared.RoomType.POOJA }
+        assertEquals("the prayer room must be in the North-West, as the bundled demo puts it", Zone.NW, pooja.zone)
+        assertEquals(
+            "and it must now be SCORED — 'not scored' is the state the ruling ended",
+            Verdict.SUBOPTIMAL, pooja.verdict,
+        )
+        assertTrue(
+            "the already-right section must have something in it too",
+            a.roomResults.any { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE },
+        )
+        val w12 = a.disputes.firstOrNull { it.id == "W-12" }
+        assertNotNull("both readings must still reach the reader after the ruling", w12)
+        assertNotNull(
+            "⭐ and the card must say which reading the score uses — showing both sides while " +
+                "staying silent about where the number stands is a half-truth",
+            w12!!.howWeScore,
+        )
+    }
+
     @Test
     fun directions_are_listed_in_words() {
         assertEquals("the North or the East", zoneList(listOf(Zone.N, Zone.E)))

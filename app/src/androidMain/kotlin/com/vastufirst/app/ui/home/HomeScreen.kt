@@ -34,6 +34,7 @@ import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
+import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuListRow
 import com.vastufirst.designsystem.components.VastuTextField
 import com.vastufirst.designsystem.components.LocalDecimalMark
@@ -61,6 +62,7 @@ fun HomeScreen(
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the list below renders headlessly
     // from a fixture in the screenshot harness — including the empty state (UI-POLISH §6).
     val saved by viewModel.plans.collectAsStateWithLifecycle()
+    val scoreChanges by viewModel.scoreChanges.collectAsStateWithLifecycle()
     HomeContent(
         plans = saved.plans,
         unreadable = saved.unreadable,
@@ -68,6 +70,8 @@ fun HomeScreen(
         onOpenPlan = onOpenPlan,
         onSettings = onSettings,
         onRename = viewModel::rename,
+        scoreChanges = scoreChanges,
+        onAcknowledgeScoreChanges = viewModel::acknowledgeScoreChanges,
     )
 }
 
@@ -83,6 +87,9 @@ fun HomeContent(
     now: Long = System.currentTimeMillis(),
     /** Saved rows this build could not read. Shown rather than hidden — see the note below. */
     unreadable: Int = 0,
+    /** Homes scored under an older set of Vastu rules, re-run under today's. Null = nothing changed. */
+    scoreChanges: ScoreChangeNotice? = null,
+    onAcknowledgeScoreChanges: (ScoreChangeNotice) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     // The home currently being renamed (null = no dialog). Held here so the dialog overlays the whole
@@ -128,6 +135,15 @@ fun HomeContent(
             )
         } else {
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                // ⭐ WE CHANGED A RULE — said out loud, above the numbers it moved. Inside the list
+                // rather than above it so the "Add a home" button can never be pushed off the bottom
+                // of a 320 dp screen by a long explanation, which is a defect this app has shipped
+                // before. It is the first thing on screen on arrival either way.
+                scoreChanges?.let { notice ->
+                    item(key = "score-change") {
+                        ScoreChangeCard(notice = notice, onAcknowledge = { onAcknowledgeScoreChanges(notice) })
+                    }
+                }
                 items(plans, key = { it.id }) { plan ->
                     PlanRow(plan = plan, now = now, onOpen = onOpenPlan, onRename = { renaming = plan })
                 }
@@ -146,6 +162,43 @@ fun HomeContent(
                 onSave = { newName -> onRename(plan.id, newName); renaming = null },
             )
         }
+    }
+}
+
+/**
+ * ⭐ "We changed a rule, here is what it did to your number."
+ *
+ * ⚠ The alternative — re-scoring saved homes quietly — is the single most trust-destroying thing a
+ * paid app of this kind can do. Someone who wrote 3.1 on a piece of paper last week and opens the
+ * app to find 3.3, with no word about it, has no way to tell a considered ruling from a bug. The
+ * reason comes from the rule data itself, so a rule change can never ship without its explanation.
+ *
+ * Written for an older reader in bright daylight: a heading that says what happened, the reason in
+ * ordinary words, one line per home with both numbers, and a single button.
+ */
+@Composable
+private fun ScoreChangeCard(notice: ScoreChangeNotice, onAcknowledge: () -> Unit) {
+    val colors = VastuTheme.colors
+    val mark = LocalDecimalMark.current
+    VastuCard(accent = colors.info) {
+        VText(scoreChangeTitle(notice), style = VastuTheme.type.h3, color = colors.textPrimary)
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(notice.reason, style = VastuTheme.type.body, color = colors.textSecondary)
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        notice.changes.forEach { change ->
+            VText(
+                scoreChangeLine(change) { scoreOutOfTen(it, mark) },
+                style = VastuTheme.type.label,
+                color = colors.textPrimary,
+            )
+        }
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        VastuButton(
+            "Got it",
+            onClick = onAcknowledge,
+            large = false,
+            modifier = Modifier.testTag("home.scorechange.ack"),
+        )
     }
 }
 

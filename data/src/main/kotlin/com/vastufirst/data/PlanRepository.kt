@@ -113,6 +113,16 @@ class PlanRepository(
         queries.setUnlocked(if (unlocked) 1L else 0L, now, id)
     }
 
+    /**
+     * Write back a home's score under a NEWER ruleset — called only after the user has been shown
+     * what changed and why. `updatedAt` is left alone on purpose: we moved the rules, they did not
+     * edit their home, and reordering their list as though they had would be a second small
+     * dishonesty on top of a number they did not ask to move.
+     */
+    suspend fun setRescored(id: String, score: Int, ruleSetVersion: String): Unit = withContext(io) {
+        queries.setScoreAndRuleSetVersion(score.toLong(), ruleSetVersion, id)
+    }
+
     /** Rename a saved home. Trims; a blank name is ignored (the row keeps its current name). */
     suspend fun rename(id: String, name: String): Unit = withContext(io) {
         val clean = name.trim()

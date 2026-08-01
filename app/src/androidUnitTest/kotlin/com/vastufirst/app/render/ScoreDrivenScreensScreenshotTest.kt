@@ -161,4 +161,18 @@ class ScoreDrivenScreensScreenshotTest {
     fun report_not_ideal_and_already_right() = render("report-notideal") {
         ReportContent(analysis = RenderFixtures.cleanAnalysis.copy(doorResult = null), intent = Intent.BUILDING)
     }
+
+    /**
+     * ⭐ THE PRAYER-ROOM RULING, ON SCREEN (1 August 2026).
+     *
+     * ⚠ The same viewport trap, one release later. Ruling W-12 for the modern North-East puts two
+     * new things in front of the reader — a prayer room with a real verdict, and a "Where the schools
+     * disagree" card that now says **which reading the number uses**. Both sit far below the fold on
+     * the bundled sample, so neither would ever appear in a picture. A short home with no problems
+     * and no front door lifts the lot into one screen.
+     */
+    @Test
+    fun report_prayer_room_ruling_and_the_dispute_card() = render("report-prayer") {
+        ReportContent(analysis = RenderFixtures.prayerRoomAnalysis.copy(doorResult = null), intent = Intent.BUILDING)
+    }
 }

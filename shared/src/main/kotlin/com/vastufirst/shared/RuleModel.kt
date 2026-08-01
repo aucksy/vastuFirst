@@ -65,6 +65,17 @@ data class Dispute(
     val readingB: DisputeReading,
     val appliesTo: RoomType? = null,
     val appliesToZone: Zone? = null,
+    /**
+     * ⭐ Which side of this dispute the NUMBER stands on, in the reader's own words — or null where
+     * the score genuinely stands on neither.
+     *
+     * Most disputes are surfaced and not scored, and for those "here are both readings" is the whole
+     * truth. Once the owner rules on one (W-12, the prayer room, 1 August 2026), showing both
+     * readings and saying nothing about which one moved the score would be a half-truth in the one
+     * product whose promise is that it does not quietly pick a side. Both readings still appear; this
+     * sentence says where the number sits.
+     */
+    val howWeScore: String? = null,
 )
 
 @Serializable
@@ -114,4 +125,17 @@ data class DefectDefinition(
 )
 
 @Serializable
-data class RulesetMeta(val version: String, val kbDraft: String? = null)
+data class RulesetMeta(
+    val version: String,
+    val kbDraft: String? = null,
+    /**
+     * ⭐ WHAT CHANGED IN THIS VERSION OF THE RULES, in the reader's own words.
+     *
+     * A saved home carries the rule version it was scored under. When the rules move, the app
+     * re-scores every saved home and shows this sentence next to the old and new number — because a
+     * score that shifts on its own, with no explanation, is the difference between an honest product
+     * and a spooky one. It lives in the rule data rather than in the app so that a rule edit and its
+     * explanation can never ship apart.
+     */
+    val changeNote: String? = null,
+)

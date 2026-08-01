@@ -116,6 +116,30 @@ class RuleSetLoaderTest {
         assertTrue(ex.message!!.contains("notCheckedLabel"), "expected the raw-code guard to fire")
     }
 
+    /**
+     * ⭐ A rule change that cannot explain itself is rejected.
+     *
+     * Every saved home stores the rule version it was scored under. When we move a ruling, the app
+     * re-scores those homes and shows this sentence beside the old and new number. Without it the app
+     * either changes somebody's score in silence, or announces the change and refuses to say why —
+     * and a rule edit is precisely the moment nobody remembers to write the sentence. So the build
+     * asks for it, rather than hoping.
+     */
+    @Test
+    fun `a ruleset that cannot say what changed in it is rejected loudly`() {
+        val silent = """{"version":"2026.08.01-1","kbDraft":"2.0"}"""
+        val ex = assertFailsWith<IllegalStateException> {
+            RuleSetLoader.load { path -> if (path.endsWith("meta.json")) silent else realResource(path) }
+        }
+        assertTrue(ex.message!!.contains("changeNote"), "expected the explain-yourself guard to fire")
+
+        val label = """{"version":"2026.08.01-1","kbDraft":"2.0","changeNote":"Updated rules."}"""
+        val ex2 = assertFailsWith<IllegalStateException> {
+            RuleSetLoader.load { path -> if (path.endsWith("meta.json")) label else realResource(path) }
+        }
+        assertTrue(ex2.message!!.contains("changeNote"), "a label is not an explanation")
+    }
+
     @Test
     fun `a defect with no remedy is rejected loudly`() {
         // Replace defects.json with a single defect that has an empty remedy list.

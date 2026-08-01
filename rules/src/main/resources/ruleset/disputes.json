@@ -45,8 +45,9 @@
     "readingB": { "label": "All extensions negative", "text": "All extensions are negative, including NE.", "school": "Strict" }
   },
   {
-    "id": "W-12", "title": "Pooja location", "appliesTo": "POOJA",
-    "readingA": { "label": "Classical — Brahmasthan (centre)", "text": "The classical position: the family deity holds the centre, per Manasara.", "school": "Classical" },
-    "readingB": { "label": "Modern — North-East", "text": "Modern near-universal practice places the pooja in the North-East.", "school": "Modern" }
+    "id": "W-12", "title": "Where the prayer room belongs", "appliesTo": "POOJA",
+    "readingA": { "label": "Classical — the centre", "text": "The classical position: the family deity holds the centre of the home, per Manasara.", "school": "Classical" },
+    "readingB": { "label": "Modern — the North-East", "text": "Near-universal modern practice places the prayer room in the North-East.", "school": "Modern" },
+    "howWeScore": "Your score follows the modern reading: the North-East is treated as the ideal place, and the North and East as acceptable. No position is counted as a defect — including the classical centre — so choosing this reading never turns the other school's advice into a fault."
   }
 ]

@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.data.SavedPlans
+import com.vastufirst.engine.VastuEngine
+import com.vastufirst.rules.RuleSetLoader
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -14,8 +17,39 @@ import kotlinx.coroutines.launch
  *  Carries a count of rows that could not be read alongside the homes that could — a home that
  *  vanishes without a word looks exactly like a home the app deleted by itself. */
 class HomeViewModel(private val repo: PlanRepository) : ViewModel() {
+
+    private val ruleSet = RuleSetLoader.loadDefault()
+    private val engine = VastuEngine(ruleSet)
+
     val plans: StateFlow<SavedPlans> = repo.observePlans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SavedPlans())
+
+    /**
+     * ⭐ The homes whose score was computed under an OLDER set of rules, re-run under today's.
+     *
+     * Nothing is written back until the user has read the card and tapped through it. Until then the
+     * list still shows the number they last saw, so the app never changes a saved score behind
+     * somebody's back and then tells them about it afterwards.
+     */
+    val scoreChanges: StateFlow<ScoreChangeNotice?> = repo.observePlans()
+        .map { saved ->
+            scoreChangesFor(
+                plans = saved.plans,
+                currentVersion = ruleSet.version,
+                reason = ruleSet.changeNote,
+                // Total on purpose: a home this build cannot re-run is dropped from the card
+                // entirely rather than reported with a made-up number.
+                rescore = { plan -> runCatching { engine.analyze(plan.plan).score }.getOrNull() },
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The user has read what changed. Write the new numbers back, so the card does not return. */
+    fun acknowledgeScoreChanges(notice: ScoreChangeNotice) {
+        viewModelScope.launch {
+            notice.changes.forEach { repo.setRescored(it.id, it.newScore, ruleSet.version) }
+        }
+    }
 
     fun deleteAll() { viewModelScope.launch { repo.deleteAll() } }
 

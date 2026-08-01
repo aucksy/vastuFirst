@@ -42,6 +42,6 @@ class RuleDataTest {
     fun `the shipped dataset loads and validates`() {
         val rs = RuleSetLoader.loadDefault()
         assertEquals(32, rs.doorPadas.size)
-        assertEquals("2026.07.19-1", rs.version)
+        assertEquals("2026.08.01-1", rs.version)
     }
 }

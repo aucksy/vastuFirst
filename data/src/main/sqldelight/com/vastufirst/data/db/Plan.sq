@@ -43,6 +43,13 @@ UPDATE planEntity SET unlocked = ?, updatedAt = ? WHERE id = ?;
 setName:
 UPDATE planEntity SET name = ? WHERE id = ?;
 
+-- Re-score a home under a NEWER ruleset, once the user has been shown what changed and why.
+-- Also deliberately leaves updatedAt alone: WE changed the rules, the user did not touch their
+-- home, and telling them they edited it today would be a small lie on top of a score they did
+-- not ask to move.
+setScoreAndRuleSetVersion:
+UPDATE planEntity SET score = ?, ruleSetVersion = ? WHERE id = ?;
+
 deleteById:
 DELETE FROM planEntity WHERE id = ?;
 
