@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.3.21 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.21/vastufirst-v0.3.21.apk)
+**Latest build to test:** v0.3.23 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.3.23/vastufirst-v0.3.23.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -138,6 +138,10 @@ sighted testing never catches.
       path someone who can't see the screen relies on. *(v0.2.3)*
 - [ ] **E4 · Set North with the dial or slider via TalkBack.** It should actually change, not just
       be readable. *(v0.3.3)*
+- [ ] **E5 · The score should be read out as "score 4.7 out of 10"** — the number *and* the scale, in
+      one phrase. Three places say it: the compass screen, the big number on your result, and the
+      picture of your home with its zones. None of them should still say "out of 100", and none
+      should read out a bare number with no scale. *(v0.3.23)*
 
 ## F · Quick looks (no interaction needed)
 

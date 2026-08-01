@@ -1819,3 +1819,118 @@ as the quietest of the three (4.64 against textSecondary's 6.90). Declared in
 `check-design-fidelity.mjs` with its reason — a contrast floor is not a matter of taste. The arrows
 needed no token change at all: the tint already carries the "this is a control" signal, so the glyph
 moved to `textSecondary`, the same call made for the Change affordance in v0.3.20.
+
+---
+
+## ⭐ The score is shown out of ten — v0.3.23 (2026-08-01)
+
+Owner: *"the Vastu score is shown out of 100. Change it to out of 10 with one decimal — 47 becomes
+4.7, 8 becomes 0.8, 100 becomes 10.0. Everywhere a person sees or hears it."* With a hard constraint
+attached: **do not touch the scoring engine.**
+
+### The constraint held, and it is the reason the change is small
+
+The engine still returns a whole 0–100. `Sample01Test`, `Sample02Test`, `AuditFixesTest` and the
+rotation-invariance case still assert the §15 worked example scores **exactly 31** — none of them was
+opened. `scoreBandColor` still branches at 75 and 50, `verdictLine` still branches at 75 and 50, and
+`ScoreBar`'s fill is still `score / 100f`. **Every home lands in exactly the band it landed in
+before**; only the string above it changed. The whole change is one new pure function plus five call
+sites.
+
+### The five places a person meets the number
+
+| where | was | now |
+|---|---|---|
+| the free score screen, big number | `31` `/ 100` | `3.1` `/ 10` |
+| the saved-homes list — also the buyer's side-by-side compare | `68` `/100` | `6.8` `/10` |
+| the live readout while dragging the North dial | `68/100` | `6.8/10` |
+| the compass's spoken description | "Score 68 of 100." | "Score 6.8 out of 10." |
+| the zone map's spoken description | "score 31 of 100." | "Score 3.1 out of 10." |
+| the disclaimer under the score | "The **0–100 score** is…" | "The **score out of 10** is…" |
+
+Searched rather than assumed: the paid report and the unlock/paywall screen quote **no number at
+all**, so neither needed a change. `ScoreBar`, `scoreBandColor` and `verdictLine` take the score but
+never print it.
+
+### Three decisions taken without asking, each with its reason
+
+1. ⭐ **Always one decimal.** `50` prints `5.0`, never `5`. A bare `5` beside a `4.7` reads as a
+   different kind of number, and this is a column users compare two homes in.
+2. **The big number now says its own scale out loud.** It carried no description, so a screen reader
+   announced a bare "4.7". It is now "Score 4.7 out of 10" — the same sentence the compass and the
+   zone map use, so the app says the score one way.
+3. ⭐ **The decimal mark is asked of the phone, never typed in** — see below.
+
+### ⭐ The decimal mark, and the trap inside it
+
+All six languages VastuFirst ships in (English, Hindi, Tamil, Telugu, Marathi, Bengali) write a
+**dot**. So a hard-coded `"."` would look correct forever, in every test, in every golden — and be
+wrong the first time the app opened on a phone set to a comma language. `deviceDecimalMark()` asks
+Android's own locale data for the resolved configuration locale (not `Locale.getDefault()`, which a
+per-app language setting can make disagree), in **one place**, and hands it down through
+`LocalDecimalMark`.
+
+⚠ **Only the mark, deliberately not the whole number.** Handing "4.7" to Android's number formatter
+would also **shape the digits**: verified against ICU before writing any Kotlin, `bn-IN` renders it
+**৪.৭** and `mr-IN` **४.७**, because those are their languages' default numbering systems. That is
+correct in a fully translated app and wrong in this one — the ₹699 price, the degrees on Mark North
+and every room size are Western digits, and the entire interface is still English until the Phase 4
+translations land. A lone Bengali numeral in an English screen reads as a bug. The numbering system
+therefore becomes a deliberate choice made **alongside** the translations, and the note saying so
+lives in the one file that would have to change.
+
+### ⚠ A safety check this change nearly disarmed
+
+The first version merged the big number and its `/ 10` into one accessibility node, so a screen
+reader would say "Score 4.7 out of 10" as a single phrase. It was **caught in self-review before CI**
+and removed:
+
+> `L1Manifest` walks the **merged** semantics tree. Merging those two texts collapses them into one
+> node — and the clipping and ellipsis checks on **the widest element on the screen** would have
+> disappeared from the manifest, at exactly the moment its width changed.
+
+Same class as v0.3.21's reverted re-framing, which silently removed the `no-clamp` injection's bite.
+The description now sits on the number itself: the node survives, its measurement survives, and the
+phrase is still spoken. **The saved-homes row was left alone entirely** for the opposite reason —
+the whole row is clickable and therefore already one merged node, so a description added inside it
+would be *appended* to the row's text rather than replacing it, and the row would read the score
+twice.
+
+### Proof
+
+- `ScoreFormatTest` — 8 cases, JUnit (`:app`, message **first**). Includes a round-trip over **all
+  101 scores**: every one reads back as itself, no two collide, every one carries exactly one
+  decimal. Verified in Python first, per the standing rule, before any Kotlin was written.
+- The formatter is **integer arithmetic** (`s / 10`, `s % 10`), so there is no floating-point
+  division that could hand a screen "4.699999" and no rounding rule to get wrong.
+- A case pins the platform's own answer for all six shipping languages (dot) **and** for German
+  (comma) — the case that a hard-coded dot would fail and no other test would catch.
+- Three screens re-rendered across the twelve-configuration matrix.
+
+### Looked at before tagging (CLAUDE.md §2b)
+
+The three changed screens, at **baseline**, **200 % font** and **320 dp** — the two configurations
+where a wider number would break a row if it were going to.
+
+- **Score** — `3.1 / 10` in the band colour, the bar still filled to 31 %, the verdict line
+  unchanged. Nothing wrapped or clipped at any of the eleven configurations.
+- **Saved homes** — `3.1 /10` and `6.8 /10`, red and amber, i.e. the same two bands as before.
+- **Mark North** — the live readout reads `3.1/10`.
+
+⭐ **The row got roomier, not tighter — and this was measured, not assumed.** The worry was that
+"4.7" is wider than "47". It is, by one narrow glyph — but `/10` is a whole character shorter than
+`/100`, and that caption is what sets the column's width. Comparing the old and new goldens side by
+side at 200 % font, the home's subtitle now fits **"Building · Updated…"** where it previously cut
+at **"Building · Update…"**. Neither ratchet baseline moved: **no new clipping and no new
+accessibility finding on any screen.**
+
+⚠ **Two things a screenshot cannot show, checked in the measurement manifest instead.** The
+disclaimer sits below the fold on a scrolling screen, so it is absent from every golden — the
+manifest confirms the new sentence lays out at its full 364 × 105 dp (351 dp tall at 200 % font)
+with `ellipsized=false`. And the big number is recorded carrying **both** its text `3.1` **and** its
+spoken `Score 3.1 out of 10` as one node with a real measured size — the direct evidence that the
+description was added without merging the node away.
+
+ℹ Noted while looking, **not a defect and not ours**: at 200 % font the big score grows about 9 %
+while the caption beside it doubles. That is Android's non-linear font scaling — text that is
+already large is deliberately scaled less — and it behaved identically when the number was `31`.

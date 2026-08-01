@@ -31,6 +31,37 @@ These are the things only you can decide, and they need to be settled before the
 
 ## Week of 28 July – 3 August 2026
 
+### Saturday 1 August — the score now reads out of 10, not out of 100
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.23/vastufirst-v0.3.23.apk
+
+A home that used to show **47** now shows **4.7**. A home that showed 8 now shows 0.8, and a perfect
+home shows 10.0. It always carries one number after the dot, so a home that scores exactly five shows
+"5.0" and never a bare "5" — beside a 4.7, a lone 5 looks like a different kind of number, and this is
+a column people compare two homes in.
+
+**Nothing about the scoring changed.** The same home gets the same result, in the same colour, with
+the same wording under it — "Strong", "Workable" and so on all fall in exactly the same places. Only
+the way the number is written on screen is different.
+
+It changed in every place a person meets it: the big number on the free result, the list of your saved
+homes (which is also the side-by-side comparison someone uses when they are choosing between two
+places), the live number that moves as you drag the compass, and — for a blind user — the two places
+the phone reads the score out loud, which used to say "score 47 of 100" and now say "score 4.7 out
+of 10". The small print under the score changed too, because it used to describe the scale by name.
+
+**One judgement call worth knowing about.** A number like 4.7 *looks* more precise than 47 did, and
+this score is a summary of a report, not a measurement of anything. So the small print under it now
+says so in four extra words — "a summary, not a measurement". If you would rather go further, the
+cheapest next step is to show the number next to its word ("4.7 · Workable") so the word carries the
+meaning. Your call, not urgent.
+
+**And one thing you will never see, which is the point of mentioning it.** India's languages write
+decimals with a dot, and so does English — so writing the dot in by hand would have looked right in
+every test we have. It would also have been wrong the moment someone opened the app on a phone set to
+a European language, where 4.7 is written "4,7". The app now asks the phone what its language uses
+instead of assuming. Nothing to check; it just will not embarrass us later.
+
 ### Friday 31 July, later — rooms now match the shape printed on your plan
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.3.21/vastufirst-v0.3.21.apk
