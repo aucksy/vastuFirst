@@ -3208,3 +3208,19 @@ release changes. Judged from the run's own recorded images — the before/after 
 - **Exactly 11 goldens changed — the eleven configs of that one screen.** Nothing else moved;
   the owner's-flat screen is untouched, as Q23 promises him. The a11y gate was pre-run locally
   against the run's own manifests: green, no baseline change.
+
+## 8. Released as 0.6.5
+
+Tagged on this release-notes commit, sitting on top of CI's goldens commit after its own green
+run — the standing rule the release workflow's verify-from-the-tag enforces. CI recorded new
+goldens for exactly one screen: the scanned-demo whose plan this release re-draws; the geometry
+ratchet was blessed at 52 from the pictures (§7) and the a11y baseline did not move.
+
+**What a user gets that they did not have yesterday:** a scanned balcony — or any strip whose
+caption prints one dimension — drawn at the depth the sheet prints instead of towering at the
+reader's sketch size; rooms that were read against the home's outer walls staying on those
+walls, so the drawn plan lines up with the paper instead of clumping into a corner; a grid that
+ends where the home does, so a small flat arrives on a small grid with bigger cells, no dead
+edge strips, and no false "is this part of your home?" question about a region that was never
+anything; and — on the sheet he rejected — a balcony shallower than the bedroom, with the
+bedroom, lobby and passage on the right edge where the paper puts them.
