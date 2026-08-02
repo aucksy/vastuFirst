@@ -376,10 +376,15 @@ fun GuidedGridContent(
     val roomsState = rememberUpdatedState(rooms)
     val selected = rooms.firstOrNull { it.id == selectedId }
 
-    // ⭐ The parking row, and the one edit that ends it. See [roomsUnplaced]. Keyed on the room list
-    // the screen opened with, so arriving from a second scan parks again rather than staying live.
-    val arrivedAs = remember(roomsUnplaced) { rooms.map { it.id to it.rect() } }
-    val parked = roomsUnplaced && rooms.map { it.id to it.rect() } == arrivedAs
+    // ⭐ The parking row. See [roomsUnplaced].
+    //
+    // ⚠ Deliberately NOT derived here by comparing the rooms against the layout this screen opened
+    // with. That version was written first and had a rotation bug: the remembered "as it arrived"
+    // list is lost on a configuration change and recaptured from whatever is on screen, so a user
+    // who had arranged their rooms and then turned the phone would be treated as parked again — and
+    // would silently stop being asked about their home's shape. The flag lives in the ViewModel,
+    // which survives rotation, and is cleared by the first room change.
+    val parked = roomsUnplaced
 
     // ⭐ THE HOME'S TRUE SHAPE (docs/SCORE-ACCURACY-CAVEATS.md #1). Every empty patch inside the
     // home's outline is a question the app must ASK rather than answer for itself: it is either a

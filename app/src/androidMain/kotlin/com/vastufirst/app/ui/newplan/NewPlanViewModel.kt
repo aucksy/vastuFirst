@@ -192,6 +192,14 @@ class NewPlanViewModel(
     // --- mutations (each nudges a debounced recompute) ---
 
     fun updateRooms(list: List<GridRoom>) {
+        // ⭐ Any change to the rooms means the user has started arranging them, so they are no longer
+        // parked in the row a scan left them in — and every question the editor asks about the shape
+        // of what is on screen becomes a fair one.
+        //
+        // ⚠ This is only safe because the scan flow calls [markRoomsUnplaced] AFTER seeding the
+        // rooms, not before. Living in the ViewModel is what makes it survive a rotation, which the
+        // first version — remembered inside the editor — did not.
+        roomsUnplaced = false
         rooms = list
         // Keep the door on the new footprint (or clear it if the last room went) so it can never be
         // displayed in one place but scored/reloaded in another after a room edit (UAT F4). No-op when
