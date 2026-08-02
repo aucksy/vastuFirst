@@ -3056,3 +3056,17 @@ floats off its bedroom. Measured across all 41 recordings before the re-push: or
 edges stay 32, and a balcony lost outright on one old-prompt recording RETURNS (2 → 1). The
 tower-D1 fixture is now pinned in the mirror too — a fixture gap is a drift channel, the plan-020
 lesson from the other direction.
+
+## 7. Looked at before tagging (CLAUDE.md §2b) — and released as 0.6.4
+
+Downloaded from run #192's artifact and read, not asserted: the owner's flat screen — his home
+now STARTS AT ITS OWN WEST WALL (the strip is gone), the living/dining is drawn wider than deep
+for the first time, the first bedroom deeper than wide, the kitchen wide; the footprint question
+points at genuinely empty regions. The scanned demo screen — the balcony a full-width strip, the
+corner question honest. The 200 % font variant still legible, labels rotating where rooms are
+tall. CI recorded new goldens for exactly the two screens whose plans changed and neither the
+geometry ratchet nor the a11y baseline moved — no new findings.
+
+Corpus, final: orientation 140/148 (was 138) · dead edge cells 32 (was 62) · rooms lost outright
+1 (was 2) · owner's flat 15/15 with every printed orientation kept. Tagged on the release-notes
+commit that sits on top of CI's goldens commit, after its own green run.
