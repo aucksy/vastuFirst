@@ -76,4 +76,30 @@ class ScanGatesTest {
         consent.set(false)
         assertFalse(consent.isGranted())
     }
+
+    /**
+     * ⭐ The size the plan printed, shortened enough to sit on one caption line beside the room name.
+     *
+     * ⚠ Not cosmetic. That line repeats once per room on the tallest screen in the app, and Indian
+     * sheets print the same measurement twice — metric then imperial. Left whole, fifteen rooms of
+     * `3.72m X 4.50m ( 12'-2" x 14'-9" )` wrap to several lines each at 200 % font on a 320 dp phone
+     * and push the button that leaves the screen out of reach, which is a defect this project has
+     * shipped before.
+     */
+    @Test
+    fun `the printed size loses its repeat but never its measurement`() {
+        assertEquals(
+            "3.72m X 4.50m",
+            shortSize("3.72m X 4.50m ( 12'-2\" x 14'-9\" )"),
+            "the bracketed repeat of the same measurement is dropped",
+        )
+        // A sheet that prints only one system keeps all of it.
+        assertEquals("10'-0\"X10'-6\"", shortSize("10'-0\"X10'-6\""), "nothing to drop, nothing dropped")
+        // ⚠ A compound space — an L-shaped utility — OPENS with a bracket, so the brackets are the
+        // measurement rather than a repeat of it. Trimming there would leave an empty string, which
+        // is the worst outcome: a room silently showing no size at all.
+        val compound = "(3.17mX0.90m)+(1.51mX0.40m) (10'-5\"X3'-0\")+(5'-0\"X1'-4\")"
+        assertEquals(compound, shortSize(compound), "a compound size must survive whole")
+        assertEquals("", shortSize(""), "a plan that prints no size shows none")
+    }
 }

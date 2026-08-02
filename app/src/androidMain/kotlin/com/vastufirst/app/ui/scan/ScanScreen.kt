@@ -211,6 +211,26 @@ private fun DoneBody(
     }
 }
 
+/**
+ * The printed size, short enough to sit on one caption line beside the room's name.
+ *
+ * ⚠ Indian sheets usually print the SAME measurement twice — `3.72m X 4.50m ( 12'-2" x 14'-9" )` —
+ * and the whole string on a row that repeats per room is several wrapped lines on a 320 dp screen at
+ * 200 % font, pushing the button that leaves this screen out of reach. The trailing repeat is
+ * dropped; nothing else is touched, because this is the number the user is checking against their
+ * own paper.
+ *
+ * A caption that OPENS with a bracket is a compound space — `(3.17mX0.90m)+(1.51mX0.40m)` for an
+ * L-shaped utility — where the brackets are the measurement rather than a repeat of it, so it is
+ * left whole and allowed to wrap.
+ */
+internal fun shortSize(printed: String): String {
+    val s = printed.trim()
+    if (s.startsWith("(")) return s
+    val bracket = s.indexOf('(')
+    return if (bracket > 0) s.substring(0, bracket).trim() else s
+}
+
 @Composable
 private fun RoomsBody(
     title: String,
@@ -337,7 +357,8 @@ private fun ReadRoomRow(
                 // tallest screen in the app, and a second line each pushes the button off a 320 dp
                 // phone at 200 % font.
                 VText(
-                    listOf(room.label, room.printedSize).filter { it.isNotBlank() }.joinToString(" · "),
+                    listOf(room.label, shortSize(room.printedSize))
+                        .filter { it.isNotBlank() }.joinToString(" · "),
                     style = VastuTheme.type.caption, color = colors.textSecondary,
                 )
             }

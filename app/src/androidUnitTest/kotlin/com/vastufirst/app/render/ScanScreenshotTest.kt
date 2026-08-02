@@ -73,6 +73,31 @@ class ScanScreenshotTest {
         writeManifestAcrossMatrix("scan-placed", screen(s))
     }
 
+    /**
+     * ⭐⭐ THE OWNER'S OWN FLAT — and the only screen that shows the SIZE the plan printed.
+     *
+     * ⚠ Every other fixture predates that field and carries its dimensions inside the caption, so
+     * nothing here would have photographed the new line at all. It is the one line on this screen
+     * whose numbers now decide each room's shape — and therefore its Vastu direction — so a person
+     * confirming their plan is checking exactly this against their own paper.
+     *
+     * What the picture has to show: fifteen rooms, each with its name AND its printed size, on one
+     * caption line, with the button still reachable at 200 % font on a 320 dp phone. His sheet prints
+     * every size twice (metric then imperial); if the repeat is back, this row is several lines tall
+     * and the button is gone.
+     */
+    @Test
+    fun scanPlacedOwnerFlat() {
+        val s = ScanUiState.Done(
+            ScanMapper.map(
+                RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply,
+                imageAspect = 646.0 / 1400.0,
+            ),
+        )
+        captureAcrossMatrix("scan-placed-sizes", screen(s))
+        writeManifestAcrossMatrix("scan-placed-sizes", screen(s))
+    }
+
     @Test
     fun scanAssisted() {
         val s = ScanUiState.Done(assisted())
