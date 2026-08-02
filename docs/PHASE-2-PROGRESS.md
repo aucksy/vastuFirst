@@ -2853,3 +2853,13 @@ Downloaded from the build and opened, not asserted:
 wider than deep — better than the inversion it replaces, and it is the residual §7 records. And the
 app asks him **one** shape question, about the top-right corner; that is a fair question with a real
 answer, where the version he complained about asked an impossible one about a parking row.
+
+## 9. Released as 0.6.2
+
+Tagged on the commit below, not on the goldens commit CI pushes — that one carries `[skip ci]`, so a
+tag on it would name a build nothing verified.
+
+**What a user gets that they did not have yesterday:** a scanned plan whose rooms are shaped by the
+sizes the plan itself prints, no room silently deleted for being drawn off the page, a fifteen-room
+flat treated as the ordinary apartment it is, and — when the reading genuinely fails — a screen that
+says so instead of a row of squares under the heading "Place your rooms".
