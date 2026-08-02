@@ -3070,3 +3070,37 @@ geometry ratchet nor the a11y baseline moved — no new findings.
 Corpus, final: orientation 140/148 (was 138) · dead edge cells 32 (was 62) · rooms lost outright
 1 (was 2) · owner's flat 15/15 with every printed orientation kept. Tagged on the release-notes
 commit that sits on top of CI's goldens commit, after its own green run.
+
+## 8. ⚠ The owner's device verdict, same evening — and the next session's job
+
+He scanned a THIRD plan (Green Court Category-II, the 336 sq ft 1BHK, branded square page) and
+rejected the output outright: balcony towering over the rooms, everything clumped left when his
+sheet has bedroom and lobby on the right, a big mostly-empty grid he has to scroll, relative
+sizes wrong. He said it was better two versions ago and that the new release broke it.
+
+Both halves of that were tested the same hour, with the standing scan-and-look loop:
+
+- **v0.6.2's rules on this very reading kept 3 of 7 rooms** — bedroom, WC, lobby and passage were
+  silently deleted. It looked cleaner by showing less of his home. The renders are the proof
+  (era comparison: `git show v0.6.2:tools/grid-prototype/sim.mjs` + the live reply).
+- **v0.6.3 and v0.6.4 draw this plan identically** (the letterbox change is a no-op here), so the
+  new release did not cause what he saw. His own flat measurably improved in v0.6.4.
+- The clean copy of the same sheet reads CLOSE to the paper today — bedroom right, lobby tall,
+  kitchen left, passage bottom-right; only the balcony strip is fat.
+
+The real, still-open defects his 336 scan exposes, in his priority order:
+
+1. **Single-dimension strip captions** (`BALCONY 6'-0" WIDE` / `1825 WIDE`) parse as no size, so
+   the strip keeps the reader's oversized sketch while every sized room shrinks to print scale —
+   the balcony dwarfs the bedroom. The caption means "this strip is 6 ft deep"; read it.
+2. **Relative-size incoherence**: sized rooms shrink to print scale, unsized rooms keep template
+   cells — mixing the two on one grid misstates which room is bigger.
+3. **Small homes get villa-sized grids**: a 336 sq ft 1BHK on the full-length grid means huge,
+   mostly-empty, scrolling cells. Compact grids for small printed totals = a deliberate editor
+   change with its own release.
+4. **Branded/logo pages scramble the reader's arrangement** (left-clumping) — reader-side;
+   consider whether a junk-arrangement reply should land Assisted rather than confidently wrong.
+
+⚠ Judge ALL of it by rendered pictures of the three real plans (owner flat, greencourt-526,
+greencourt-336 clean + branded) against their sheets — corpus totals held steady today while
+individual rooms crushed, three times.
