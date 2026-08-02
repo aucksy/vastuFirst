@@ -263,26 +263,40 @@ class ScanMapperTest {
         assertEquals("ZORBING PIT", dropped.single { it.reason == DropReason.UNKNOWN_LABEL }.label)
     }
 
-    // ---- sub-areas, by geometry (owner decision D1) ---------------------------------------------
+    // ---- a room inside another room's rectangle SURVIVES (a measured reversal) -------------------
 
     @Test
-    fun `a rectangle wholly inside another room is dropped as a sub-area`() {
+    fun `⭐ a typed room drawn wholly inside another room is kept, and the big room gives way`() {
+        // ⚠ This asserts the OPPOSITE of what it used to. The geometric sub-area drop was measured
+        // across every recorded real reply (41 plans) and fired 24 times — every single one a real
+        // scored room: nine toilets, a pooja, balconies, a study, the owner's own master-bedroom
+        // toilet. Not one genuine dressing area ever reached it, because genuine sub-areas drop BY
+        // NAME before geometry runs. A reader that lays out template rectangles draws real rooms
+        // inside other rooms' boxes all the time; deleting them was deleting the home's toilets.
         val out = ScanMapper.map(
             draft(
                 box("MASTER BEDROOM", 0.0, 0.0, 0.6, 0.6),
-                box("STORE", 0.1, 0.1, 0.15, 0.15),   // wholly inside the bedroom
+                box("STORE", 0.1, 0.1, 0.15, 0.15),   // wholly inside the bedroom's rectangle
                 box("KITCHEN", 0.6, 0.0, 0.4, 0.6),
                 box("LIVING ROOM", 0.0, 0.6, 1.0, 0.4),
             ),
         )
-        val dropped = outcomeNotes(out).dropped
-        assertEquals(listOf("STORE"), dropped.filter { it.reason == DropReason.SUB_AREA }.map { it.label })
+        val placed = assertIs<ScanOutcome.Placed>(out)
+        assertTrue(placed.notes.dropped.isEmpty(), "nothing may be dropped: ${placed.notes.dropped}")
+        val store = placed.rooms.single { it.type == RoomType.STORE }
+        assertTrue(store.rect != null, "the contained room reaches the grid where it was read")
+        val master = placed.rooms.single { it.type == RoomType.MASTER_BEDROOM }
+        assertTrue(
+            RoomFlag.OVERLAP_TRIMMED in master.flags,
+            "the room it sat inside absorbs the cut and is flagged for the user",
+        )
+        assertEditorInvariants(placed)
     }
 
     @Test
-    fun `an adjacent room that merely touches is not a sub-area`() {
+    fun `adjacent rooms that merely touch survive with nothing dropped`() {
         val out = ScanMapper.map(goodDraft())
-        assertTrue(outcomeNotes(out).dropped.none { it.reason == DropReason.SUB_AREA })
+        assertTrue(outcomeNotes(out).dropped.isEmpty())
     }
 
     @Test

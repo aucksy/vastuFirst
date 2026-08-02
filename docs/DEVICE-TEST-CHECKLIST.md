@@ -502,3 +502,20 @@ squares between all of them, and then ask whether your home was "cut off" somewh
 - [ ] **Q9 · A plan that prints no room sizes should still behave.** Some plans just print names. That
       should still work — the rooms arrive, possibly unplaced, and nothing invented. If you see sizes
       on screen that are not on the paper, that is the worst possible bug and I want it immediately.
+
+### Q · continued  *(new in this build — the toilets come back)*
+
+- [ ] **Q11 · ⭐ Scan the 3-bedroom flat and count the toilets. There must be THREE.** Your attached
+      master toilet was being deleted before you ever saw the plan — it only appeared in a small
+      "we also saw" note. It now arrives as a room on the grid. Expect it in the wrong place (the
+      reading puts it near the living room, not against the west wall where your sheet has it) and
+      marked for checking — wrong place is fine, missing is the bug.
+- [ ] **Q12 · Nothing from that sheet should be reported as left out any more.** The screen before
+      the grid used to list rooms we "also saw" but did not place. For your flat that list should
+      now be empty — every named space either becomes a room or is a dressing area, which is part of
+      its bedroom. If any room is listed as left out, tell me which.
+- [ ] **Q13 · ⚠ The living-and-dining now comes out SQUARE, not wide.** Honest change from the last
+      build: bringing your master toilet back costs the living room one column, because the reading
+      put the toilet inside the living room's area and we never move a room you haven't seen. Square
+      is acceptable — drawn TALLER than wide is still the bug to report. After you drag the toilet
+      to the west wall, stretching the living room wide takes one pull.

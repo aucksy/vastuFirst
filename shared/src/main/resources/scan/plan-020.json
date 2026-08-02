@@ -1,0 +1,160 @@
+{
+ "fixture": "plan-020",
+ "_note": [
+  "A real Gurgaon builder plan whose every size is printed in FEET AND INCHES - 11'-0\" x 15'-0\".",
+  "This is the reply the real Groq API returned for it (the size-field experiment, 2 August 2026),",
+  "pasted unedited. It exists because the corpus audit found the feet-inches parse path had NEVER",
+  "been exercised end-to-end against a real recorded reply: every earlier fixture prints metres or",
+  "bare millimetres. It also carries FOUR rooms with the identical caption BALCONY at four different",
+  "printed sizes - the duplicate-caption case - and one caption (LOBBY/DINING) that needs the",
+  "plan-aware lobby rule. Thirteen of its fourteen rooms place; the DRESS is dropped by name."
+ ],
+ "model": "qwen/qwen3.6-27b",
+ "imageSize": [
+  1399,
+  1389
+ ],
+ "usage": {
+  "queue_time": 0.165355376,
+  "prompt_tokens": 1755,
+  "prompt_time": 0.125727892,
+  "completion_tokens": 1278,
+  "completion_time": 2.433399715,
+  "total_tokens": 3033,
+  "total_time": 2.5591276069999997
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "rooms": [
+   {
+    "label": "DINING ROOM",
+    "size": "11'-0\" x 15'-0\"",
+    "x": 0.12,
+    "y": 0.12,
+    "w": 0.25,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-6\" x 9'-5\"",
+    "x": 0.37,
+    "y": 0.25,
+    "w": 0.15,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "FOYER",
+    "size": "17'-2\"x6'-0\"",
+    "x": 0.12,
+    "y": 0.37,
+    "w": 0.4,
+    "h": 0.15,
+    "confidence": 0.9
+   },
+   {
+    "label": "DRAWING ROOM",
+    "size": "16'-2\" x 18'-4\"",
+    "x": 0.12,
+    "y": 0.52,
+    "w": 0.25,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "LOBBY/DINING",
+    "size": "12'-9\" x 19'-0\"",
+    "x": 0.37,
+    "y": 0.37,
+    "w": 0.25,
+    "h": 0.4,
+    "confidence": 0.9
+   },
+   {
+    "label": "BED ROOM-1",
+    "size": "12'-4\" x 16'-9\"",
+    "x": 0.62,
+    "y": 0.52,
+    "w": 0.25,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "DRESS",
+    "size": "7'-0\" x 8'-3\"",
+    "x": 0.87,
+    "y": 0.52,
+    "w": 0.1,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET",
+    "size": "7'-0\" x 8'-2\"",
+    "x": 0.87,
+    "y": 0.67,
+    "w": 0.1,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "KITCHEN",
+    "size": "12'-8\" x 13'-6\"",
+    "x": 0.62,
+    "y": 0.37,
+    "w": 0.25,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "PANTRY",
+    "size": "7'-0\" x 13'-6\"",
+    "x": 0.87,
+    "y": 0.37,
+    "w": 0.1,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "BALCONY",
+    "size": "33'-5\"x5'-0\"",
+    "x": 0.37,
+    "y": 0.12,
+    "w": 0.6,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "BALCONY",
+    "size": "17'-4\"x8'-3\"",
+    "x": 0.12,
+    "y": 0.77,
+    "w": 0.25,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "BALCONY",
+    "size": "13'-9\"x10'-0\"",
+    "x": 0.37,
+    "y": 0.77,
+    "w": 0.25,
+    "h": 0.1,
+    "confidence": 0.9
+   },
+   {
+    "label": "BALCONY",
+    "size": "20'-2\"x6'-0\"",
+    "x": 0.62,
+    "y": 0.77,
+    "w": 0.35,
+    "h": 0.1,
+    "confidence": 0.9
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

@@ -115,23 +115,26 @@ class OwnerFlatScanTest {
     }
 
     /**
-     * ⚠ Recorded rather than asserted away: his attached master-bedroom toilet is drawn by the
-     * reader wholly inside the rectangle it gave the living room, so it is dropped as a sub-area —
-     * and a toilet is a scored room. This is the known, deliberate cost of dropping sub-areas by
-     * geometry (owner decision D1), and it is why every drop is shown to the user rather than being
-     * silent. Pinned so it stays a stated trade rather than becoming a surprise.
+     * ⭐⭐ His master-bedroom toilet ARRIVES — the previous release's stated trade, closed.
+     *
+     * v0.6.2 shipped with this room deleted: the reader drew it wholly inside the rectangle it gave
+     * the living room, and the geometric sub-area drop threw it away — a toilet, weight 2.5,
+     * silently absent from a paid score, with a line in "we also saw…" to show for it. The drop was
+     * then measured across every recorded reply (24 firings, 24 real scored rooms, zero genuine
+     * sub-areas — those all drop by name) and removed. His flat now arrives whole.
+     *
+     * (This test used to pin the drop as a stated trade, with a note saying to rewrite it if the
+     * room ever survived. It survived.)
      */
     @Test
-    fun `⚠ a space we drop is always one we can tell the user about`() {
+    fun `⭐⭐ his master-bedroom toilet arrives, and nothing from his sheet is dropped`() {
         val p = placed()
-        assertTrue(
-            p.notes.dropped.isNotEmpty(),
-            "if nothing is dropped from this reply any more, that is good news and this test should " +
-                "be rewritten rather than deleted",
-        )
-        assertTrue(
-            p.notes.dropped.all { it.label.isNotBlank() },
-            "every dropped space must be nameable on screen: ${p.notes.dropped}",
+        assertEquals(15, p.rooms.size, "all fifteen named spaces on his sheet must arrive")
+        assertTrue(p.notes.dropped.isEmpty(), "nothing may be dropped: ${p.notes.dropped}")
+        assertEquals(
+            3,
+            p.rooms.count { it.type == RoomType.TOILET },
+            "his flat has three toilets — attached, common, and the master's own",
         )
     }
 

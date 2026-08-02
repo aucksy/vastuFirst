@@ -80,6 +80,39 @@ class RoomLabelsTest {
     }
 
     @Test
+    fun `⭐ captions the corpus audit found unmapped now resolve — each read off a real reply`() {
+        // Every caption here landed in "we didn't recognise the name" until the whole recorded
+        // corpus was swept through the mapper (tools/scan-eval/audit-mapper.mjs). Each is verbatim
+        // reader output for a real room on a real plan — two of them whole bedrooms, whose absence
+        // left the biggest holes in their plans' layouts.
+        assertEquals(RoomType.BEDROOM, type("BED RM.-01"))
+        assertEquals(RoomType.BEDROOM, type("BED RM.-02"))
+        assertEquals(RoomType.BEDROOM, type("KIDS 7'8\"X12'0\""))
+        assertEquals(RoomType.BEDROOM, type("SERV. RM"))
+        assertEquals(RoomType.MASTER_BEDROOM, type("Masterbed 360X370"))
+        assertEquals(RoomType.TOILET, type("TOIL"))
+        assertEquals(RoomType.POOJA, type("Pojo 150X100"))
+        assertEquals(RoomType.BALCONY, type("DRY BALC."))
+        assertEquals(RoomType.BALCONY, type("C Bal"))
+        assertEquals(RoomType.UTILITY, type("W area 224x270"))
+        assertEquals(RoomType.UTILITY, type("W/area"))
+    }
+
+    @Test
+    fun `site features and furniture drop as not-a-room, never as unrecognised`() {
+        // A lawn and a pathway are ground outside the home; a crockery unit is a cabinet drawn on
+        // the sheet. "We didn't recognise the name" was dishonest for these — we read them fine;
+        // they are simply not rooms.
+        assertIs<LabelMatch.NotHabitable>(RoomLabels.resolve("LAWN"))
+        assertIs<LabelMatch.NotHabitable>(RoomLabels.resolve("PATHWAY"))
+        assertIs<LabelMatch.NotHabitable>(RoomLabels.resolve("CROCKERY UNIT"))
+        // WATCHMAN stays unknown DELIBERATELY: a watchman's cabin is a real structure, but it
+        // stands at the gate outside the home's footprint, and guessing it onto the plan would
+        // move the score. Unknown surfaces it to the user, which is the honest treatment.
+        assertIs<LabelMatch.Unknown>(RoomLabels.resolve("WATCHMAN"))
+    }
+
+    @Test
     fun `owner decision D1 — dressing areas and service shafts are dropped, not typed`() {
         for (caption in listOf(
             "DRESS", "DRESSING", "DRESS AREA", "DRESSING ROOM",

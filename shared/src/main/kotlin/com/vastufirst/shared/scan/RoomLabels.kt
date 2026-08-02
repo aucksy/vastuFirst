@@ -47,6 +47,11 @@ object RoomLabels {
         "WALK IN CLOSET", "WALK IN WARDROBE", "WALK IN ROBE", "WARDROBE", "CLOSET",
         "DUCT", "ELECTRICAL DUCT", "PLUMBING DUCT", "SHAFT", "LIFT", "LIFT LOBBY",
         "ELEVATOR", "AC LEDGE", "LEDGE", "OTS", "VOID", "OPEN TO BELOW",
+        // Site features and furniture read off real plans (the corpus audit): a lawn and a pathway
+        // are ground outside the home, and a crockery unit is a cabinet drawn on the plan. Naming
+        // them here means the drop says "not a room we score" instead of the dishonest "we didn't
+        // recognise the name" — we recognised it fine.
+        "LAWN", "PATHWAY", "CROCKERY UNIT",
     )
 
     /**
@@ -78,15 +83,33 @@ object RoomLabels {
         put(
             RoomType.MASTER_BEDROOM,
             "MASTER BEDROOM", "MASTER BED ROOM", "MASTER BED", "MBR", "M BEDROOM", "MASTER",
+            // `Masterbed 360X370` — a hand-drawn plan's caption, read verbatim by the model.
+            "MASTERBED",
         )
         put(
             RoomType.BEDROOM,
             "BEDROOM", "BED ROOM", "BED", "SER ROOM", "SERVANT ROOM", "SERVANT", "MAID ROOM",
             "KIDS ROOM", "KIDS BEDROOM", "CHILDREN ROOM", "CHILD BEDROOM",
+            // Read off real plans in the corpus audit: `BED RM.-01`, a bare `KIDS`, `SERV. RM`.
+            // Each cleans to the form here (dots deleted, the index a measurement token).
+            "BED RM", "KIDS", "SERV RM", "SERV ROOM",
         )
         put(RoomType.GUEST_BEDROOM, "GUEST BEDROOM", "GUEST ROOM", "GUEST BED ROOM")
-        put(RoomType.POOJA, "POOJA", "PUJA", "POOJA ROOM", "PUJA ROOM", "PUJA SPACE", "POOJA SPACE", "PRAYER ROOM", "MANDIR", "TEMPLE")
-        put(RoomType.TOILET, "TOILET", "WC", "WATER CLOSET", "POWDER ROOM", "ATT TOILET", "ATTACHED TOILET", "COMMON TOILET", "WASHROOM", "WASH ROOM")
+        put(
+            RoomType.POOJA,
+            "POOJA", "PUJA", "POOJA ROOM", "PUJA ROOM", "PUJA SPACE", "POOJA SPACE", "PRAYER ROOM",
+            "MANDIR", "TEMPLE",
+            // `Pojo 150X100` — the reader's faithful transcription of a hand-lettered pooja niche.
+            // Whole-caption only, and it collides with nothing else a plan prints.
+            "POJO",
+        )
+        put(
+            RoomType.TOILET,
+            "TOILET", "WC", "WATER CLOSET", "POWDER ROOM", "ATT TOILET", "ATTACHED TOILET",
+            "COMMON TOILET", "WASHROOM", "WASH ROOM",
+            // `TOIL` — a caption truncated by the sheet itself, read verbatim (corpus audit).
+            "TOIL",
+        )
         put(RoomType.BATHROOM, "BATH", "BATHROOM", "BATH ROOM", "BATH TOILET")
         put(
             RoomType.LIVING,
@@ -104,10 +127,18 @@ object RoomLabels {
             RoomType.BALCONY,
             "BALCONY", "BALC", "TERRACE", "OPEN TERRACE", "SIT OUT", "SITOUT", "PORCH",
             "VERANDAH", "VERANDA", "DECK", "UTILITY BALCONY",
+            // `DRY BALC.` and `C Bal` — a dry (service) balcony and a common balcony, both read
+            // verbatim off real sheets in the corpus audit.
+            "DRY BALC", "DRY BALCONY", "C BAL",
         )
         put(RoomType.BASEMENT, "BASEMENT", "CELLAR")
         put(RoomType.COURTYARD, "COURTYARD", "COURT YARD", "ATRIUM", "OPEN TO SKY")
-        put(RoomType.UTILITY, "UTILITY", "WASH AREA", "WASH", "LAUNDRY", "SERVICE AREA", "UTILITY AREA")
+        put(
+            RoomType.UTILITY,
+            "UTILITY", "WASH AREA", "WASH", "LAUNDRY", "SERVICE AREA", "UTILITY AREA",
+            // `W area 224x270` and `W/area` — how hand-drawn plans abbreviate the wash area.
+            "W AREA",
+        )
         put(RoomType.CORRIDOR, "CORRIDOR", "PASSAGE", "HALLWAY", "GALLERY", "CIRCULATION")
     }
 

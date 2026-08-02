@@ -559,7 +559,6 @@ private fun Bullet(text: String) {
 
 /** Plain English for why a space didn't make it onto the grid. Never a code, never blank. */
 private fun DropReason.plain(): String = when (this) {
-    DropReason.SUB_AREA -> "it sits inside another room"
     DropReason.NOT_HABITABLE -> "it isn't a room we score"
     DropReason.UNKNOWN_LABEL -> "we didn't recognise the name"
     DropReason.DEGENERATE -> "it was too small to place on the grid"

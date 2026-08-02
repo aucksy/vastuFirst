@@ -170,8 +170,16 @@ object ScanMapper {
     /** Below this many rooms, identical sizes are plausible (a row of three shops) — don't judge. */
     const val UNIFORM_MIN_ROOMS = 4
 
-    /** A rectangle at least this covered by a bigger one is a sub-area of it, not a room. */
-    const val CONTAINMENT_FRACTION = 0.90
+    // ⚠ MEASURED AND REMOVED: the geometric sub-area drop (a rectangle ≥90 % inside a bigger one
+    // was deleted as a dressing-area). Run across every recorded real reply — 41 plans,
+    // `tools/scan-eval/audit-mapper.mjs` — it fired 24 times and EVERY ONE was a real scored room:
+    // nine toilets, a pooja, balconies, a study, a servant room. Not one genuine dressing area ever
+    // reached it, because genuine sub-areas are caught BY NAME (dress/wardrobe/duct, RoomLabels)
+    // before geometry runs. The reader lays out template rectangles, so "wholly inside another
+    // room" describes the reader's sloppiness, not the home — the owner's own master toilet was
+    // deleted by it. Owner decision D1's intent (a dressing area never becomes a room) is carried
+    // entirely by the name table; a typed room now always survives to placement, where the overlap
+    // resolver trims the pair apart and flags them.
 
     // ⚠ MEASURED AND NOT BUILT: a separate "fill the grid" scale.
     //
@@ -313,8 +321,10 @@ object ScanMapper {
             }
         }
 
-        // ---- 5. sub-areas, by GEOMETRY not by name --------------------------------------------
-        val rooms = dropSubAreas(typed, dropped)
+        // ---- 5. every typed room survives — sub-areas were dropped BY NAME in step 4 -----------
+        // (The geometric containment drop that used to live here was measured against the whole
+        // recorded corpus and deleted; see the note above where its threshold used to be.)
+        val rooms = typed
 
         if (rooms.isEmpty()) {
             // Everything the plan said was unreadable as a room name — a numbered legend whose key
@@ -588,36 +598,6 @@ object ScanMapper {
     }
 
     /**
-     * Drop a rectangle that sits wholly inside a bigger one — a dressing area, a walk-in wardrobe, a
-     * niche. **By geometry, not by name** (owner decision D1): the parent room already occupies that
-     * floor, and the engine only ever measures a room's own footprint, so the sub-area is invisible
-     * to scoring anyway.
-     *
-     * ⚠ Known cost, deliberately accepted: the model's rectangles are sloppy, so an *attached* toilet
-     * drawn slightly inside its bedroom would be dropped here — and TOILET is a scored input. That is
-     * why every drop is recorded in [ScanNotes.dropped] and shown to the user ("we also saw…"),
-     * instead of vanishing. The user confirms every room before anything is scored (§6.2b).
-     */
-    private fun dropSubAreas(typed: List<Candidate>, dropped: MutableList<DroppedSpace>): List<Candidate> {
-        val keep = ArrayList<Candidate>(typed.size)
-        for (c in typed) {
-            val inside = typed.any { it !== c && containedIn(c.box, it.box) }
-            if (inside) dropped += DroppedSpace(c.box.label, DropReason.SUB_AREA) else keep += c
-        }
-        return keep
-    }
-
-    /** True when [inner] is smaller than [outer] and at least [CONTAINMENT_FRACTION] of it is inside. */
-    internal fun containedIn(inner: ScanBox, outer: ScanBox): Boolean {
-        val innerArea = inner.w * inner.h
-        val outerArea = outer.w * outer.h
-        if (innerArea <= 0.0 || innerArea >= outerArea) return false
-        val ix = max(0.0, min(inner.x + inner.w, outer.x + outer.w) - max(inner.x, outer.x))
-        val iy = max(0.0, min(inner.y + inner.h, outer.y + outer.h) - max(inner.y, outer.y))
-        return (ix * iy) / innerArea >= CONTAINMENT_FRACTION
-    }
-
-    /**
      * The part of the picture the HOME occupies: the bounding box of the rooms we are going to draw,
      * clamped to the picture itself.
      *
@@ -837,12 +817,14 @@ object ScanMapper {
      * still loses **4** rooms outright and smallest-first loses **none**.
      *
      * ⚠ **It is not free, and the cost is stated rather than buried.** Because the biggest room is
-     * then the one squeezed, and the biggest room is usually the living room, one more room across
-     * that whole set ends up drawn against the orientation its plan prints — 5 where confidence-first
-     * gives 4, out of 57 dimensioned rooms. That trade is taken deliberately: a room drawn the wrong
-     * shape is visible, flagged and correctable by the user, while a room that vanishes changes the
-     * footprint the engine scores and cannot be re-added by someone who never saw it. It is the
-     * standing rule of this file, applied to the one case where the two harms compete.
+     * then the one squeezed, and the biggest room is usually the living room, the big rooms absorb
+     * the trims. [bestFreeSubRect] keeps that cost as low as it can be kept — the search is exact,
+     * and its tie-break refuses to give up a room's printed orientation for zero cells — but a
+     * blocker sitting mid-rectangle still costs real cells. The trade is taken deliberately: a room
+     * drawn the wrong shape is visible, flagged and correctable by the user, while a room that
+     * vanishes changes the footprint the engine scores and cannot be re-added by someone who never
+     * saw it. It is the standing rule of this file, applied to the one case where the two harms
+     * compete.
      *
      * ⭐ [rescued] rooms jump the queue. A room only lands there by having been lost outright on a
      * previous pass, so it is the narrowest possible exception: it fires for a room that would
@@ -865,13 +847,14 @@ object ScanMapper {
         val lost = ArrayList<Candidate>()
         for ((cand, rect, asRead) in order) {
             val blockers = out.map { it.second }
-            // The printed shape first; then the shape it was read with; then a single cell at its own
-            // corner. Keeping a room of the wrong SIZE beats losing it — the user can re-shape a room
-            // they can see and cannot re-add one that never arrived — and none of these three ever
-            // MOVES it, which is the rule the whole step exists to keep.
-            val fitted = trimAgainst(rect, blockers)
-                ?: trimAgainst(asRead, blockers)
-                ?: CellRect(rect.col, rect.row, 1, 1).takeIf { one -> blockers.none { it.overlaps(one) } }
+            // The printed shape first; then the shape it was read with. Keeping a room of the wrong
+            // SIZE beats losing it — the user can re-shape a room they can see and cannot re-add one
+            // that never arrived — and neither search ever MOVES a room beyond its own rectangle,
+            // which is the rule the whole step exists to keep. A one-cell survivor is simply the
+            // smallest sub-rectangle, so the old corner fallback is subsumed.
+            val ratio = RoomDimensions.of(cand.box)?.ratio?.takeIf { it.isFinite() && it > 0.0 }
+            val fitted = bestFreeSubRect(rect, blockers, ratio)
+                ?: bestFreeSubRect(asRead, blockers, ratio)
             if (fitted == null) {
                 lost += cand
                 continue
@@ -881,25 +864,61 @@ object ScanMapper {
         return Attempt(out, lost)
     }
 
-    /** Shrink [cand] until it clears every blocker, or give up. Terminates: every step loses area. */
-    private fun trimAgainst(cand: CellRect, blockers: List<CellRect>): CellRect? {
-        var r = cand
-        var guard = cand.w * cand.h + 4
-        while (guard-- > 0) {
-            val hit = blockers.firstOrNull { it.overlaps(r) } ?: return r
-            r = retract(r, hit) ?: return null
+    /**
+     * ⭐⭐ The LARGEST free sub-rectangle of [cand] against [blockers] — exact, not greedy.
+     *
+     * This replaced a chain of single-edge retractions, each locally cheapest, whose sum was often
+     * terrible: measured on the corpus, one plan's living/dining went from 5×4 to a 2×3 drawn the
+     * WRONG way round, and another's lobby/dining from 4×3 to 1×3 — each retraction threw away a
+     * whole slice when the blocker only touched a corner of it. Every sub-rectangle is checked
+     * instead (≤ ~3 000 for a 10×10 room, O(1) apiece via prefix sums), keeping the best by: most
+     * cells, then agreement with the PRINTED orientation, then least displaced from where the room
+     * was read. The tie-break means a room never gives up the way its own sheet says it runs to
+     * save zero cells. Post-trim orientation agreement across the recorded corpus went 120/132 →
+     * 127/138, and rooms lost outright 2 → 1 (the one loss is two rectangles read at the same
+     * cells, which no trim can fix).
+     */
+    private fun bestFreeSubRect(cand: CellRect, blockers: List<CellRect>, printedRatio: Double?): CellRect? {
+        val w = cand.w
+        val h = cand.h
+        if (w < 1 || h < 1) return null
+        // pre[r][c] = blocked cells above-left of (r, c) in the candidate's own frame.
+        val pre = Array(h + 1) { IntArray(w + 1) }
+        for (r in 0 until h) {
+            for (c in 0 until w) {
+                val cell = CellRect(cand.col + c, cand.row + r, 1, 1)
+                val hit = if (blockers.any { it.overlaps(cell) }) 1 else 0
+                pre[r + 1][c + 1] = hit + pre[r][c + 1] + pre[r + 1][c] - pre[r][c]
+            }
         }
-        return null
-    }
-
-    /** The single-edge retraction that clears [o] while losing the fewest cells. */
-    private fun retract(r: CellRect, o: CellRect): CellRect? {
-        val options = ArrayList<CellRect>(4)
-        if (o.right > r.col && o.right < r.right) options += CellRect(o.right, r.row, r.right - o.right, r.h)
-        if (o.col > r.col && o.col < r.right) options += CellRect(r.col, r.row, o.col - r.col, r.h)
-        if (o.bottom > r.row && o.bottom < r.bottom) options += CellRect(r.col, o.bottom, r.w, r.bottom - o.bottom)
-        if (o.row > r.row && o.row < r.bottom) options += CellRect(r.col, r.row, r.w, o.row - r.row)
-        return options.maxByOrNull { it.w * it.h }
+        fun agree(ww: Int, hh: Int): Int = when {
+            printedRatio == null || printedRatio == 1.0 -> 1
+            ww == hh -> 1
+            (printedRatio > 1.0) == (ww > hh) -> 2
+            else -> 0
+        }
+        var best: CellRect? = null
+        var bestScore: IntArray? = null
+        for (r0 in 0 until h) for (r1 in r0 + 1..h) for (c0 in 0 until w) for (c1 in c0 + 1..w) {
+            if (pre[r1][c1] - pre[r0][c1] - pre[r1][c0] + pre[r0][c0] > 0) continue
+            val ww = c1 - c0
+            val hh = r1 - r0
+            val score = intArrayOf(ww * hh, agree(ww, hh), -(r0 + c0), -r0, -c0)
+            val prev = bestScore
+            var better = prev == null
+            if (prev != null) {
+                for (i in score.indices) {
+                    if (score[i] == prev[i]) continue
+                    better = score[i] > prev[i]
+                    break
+                }
+            }
+            if (better) {
+                best = CellRect(cand.col + c0, cand.row + r0, ww, hh)
+                bestScore = score
+            }
+        }
+        return best
     }
 
     /**

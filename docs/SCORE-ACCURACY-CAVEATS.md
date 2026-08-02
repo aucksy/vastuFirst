@@ -81,13 +81,19 @@ measured and produced the identical lattice with *more* rooms off the page.
   is the weaker product. Two of the owner's eleven placed rooms are still drawn against their printed
   shape; both are visible and flagged, which is what the mandatory confirmation step is for.
 
-### 2e. ⚠ An attached toilet drawn inside its parent room is dropped
+### 2e. ⭐ An attached toilet drawn inside its parent room used to be dropped — closed 2 August 2026
 The reader put the owner's master-bedroom toilet wholly inside the rectangle it gave the living room,
-and sub-areas are dropped by geometry (owner decision D1) — so a TOILET, a 2.5-weight scored room,
-does not reach the grid.
-- Silent: **no** — every drop is listed to the user on the confirmation screen ("we also saw…").
-  Moves number: yes, by omission. Fix path: containment by geometry is right for dressing areas and
-  wardrobes and wrong here; distinguishing them needs a signal we do not yet have.
+and the geometric sub-area rule deleted it — a TOILET, a 2.5-weight scored room, gone from the grid.
+- The "signal we do not yet have" turned out to already exist: the room's **name**. Measured across
+  every recorded real reply (41 plans), the geometric rule fired 24 times and every one was a real
+  scored room — nine toilets, a pooja, balconies, a study — while every genuine dressing area was
+  already being dropped by name before geometry ran. The geometric rule is deleted; a named room now
+  always survives, keeps the cells it was read at, and the room it collided with is trimmed around
+  it and flagged.
+- ⚠ **Residual:** the rescued room sits where the reader read it, which on the owner's flat is inside
+  the living room's area rather than against the west wall where his sheet puts it. Moving it there
+  would mean relocating a room the user has never seen — the harm the no-relocation rule exists to
+  prevent — so it arrives visibly misplaced and flagged, one drag from right.
 
 ### 3. North is set by the user and cannot be verified
 The whole zone assignment rotates with North. The user sets it by dial / slider / degree — if their

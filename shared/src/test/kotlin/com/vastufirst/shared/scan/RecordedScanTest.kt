@@ -175,4 +175,38 @@ class RecordedScanTest {
         assertEquals(10 to 10, densePlaced.cols to densePlaced.rows)
         assertTrue(densePlaced.notes.dropped.isEmpty())
     }
+
+    /**
+     * ⭐ plan-020 — a real Gurgaon builder plan whose every size is printed in **feet and inches**
+     * (`11'-0" x 15'-0"`), the one measurement convention no recorded fixture exercised end-to-end.
+     *
+     * ⚠ The gap was found the hard way. The fuzz mirror's feet-inches pattern had a broken string
+     * escape, so no feet-inch size ever parsed there — and this plan came out ASSISTED in the
+     * mirror while Kotlin, whose pattern was right, PLACED it. Two implementations of one design
+     * disagreed on a plan's entire outcome and every suite stayed green. This test pins Kotlin's
+     * half; the mirror pins its own in `sim.mjs`, so the two can no longer drift apart silently.
+     */
+    @Test
+    fun `⭐ the feet-and-inches plan places, with every size read from its printed text`() {
+        val rec = assertNotNull(RecordedScans.load(RecordedScans.PLAN_020), "plan-020 is not bundled")
+        assertEquals(14, rec.reply.rooms.size, "the sheet names fourteen spaces")
+        assertEquals(
+            14,
+            rec.reply.rooms.count { RoomDimensions.of(it) != null },
+            "every space prints a feet-and-inches size, and every one must parse",
+        )
+        val out = ScanMapper.map(rec.reply, imageAspect = 1399.0 / 1389.0)
+        val placed = assertIs<ScanOutcome.Placed>(out, "a fully dimensioned single home must place")
+        assertEquals(13, placed.rooms.size, "everything but the dressing area places")
+        assertEquals(
+            listOf("DRESS"),
+            placed.notes.dropped.map { it.label },
+            "the dressing area drops by NAME — the only drop on this sheet",
+        )
+        assertEquals(
+            4,
+            placed.rooms.count { it.type == RoomType.BALCONY },
+            "four rooms captioned just BALCONY, at four different printed sizes, stay four rooms",
+        )
+    }
 }

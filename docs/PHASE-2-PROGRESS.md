@@ -2863,3 +2863,96 @@ tag on it would name a build nothing verified.
 sizes the plan itself prints, no room silently deleted for being drawn off the page, a fifteen-room
 flat treated as the ordinary apartment it is, and — when the reading genuinely fails — a screen that
 says so instead of a row of squares under the heading "Place your rooms".
+
+---
+
+# ⭐⭐ v0.6.3 — every recorded plan through the mapper, measured, and the toilets come back (2026-08-02)
+
+The whole scan pipeline was audited against **every reply the real API has ever returned for a real
+plan** — 41 recordings: the 30-plan corpus, the nine re-reads with printed sizes, and the owner's own
+flat. A new tool (`tools/scan-eval/audit-mapper.mjs`) runs them all through the mapper in seconds and
+reports, per plan, what a user would be handed. Everything below was found by that audit, fixed, and
+then re-measured on the same corpus. Nothing here changes the engine or any score rule — it changes
+what a scan hands the editor.
+
+## 1. ⭐⭐ The "sub-area" rule was deleting toilets — 24 real rooms across the corpus, zero sub-areas
+
+A rectangle drawn wholly inside another room's rectangle was treated as a dressing-area and dropped.
+Measured across all 41 recordings, that rule fired **24 times — and every single one was a real,
+scored room**: nine toilets, a pooja, balconies, a study, a servant room. The owner's own
+master-bedroom toilet was one of them (v0.6.2 shipped it as a stated trade in the "we also saw"
+list). Not one genuine dressing area ever reached the rule, because dressing areas, wardrobes and
+ducts are recognised **by name** and dropped before any geometry is looked at. The reader lays out
+template rectangles, so "inside another room" describes the reader's sloppiness, not the home.
+
+The rule is gone. A named room now always survives to the grid: it keeps the cells it was read at,
+and the room it collided with is trimmed around it and flagged for checking. **On his flat: all
+fifteen spaces now arrive, including the master toilet, and nothing is dropped at all.**
+
+## 2. ⭐ The overlap trimmer is now exact, and it respects the printed sizes
+
+When two rooms fight over cells, the loser used to be cut back one whole edge at a time, each cut
+locally cheapest — and the sum was often terrible: one plan's living/dining went from a 20-cell room
+to a 6-cell sliver drawn the wrong way round. The trimmer now searches **every** possible surviving
+rectangle and keeps the best: most cells first, then the one that still runs the way the plan prints
+the room, then the least moved. Rooms drawn against their own sheet's orientation across the corpus:
+**11 → 10 of 148 judged**, and — with the label fixes below — rooms lost outright on the current
+prompt: **zero**.
+
+## 3. ⭐ Eleven real caption styles that read as "we didn't recognise the name" now resolve
+
+Every one read verbatim off a recorded reply, none invented: `BED RM.-01` (a bedroom), a bare
+`KIDS`, `SERV. RM`, `Masterbed 360X370`, `TOIL` (the sheet itself truncates it), `Pojo 150X100` (a
+hand-lettered pooja), `DRY BALC.`, `C Bal`, `W area` / `W/area` (wash area). And three things that
+are genuinely not rooms — a lawn, a pathway, a crockery unit — now say "not a room we score" instead
+of the dishonest "we didn't recognise the name". A watchman's cabin stays unrecognised **on
+purpose**: it stands at the gate, outside the home, and guessing it onto the plan would move the
+score.
+
+Two plans transform: the hand-drawn sheet goes from 8 of 12 rooms placed to 11 of 12 (its master
+bedroom and pooja were the ones missing), and another recovers **both bedrooms** it had been losing
+to the caption style `BED RM.-01` — its layout had been two-thirds empty because of it.
+
+## 4. ⭐ The fuzz mirror had two silent blind spots — found because the audit disagreed with Kotlin
+
+- **No feet-and-inches size ever parsed in the mirror.** A broken string escape meant the pattern
+  could not match, so every suite stayed green while the mirror and Kotlin disagreed on a real
+  plan's entire outcome (Assisted there, Placed here). The plan that exposed it — a Gurgaon builder
+  plan printing `11'-0" x 15'-0"` on all fourteen spaces — is now a bundled fixture pinned in BOTH
+  Kotlin and the mirror, so the two can never drift apart silently again.
+- **The orientation invariant never judged the current prompt's replies.** It read sizes only from
+  the caption text, and the current prompt puts them in their own field — so the check that guards
+  "rooms run the way the sheet says" had been judging nothing since the size field shipped.
+
+## 5. ⭐ The wall magnet is finally proven — and a relaxation pass was measured and NOT shipped
+
+- `no-magnet` had been recorded as unproven in v0.6.1 and v0.6.2. The feet-and-inches plan settles
+  it: without the magnet its kitchen falls one cell short of the dining wall (a 9-cell kitchen and
+  37 empty cells; 12 and 34 with it). The injection now goes red on a pinned real plan.
+- A relaxation pass (each room re-trimmed against everyone's final rectangles, to reclaim cells a
+  mid-queue trim freed) was built and measured across all 41 recordings: **it changed nothing on any
+  plan** — the cells a big room loses are held by neighbours whose placement is legitimate.
+  Machinery that cannot be shown to change an answer does not ship; it was removed, and the note in
+  the code says why.
+
+## 6. ⚠ Honest limits, restated
+
+- **His living/dining is still square** (printed wider than deep). It is squeezed between the reader
+  template's positions for its neighbours — including the master toilet this release brings back,
+  which occupies one of the cells the living room would need. Fixing it would mean *moving* a room
+  somewhere the reader did not put it, and the standing rule — never relocate a room the user has
+  not seen — is worth more than the shape of one room. Visible, flagged, correctable in one drag.
+- **Ten rooms across the corpus still land against their printed orientation** after overlaps
+  resolve — all big rooms whose cells were genuinely taken. The pre-trim shapes are always right;
+  the confirmation step exists for exactly this.
+- **Two rooms are lost outright on the OLD prompt's recordings** (two rectangles read at identical
+  cells, nothing to trim); on the current prompt's recordings, none.
+- **A plan that prints no sizes** still rides entirely on the reader's template and the room-count
+  gate. Unchanged, and still the weak case.
+
+## 7. Looked at before tagging (CLAUDE.md §2b)
+
+The three fixture-driven screens re-render with this release: the owner's flat (now fifteen rooms,
+with the master toilet visible west of the living room), the Gurgaon seven-room flat, and the
+floor-plate room list (which now offers all four of its toilets). Goldens re-recorded and read
+before tagging; ratchet movements compared picture-to-picture, not assumed.

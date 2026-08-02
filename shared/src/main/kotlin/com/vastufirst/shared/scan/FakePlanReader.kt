@@ -88,7 +88,18 @@ object RecordedScans {
      */
     const val OWNER_FLAT = "owner-flat"
 
-    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT)
+    /**
+     * ⭐ A real Gurgaon builder plan whose every size is printed in **feet and inches** —
+     * `11'-0" x 15'-0"` — the one measurement convention no recorded fixture covered end-to-end.
+     * That gap was found the hard way: the fuzz mirror's feet-inches pattern had a broken escape,
+     * so no feet-inch size ever parsed THERE while Kotlin parsed them all, and the two disagreed on
+     * this plan's entire outcome without any suite noticing. It also carries four rooms captioned
+     * just `BALCONY` at four different printed sizes — the duplicate-caption case — and a
+     * `LOBBY/DINING`. Thirteen of its fourteen spaces place; the DRESS drops by name.
+     */
+    const val PLAN_020 = "plan-020"
+
+    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020)
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {

@@ -113,8 +113,9 @@ data class ScanDraft(
 /** Why a space the model reported did not become a room. Always surfaced, never silent. */
 @Serializable
 enum class DropReason {
-    /** A rectangle wholly inside another room — a dressing area, a walk-in closet. §3j D1. */
-    SUB_AREA,
+    // ⚠ SUB_AREA (a rectangle wholly inside another room) is GONE. Measured across all 41 recorded
+    // real replies it only ever deleted real scored rooms — the owner's own master toilet among
+    // them — because genuine sub-areas are already caught by name. See the note in ScanMapper.
 
     /** Named on the drop list: dressing areas, ducts, shafts, lifts. Not habitable, not scored. */
     NOT_HABITABLE,

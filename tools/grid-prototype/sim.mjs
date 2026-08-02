@@ -1244,13 +1244,72 @@ function scanTrimAgainst(cand, blockers) {
   return null;
 }
 
+/**
+ * ⭐⭐ The LARGEST free sub-rectangle of [cand] — exact, replacing the greedy edge-retraction above.
+ *
+ * The greedy chain retracted one whole edge per collision, each step locally best, and the sum was
+ * often terrible: measured on the corpus, plan-014's living/dining went 5x4 → 2x3 (wide → DEEP) and
+ * plan-026's lobby/dining 4x3 → 1x3, because each retraction threw away a full slice when the
+ * blocker only touched a corner of it. This searches every sub-rectangle instead (≤ ~3000 for a
+ * 10×10 room, O(1) apiece via prefix sums) and keeps the best by: most cells, then agreement with
+ * the PRINTED orientation, then least displaced. Exact beats greedy, and the tie-break means a room
+ * never gives up the way its own sheet says it runs to save zero cells.
+ *
+ * Mirrors ScanMapper.bestFreeSubRect. FAULT INJECTION 'greedy-trim' restores the old chain — the
+ * state that inverted big rooms and could lose one entirely while free cells sat inside its own
+ * read rectangle (LOST-WITH-ROOM-TO-SPARE fires).
+ */
+function bestFreeSubRect(cand, blockers, printedRatio) {
+  const W = cand.w, H = cand.h;
+  if (W < 1 || H < 1) return null;
+  // pre[r][c] = blocked cells in cand's own frame, rows/cols < r,c (prefix sum)
+  const pre = Array.from({ length: H + 1 }, () => new Array(W + 1).fill(0));
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      const cell = { col: cand.col + c, row: cand.row + r, w: 1, h: 1 };
+      const hit = blockers.some((b) => overlaps(b, cell)) ? 1 : 0;
+      pre[r + 1][c + 1] = hit + pre[r][c + 1] + pre[r + 1][c] - pre[r][c];
+    }
+  }
+  const agree = (w, h) => (printedRatio == null || printedRatio === 1 ? 1
+    : w === h ? 1 : (printedRatio > 1) === (w > h) ? 2 : 0);
+  let best = null;
+  for (let r0 = 0; r0 < H; r0++) {
+    for (let r1 = r0 + 1; r1 <= H; r1++) {
+      for (let c0 = 0; c0 < W; c0++) {
+        for (let c1 = c0 + 1; c1 <= W; c1++) {
+          if (pre[r1][c1] - pre[r0][c1] - pre[r1][c0] + pre[r0][c0] > 0) continue;
+          const w = c1 - c0, h = r1 - r0;
+          const score = [w * h, agree(w, h), -(r0 + c0), -r0, -c0];
+          let better = best == null;
+          if (!better) {
+            for (let i = 0; i < score.length; i++) {
+              if (score[i] === best.score[i]) continue;
+              better = score[i] > best.score[i];
+              break;
+            }
+          }
+          if (better) best = { score, rect: { col: cand.col + c0, row: cand.row + r0, w, h } };
+        }
+      }
+    }
+  }
+  return best ? best.rect : null;
+}
+
 /** The whole mapper. Returns {kind:'placed'|'assisted'|'refused', ...}. */
 // ---- printed room sizes (RoomDimensions.kt) --------------------------------------------------
 // The reader reads TEXT at ~95 % and guesses rectangles at 40-70 %, so where a caption prints the
 // room's size that number beats the rectangle it arrived with. Mirrors RoomDimensions.parse.
 const FRACTIONS = { '\u00bd': 0.5, '\u00bc': 0.25, '\u00be': 0.75, '\u2153': 1/3, '\u2154': 2/3, '\u215b': 0.125 };
-const FEET_INCHES = "(\d+)\s*['\u2032\u2019]\s*-?\s*(\d+)?\s*([\u00bd\u00bc\u00be\u2153\u2154\u215b])?\s*[\"\u2033\u201d]?";
-const PAIR_FEET_INCHES = new RegExp(FEET_INCHES + "\s*[X\u00d7]\s*" + FEET_INCHES);
+// \u26a0 DOUBLE-escaped, because this is a plain string fed to `new RegExp`. It was written with single
+// backslashes once, and JavaScript silently reads "\d" in a string literal as the letter d \u2014 so the
+// pattern could never match, every feet-inches size in the corpus silently failed to parse in this
+// mirror, and the PRINTED-ORIENTATION invariant never judged a single feet-inch room while Kotlin
+// parsed them all. Found by the corpus audit: plan-020, sized on every caption, came out ASSISTED
+// here and PLACED in Kotlin. A mirror that quietly skips a branch is a mirror that stops mirroring.
+const FEET_INCHES = "(\\d+)\\s*['\u2032\u2019]\\s*-?\\s*(\\d+)?\\s*([\u00bd\u00bc\u00be\u2153\u2154\u215b])?\\s*[\"\u2033\u201d]?";
+const PAIR_FEET_INCHES = new RegExp(FEET_INCHES + "\\s*[X\u00d7]\\s*" + FEET_INCHES);
 const PAIR_PLAIN = /(?<![\d.'"\u2032\u2033])(\d{2,5})\s*(?:MM|CM)?\s*[X\u00d7]\s*(\d{2,5})\s*(?:MM|CM)?(?!\d)/;
 const MM_PER_FOOT = 304.8, FEET_IF_UNDER = 100;
 
@@ -1388,17 +1447,30 @@ function scanMap(draft, imageAspect, opts = {}) {
 
   const typed = [];
   let unknown = 0;
+  // The audit tool substitutes the FULL synonym table here (this mirror deliberately carries a
+  // cut-down one — see the Suite E header). Absent an override, behaviour is byte-identical.
+  const resolve = opts.resolveLabel || resolveLabel;
   for (const b of clean) {
-    const m = resolveLabel(b.label);
+    const m = resolve(b.label);
     if (m.kind === 'room') typed.push({ box: b, type: m.type, flags: new Set() });
     else if (m.kind === 'drop') dropped.push({ label: b.label, reason: 'NOT_HABITABLE' });
     else { unknown++; dropped.push({ label: b.label, reason: 'UNKNOWN_LABEL' }); }
   }
 
+  // ⭐⭐ A TYPED room is NEVER dropped for sitting inside another room's rectangle.
+  //
+  // The geometric sub-area drop was measured across every recorded real reply (41 plans,
+  // tools/scan-eval/audit-mapper.mjs): it fired 24 times, and EVERY ONE was a real scored room —
+  // nine toilets, a pooja, balconies, a study, a servant room. Not a single genuine dressing area
+  // reached it, because genuine sub-areas are caught BY NAME (dress/wardrobe/duct) before geometry
+  // runs. The reader lays out template rectangles, so "wholly inside another room" describes its
+  // sloppiness, not the home. The contained room stays; the overlap resolver trims the pair apart.
+  // FAULT INJECTION 'drop-contained' restores the drop — the owner's own master toilet vanishes.
   const rooms = [];
   for (const c of typed) {
-    if (typed.some((o) => o !== c && containedIn(c.box, o.box))) dropped.push({ label: c.box.label, reason: 'SUB_AREA' });
-    else rooms.push(c);
+    if (inject === 'drop-contained' && typed.some((o) => o !== c && containedIn(c.box, o.box))) {
+      dropped.push({ label: c.box.label, reason: 'SUB_AREA' });
+    } else rooms.push(c);
   }
   if (!rooms.length) return { kind: 'refused', reason: unknown > 0 ? 'NO_LABELS' : 'NO_ROOMS', notes: notes() };
 
@@ -1456,7 +1528,10 @@ function scanMap(draft, imageAspect, opts = {}) {
     // The printed size is attached here, NOT inside reshapeToPrinted, so that deleting the
     // reshaping (--inject=no-printed-sizes) still leaves the invariant something to judge. An
     // injection that removes a feature has to go red; one that merely stops recording it would not.
-    else snapped.push({ c, rect, asRead: rect, asReadRaw: rect, printed: parsePrinted(c.box.label) });
+    // ⚠ Read via printedTextOf — the `size` FIELD first, the caption second. It read the caption
+    // only, so the PRINTED-ORIENTATION invariant never judged a single reply from the current
+    // prompt (which puts every size in its own field) while reporting green. Found by the audit.
+    else snapped.push({ c, rect, asRead: rect, asReadRaw: rect, printed: parsePrinted(printedTextOf(c.box)) });
   }
   snapped = reshapeToPrinted(snapped, cols, rows, inject);
 
@@ -1483,20 +1558,32 @@ function scanMap(draft, imageAspect, opts = {}) {
       // Re-shaping must never cost a room: a room that vanishes changes the footprint the engine
       // scores, which is worse than a room of the wrong shape (which the user can see and fix).
       let trimmed, basis = s2.rect;
+      const blockers = placed.map((p) => p.rect);
+      const ratio = s2.printed ? s2.printed.w / s2.printed.h : null;
       if (inject === 'repack') {
-        trimmed = (fitWithoutOverlap([...placed.map((p) => p.rect), s2.rect], cols, rows) || []).slice(-1)[0] || null;
+        trimmed = (fitWithoutOverlap([...blockers, s2.rect], cols, rows) || []).slice(-1)[0] || null;
       } else if (inject === 'no-trim') {
         trimmed = s2.rect;
-      } else {
-        trimmed = scanTrimAgainst(s2.rect, placed.map((p) => p.rect));
-        if (!trimmed) {         // the printed shape will not fit here; fall back to the read shape
-          basis = s2.asReadRaw || s2.rect;
-          trimmed = scanTrimAgainst(basis, placed.map((p) => p.rect));
+      } else if (inject === 'greedy-trim') {
+        // The pre-audit behaviour: single-edge retraction, read-shape fallback, corner cell only.
+        // Kept as an injection because it FAILS two ways the search cannot: it inverts big rooms
+        // (PRINTED-ORIENTATION would fire post-trim if judged there; the pinned corpus cases fire
+        // instead) and it can lose a room while free cells sit inside its own rectangle
+        // (LOST-WITH-ROOM-TO-SPARE).
+        trimmed = scanTrimAgainst(s2.rect, blockers);
+        if (!trimmed) { basis = s2.asReadRaw || s2.rect; trimmed = scanTrimAgainst(basis, blockers); }
+        if (!trimmed) {
+          const one = { col: s2.rect.col, row: s2.rect.row, w: 1, h: 1 };
+          if (!blockers.some((b) => overlaps(b, one))) { trimmed = one; basis = s2.rect; }
         }
-      }
-      if (!trimmed && inject !== 'no-onecell') {
-        const one = { col: s2.rect.col, row: s2.rect.row, w: 1, h: 1 };
-        if (!placed.some((p) => overlaps(p.rect, one))) { trimmed = one; basis = s2.rect; }
+      } else {
+        // ⭐ Exact largest-free-sub-rectangle, orientation-aware — see bestFreeSubRect. A one-cell
+        // survivor is just the smallest sub-rectangle, so the old corner fallback is subsumed.
+        trimmed = bestFreeSubRect(s2.rect, blockers, ratio);
+        if (!trimmed) {         // the printed shape's whole footprint is blocked; try the read shape
+          basis = s2.asReadRaw || s2.rect;
+          trimmed = bestFreeSubRect(basis, blockers, ratio);
+        }
       }
       if (!trimmed) { lost.push(s2.c); continue; }
       // `asRead` is the rectangle this placement was actually DERIVED from, so the anti-relocation
@@ -1504,6 +1591,11 @@ function scanMap(draft, imageAspect, opts = {}) {
       // catches a relocating packer, which moves a room to a free slot unrelated to either.
       placed.push({ c: s2.c, rect: trimmed, asRead: basis, printed: s2.printed || null, shaped: s2.rect });
     }
+    // ⚠ MEASURED AND NOT BUILT: a relaxation pass (each room re-trimmed against everyone's FINAL
+    // rectangles until nothing improves, hoping to reclaim cells a mid-queue trim freed). Run
+    // across all 41 recorded replies it changed NOTHING — the cells a big room loses are held by
+    // neighbours whose placement is legitimate, so there is nothing to reclaim. Machinery that
+    // cannot be shown to change an answer does not ship (the exp-frame.py precedent).
     return { placed, lost };
   }
 
@@ -1521,9 +1613,18 @@ function scanMap(draft, imageAspect, opts = {}) {
   const lostWithFreeCorner = [];
   for (const c of attempt.lost) {
     dropped.push({ label: c.box.label, reason: 'OVERLAP_UNRESOLVABLE' });
+    // ⭐ Strengthened from "its corner cell was free" to "ANY cell of its own rectangle was free":
+    // the search-based trim can always keep one cell anywhere inside the rectangle, so a loss is
+    // only ever legal when another room holds every single cell the room was read at.
     const src = snapped.find((x) => x.c === c);
-    const one = src && { col: src.rect.col, row: src.rect.row, w: 1, h: 1 };
-    if (one && !placed.some((pp) => overlaps(pp.rect, one))) lostWithFreeCorner.push(c.box.label);
+    if (!src) continue;
+    let anyFree = false;
+    for (let rr = src.rect.row; rr < bottom(src.rect) && !anyFree; rr++) {
+      for (let cc = src.rect.col; cc < right(src.rect) && !anyFree; cc++) {
+        if (!placed.some((pp) => overlaps(pp.rect, { col: cc, row: rr, w: 1, h: 1 }))) anyFree = true;
+      }
+    }
+    if (anyFree) lostWithFreeCorner.push(c.box.label);
   }
 
   if (placed.length < MIN_PLACED_ROOMS || placed.length < rooms.length * MIN_PLACED_FRACTION) {
@@ -1802,11 +1903,68 @@ function scanPinnedCases(inject) {
       if (o.cols < 5) problems.push(`owner-flat: grid ${o.cols}x${o.rows} is too narrow for its widest room`);
       const living = (o.rooms || []).find((r) => /LIVING/.test(r.label));
       if (!living) problems.push('owner-flat: the living/dining did not survive');
-      else if (living.rect.w <= living.rect.h) {
+      else if (living.rect.w < living.rect.h) {
         // `--inject=no-printed-sizes` lands here: without the sizes the sheet prints, his main room
         // comes out taller than wide, which puts it in a different Vastu direction.
+        // ⚠ `<`, not `<=`, matching Kotlin's OwnerFlatScanTest: rounding is monotonic, so the room
+        // may flatten to a SQUARE — it does, once his master toilet stopped being deleted and took
+        // one of the cells — but it may never come out deeper than wide.
         problems.push(`owner-flat: LIVING/DINING is printed 7.25m x 4.30m but drawn `
           + `${living.rect.w}x${living.rect.h} — deeper than wide`);
+      }
+      // ⭐⭐ His master-bedroom toilet ARRIVES. The reader drew it wholly inside the rectangle it
+      // gave the living room, and the geometric sub-area drop deleted it — a 2.5-weight scored
+      // room, silently gone from a paid score. Measured across all 41 recorded replies, that drop
+      // fired 24 times and every single one was a real room, so it is gone; genuine sub-areas
+      // (dressing, wardrobe, duct) are caught by NAME before geometry runs.
+      // `--inject=drop-contained` restores the drop and this goes red.
+      if (o.kind === 'placed' && !(o.rooms || []).some((r) => /MBR TOILET/.test(r.label))) {
+        problems.push('owner-flat: MBR TOILET was deleted — a contained scored room must survive');
+      }
+    }
+  }
+
+  // ⭐ plan-020 — a real Gurgaon builder plan whose every size is printed in FEET AND INCHES
+  // (`11'-0" x 15'-0"`), the convention the corpus audit found had never been exercised end-to-end
+  // here: a broken escape in this mirror's own feet-inches regex meant no feet-inch size ever
+  // parsed, every suite stayed green, and Kotlin (whose regex was right) disagreed with this file
+  // on the plan's whole outcome — Placed there, Assisted here. Pinned so the two cannot drift
+  // silently again. It also carries FOUR rooms captioned just "BALCONY" at four different printed
+  // sizes — the duplicate-caption case.
+  //
+  // ⭐ And it is the case that finally proves the MAGNET (`--inject=no-magnet` was recorded as
+  // unproven in v0.6.1 and v0.6.2): the kitchen's printed shape lands one cell short of its
+  // neighbour's wall line, the magnet clicks it on, and without it the kitchen is 3x3 instead of
+  // 3x4 and the home has 37 empty cells instead of 34. Injecting no-magnet goes red HERE.
+  let p020;
+  try {
+    p020 = JSON.parse(readFileSync(join(FIXTURES, 'plan-020.json'), 'utf8'));
+  } catch {
+    problems.push('plan-020: fixture missing from shared/src/main/resources/scan/');
+  }
+  if (p020) {
+    const o = scanMap(p020.reply, p020.imageSize[0] / p020.imageSize[1], opts);
+    if (o.kind !== 'placed') {
+      problems.push(`plan-020: expected placed, got ${o.kind}/${o.reason || ''}`);
+    } else {
+      if ((o.rooms || []).filter((r) => r.label === 'BALCONY').length !== 4) {
+        problems.push(`plan-020: all four BALCONY captions must survive as their own rooms`);
+      }
+      const kitchen = (o.rooms || []).find((r) => /KITCHEN/.test(r.label));
+      if (!kitchen) problems.push('plan-020: the kitchen did not survive');
+      else if (kitchen.rect.w * kitchen.rect.h < 12) {
+        problems.push(`plan-020: KITCHEN ${kitchen.rect.w}x${kitchen.rect.h} — the magnet no longer `
+          + 'clicks it onto its neighbour\'s wall (12 cells with the magnet, 9 without)');
+      }
+      const rects = (o.rooms || []).map((r) => r.rect);
+      const minC = Math.min(...rects.map((r) => r.col)), maxC = Math.max(...rects.map((r) => right(r)));
+      const minR = Math.min(...rects.map((r) => r.row)), maxR = Math.max(...rects.map((r) => bottom(r)));
+      const cells = new Set();
+      for (const r of rects) for (let c = r.col; c < right(r); c++) for (let w = r.row; w < bottom(r); w++) cells.add(`${c},${w}`);
+      const empty = (maxC - minC) * (maxR - minR) - cells.size;
+      if (empty > 34) {
+        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 34 with the `
+          + 'magnet, 37 without it');
       }
     }
   }
@@ -1925,3 +2083,7 @@ if (scan.fails.length === 0) {
   process.exitCode = 1;
 }
 }
+
+// Exported for tools/scan-eval/audit-mapper.mjs, which runs every RECORDED real reply through this
+// mirror and reports per-plan quality. Run it with `--only=X` in argv so no suite fires on import.
+export { scanMap, scanInvariants, parsePrinted, printedTextOf, resolveLabel, cleanLabel };
