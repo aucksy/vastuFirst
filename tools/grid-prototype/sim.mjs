@@ -1427,17 +1427,25 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     for (const l of lines) if (l >= lowest && l <= highest && (best === null || Math.abs(l - edge) < Math.abs(best - edge))) best = l;
     return (best !== null && Math.abs(best - edge) <= 1 && inject !== 'no-magnet') ? best : edge;
   };
-  // ⭐ Flushness observed at the SNAP survives the re-shape. Where a room's far edge was snapped
-  // flush against a NEIGHBOUR's wall (their edges share the line and their spans overlap), and the
-  // printed-size shrink would pull that edge exactly one cell off it, the wall wins: the printed
-  // number and the observed wall disagree by one cell of rounding, and a phantom moat inside the
-  // home (the §2c defect, photographed by the owner) is the worse lie than a room one cell deeper
-  // than its caption. Fires ONLY on observed flushness, only on a one-cell pull-away, and never
-  // against the printed orientation (the agree-guard keeps its veto).
-  const flushRight = (rect) => snapped.some((o) => o.rect !== rect
-    && o.rect.col === right(rect) && o.rect.row < bottom(rect) && rect.row < bottom(o.rect));
-  const flushBottom = (rect) => snapped.some((o) => o.rect !== rect
-    && o.rect.row === bottom(rect) && o.rect.col < right(rect) && rect.col < right(o.rect));
+  // ⭐ Where the printed size and the observed walls disagree by ONE cell, the gap breaks toward
+  // the UNSIZED side. A room read flush between two walls four cells apart whose caption prints
+  // three has to give one flushness up; giving up the wrong one reopens the §2c moat (the master
+  // toilet a cell adrift of the master bedroom, the defect the owner photographed). A neighbour
+  // that carries a printed size is position evidence — its own reshape anchors that shared wall —
+  // so the re-shaped room SLIDES one cell to stay flush with the sized neighbour and lets the gap
+  // open against the unsized one. The slide stays inside the room's own read span (never
+  // relocation), never resizes (printed proportions untouched), and is skipped entirely when both
+  // sides are sized or both unsized (no evidence either way).
+  const printedOf = new Map(snapped.map((s, i) => [s.rect, printed[i]]));
+  const flushSized = (edgeTest) => snapped.some((o) => edgeTest(o.rect) && printedOf.get(o.rect));
+  const rightFlushSized = (rect) => flushSized((o) => o !== rect
+    && o.col === right(rect) && o.row < bottom(rect) && rect.row < bottom(o));
+  const leftFlushSized = (rect) => flushSized((o) => o !== rect
+    && right(o) === rect.col && o.row < bottom(rect) && rect.row < bottom(o));
+  const bottomFlushSized = (rect) => flushSized((o) => o !== rect
+    && o.row === bottom(rect) && o.col < right(rect) && rect.col < right(o));
+  const topFlushSized = (rect) => flushSized((o) => o !== rect
+    && bottom(o) === rect.row && o.col < right(rect) && rect.col < right(o));
 
   return snapped.map((s, i) => {
     const size = printed[i];
@@ -1472,15 +1480,22 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     // a plain yes/no let a kitchen printed 6'-11"x9'-7" be stretched from deeper-than-wide to square.
     const agree = (ww, hh) => (ratio === 1 ? 2 : ww === hh ? 1 : ((ratio > 1) === (ww > hh) ? 2 : 0));
     const free = agree(w, h);
-    let rightE = magnet(col + w, xLines, col + 1, cols);
-    let bottomE = magnet(row + h, yLines, row + 1, rows);
+    let col2 = col, row2 = row;
     if (inject !== 'no-magnet') {
-      if (col + w === right(s.rect) - 1 && flushRight(s.rect) && right(s.rect) <= cols) rightE = right(s.rect);
-      if (row + h === bottom(s.rect) - 1 && flushBottom(s.rect) && bottom(s.rect) <= rows) bottomE = bottom(s.rect);
+      // …and only into cells NO other read rectangle holds: the slide may close a rounding gap,
+      // never open a fight with a neighbour the reader actually drew there.
+      const stripFree = (c0, r0, ww, hh) => !snapped.some((o) => o.rect !== s.rect
+        && overlaps(o.rect, { col: c0, row: r0, w: ww, h: hh }));
+      if (col + w === right(s.rect) - 1 && rightFlushSized(s.rect) && !leftFlushSized(s.rect)
+        && stripFree(col + w, row, 1, h)) col2 = col + 1;
+      if (row + h === bottom(s.rect) - 1 && bottomFlushSized(s.rect) && !topFlushSized(s.rect)
+        && stripFree(col2, row + h, w, 1)) row2 = row + 1;
     }
-    const [rr, bb] = [[rightE, bottomE], [rightE, row + h], [col + w, bottomE], [col + w, row + h]]
-      .find(([x, y]) => agree(x - col, y - row) >= free);
-    const out = { col, row, w: rr - col, h: bb - row };
+    const rightE = magnet(col2 + w, xLines, col2 + 1, cols);
+    const bottomE = magnet(row2 + h, yLines, row2 + 1, rows);
+    const [rr, bb] = [[rightE, bottomE], [rightE, row2 + h], [col2 + w, bottomE], [col2 + w, row2 + h]]
+      .find(([x, y]) => agree(x - col2, y - row2) >= free);
+    const out = { col: col2, row: row2, w: rr - col2, h: bb - row2 };
     return { ...s, rect: out, asRead: out };
   });
 }
@@ -1585,6 +1600,11 @@ function scanMap(draft, imageAspect, opts = {}) {
   // once and rounded once. Without it, a shared wall reported as 3.48 by one room and 3.52 by its
   // neighbour rounds to 3 and 4 and opens a moat between two rooms that touch.
   // FAULT INJECTION 'no-walls' removes it — the state that shipped a home as a scatter of islands.
+  // ⚠ Since the sized-flush slide (2 Aug 2026) the four BUNDLED fixtures no longer go red under
+  // this injection — the slide and the magnet re-close the specific seams those pins assert. That
+  // is stated rather than dressed up (the frame-picture precedent): the proof lives in the corpus
+  // audit instead, where no-walls still tears real plans open — plan-015 empty 5 → 18, plan-017
+  // 40 → 54, plan-014 17 → 22 (tools/scan-eval/audit-mapper.mjs --inject=no-walls).
   const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, imageAspect, cols, rows, inject);
   let snapped = [];
   for (const c of rooms) {
@@ -2004,9 +2024,11 @@ function scanPinnedCases(inject) {
   // fixture lived ONLY in Kotlin (ScanWallLinesTest) until the grid-fill change broke it there
   // while every suite here stayed green — a fixture gap is a drift channel, so it is pinned on
   // both sides now. The two adjacencies are the §2c doctrine itself: rooms that share a wall on
-  // the sheet share a grid line here, through snap, re-shape and trim. The flush-preserving
-  // re-shape is what holds the second one: the master bedroom's printed height disagrees with its
-  // observed walls by one cell of rounding, and the wall must win over the arithmetic.
+  // the sheet share a grid line here, through snap, re-shape and trim. The sized-flush SLIDE is
+  // what holds the second one: the master bedroom's printed height disagrees with its observed
+  // walls by one cell of rounding, and the room slides to stay flush with the sized toilet below
+  // while the gap opens against the unsized balcony above — walls beat arithmetic on POSITION,
+  // print keeps SIZE, and the living/dining stays strictly the biggest room on the sheet.
   {
     const towerD1 = {
       planType: '2D_PLAN', hasRoomLabels: true, planConfidence: 0.95,
@@ -2079,9 +2101,12 @@ function scanPinnedCases(inject) {
       const cells = new Set();
       for (const r of rects) for (let c = r.col; c < right(r); c++) for (let w = r.row; w < bottom(r); w++) cells.add(`${c},${w}`);
       const empty = (maxC - minC) * (maxR - minR) - cells.size;
-      if (empty > 34) {
-        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 34 with the `
-          + 'magnet, 37 without it');
+      // Re-measured 2 Aug 2026 under the grid-fill + widest-gap-split rules: 37, and the magnet no
+      // longer moves THIS number (37 with it and without it — the empties sit elsewhere now). The
+      // magnet's proof is the KITCHEN check above (12 cells with it, 9 without); this cap only
+      // stops the plan quietly falling apart.
+      if (empty > 37) {
+        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 37 when pinned`);
       }
     }
   }

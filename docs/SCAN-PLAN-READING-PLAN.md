@@ -898,10 +898,17 @@ Two defects underneath, each with its own rule:
    their LARGEST INTERNAL GAP, recursively: the seam goes where the geometry says.
 2. **The printed-size re-shape could pull a room one cell off a wall it was READ flush against**
    (printed height and observed walls disagreeing by one cell of rounding), reopening a §2c moat
-   inside the home. Rule: **flushness observed at the snap survives the re-shape** — fires only on
-   observed flushness, only on a one-cell pull-away, never against printed orientation. Walls beat
-   arithmetic; a phantom moat is the worse lie than a room one cell deeper than its caption.
+   inside the home. Restoring the wall by re-growing the room was built first and measured WORSE:
+   it inflated the two bedrooms until they tied the living room — the biggest-room hierarchy is
+   itself a proportion promise, and the same fixture pins it. The rule that honours both:
+   **the room SLIDES one cell to stay flush with its SIZED neighbour, and the gap breaks toward
+   the UNSIZED side.** A sized neighbour's own re-shape anchors the shared wall, so it is position
+   evidence; an unsized neighbour is template sketch. The slide stays inside the room's own read
+   span (never relocation), never resizes (printed proportions kept), needs the entered cells free,
+   and is skipped when both sides are sized or both unsized.
 
 Corpus after both rules (the release's final numbers): **orientation 140/148 · dead edge cells
 62 → 32 · rooms lost outright 2 → 1** (a balcony on one old-prompt recording returns) · owner's
-kitchen back to 2x1 wide · tower-D1 empty squares 26 → 24 with both §2c adjacencies held.
+flat at 15/15 with the west wall reached · tower-D1: both §2c adjacencies held AND the
+living/dining still strictly the biggest room. The plan-020 empty-cell pin re-measured 34 → 37
+(the magnet no longer moves that number; its proof remains the kitchen's 12-vs-9 cells).

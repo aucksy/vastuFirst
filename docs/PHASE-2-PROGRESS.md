@@ -3045,9 +3045,13 @@ The first push went red on the jittered replica of the owner's FIRST flat (the �
 memorial, `ScanWallLinesTest`) — a fixture the mirror never carried, so every mirror suite stayed
 green while Kotlin failed. Underneath: the wall clusterer cut over-long chains at arrival order
 (now: split at the largest internal gap, recursively), and the printed-size re-shape could pull a
-room one cell off a wall it was read flush against, reopening a moat inside the home (now:
-flushness observed at the snap survives the re-shape — walls beat arithmetic, orientation keeps
-its veto). Both rules measured across all 41 recordings before the re-push: orientation stays
-140/148, dead edges stay 32, and a balcony lost outright on one old-prompt recording RETURNS
-(2 → 1). The tower-D1 fixture is now pinned in the mirror too — a fixture gap is a drift channel,
-the plan-020 lesson from the other direction.
+room one cell off a wall it was read flush against, reopening a moat inside the home. The first
+cure — re-growing the room back onto the wall — was measured worse: it inflated the two bedrooms
+until they tied the living room, and the biggest-room hierarchy is a proportion promise the same
+fixture pins. The rule that honours both: the room SLIDES one cell to stay flush with its SIZED
+neighbour (position evidence — its own print anchors that wall) and the gap breaks toward the
+UNSIZED side; the slide stays inside the room's own read span, never resizes, and only enters
+free cells. Measured across all 41 recordings before the re-push: orientation stays 140/148, dead
+edges stay 32, and a balcony lost outright on one old-prompt recording RETURNS (2 → 1). The
+tower-D1 fixture is now pinned in the mirror too — a fixture gap is a drift channel, the plan-020
+lesson from the other direction.

@@ -489,21 +489,32 @@ object ScanMapper {
         val xLines = snapped.flatMapTo(HashSet()) { listOf(it.second.col, it.second.right) }
         val yLines = snapped.flatMapTo(HashSet()) { listOf(it.second.row, it.second.bottom) }
 
-        // ⭐ Flushness observed at the SNAP survives the re-shape. Where a room's far edge was
-        // snapped flush against a NEIGHBOUR's wall (their edges share the line and their spans
-        // overlap), and the printed-size shrink would pull that edge exactly ONE cell off it, the
-        // wall wins: the printed number and the observed wall disagree by one cell of rounding, and
-        // a phantom moat inside the home — the §2c defect the owner photographed — is the worse lie
-        // than a room one cell deeper than its caption. Fires only on observed flushness, only on a
-        // one-cell pull-away, and never against the printed orientation (the agreement guard below
-        // keeps its veto). Proven on the jittered tower-D1 sheet (ScanWallLinesTest) and measured
-        // corpus-wide: orientation agreement holds at 140/148 and one previously-lost room returns.
-        fun flushRight(r: CellRect) = snapped.any { (_, o) ->
-            o !== r && o.col == r.right && o.row < r.bottom && r.row < o.bottom
-        }
-        fun flushBottom(r: CellRect) = snapped.any { (_, o) ->
-            o !== r && o.row == r.bottom && o.col < r.right && r.col < o.right
-        }
+        // ⭐ Where the printed size and the observed walls disagree by ONE cell, the gap breaks
+        // toward the UNSIZED side. A room read flush between two walls four cells apart whose
+        // caption prints three has to give one flushness up; giving up the wrong one reopens the
+        // §2c moat — the master toilet a cell adrift of the master bedroom, the defect the owner
+        // photographed. A neighbour that carries a printed size is position evidence (its own
+        // re-shape anchors that shared wall), so the re-shaped room SLIDES one cell to stay flush
+        // with the sized neighbour and lets the gap open against the unsized one. The slide stays
+        // inside the room's own read span (never relocation), never resizes (printed proportions
+        // untouched), is skipped when both sides are sized or both unsized (no evidence either
+        // way), and only enters cells no other read rectangle holds (it may close a rounding gap,
+        // never open a fight with a neighbour the reader drew there). Proven on the jittered
+        // tower-D1 sheet (ScanWallLinesTest): both §2c adjacencies hold AND the living/dining stays
+        // strictly the biggest room; corpus-wide the orientation agreement holds at 140/148 and one
+        // previously-lost room returns.
+        fun flushSized(test: (CellRect) -> Boolean) =
+            snapped.indices.any { j -> printed[j] != null && test(snapped[j].second) }
+        fun rightFlushSized(r: CellRect) =
+            flushSized { o -> o !== r && o.col == r.right && o.row < r.bottom && r.row < o.bottom }
+        fun leftFlushSized(r: CellRect) =
+            flushSized { o -> o !== r && o.right == r.col && o.row < r.bottom && r.row < o.bottom }
+        fun bottomFlushSized(r: CellRect) =
+            flushSized { o -> o !== r && o.row == r.bottom && o.col < r.right && r.col < o.right }
+        fun topFlushSized(r: CellRect) =
+            flushSized { o -> o !== r && o.bottom == r.row && o.col < r.right && r.col < o.right }
+        fun stripFree(self: CellRect, c0: Int, r0: Int, ww: Int, hh: Int) =
+            snapped.none { (_, o) -> o !== self && o.overlaps(CellRect(c0, r0, ww, hh)) }
 
         return snapped.mapIndexed { i, (candidate, rect) ->
             val size = printed[i] ?: return@mapIndexed candidate to rect
@@ -540,20 +551,26 @@ object ScanMapper {
             // itself a room facing the wrong way, so the candidates are tried most-magnetic first
             // and the first one that still agrees with the sheet wins. Doing nothing always agrees,
             // because the rounding above is monotonic, so there is always an answer.
-            val freeRight = col + w
-            val freeBottom = row + h
-            var right = magnet(freeRight, xLines, col + 1, cols)
-            var bottom = magnet(freeBottom, yLines, row + 1, rows)
-            if (freeRight == rect.right - 1 && rect.right <= cols && flushRight(rect)) right = rect.right
-            if (freeBottom == rect.bottom - 1 && rect.bottom <= rows && flushBottom(rect)) bottom = rect.bottom
+            var col2 = col
+            var row2 = row
+            if (col + w == rect.right - 1 && rightFlushSized(rect) && !leftFlushSized(rect) &&
+                stripFree(rect, col + w, row, 1, h)
+            ) col2 = col + 1
+            if (row + h == rect.bottom - 1 && bottomFlushSized(rect) && !topFlushSized(rect) &&
+                stripFree(rect, col2, row + h, w, 1)
+            ) row2 = row + 1
+            val freeRight = col2 + w
+            val freeBottom = row2 + h
+            val right = magnet(freeRight, xLines, col2 + 1, cols)
+            val bottom = magnet(freeBottom, yLines, row2 + 1, rows)
             val free = agreement(w, h, ratio)
             val (r, b) = listOf(
                 right to bottom,
                 right to freeBottom,
                 freeRight to bottom,
                 freeRight to freeBottom,
-            ).first { (rr, bb) -> agreement(rr - col, bb - row, ratio) >= free }
-            candidate to CellRect(col, row, r - col, b - row)
+            ).first { (rr, bb) -> agreement(rr - col2, bb - row2, ratio) >= free }
+            candidate to CellRect(col2, row2, r - col2, b - row2)
         }
     }
 
@@ -737,9 +754,9 @@ object ScanMapper {
      * his home drawn off the west wall his sheet puts it on — and the very column [widenForWidest]
      * added for his living/dining was eaten as margin, so the living room stayed square. Per-axis
      * fill hands the widened column to the rooms. Corpus (audit-mapper.mjs), together with the
-     * widest-gap wall split and the flush-preserving re-shape below: final orientation agreement
-     * 138/148 → 140/148, dead edge cells 62 → 32, rooms lost outright 2 → 1, no pinned plan
-     * changes outcome.
+     * widest-gap wall split and the sized-flush slide in reshapeToPrinted: final orientation
+     * agreement 138/148 → 140/148, dead edge cells 62 → 32, rooms lost outright 2 → 1, no pinned
+     * plan changes outcome.
      * The stretch is bounded: the grid's whole-cell shape comes from the home's own aspect, so the
      * slack is rounding plus deliberate widening — under one cell per axis on every recorded plan.
      *
