@@ -46,7 +46,39 @@ data class Gap(
     val removable: Boolean,
     /** True when the gap never touches the bounding box edge — a courtyard, not a missing corner. */
     val enclosed: Boolean,
-)
+    /**
+     * True when the patch actually contains a CORNER of the bounding box — which is the shape a
+     * missing corner has, and the only shape the engine's cut/extension checks can read.
+     */
+    val atCorner: Boolean = false,
+) {
+    /**
+     * ⭐⭐ Is this worth asking "is this part of your home?" about?
+     *
+     * ⚠ Why this test exists. The app used to offer to cut away ANY removable gap, and after a scan
+     * that meant offering to amputate the loose space between rooms the reader had drawn slightly
+     * apart. The owner was shown a five-square patch in the north-west of a flat whose north-west
+     * corner is its master bedroom, and asked whether his home was cut off there. Answering "yes"
+     * would have scored a shape his home does not have; answering "no" left the question looking
+     * like the app had misread everything. Neither answer was right, because the question was wrong.
+     *
+     * A real missing corner is a corner: it reaches the edge of the bounding box, it *contains* one
+     * of its four corners, and it is big enough to be a piece of building rather than a rounding
+     * artefact. Anything else is unlabelled floor — a passage, a hall, a lobby — and belongs to the
+     * home whether or not a room has been drawn on it. We say so instead of asking.
+     */
+    val looksLikeMissingCorner: Boolean
+        get() = removable && !enclosed && atCorner && cells.size >= MIN_CUT_CELLS
+
+    companion object {
+        /**
+         * A single stray square is never a missing corner. Two is the smallest patch that can be a
+         * genuine notch on a grid this coarse, and it is also the smallest that survives the loose
+         * placement a scan produces.
+         */
+        const val MIN_CUT_CELLS = 2
+    }
+}
 
 /**
  * The home's shape on the drawing grid.
@@ -185,11 +217,15 @@ object Footprint {
             val touchesEdge = patch.any { it.col == minC || it.col == maxC || it.row == minR || it.row == maxR }
             val blocked = patch.any { it in protectedCells }
             val removable = !blocked && trace(box - patch) != null
+            // A missing corner has to contain a corner. Everything else is floor with no room drawn
+            // on it — see [Gap.looksLikeMissingCorner] for why that distinction is load-bearing.
+            val corners = setOf(Cell(minC, minR), Cell(maxC, minR), Cell(minC, maxR), Cell(maxC, maxR))
             out += Gap(
                 cells = patch,
                 zone = zoneOfCells(patch, minC, maxC + 1, minR, maxR + 1),
                 removable = removable,
                 enclosed = !touchesEdge,
+                atCorner = patch.any { it in corners },
             )
         }
         return out

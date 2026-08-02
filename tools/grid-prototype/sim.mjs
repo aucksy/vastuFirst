@@ -1087,15 +1087,54 @@ function scanHomeAspect(frame, imageAspect) {
  * Each EDGE rounded independently, so rooms flush on the plan stay flush on the grid — but measured
  * against the FRAME, and with a one-cell floor so a small room rounds SMALL rather than away.
  */
-function scanSnap(b, frame, imageAspect, cols, rows, inject) {
+const WALL_TOLERANCE = 0.5;
+const WALL_MAX_SPAN = 0.75;
+
+/** Group near-equal edges into shared wall lines. Mirrors ScanMapper.wallLines. */
+function scanClusterLines(values, max) {
+  const sorted = [...new Set(values)].sort((p, q) => p - q);
+  const assigned = new Map();
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i + 1;
+    while (j < sorted.length &&
+           sorted[j] - sorted[j - 1] <= WALL_TOLERANCE &&
+           sorted[j] - sorted[i] <= WALL_MAX_SPAN) j++;
+    let sum = 0;
+    for (let k = i; k < j; k++) sum += sorted[k];
+    const line = clampInt(Math.round(sum / (j - i)), 0, max);
+    for (let k = i; k < j; k++) assigned.set(sorted[k], line);
+    i = j;
+  }
+  return assigned;
+}
+
+/** The wall lines of one plan, in continuous cell space. Mirrors ScanMapper.snapAll. */
+function scanWallLines(boxes, frame, imageAspect, cols, rows) {
   const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
   const pw = frame.w * a, ph = frame.h;
   const s = Math.min(cols / pw, rows / ph);
   const ox = (cols - pw * s) / 2, oy = (rows - ph * s) / 2;
-  const L = ((b.x - frame.x) * a) * s + ox;
-  const R = (((b.x + b.w) - frame.x) * a) * s + ox;
-  const T = (b.y - frame.y) * s + oy;
-  const B = ((b.y + b.h) - frame.y) * s + oy;
+  const cx = (v) => ((v - frame.x) * a) * s + ox;
+  const cy = (v) => (v - frame.y) * s + oy;
+  const xs = [], ys = [];
+  for (const b of boxes) { xs.push(cx(b.x), cx(b.x + b.w)); ys.push(cy(b.y), cy(b.y + b.h)); }
+  return { x: scanClusterLines(xs, cols), y: scanClusterLines(ys, rows) };
+}
+
+function scanSnap(b, frame, imageAspect, cols, rows, inject, walls) {
+  const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
+  const pw = frame.w * a, ph = frame.h;
+  const s = Math.min(cols / pw, rows / ph);
+  const ox = (cols - pw * s) / 2, oy = (rows - ph * s) / 2;
+  const L0 = ((b.x - frame.x) * a) * s + ox;
+  const R0 = (((b.x + b.w) - frame.x) * a) * s + ox;
+  const T0 = (b.y - frame.y) * s + oy;
+  const B0 = ((b.y + b.h) - frame.y) * s + oy;
+  const L = walls ? (walls.x.get(L0) ?? L0) : L0;
+  const R = walls ? (walls.x.get(R0) ?? R0) : R0;
+  const T = walls ? (walls.y.get(T0) ?? T0) : T0;
+  const B = walls ? (walls.y.get(B0) ?? B0) : B0;
   // FAULT INJECTION 'no-clamp' removes the grid clamp too, so a box the reader put off the page —
   // which the frame can never cover, because the frame is clamped to the picture — lands off-grid.
   if (inject === 'no-clamp') {
@@ -1179,6 +1218,15 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
   });
   if (cellTotal <= 0 || printedTotal <= 0) return snapped;
   const cellsPerSquareMm = cellTotal / printedTotal;
+  // ⭐ The plan's own wall lines, so a re-shaped room's far edges CLICK back onto a neighbour's wall
+  // instead of shrinking one cell clear of it and re-opening the moat the shared snap just closed.
+  const xLines = new Set(), yLines = new Set();
+  for (const s of snapped) { xLines.add(s.rect.col); xLines.add(right(s.rect)); yLines.add(s.rect.row); yLines.add(bottom(s.rect)); }
+  const magnet = (edge, lines, lowest, highest) => {
+    let best = null;
+    for (const l of lines) if (l >= lowest && l <= highest && (best === null || Math.abs(l - edge) < Math.abs(best - edge))) best = l;
+    return (best !== null && Math.abs(best - edge) <= 1 && inject !== 'no-magnet') ? best : edge;
+  };
 
   return snapped.map((s, i) => {
     const size = printed[i];
@@ -1200,7 +1248,16 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     const w = clampInt(Math.round(wf), 1, cols);
     const h = clampInt(Math.round(hf), 1, rows);
     const col = clampInt(s.rect.col, 0, cols - w), row = clampInt(s.rect.row, 0, rows - h);
-    return { ...s, rect: { col, row, w, h }, asRead: { col, row, w, h } };
+    // ⚠ The magnet may close a gap but must NEVER flip a room against the size its plan prints —
+    // this suite caught it doing exactly that on a 1350x2250 toilet. Most-magnetic candidate first;
+    // doing nothing always agrees, because the rounding above is monotonic.
+    const agrees = (ww, hh) => (ratio > 1 ? ww >= hh : ratio < 1 ? hh >= ww : true);
+    const rightE = magnet(col + w, xLines, col + 1, cols);
+    const bottomE = magnet(row + h, yLines, row + 1, rows);
+    const [rr, bb] = [[rightE, bottomE], [rightE, row + h], [col + w, bottomE], [col + w, row + h]]
+      .find(([x, y]) => agrees(x - col, y - row));
+    const out = { col, row, w: rr - col, h: bb - row };
+    return { ...s, rect: out, asRead: out };
   });
 }
 
@@ -1271,9 +1328,14 @@ function scanMap(draft, imageAspect, opts = {}) {
   if (!frame) return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   const roundedAway = [];
   const [cols, rows] = scanGridFor(scanHomeAspect(frame, imageAspect), inject);
+  // ⭐ The plan's own WALL LINES: edges within half a cell of each other are the same wall, agreed
+  // once and rounded once. Without it, a shared wall reported as 3.48 by one room and 3.52 by its
+  // neighbour rounds to 3 and 4 and opens a moat between two rooms that touch.
+  // FAULT INJECTION 'no-walls' removes it — the state that shipped a home as a scatter of islands.
+  const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, imageAspect, cols, rows);
   let snapped = [];
   for (const c of rooms) {
-    const rect = scanSnap(c.box, frame, imageAspect, cols, rows, inject);
+    const rect = scanSnap(c.box, frame, imageAspect, cols, rows, inject, walls);
     if (!rect) { roundedAway.push(c.box.label); dropped.push({ label: c.box.label, reason: 'DEGENERATE' }); }
     // The printed size is attached here, NOT inside reshapeToPrinted, so that deleting the
     // reshaping (--inject=no-printed-sizes) still leaves the invariant something to judge. An

@@ -368,14 +368,20 @@ fun GuidedGridContent(
     // One question at a time, and only about gaps that CAN be cut away. A gap enclosed by rooms would
     // punch a hole through the outline, and one under the front door would leave the door off the
     // wall — those get told, not asked.
-    val pendingGap = undecided.firstOrNull { it.removable }
+    // ⭐ …and only about a gap that is actually shaped like a missing CORNER. Offering to cut away
+    // any removable gap meant that, after a scan, the app asked whether a home was cut off in the
+    // north-west while pointing at the loose space beside its master bedroom. Neither answer to that
+    // question was right, because the question was wrong. See `Gap.looksLikeMissingCorner`.
+    val pendingGap = undecided.firstOrNull { it.looksLikeMissingCorner }
     val enclosedGap = undecided.firstOrNull { it.enclosed }
     // ⚠ Rooms drawn with space between them leave ONE gap that wraps all the way round them, and
     // cutting that would shatter the home into pieces — so it is neither askable nor a courtyard, and
     // it used to fall through to a line inviting the user to "leave that part empty and we'll ask
     // about it" while the app was visibly not asking. Found by looking at the rendered screen, which
     // is the whole reason for looking. It now gets its own sentence.
-    val unaskableGap = undecided.any { !it.removable && !it.enclosed }
+    // Now also covers a gap that COULD be cut but is not corner-shaped: unlabelled floor between
+    // rooms, which belongs to the home whether or not anyone draws a room on it. Told, not asked.
+    val unaskableGap = undecided.any { !it.enclosed && !it.looksLikeMissingCorner }
     // The outline as it now stands, for drawing. Null ⇒ a plain rectangle, drawn as one.
     val homeRing = remember(rooms, cutOutCells) {
         if (cutOutCells.isEmpty()) null

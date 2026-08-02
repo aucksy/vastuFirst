@@ -120,6 +120,51 @@ object ScanMapper {
     // nothing left to do. Machinery that cannot be shown to change an answer does not ship.
     // `tools/scan-eval/exp-frame.py` is the record.
 
+    /**
+     * ⭐⭐ TWO ROOM EDGES THIS CLOSE ARE THE SAME WALL.
+     *
+     * ⚠ This is the fix for the defect the owner photographed: a scanned home arriving as a dozen
+     * islands with empty squares between every one of them, on a plan whose rooms all share walls.
+     *
+     * **Rounding each edge on its own was never enough.** It keeps two rooms flush only when the
+     * reader reports their shared wall at the *identical* number. The reader does not: it draws
+     * inside the wall thickness and jitters every edge, so one room's right edge comes back at 3.48
+     * cells and its neighbour's left edge at 3.52 — a difference of four hundredths of a cell that
+     * rounds to 3 and 4, and opens a one-cell moat between two rooms that touch in the real home.
+     * Every room in a plan does this to every neighbour, which is why the whole layout falls apart
+     * into islands rather than merely being a little loose.
+     *
+     * Half a cell is the honest threshold and not a tuned one: two edges closer than that round
+     * *arbitrarily* — a hundredth of a cell either way flips the answer — so they carry no
+     * information about being different walls. Beyond half a cell, rounding is decided and we leave
+     * it alone.
+     *
+     * Measured on a faithful sloppy read of the owner's own sheet: 36 empty cells in 3 holes → 15,
+     * and the biggest hole 25 cells → 9. What survives is the genuine notch in that plan's shape.
+     */
+    const val WALL_TOLERANCE = 0.5
+
+    /**
+     * …and a cluster may never grow wider than this in total.
+     *
+     * Without it, edges at 0.0, 0.4, 0.8, 1.2 chain into one "wall" a cell and a half wide, and a
+     * one-cell room between two of them is crushed out of existence. Single-linkage clustering
+     * always needs this guard; it is the difference between merging near-duplicates and merging
+     * everything.
+     */
+    const val WALL_MAX_SPAN = 0.75
+
+    /**
+     * ⭐ How far a re-shaped room's edge will reach to CLICK ONTO a wall line: one cell.
+     *
+     * Re-shaping to the printed size anchors a room's top-left corner and replaces its extent, so
+     * it shrinks away from the neighbour on its right and below — re-opening the moat the wall
+     * lines just closed. Letting the new edge click onto a wall line within one cell keeps the
+     * printed proportions and the shared wall. One cell, because a room whose true size differs
+     * from its neighbour's wall by more than that is telling us something we should not overrule.
+     */
+    const val MAGNET_REACH = 1
+
     /** Fewer than this many rooms surviving the grid snap isn't a layout worth showing. */
     const val MIN_PLACED_ROOMS = 2
 
@@ -245,7 +290,10 @@ object ScanMapper {
         val frame = frameOf(rooms.map { it.box })
             ?: return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
         val (cols, rows) = gridFor(homeAspect(frame, imageAspect))
-        val snapped = rooms.map { it to snap(it.box, frame, imageAspect, cols, rows) }
+        // ⭐ Snapped TOGETHER, not one at a time — see [WALL_TOLERANCE]. Rooms that share a wall on
+        // the plan must share a grid line here, or the home arrives as a scatter of islands.
+        val rects = snapAll(rooms.map { it.box }, frame, imageAspect, cols, rows)
+        val snapped = rooms.mapIndexed { i, c -> c to rects[i] }
 
         // ---- 7b/8. ⭐ shape each room to the size PRINTED on the plan, then place them -------------
         // The reader reads text at ~95 % and guesses rectangles at 40–70 %, so where a caption states
@@ -331,6 +379,13 @@ object ScanMapper {
         if (cellTotal <= 0.0 || printedTotal <= 0.0) return snapped
         val cellsPerSquareMm = cellTotal / printedTotal
 
+        // ⭐ The plan's own wall lines, as the shared snap left them. A re-shaped room's new edge
+        // clicks onto one of these when it lands within [MAGNET_REACH] — otherwise re-shaping
+        // re-opens the very moats the shared snap just closed, because it anchors the top-left
+        // corner and pulls the other two edges inward. See [MAGNET_REACH].
+        val xLines = snapped.flatMapTo(HashSet()) { listOf(it.second.col, it.second.right) }
+        val yLines = snapped.flatMapTo(HashSet()) { listOf(it.second.row, it.second.bottom) }
+
         return snapped.mapIndexed { i, (candidate, rect) ->
             val size = printed[i] ?: return@mapIndexed candidate to rect
             val targetCells = size.area * cellsPerSquareMm
@@ -357,8 +412,40 @@ object ScanMapper {
             // Keep the corner the reader gave us; clamp back in if the new extent runs off the grid.
             val col = rect.col.coerceIn(0, cols - w)
             val row = rect.row.coerceIn(0, rows - h)
-            candidate to CellRect(col, row, w, h)
+            // …then let the far edges click onto the plan's own walls if they are within reach.
+            //
+            // ⚠ But NEVER at the cost of the orientation. Found by the fuzz suite in 363 of 20 000
+            // random replies: a magnet that stretches a 1 350 × 2 250 toilet one cell wider turns a
+            // room the plan prints deeper-than-wide into a wider-than-deep one — which is the exact
+            // error the whole printed-size feature exists to remove. Closing a gap must never buy
+            // itself a room facing the wrong way, so the candidates are tried most-magnetic first
+            // and the first one that still agrees with the sheet wins. Doing nothing always agrees,
+            // because the rounding above is monotonic, so there is always an answer.
+            val freeRight = col + w
+            val freeBottom = row + h
+            val right = magnet(freeRight, xLines, col + 1, cols)
+            val bottom = magnet(freeBottom, yLines, row + 1, rows)
+            val (r, b) = listOf(
+                right to bottom,
+                right to freeBottom,
+                freeRight to bottom,
+                freeRight to freeBottom,
+            ).first { (rr, bb) -> orientationAgrees(rr - col, bb - row, ratio) }
+            candidate to CellRect(col, row, r - col, b - row)
         }
+    }
+
+    /** The nearest wall line to [edge] within [MAGNET_REACH], or [edge] itself when none is close. */
+    private fun magnet(edge: Int, lines: Set<Int>, lowest: Int, highest: Int): Int {
+        val best = lines.filter { it in lowest..highest }.minByOrNull { kotlin.math.abs(it - edge) }
+        return if (best != null && kotlin.math.abs(best - edge) <= MAGNET_REACH) best else edge
+    }
+
+    /** Does a [w] × [h] rectangle run the way a room printed at this width-to-depth [ratio] should? */
+    private fun orientationAgrees(w: Int, h: Int, ratio: Double): Boolean = when {
+        ratio > 1.0 -> w >= h
+        ratio < 1.0 -> h >= w
+        else -> true
     }
 
 
@@ -486,6 +573,74 @@ object ScanMapper {
      * rooms, which are the toilets. One cell in the right place is a room the user can see and
      * correct; a dropped room is one they never knew to look for.
      */
+    /**
+     * ⭐⭐ Every room snapped to the plan's own WALL LINES, in one pass.
+     *
+     * This is [snap] applied to the whole plan at once, with one addition that turns out to be the
+     * difference between a home and a scatter of boxes: **edges within [WALL_TOLERANCE] of each
+     * other are first agreed to be the same wall, and then rounded once.** Two rooms that touch on
+     * the sheet therefore touch on the grid, instead of landing a cell apart because one edge
+     * rounded up and the other down.
+     *
+     * Nothing is moved to make it fit and no room is created or destroyed; the only thing that
+     * changes is that a set of near-equal numbers becomes one number before it is rounded. On a
+     * tidy fixture — where the reader already reports shared walls at identical values — this is a
+     * no-op, which is why it does not disturb the plans already pinned by tests.
+     */
+    internal fun snapAll(
+        boxes: List<ScanBox>,
+        frame: ScanBox,
+        imageAspect: Double?,
+        cols: Int,
+        rows: Int,
+    ): List<CellRect> {
+        val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
+        val pw = frame.w * a
+        val ph = frame.h
+        val s = min(cols / pw, rows / ph)
+        val ox = (cols - pw * s) / 2.0
+        val oy = (rows - ph * s) / 2.0
+        fun cx(v: Double) = ((v - frame.x) * a) * s + ox
+        fun cy(v: Double) = (v - frame.y) * s + oy
+
+        val xLine = wallLines(boxes.flatMap { listOf(cx(it.x), cx(it.x + it.w)) }, cols)
+        val yLine = wallLines(boxes.flatMap { listOf(cy(it.y), cy(it.y + it.h)) }, rows)
+
+        return boxes.map { b ->
+            // The same "may round SMALL, never away" rule [snap] documents: a room the grid cannot
+            // resolve becomes one cell the user can see and correct, never nothing at all.
+            val left = xLine(cx(b.x)).coerceIn(0, cols - 1)
+            val right = xLine(cx(b.x + b.w)).coerceIn(left + 1, cols)
+            val top = yLine(cy(b.y)).coerceIn(0, rows - 1)
+            val bottom = yLine(cy(b.y + b.h)).coerceIn(top + 1, rows)
+            CellRect(left, top, right - left, bottom - top)
+        }
+    }
+
+    /**
+     * Group near-equal edge positions into shared wall lines and round each group once.
+     *
+     * Single-linkage with a hard cap on how wide a group may grow ([WALL_MAX_SPAN]) — without the
+     * cap, a run of edges each within tolerance of the last chains into one enormous "wall" and
+     * crushes the rooms between them.
+     */
+    private fun wallLines(edges: List<Double>, max: Int): (Double) -> Int {
+        val sorted = edges.distinct().sorted()
+        val assigned = HashMap<Double, Int>(sorted.size)
+        var i = 0
+        while (i < sorted.size) {
+            var j = i + 1
+            while (j < sorted.size &&
+                sorted[j] - sorted[j - 1] <= WALL_TOLERANCE &&
+                sorted[j] - sorted[i] <= WALL_MAX_SPAN
+            ) j++
+            val line = ((i until j).sumOf { sorted[it] } / (j - i)).roundToInt().coerceIn(0, max)
+            for (k in i until j) assigned[sorted[k]] = line
+            i = j
+        }
+        return { e -> assigned[e] ?: e.roundToInt().coerceIn(0, max) }
+    }
+
     internal fun snap(b: ScanBox, frame: ScanBox, imageAspect: Double?, cols: Int, rows: Int): CellRect {
         val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
         val pw = frame.w * a

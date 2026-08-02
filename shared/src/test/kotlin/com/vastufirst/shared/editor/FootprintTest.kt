@@ -140,6 +140,37 @@ class FootprintTest {
     }
 
     @Test
+    fun `⭐ only a gap shaped like a missing CORNER is worth asking about`() {
+        // ⚠ The exact defect the owner photographed. After a scan, rooms sit slightly apart, and the
+        // app offered to amputate the loose space between them — asking whether his home was "cut
+        // off in the north-west" while pointing at the squares beside his master bedroom. Neither
+        // answer was right, because the question was wrong.
+        val corner = Footprint.gaps(listOf(rect(0, 0, 5, 8), rect(5, 3, 3, 5))).single()
+        assertTrue(corner.atCorner, "a real cut contains a corner of the bounding box")
+        assertTrue(corner.looksLikeMissingCorner, "…and is the one thing we DO ask about")
+
+        // Loose space against a wall but nowhere near a corner: a passage, and part of the home.
+        val slack = Footprint.gaps(
+            listOf(rect(0, 0, 4, 1), rect(0, 1, 1, 1), rect(2, 1, 2, 1), rect(0, 2, 4, 1)),
+        ).single()
+        assertEquals(setOf(Cell(1, 1)), slack.cells)
+        assertFalse(slack.atCorner, "it holds no corner of the bounding box")
+        assertFalse(slack.looksLikeMissingCorner, "so the app must state it, not ask about it")
+    }
+
+    @Test
+    fun `⭐ a single stray square is never a missing corner`() {
+        // One empty cell at a corner is what a rounding error looks like, not what a building does.
+        val gap = Footprint.gaps(listOf(rect(1, 0, 3, 1), rect(0, 1, 4, 3))).single()
+        assertEquals(setOf(Cell(0, 0)), gap.cells)
+        assertTrue(gap.atCorner)
+        assertFalse(
+            gap.looksLikeMissingCorner,
+            "one square is below the size a real notch can be — offering to cut it invites a wrong answer",
+        )
+    }
+
+    @Test
     fun `a gap in the middle is reported as enclosed and not removable`() {
         val rooms = listOf(
             rect(0, 0, 3, 1), rect(0, 1, 1, 1), rect(2, 1, 1, 1), rect(0, 2, 3, 1),
