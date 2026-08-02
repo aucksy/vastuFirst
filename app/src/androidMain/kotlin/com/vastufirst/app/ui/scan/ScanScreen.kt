@@ -317,6 +317,7 @@ private fun ReadRoomRow(
                 .semantics(mergeDescendants = true) {
                     this.contentDescription =
                         "We read \"${room.label}\" as ${room.type.label()}" +
+                            (if (room.printedSize.isNotBlank()) ", ${room.printedSize}" else "") +
                             (if (needsCheck) ". Please check this one." else "")
                 },
             verticalAlignment = Alignment.CenterVertically,
@@ -329,7 +330,16 @@ private fun ReadRoomRow(
                 // caption we read off the user's own plan, and checking it is the whole job §6.2b gives
                 // them. Caught only because the Assisted golden was switched to a real 24-space plan —
                 // with 8 rooms it was already failing and I had baselined it without looking.
-                VText(room.label, style = VastuTheme.type.caption, color = colors.textSecondary)
+                // ⭐ The caption AND the size the plan printed beside it. The size is what every
+                // room's shape is now built from — and therefore which direction it lands in — so
+                // hiding it would leave the user confirming an answer whose working they cannot see.
+                // Joined on one line rather than stacked: this row already repeats per room on the
+                // tallest screen in the app, and a second line each pushes the button off a 320 dp
+                // phone at 200 % font.
+                VText(
+                    listOf(room.label, room.printedSize).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = VastuTheme.type.caption, color = colors.textSecondary,
+                )
             }
             if (needsCheck) CheckPill()
             // A visible affordance, so the row does not rely on the reader guessing it is tappable.

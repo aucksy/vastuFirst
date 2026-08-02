@@ -163,6 +163,18 @@ data class ScannedRoom(
     val label: String,
     val rect: CellRect?,
     val flags: Set<RoomFlag> = emptySet(),
+    /**
+     * ⭐ The size the plan printed for this room, verbatim — carried all the way to the confirmation
+     * screen so the user can check it against their own paper.
+     *
+     * ⚠ This field exists to undo a regression introduced by the field that produced it. The size
+     * used to arrive inside [label] (`ATT. TOILET 1350X2250`), so the screen showed it for free.
+     * Moving it into its own field on the wire made the labels clean — and made the numbers we now
+     * shape every room from **invisible to the person confirming them**. Since those numbers decide
+     * which way round a room is drawn, and therefore which Vastu direction it lands in, they are
+     * exactly what §6.2b means by checking our reading rather than just our answer.
+     */
+    val printedSize: String = "",
 )
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */

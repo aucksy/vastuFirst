@@ -327,7 +327,12 @@ object ScanMapper {
         // Top-to-bottom, left-to-right — the order someone reads a plan, so the palette makes sense.
         val identified = rooms
             .sortedWith(compareBy({ it.box.y }, { it.box.x }))
-            .map { ScannedRoom(it.type, it.box.label, rect = null, flags = it.flags.toSet()) }
+            .map {
+                ScannedRoom(
+                    it.type, it.box.label, rect = null, flags = it.flags.toSet(),
+                    printedSize = it.box.printedSize,
+                )
+            }
 
         // ---- 6. the objective gates (L2 is a bonus, never a promise) ---------------------------
         // ⚠ Coverage is deliberately NOT a gate — see [MAX_TRUSTED_ROOMS]. It is still measured and
@@ -412,7 +417,9 @@ object ScanMapper {
         }
 
         val out = chosen.rooms
-            .map { (c, rect, _) -> ScannedRoom(c.type, c.box.label, rect, c.flags.toSet()) }
+            .map { (c, rect, _) ->
+                ScannedRoom(c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize)
+            }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
         return ScanOutcome.Placed(cols, rows, out, notes())
     }
