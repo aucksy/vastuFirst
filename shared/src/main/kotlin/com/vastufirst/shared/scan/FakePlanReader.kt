@@ -99,7 +99,17 @@ object RecordedScans {
      */
     const val PLAN_020 = "plan-020"
 
-    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020)
+    /**
+     * ⭐ A real 2BHK (Green Court, Sector 90 Gurgaon — the 526 sq ft unit), scanned live on
+     * 2 August 2026 after the owner reported its branded twin drawing badly on his phone. Two
+     * things no other fixture carries: every size prints in raw MILLIMETRES (`3285X3350`), and the
+     * balcony prints only ONE dimension (`1525 WIDE`) — a caption style seen on both copies of
+     * this sheet — so it must ride the reader's rectangle (a full-width strip, which the reader
+     * gets right on the clean copy) rather than a parsed pair.
+     */
+    const val GREENCOURT = "greencourt-526"
+
+    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020, GREENCOURT)
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {

@@ -18,11 +18,14 @@
 // Assisted answers on real replies (the sized-share and room-count gates count TYPED rooms). This
 // port mirrors shared/.../scan/RoomLabels.kt; RoomLabelsTest is the authority when they disagree.
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { scanMap, scanInvariants, parsePrinted, printedTextOf } from '../grid-prototype/sim.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+// True when run as `node audit-mapper.mjs`; false when imported (render-grid.mjs reuses the corpus
+// and the label table without re-printing the report).
+const IS_MAIN = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 // ---- full RoomLabels port (see RoomLabels.kt) --------------------------------------------------
 const EXACT = {};
@@ -123,12 +126,15 @@ const boundsOf = (rects) => {
   return (maxC - minC) * (maxR - minR);
 };
 
+export { plans, fullResolve, contextOf, clean };
+
 // `--inject=` runs the whole corpus under a fault injection, so "does this machinery change any
 // real answer?" is one diff away instead of an argument.
 const INJECT = (process.argv.find((a) => a.startsWith('--inject=')) || '').split('=')[1] || null;
+if (IS_MAIN) {
 if (INJECT) console.log(`⚠ FAULT INJECTED: ${INJECT}`);
 
-let totals = { placed: 0, assisted: 0, refused: 0, orientBad: 0, orientJudged: 0, unknowns: new Map(), drops: new Map() };
+let totals = { placed: 0, assisted: 0, refused: 0, orientBad: 0, orientJudged: 0, unknowns: new Map(), drops: new Map(), marginCells: 0, fillPct: 0, fillN: 0 };
 for (const plan of plans) {
   const ctx = contextOf((plan.reply.rooms || []).map((b) => b.label));
   const out = scanMap(plan.reply, plan.aspect, { resolveLabel: (raw) => fullResolve(raw, ctx), inject: INJECT });
@@ -144,6 +150,13 @@ for (const plan of plans) {
   if (out.kind === 'placed') {
     const rects = out.rooms.map((r) => r.rect);
     const empty = boundsOf(rects) - cellsOf(rects).size;
+    // Dead edge strips (grid columns/rows outside the content, W/E/N/S) and grid fill — the two
+    // numbers the owner SEES: his flat drawn off its own west wall scored margin 1/0/0/0.
+    const minC = Math.min(...rects.map((r) => r.col)), maxC = Math.max(...rects.map((r) => r.col + r.w));
+    const minR = Math.min(...rects.map((r) => r.row)), maxR = Math.max(...rects.map((r) => r.row + r.h));
+    const margin = [minC, out.cols - maxC, minR, out.rows - maxR];
+    totals.marginCells += margin[0] * out.rows + margin[1] * out.rows + margin[2] * out.cols + margin[3] * out.cols;
+    totals.fillPct += cellsOf(rects).size / (out.cols * out.rows); totals.fillN++;
     // FINAL orientation vs the printed sheet — what the user actually sees, trim included.
     // `r.printed` is attached by scanMap per room, so duplicate captions (three rooms all labelled
     // BALCONY with different sizes) are judged each against their own size, not the first one's.
@@ -156,6 +169,8 @@ for (const plan of plans) {
     }
     totals.orientBad += bad; totals.orientJudged += judged;
     detail = `${out.cols}x${out.rows} · ${out.rooms.length}/${(plan.reply.rooms || []).length} rooms · empty ${empty}/${boundsOf(rects)}`
+      + ` · fill ${Math.round(100 * (cellsOf(rects).size / (out.cols * out.rows)))}%`
+      + (margin.some((m) => m > 0) ? ` · margin W${margin[0]}/E${margin[1]}/N${margin[2]}/S${margin[3]}` : '')
       + (judged ? ` · orient ${judged - bad}/${judged}` : '');
   } else if (out.kind === 'assisted') {
     detail = `${out.reason} · ${out.rooms.length} identified`;
@@ -171,5 +186,7 @@ for (const plan of plans) {
 console.log('\n---- totals ----');
 console.log(`outcomes: ${totals.placed} placed · ${totals.assisted} assisted · ${totals.refused} refused of ${plans.length}`);
 console.log(`final orientation agrees with the printed sheet: ${totals.orientJudged - totals.orientBad}/${totals.orientJudged}`);
+console.log(`grid fill (placed plans): avg ${Math.round(100 * totals.fillPct / Math.max(1, totals.fillN))}% · dead edge cells ${totals.marginCells}`);
 console.log('drops by reason:', Object.fromEntries(totals.drops));
 console.log('unknown captions:', [...totals.unknowns.keys()].sort().join(' | ') || '(none)');
+} // IS_MAIN

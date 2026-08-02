@@ -1,0 +1,80 @@
+{
+ "fixture": "greencourt-526",
+ "_note": "A real 2BHK builder plan (Green Court, Sector 90 Gurgaon, the 526 sq ft Category-III unit) scanned live with scan-live.py on 2 August 2026 after the owner reported its branded twin drawing badly on his phone. Sizes print in raw millimetres (3285X3350); the balcony prints ONE dimension only ('1525 WIDE') so it carries no parseable size and keeps the reader's strip. Reply verbatim; the plan image stays out of the repo.",
+ "model": "qwen/qwen3.6-27b",
+ "imageSize": [
+  691,
+  954
+ ],
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "rooms": [
+   {
+    "label": "BED ROOM",
+    "size": "3285X3350",
+    "x": 0.05,
+    "y": 0.22,
+    "w": 0.45,
+    "h": 0.35,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET",
+    "size": "2485X1525",
+    "x": 0.52,
+    "y": 0.22,
+    "w": 0.25,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2485X2390",
+    "x": 0.52,
+    "y": 0.42,
+    "w": 0.25,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "W.C",
+    "size": "1500X1950",
+    "x": 0.05,
+    "y": 0.57,
+    "w": 0.25,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3200X3050",
+    "x": 0.05,
+    "y": 0.77,
+    "w": 0.45,
+    "h": 0.23,
+    "confidence": 0.95
+   },
+   {
+    "label": "LOBBY",
+    "size": "3135X4535",
+    "x": 0.52,
+    "y": 0.67,
+    "w": 0.25,
+    "h": 0.33,
+    "confidence": 0.95
+   },
+   {
+    "label": "BALCONY",
+    "size": "1525 WIDE",
+    "x": 0.05,
+    "y": 0.05,
+    "w": 0.72,
+    "h": 0.17,
+    "confidence": 0.9
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

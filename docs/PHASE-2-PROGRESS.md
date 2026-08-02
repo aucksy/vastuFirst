@@ -2971,3 +2971,70 @@ detail print-out predate this release and sit inside the old counts.
 from the TAG's own tree. A tag placed on the commit CI validated — but placed before CI's goldens
 commit landed — re-verifies against the old pictures and fails. The tag must go on a real commit
 that sits ON TOP of the goldens commit, once that commit's own CI run is green.
+
+---
+
+# ⭐⭐ v0.6.4 — the letterbox comes out, and the assistant can now scan and LOOK (2026-08-02)
+
+Started from the owner's phone screenshots of two scans ("grid dimensions and room proportions
+are still not perfect"). Both were reproduced off-phone before anything changed: his flat from its
+bundled recording, the Green Court 2BHK by scanning a clean copy of the same sheet live with the
+app's own reader settings. Everything measured on all 41 recordings before being written in Kotlin.
+
+## 1. ⭐⭐ The home fills the grid — the letterbox was the thief, twice over
+
+The snap fitted the home into the grid with one scale, centred in the slack axis. The grid's
+whole-cell shape never exactly matches the home's, so every scan was letterboxed by up to a cell:
+
+- **His flat was drawn off its own west wall.** The 0.68-column margin rounded into a FULL empty
+  column on the west — first bedroom, both west toilets and the master bedroom all pulled off the
+  edge his sheet puts them on.
+- **The column the grid-widener added for his living/dining was eaten as margin** — which is the
+  real reason that room stayed square through two releases. v0.6.3 §6 blamed the returned master
+  toilet; the picture shows the letterbox took the column first.
+
+One scale per axis now; the frame fills the grid. Corpus: **orientation 138/148 → 140/148, dead
+edge cells 62 → 32, rooms lost still zero, no pinned plan changes outcome.** His flat: west wall
+reached, living/dining **3x2 — wider than deep, as printed, for the first time** — first bedroom
+2x3 (deeper than wide, as printed). Pinned in Kotlin (`OwnerFlatScanTest`, "reaches its own west
+wall") and the mirror (`--inject=letterbox` goes red on his flat).
+
+## 2. ⭐ Two more candidates built, measured across all 41 recordings, and NOT shipped
+
+- **True-scale rooms** (share the whole home's area by printed size): six rooms flip against their
+  own printed orientation, 138 → 135, his kitchen among them. Removed; note kept in the mirror.
+- **Centre-anchored reshape** (grow about the centre, not the top-left): slides rooms off the wall
+  lines the magnet needs — 139/148, fill 70 % → 67 %, his living/dining flattens to 3x1. Removed.
+
+Both notes name the numbers so the ideas are not re-tried blind.
+
+## 3. ⭐⭐ "What would it take for you to scan plans and see the results yourself?" — built
+
+Three commands, ~₹0.21 a scan, no phone: `scan-live.py` (the app's exact reader — same prompt
+file, same model and settings, same downscale), `render-grid.mjs` (the mapper mirror draws the
+resulting grid; also draws every recorded corpus reply), `render-png.py` (PNGs a session opens
+next to the plan image). Validated by re-scanning plan-010 — byte-equivalent template to the
+bundled recording — before first use. Documented as plan doc §3m.
+
+First use, on the owner's second screenshot: **the Green Court 2BHK maps cleanly from a clean
+copy** — balcony a full-width strip, lobby deeper than wide, bedrooms square, toilet wider than
+deep. The distortion on his phone is the reader's rectangles on the BRANDED copy (a third of that
+page is logo), i.e. the known §3e page-furniture sensitivity, not the mapper. That scan is now
+`greencourt-526`, bundled and pinned (`RecordedScanTest`): raw-millimetre sizes and a
+one-dimension balcony caption (`1525 WIDE`), both firsts in the fixture family.
+
+## 4. ⚠ Honest limits, restated
+
+- **His kitchen arrives at ONE cell** (right place, flagged) — the reader crams that corner of his
+  flat and the standing no-relocation rule holds. One drag fixes it; Q17 tells him to expect it.
+- **A branded, logo-heavy page still degrades the reader's rectangles** — reader-side, documented
+  in caveat 2d. The clean-copy comparison is now reproducible in-session.
+- **A plan printing no sizes is unchanged** — template geometry, room-count gate.
+- Corpus totals: 20 placed · 10 assisted · 11 refused of 41; eight placed rooms corpus-wide still
+  land against their printed orientation after overlaps (was ten).
+
+## 5. Housekeeping
+
+The audit now prints grid fill and dead edge strips per plan. The dead single-box `snap()` was
+deleted (it still carried the letterbox). `audit-mapper.mjs` exports its corpus and label table
+for the renderer. Device checklist gains Q14–Q18.

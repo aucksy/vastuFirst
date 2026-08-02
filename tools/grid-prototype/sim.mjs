@@ -1182,28 +1182,47 @@ function scanClusterLines(values, max) {
   return assigned;
 }
 
-/** The wall lines of one plan, in continuous cell space. Mirrors ScanMapper.snapAll. */
-function scanWallLines(boxes, frame, imageAspect, cols, rows) {
+/**
+ * ⭐ The home FILLS the grid — one scale per axis, no letterbox. Mirrors ScanMapper.snapAll.
+ *
+ * The old uniform fit (one scale, centred in the slack axis) letterboxed the home whenever the
+ * grid's whole-cell shape disagreed with the frame's: on the owner's flat the widened 5-column grid
+ * held 3.64 columns of content, and the 0.68-cell margin rounded into a FULL EMPTY COLUMN on the
+ * west — his home drawn hugging the east edge, off the west wall his sheet puts it on. Worse, the
+ * column widenForWidest added for the living room was eaten by that margin instead of widening
+ * anything. Per-axis fill hands the widened column to the rooms, which is what it was FOR.
+ *
+ * The distortion the uniform fit protected against no longer needs protecting: every sized room's
+ * proportions are re-imposed from the PRINTED size (reshapeToPrinted), and the stretch is bounded —
+ * the grid's shape comes from the home's own aspect, so the slack is rounding plus deliberate
+ * widening, under one cell either axis on every recorded plan.
+ *
+ * FAULT INJECTION 'letterbox' restores the uniform centred fit.
+ */
+function scanProject(frame, imageAspect, cols, rows, inject) {
   const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
   const pw = frame.w * a, ph = frame.h;
-  const s = Math.min(cols / pw, rows / ph);
-  const ox = (cols - pw * s) / 2, oy = (rows - ph * s) / 2;
-  const cx = (v) => ((v - frame.x) * a) * s + ox;
-  const cy = (v) => (v - frame.y) * s + oy;
+  let sx = cols / pw, sy = rows / ph, ox = 0, oy = 0;
+  if (inject === 'letterbox') {
+    sx = sy = Math.min(cols / pw, rows / ph);
+    ox = (cols - pw * sx) / 2; oy = (rows - ph * sy) / 2;
+  }
+  return { cx: (v) => ((v - frame.x) * a) * sx + ox, cy: (v) => (v - frame.y) * sy + oy };
+}
+
+function scanWallLines(boxes, frame, imageAspect, cols, rows, inject) {
+  const { cx, cy } = scanProject(frame, imageAspect, cols, rows, inject);
   const xs = [], ys = [];
   for (const b of boxes) { xs.push(cx(b.x), cx(b.x + b.w)); ys.push(cy(b.y), cy(b.y + b.h)); }
   return { x: scanClusterLines(xs, cols), y: scanClusterLines(ys, rows) };
 }
 
 function scanSnap(b, frame, imageAspect, cols, rows, inject, walls) {
-  const a = (typeof imageAspect === 'number' && Number.isFinite(imageAspect) && imageAspect > 0) ? imageAspect : 1;
-  const pw = frame.w * a, ph = frame.h;
-  const s = Math.min(cols / pw, rows / ph);
-  const ox = (cols - pw * s) / 2, oy = (rows - ph * s) / 2;
-  const L0 = ((b.x - frame.x) * a) * s + ox;
-  const R0 = (((b.x + b.w) - frame.x) * a) * s + ox;
-  const T0 = (b.y - frame.y) * s + oy;
-  const B0 = ((b.y + b.h) - frame.y) * s + oy;
+  const { cx, cy } = scanProject(frame, imageAspect, cols, rows, inject);
+  const L0 = cx(b.x);
+  const R0 = cx(b.x + b.w);
+  const T0 = cy(b.y);
+  const B0 = cy(b.y + b.h);
   const L = walls ? (walls.x.get(L0) ?? L0) : L0;
   const R = walls ? (walls.x.get(R0) ?? R0) : R0;
   const T = walls ? (walls.y.get(T0) ?? T0) : T0;
@@ -1372,6 +1391,12 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     if (printed[i]) { cellTotal += s.rect.w * s.rect.h; printedTotal += printed[i].w * printed[i].h; }
   });
   if (cellTotal <= 0 || printedTotal <= 0) return snapped;
+  // ⚠ MEASURED AND NOT SHIPPED (2 Aug 2026): deriving this scale from the HOME's box instead of the
+  // sketch's cells — (cols*rows − unsized cells) / printed total, so the sized rooms share the whole
+  // home. It assumes wall-to-wall rooms, overshoots by the wall/void share, and the overlap trims
+  // then FLIPPED six rooms across the corpus against their own printed orientation (138/148 → 135,
+  // including the owner's kitchen, 3x2 → 1x2). The grid-fill change alone grows every snapped cell
+  // and takes the corpus to 140/148 with nothing flipped, so the sketch-derived scale stays.
   const cellsPerSquareMm = cellTotal / printedTotal;
   // ⭐ The plan's own wall lines, so a re-shaped room's far edges CLICK back onto a neighbour's wall
   // instead of shrinking one cell clear of it and re-opening the moat the shared snap just closed.
@@ -1402,6 +1427,11 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     wf *= fit; hf *= fit;
     const w = clampInt(Math.round(wf), 1, cols);
     const h = clampInt(Math.round(hf), 1, rows);
+    // ⚠ MEASURED AND NOT SHIPPED (2 Aug 2026): growing about the room's CENTRE instead of this
+    // corner anchor. It reads as the fairer rule — growth spread to all four walls instead of
+    // down-and-right — and on the corpus it was strictly worse: orientation 140 → 139, average fill
+    // 70 → 67, and the owner's living/dining flattened from 3x2 to 3x1 because centre-shifted rooms
+    // slide off the wall lines the magnet needs. The corner the reader gave stays the anchor.
     const col = clampInt(s.rect.col, 0, cols - w), row = clampInt(s.rect.row, 0, rows - h);
     // ⚠ The magnet may close a gap but must NEVER flip a room against the size its plan prints —
     // this suite caught it doing exactly that on a 1350x2250 toilet. Most-magnetic candidate first;
@@ -1520,7 +1550,7 @@ function scanMap(draft, imageAspect, opts = {}) {
   // once and rounded once. Without it, a shared wall reported as 3.48 by one room and 3.52 by its
   // neighbour rounds to 3 and 4 and opens a moat between two rooms that touch.
   // FAULT INJECTION 'no-walls' removes it — the state that shipped a home as a scatter of islands.
-  const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, imageAspect, cols, rows);
+  const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, imageAspect, cols, rows, inject);
   let snapped = [];
   for (const c of rooms) {
     const rect = scanSnap(c.box, frame, imageAspect, cols, rows, inject, walls);
@@ -1920,6 +1950,17 @@ function scanPinnedCases(inject) {
       // `--inject=drop-contained` restores the drop and this goes red.
       if (o.kind === 'placed' && !(o.rooms || []).some((r) => /MBR TOILET/.test(r.label))) {
         problems.push('owner-flat: MBR TOILET was deleted — a contained scored room must survive');
+      }
+      // ⭐ His home REACHES ITS OWN WEST WALL. The letterboxed fit centred 3.64 columns of content
+      // in the 5-column grid, and the margin rounded into a full empty column on the west — his
+      // home drawn hugging the east edge, off the wall his sheet puts it on, with the column
+      // widenForWidest added eaten as margin instead of widening anything.
+      // `--inject=letterbox` restores that fit and this goes red.
+      if (o.kind === 'placed') {
+        const minCol = Math.min(...(o.rooms || []).map((r) => r.rect.col));
+        if (minCol > 0) {
+          problems.push(`owner-flat: the home starts at column ${minCol} — drawn off its own west wall`);
+        }
       }
     }
   }

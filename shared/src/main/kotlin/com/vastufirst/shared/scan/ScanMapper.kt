@@ -710,10 +710,18 @@ object ScanMapper {
     /**
      * Normalised rectangle → whole cells, measured against [frame] rather than against the picture.
      *
-     * The fit is UNIFORM — one scale for both axes, centred in whichever axis is slack — so a room's
-     * proportions survive the mapping. Stretching the frame to fill the grid in both directions would
-     * distort every room by the same amount the home's shape differs from the grid's, which is
-     * exactly the orientation error the printed sizes exist to remove.
+     * ⭐ The home FILLS the grid — one scale per axis, no letterbox. The old uniform fit (one scale,
+     * centred in the slack axis) protected room proportions back when the reader's rectangles were
+     * the only source of shape; since the printed sizes took that job (§3k), every sized room's
+     * proportions are re-imposed from the sheet's own text and the protection protected nothing.
+     * What the letterbox DID do, measured on the owner's flat: the widened five-column grid held
+     * 3.64 columns of content, the 0.68-cell margin rounded into a full empty column on the WEST —
+     * his home drawn off the west wall his sheet puts it on — and the very column [widenForWidest]
+     * added for his living/dining was eaten as margin, so the living room stayed square. Per-axis
+     * fill hands the widened column to the rooms. Corpus (audit-mapper.mjs): final orientation
+     * agreement 138/148 → 140/148, dead edge cells 62 → 32, no room lost, no pinned plan changed.
+     * The stretch is bounded: the grid's whole-cell shape comes from the home's own aspect, so the
+     * slack is rounding plus deliberate widening — under one cell per axis on every recorded plan.
      *
      * Each EDGE is rounded independently rather than rounding the position and the size: rounding the
      * size makes two rooms that were flush on the plan drift apart or overlap, and adjacency is what
@@ -748,11 +756,10 @@ object ScanMapper {
         val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
         val pw = frame.w * a
         val ph = frame.h
-        val s = min(cols / pw, rows / ph)
-        val ox = (cols - pw * s) / 2.0
-        val oy = (rows - ph * s) / 2.0
-        fun cx(v: Double) = ((v - frame.x) * a) * s + ox
-        fun cy(v: Double) = (v - frame.y) * s + oy
+        val sx = cols / pw
+        val sy = rows / ph
+        fun cx(v: Double) = ((v - frame.x) * a) * sx
+        fun cy(v: Double) = (v - frame.y) * sy
 
         val xLine = wallLines(boxes.flatMap { listOf(cx(it.x), cx(it.x + it.w)) }, cols)
         val yLine = wallLines(boxes.flatMap { listOf(cy(it.y), cy(it.y + it.h)) }, rows)
@@ -792,19 +799,9 @@ object ScanMapper {
         return { e -> assigned[e] ?: e.roundToInt().coerceIn(0, max) }
     }
 
-    internal fun snap(b: ScanBox, frame: ScanBox, imageAspect: Double?, cols: Int, rows: Int): CellRect {
-        val a = if (imageAspect != null && imageAspect.isFinite() && imageAspect > 0.0) imageAspect else 1.0
-        val pw = frame.w * a
-        val ph = frame.h
-        val s = min(cols / pw, rows / ph)
-        val ox = (cols - pw * s) / 2.0
-        val oy = (rows - ph * s) / 2.0
-        val left = (((b.x - frame.x) * a) * s + ox).roundToInt().coerceIn(0, cols - 1)
-        val right = ((((b.x + b.w) - frame.x) * a) * s + ox).roundToInt().coerceIn(left + 1, cols)
-        val top = ((b.y - frame.y) * s + oy).roundToInt().coerceIn(0, rows - 1)
-        val bottom = (((b.y + b.h) - frame.y) * s + oy).roundToInt().coerceIn(top + 1, rows)
-        return CellRect(left, top, right - left, bottom - top)
-    }
+    // The single-box snap() that used to sit here was dead code — snapAll replaced every caller —
+    // and it still carried the letterboxed fit. Deleted rather than updated, so the old behaviour
+    // has no body left to be resurrected from.
 
     /**
      * Resolve overlaps by TRIMMING, never by relocating. A room is cut back along whichever single

@@ -157,6 +157,19 @@ class OwnerFlatScanTest {
     }
 
     @Test
+    fun `⭐ his home reaches its own west wall — the grid is filled, not letterboxed`() {
+        // The old uniform fit centred 3.64 columns of content in the 5-column grid, and the margin
+        // rounded into a FULL EMPTY COLUMN on the west: his home drawn hugging the east edge, off
+        // the wall his sheet puts the first bedroom, both west toilets and the master bedroom on —
+        // and the very column widenForWidest added for his living/dining was eaten as that margin,
+        // which is why the living room stayed square. The mirror pins the same property in
+        // sim.mjs, where `--inject=letterbox` restores the old fit and goes red.
+        val p = placed()
+        val minCol = p.rooms.minOf { it.rect!!.col }
+        assertEquals(0, minCol, "his home starts at column $minCol — drawn off its own west wall")
+    }
+
+    @Test
     fun `⭐ the big rooms are drawn the way his plan prints them`() {
         val p = placed()
         // LIVING/DINING is printed 7.25 m × 4.30 m — unmistakably wider than it is deep. Drawn the

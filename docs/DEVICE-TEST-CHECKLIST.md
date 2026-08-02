@@ -519,3 +519,25 @@ squares between all of them, and then ask whether your home was "cut off" somewh
       put the toilet inside the living room's area and we never move a room you haven't seen. Square
       is acceptable — drawn TALLER than wide is still the bug to report. After you drag the toilet
       to the west wall, stretching the living room wide takes one pull.
+
+### Q · continued  *(new in this build — the home fills its box)*
+
+- [ ] **Q14 · ⭐ Scan the 3-bedroom flat again and look at the WEST edge (left side).** Last build
+      the whole home sat one square in from the left, with a dead empty strip down that side — your
+      first bedroom, both left-hand toilets and the master bedroom all belong against that edge.
+      Now the rooms should reach it. If there is still a full empty strip down any side of the
+      grid, send a screenshot — that exact strip is what this build removes.
+- [ ] **Q15 · ⭐ The living-and-dining should now be WIDER than it is deep.** Your sheet prints it
+      7.25 m x 4.30 m. The last two builds drew it square and we called that an accepted trade; it
+      was actually our drawing bug, now fixed. Square or taller-than-wide is a bug again — report it.
+- [ ] **Q16 · Your first bedroom should be deeper than it is wide** (the sheet prints 3.72 x 4.50).
+      It was drawn square before. Small rooms are still allowed to be a single square.
+- [ ] **Q17 · ⚠ The kitchen may arrive SMALL — one square — in the right place.** The reading crams
+      your kitchen's corner of the flat, and we never move or inflate a room you haven't seen. It
+      is marked for checking; one drag on its corner fixes it. Missing would be a bug; small is the
+      honest reading.
+- [ ] **Q18 · The 2-bedroom plan you scanned (the green builder page): expect it imperfect, and
+      tell me only if it got WORSE.** On that copy of the sheet, most of the mess comes from the
+      reading step being confused by the page's logo and margins, not from the drawing rules — the
+      same flat read from a plain copy draws almost exactly like the paper. A cleaner photo or crop
+      of just the plan should read noticeably better; if you get a chance, try that once.

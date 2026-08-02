@@ -209,4 +209,42 @@ class RecordedScanTest {
             "four rooms captioned just BALCONY, at four different printed sizes, stay four rooms",
         )
     }
+
+    /**
+     * ⭐ greencourt-526 — a real 2BHK scanned live on 2 August 2026, after the owner reported its
+     * branded twin drawing badly on his phone. Two firsts: every size prints in raw MILLIMETRES
+     * (`3285X3350`), and the balcony prints only ONE dimension (`1525 WIDE`) — not a parseable
+     * pair, so the room must ride the rectangle the reader drew for it. On the clean copy the
+     * reader draws that strip right, and the mapper must keep it: a full-width band across the
+     * north, exactly as the sheet has it.
+     */
+    @Test
+    fun `⭐ the millimetre 2BHK places whole, and the one-dimension balcony keeps its full-width strip`() {
+        val rec = assertNotNull(RecordedScans.load(RecordedScans.GREENCOURT), "greencourt-526 is not bundled")
+        assertEquals(7, rec.reply.rooms.size, "the sheet names seven spaces")
+        assertEquals(
+            6,
+            rec.reply.rooms.count { RoomDimensions.of(it) != null },
+            "six spaces print a millimetre pair; '1525 WIDE' is one number, not a size",
+        )
+        val out = ScanMapper.map(rec.reply, imageAspect = 691.0 / 954.0)
+        val placed = assertIs<ScanOutcome.Placed>(out, "a dimensioned single 2BHK must place")
+        assertEquals(7, placed.rooms.size, "every named space places — nothing on this sheet drops")
+        assertTrue(placed.notes.dropped.isEmpty(), "nothing may be dropped: ${placed.notes.dropped}")
+
+        val balcony = placed.rooms.single { it.type == RoomType.BALCONY }
+        assertEquals(0, balcony.rect!!.row, "the balcony is the sheet's north edge")
+        assertEquals(
+            placed.cols,
+            balcony.rect!!.w,
+            "the balcony must span the home's full width, as the reader drew it",
+        )
+        // Directions from the printed millimetre pairs — the properties, not the trimmer's arithmetic.
+        val lobby = placed.rooms.single { it.type == RoomType.LIVING }
+        assertTrue(lobby.rect!!.h > lobby.rect!!.w, "LOBBY prints 3135X4535 — deeper than wide")
+        val toilet = placed.rooms.single { it.label == "TOILET" }
+        assertTrue(toilet.rect!!.w > toilet.rect!!.h, "TOILET prints 2485X1525 — wider than deep")
+        val wc = placed.rooms.single { it.label == "W.C" }
+        assertTrue(wc.rect!!.h > wc.rect!!.w, "W.C prints 1500X1950 — deeper than wide")
+    }
 }

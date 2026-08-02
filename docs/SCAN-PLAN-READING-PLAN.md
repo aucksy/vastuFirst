@@ -818,3 +818,65 @@ that changed nothing (removed rather than shipped); and the wall magnet's first 
 `RoomLabelsTest` is the authority whenever they disagree. The corpus JSONs under
 `tools/scan-eval/out/` are recordings of real, paid API calls: never regenerate them casually, and
 never edit them at all.
+
+## 3m. ⭐⭐ The letterbox, and the see-it-yourself loop (2 August 2026)
+
+The owner sent phone screenshots of two scans (his flat and a Green Court 2BHK) with "grid
+dimensions and room proportions still not perfect". Reproduced without his phone, measured, and
+one of the two turned out to be ours.
+
+### The letterbox — his home drawn off its own west wall
+
+The snap fitted the home's frame into the grid with ONE scale, centred in the slack axis. The
+grid's whole-cell shape never exactly matches the frame's, so the home was letterboxed — and on his
+flat the 0.68-column margin rounded into a FULL EMPTY COLUMN on the west: his home hugging the east
+edge, off the wall his sheet puts the first bedroom, both west toilets and the master bedroom on.
+Worse: the column `widenForWidest` deliberately adds for his living/dining was eaten as margin,
+which is exactly why that room had stayed square (v0.6.3 §6 blamed the returned toilet; the real
+thief was the letterbox).
+
+**The fit is now one scale PER AXIS — the frame fills the grid.** The old protection (uniform scale
+preserves room proportions) protects nothing since §3k: sized rooms get their proportions from the
+printed text, and the stretch is bounded by construction — the grid's shape comes from the home's
+own aspect, so slack is rounding plus deliberate widening, under one cell per axis on every
+recorded plan. Measured across all 41 recordings (`audit-mapper.mjs`, which now also prints grid
+fill and dead edge strips): **orientation 138/148 → 140/148, dead edge cells 62 → 32, rooms lost
+unchanged at zero, no pinned plan changes outcome.** On his flat: the west column is gone, the
+living/dining is finally 3x2 — wider than deep, as printed — and the first bedroom is 2x3, deeper
+than wide, as printed. Pinned both sides: `OwnerFlatScanTest` ("reaches its own west wall") and
+sim.mjs, where `--inject=letterbox` restores the old fit and goes red on his flat.
+
+### Measured and NOT shipped, both by the corpus
+
+- **True-scale rooms** — deriving cells-per-m² from the home's box (grid area minus unsized cells
+  over printed total) instead of the sketch's cells. Rooms then sum to the whole home, the trims
+  arbitrate, and six rooms across the corpus FLIP against their own printed orientation (138 → 135),
+  including the owner's kitchen. The sketch-derived scale stays; the note sits in `sim.mjs`.
+- **Centre-anchored reshape** — growing a re-shaped room about its centre instead of its top-left
+  corner. Fairer on paper; on the corpus it slides rooms off the wall lines the magnet needs:
+  138 → 139 only, average fill 70 → 67, and the owner's living/dining flattens 3x2 → 3x1.
+
+### ⭐ The see-it-yourself loop — scan any plan and LOOK, no phone involved
+
+The owner asked what it would take for a session to scan floor plans and see the results the way he
+does. It exists now, three commands, ~₹0.21 of API:
+
+```
+python tools/scan-eval/scan-live.py <image path or URL>     # the app's exact reader: same prompt
+                                                            # file, model, settings, downscale
+node tools/scan-eval/render-grid.mjs --only=X --reply=tools/scan-eval/out/live/<name>.json
+python tools/scan-eval/render-png.py <name>                 # draw it; open the png and look
+```
+
+`render-grid.mjs` (no `--reply`) draws every recorded corpus reply the same way; `render-png.py
+--all` turns them into PNGs a session can open next to the plan image. Replies land in `out/live/`
+— a separate class from the frozen corpus recordings, safe to re-record. The loop was validated by
+re-scanning plan-010 (byte-equivalent template to the bundled recording, §3k) before being used on
+anything new.
+
+First use found: the Green Court 2BHK maps CLEANLY from a clean copy of its sheet — balcony a
+full-width strip, lobby deeper than wide, both bedrooms square, toilet wider than deep. The mess on
+the owner's phone came from the reader's rectangles on the BRANDED copy (a third of that page is
+logo and title), which is the §3e page-furniture sensitivity, not the mapper. Recorded as
+`greencourt-526` (bundled + pinned in `RecordedScanTest`): raw-millimetre sizes and a
+one-dimension balcony caption (`1525 WIDE`), both firsts for the fixture family.
