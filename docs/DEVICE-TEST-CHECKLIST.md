@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.6.0 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.6.0/vastufirst-v0.6.0.apk)
+**Latest build to test:** v0.6.1 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.6.1/vastufirst-v0.6.1.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the

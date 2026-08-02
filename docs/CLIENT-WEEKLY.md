@@ -59,6 +59,8 @@ one, and it is not something we were willing to ship.
 
 ### Sunday 2 August, later — reading a plan properly
 
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.6.1/vastufirst-v0.6.1.apk
+
 **You sent a screenshot of your own flat scanned in, and you were right: it was not good enough.**
 Ten small boxes with empty squares between every one of them, on a plan where every room shares a wall
 with its neighbour — and then the app asked whether your home was "cut off" in the north-west, pointing
