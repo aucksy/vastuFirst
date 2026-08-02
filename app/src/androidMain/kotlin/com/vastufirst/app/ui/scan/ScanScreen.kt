@@ -183,11 +183,14 @@ private fun DoneBody(
                         "print their sizes, so we can't tell where each one sits. We haven't " +
                         "guessed. They're waiting on the grid in a row: drag each one to where it " +
                         "really is."
+                // ⚠ SHORTER than the line it replaces, deliberately. This screen already carries a
+                // row per room, and with a room's type list open the geometry gate measured three
+                // more elements pushed out of view when this paragraph was merely the same length.
+                // A caption on a crowded screen is not a free place to explain things.
                 AssistReason.FLOOR_PLATE ->
-                    "We read every room name clearly. But this sheet shows a whole floor of the " +
-                        "building — it has a lift on it — rather than one home, so we can't tell " +
-                        "which parts are yours. They're waiting on the grid in a row: drag the ones " +
-                        "that are yours to where they really are."
+                    "We read every room name clearly. But this sheet has a lift on it, so it shows " +
+                        "a whole floor of the building rather than one home. Drag the rooms that " +
+                        "are yours to where they belong."
                 AssistReason.TOO_FEW_PLACED ->
                     "We could read the room names clearly, but not where they sit on the plan — so " +
                         "we haven't guessed. They're waiting on the grid in a row: drag each one to " +

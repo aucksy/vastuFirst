@@ -62,16 +62,28 @@ fun toGridRooms(rooms: List<ScannedRoom>, cols: Int, rows: Int): List<GridRoom> 
     if (rooms.isNotEmpty() && rooms.all { it.rect != null }) {
         return rooms.mapIndexed { i, r -> r.toGridRoom(i, r.rect!!) }
     }
-    // Unplaced: a provisional strip of single cells, packed across the grid and wrapping down.
-    // Single cells on purpose — it is the smallest thing the editor supports, it is unmistakably not
-    // a floor plan, and it cannot overlap by construction.
+    // Unplaced: a provisional row of equal tiles, packed across the grid and wrapping down.
+    //
+    // ⭐⭐ TWO CELLS WIDE, and that is the whole point of the width. Single cells were the first
+    // version — the smallest thing the editor supports, unmistakably not a floor plan, and unable to
+    // overlap by construction — and looking at the rendered screen killed it: **a one-cell tile is
+    // too narrow to print a room's name**, so twelve rooms arrived as twelve blank coloured squares
+    // under an instruction to "drag each one to where it really is". The user could not tell which
+    // one was the kitchen. The geometry gate counted it too — 203 clipped labels across the
+    // configuration matrix — but it took opening the picture to see what that meant.
+    //
+    // Two cells fits every room name the palette offers (Bedroom, Kitchen, Balcony, Corridor,
+    // Entrance all render whole at this width elsewhere in the editor), still reads as a uniform
+    // holding row rather than a plan, and still cannot overlap. On the 10 × 10 grid an unplaced scan
+    // always draws on, that is five per row and up to fifty rooms — far more than any plan produces.
+    val w = if (cols >= 2) 2 else 1
     var col = 0
     var row = 0
     return rooms.mapIndexedNotNull { i, r ->
         if (row >= rows) return@mapIndexedNotNull null   // out of canvas; the rest stay unplaced
-        val cell = CellRect(col, row, 1, 1)
-        col++
-        if (col >= cols) { col = 0; row++ }
+        val cell = CellRect(col, row, w, 1)
+        col += w
+        if (col + w > cols) { col = 0; row++ }
         r.toGridRoom(i, cell)
     }
 }
