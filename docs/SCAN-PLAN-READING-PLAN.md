@@ -880,3 +880,28 @@ the owner's phone came from the reader's rectangles on the BRANDED copy (a third
 logo and title), which is the §3e page-furniture sensitivity, not the mapper. Recorded as
 `greencourt-526` (bundled + pinned in `RecordedScanTest`): raw-millimetre sizes and a
 one-dimension balcony caption (`1525 WIDE`), both firsts for the fixture family.
+
+### §3m addendum — what the first CI run caught, and the two rules it forced (same day)
+
+The first push FAILED CI on `ScanWallLinesTest` — the hand-jittered replica of the owner's FIRST
+flat (the §2c islands memorial), a fixture that existed **only in Kotlin**. The mirror had been
+blind to it, so every mirror suite stayed green while Kotlin went red: a fixture gap is a drift
+channel, exactly the plan-020 lesson from the other direction. The fixture is now pinned on both
+sides.
+
+Two defects underneath, each with its own rule:
+
+1. **The wall clusterer cut chains at arrival order.** A chain of near-equal edges that outgrows
+   the span cap was cut off at whichever edge happened to arrive when the cap was reached — the
+   living room's top dragged the chain over the cap and the cut landed between the master
+   bedroom's bottom and the master toilet's top, the same physical wall. Chains now split at
+   their LARGEST INTERNAL GAP, recursively: the seam goes where the geometry says.
+2. **The printed-size re-shape could pull a room one cell off a wall it was READ flush against**
+   (printed height and observed walls disagreeing by one cell of rounding), reopening a §2c moat
+   inside the home. Rule: **flushness observed at the snap survives the re-shape** — fires only on
+   observed flushness, only on a one-cell pull-away, never against printed orientation. Walls beat
+   arithmetic; a phantom moat is the worse lie than a room one cell deeper than its caption.
+
+Corpus after both rules (the release's final numbers): **orientation 140/148 · dead edge cells
+62 → 32 · rooms lost outright 2 → 1** (a balcony on one old-prompt recording returns) · owner's
+kitchen back to 2x1 wide · tower-D1 empty squares 26 → 24 with both §2c adjacencies held.

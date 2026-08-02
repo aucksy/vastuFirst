@@ -489,6 +489,22 @@ object ScanMapper {
         val xLines = snapped.flatMapTo(HashSet()) { listOf(it.second.col, it.second.right) }
         val yLines = snapped.flatMapTo(HashSet()) { listOf(it.second.row, it.second.bottom) }
 
+        // ⭐ Flushness observed at the SNAP survives the re-shape. Where a room's far edge was
+        // snapped flush against a NEIGHBOUR's wall (their edges share the line and their spans
+        // overlap), and the printed-size shrink would pull that edge exactly ONE cell off it, the
+        // wall wins: the printed number and the observed wall disagree by one cell of rounding, and
+        // a phantom moat inside the home — the §2c defect the owner photographed — is the worse lie
+        // than a room one cell deeper than its caption. Fires only on observed flushness, only on a
+        // one-cell pull-away, and never against the printed orientation (the agreement guard below
+        // keeps its veto). Proven on the jittered tower-D1 sheet (ScanWallLinesTest) and measured
+        // corpus-wide: orientation agreement holds at 140/148 and one previously-lost room returns.
+        fun flushRight(r: CellRect) = snapped.any { (_, o) ->
+            o !== r && o.col == r.right && o.row < r.bottom && r.row < o.bottom
+        }
+        fun flushBottom(r: CellRect) = snapped.any { (_, o) ->
+            o !== r && o.row == r.bottom && o.col < r.right && r.col < o.right
+        }
+
         return snapped.mapIndexed { i, (candidate, rect) ->
             val size = printed[i] ?: return@mapIndexed candidate to rect
             val targetCells = size.area * cellsPerSquareMm
@@ -526,8 +542,10 @@ object ScanMapper {
             // because the rounding above is monotonic, so there is always an answer.
             val freeRight = col + w
             val freeBottom = row + h
-            val right = magnet(freeRight, xLines, col + 1, cols)
-            val bottom = magnet(freeBottom, yLines, row + 1, rows)
+            var right = magnet(freeRight, xLines, col + 1, cols)
+            var bottom = magnet(freeBottom, yLines, row + 1, rows)
+            if (freeRight == rect.right - 1 && rect.right <= cols && flushRight(rect)) right = rect.right
+            if (freeBottom == rect.bottom - 1 && rect.bottom <= rows && flushBottom(rect)) bottom = rect.bottom
             val free = agreement(w, h, ratio)
             val (r, b) = listOf(
                 right to bottom,
@@ -718,8 +736,10 @@ object ScanMapper {
      * 3.64 columns of content, the 0.68-cell margin rounded into a full empty column on the WEST —
      * his home drawn off the west wall his sheet puts it on — and the very column [widenForWidest]
      * added for his living/dining was eaten as margin, so the living room stayed square. Per-axis
-     * fill hands the widened column to the rooms. Corpus (audit-mapper.mjs): final orientation
-     * agreement 138/148 → 140/148, dead edge cells 62 → 32, no room lost, no pinned plan changed.
+     * fill hands the widened column to the rooms. Corpus (audit-mapper.mjs), together with the
+     * widest-gap wall split and the flush-preserving re-shape below: final orientation agreement
+     * 138/148 → 140/148, dead edge cells 62 → 32, rooms lost outright 2 → 1, no pinned plan
+     * changes outcome.
      * The stretch is bounded: the grid's whole-cell shape comes from the home's own aspect, so the
      * slack is rounding plus deliberate widening — under one cell per axis on every recorded plan.
      *
@@ -781,19 +801,38 @@ object ScanMapper {
      * Single-linkage with a hard cap on how wide a group may grow ([WALL_MAX_SPAN]) — without the
      * cap, a run of edges each within tolerance of the last chains into one enormous "wall" and
      * crushes the rooms between them.
+     *
+     * ⭐ A chain that outgrows the cap is split at its LARGEST INTERNAL GAP, recursively — never cut
+     * off at whichever edge happened to arrive when the cap was reached. The greedy cut was
+     * order-fragile: on the jittered tower-D1 sheet the living room's top edge chained onto the
+     * master bedroom's bottom edge, dragged the span over the cap, and the cut then landed BETWEEN
+     * the master bedroom's bottom and the master toilet's top — the same physical wall — putting
+     * the two rooms on different lines. Splitting at the widest gap puts the seam where the
+     * geometry says a seam is; tolerance and cap semantics are unchanged.
      */
     private fun wallLines(edges: List<Double>, max: Int): (Double) -> Int {
         val sorted = edges.distinct().sorted()
         val assigned = HashMap<Double, Int>(sorted.size)
+        fun emit(lo: Int, hi: Int) {
+            if (hi > lo && sorted[hi] - sorted[lo] > WALL_MAX_SPAN) {
+                var cut = lo
+                var widest = -1.0
+                for (k in lo until hi) {
+                    val gap = sorted[k + 1] - sorted[k]
+                    if (gap > widest) { widest = gap; cut = k }
+                }
+                emit(lo, cut)
+                emit(cut + 1, hi)
+                return
+            }
+            val line = ((lo..hi).sumOf { sorted[it] } / (hi - lo + 1)).roundToInt().coerceIn(0, max)
+            for (k in lo..hi) assigned[sorted[k]] = line
+        }
         var i = 0
         while (i < sorted.size) {
             var j = i + 1
-            while (j < sorted.size &&
-                sorted[j] - sorted[j - 1] <= WALL_TOLERANCE &&
-                sorted[j] - sorted[i] <= WALL_MAX_SPAN
-            ) j++
-            val line = ((i until j).sumOf { sorted[it] } / (j - i)).roundToInt().coerceIn(0, max)
-            for (k in i until j) assigned[sorted[k]] = line
+            while (j < sorted.size && sorted[j] - sorted[j - 1] <= WALL_TOLERANCE) j++
+            emit(i, j - 1)
             i = j
         }
         return { e -> assigned[e] ?: e.roundToInt().coerceIn(0, max) }

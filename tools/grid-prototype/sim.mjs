@@ -1163,20 +1163,40 @@ function scanHomeAspect(frame, imageAspect) {
 const WALL_TOLERANCE = 0.5;
 const WALL_MAX_SPAN = 0.75;
 
-/** Group near-equal edges into shared wall lines. Mirrors ScanMapper.wallLines. */
+/**
+ * Group near-equal edges into shared wall lines. Mirrors ScanMapper.wallLines.
+ *
+ * ⭐ A chain that grows past WALL_MAX_SPAN is split at its LARGEST INTERNAL GAP, recursively — not
+ * cut off at whichever edge happened to arrive when the cap was reached. The old greedy cut was
+ * order-fragile: on the jittered tower-D1 sheet the living room's top edge chained onto the master
+ * bedroom's bottom edge, dragged the span over the cap, and the cut then landed BETWEEN the master
+ * bedroom's bottom and the master toilet's top — the same physical wall — reopening the §2c moat
+ * the wall lines exist to close. Splitting at the widest gap puts the seam where the geometry says
+ * a seam is; the tolerance and cap semantics are unchanged.
+ */
 function scanClusterLines(values, max) {
   const sorted = [...new Set(values)].sort((p, q) => p - q);
   const assigned = new Map();
+  const emit = (lo, hi) => {           // sorted[lo..hi] inclusive, tolerance-chained
+    if (sorted[hi] - sorted[lo] > WALL_MAX_SPAN && hi > lo) {
+      let cut = lo, widest = -1;
+      for (let k = lo; k < hi; k++) {
+        const gap = sorted[k + 1] - sorted[k];
+        if (gap > widest) { widest = gap; cut = k; }
+      }
+      emit(lo, cut); emit(cut + 1, hi);
+      return;
+    }
+    let sum = 0;
+    for (let k = lo; k <= hi; k++) sum += sorted[k];
+    const line = clampInt(Math.round(sum / (hi - lo + 1)), 0, max);
+    for (let k = lo; k <= hi; k++) assigned.set(sorted[k], line);
+  };
   let i = 0;
   while (i < sorted.length) {
     let j = i + 1;
-    while (j < sorted.length &&
-           sorted[j] - sorted[j - 1] <= WALL_TOLERANCE &&
-           sorted[j] - sorted[i] <= WALL_MAX_SPAN) j++;
-    let sum = 0;
-    for (let k = i; k < j; k++) sum += sorted[k];
-    const line = clampInt(Math.round(sum / (j - i)), 0, max);
-    for (let k = i; k < j; k++) assigned.set(sorted[k], line);
+    while (j < sorted.length && sorted[j] - sorted[j - 1] <= WALL_TOLERANCE) j++;
+    emit(i, j - 1);
     i = j;
   }
   return assigned;
@@ -1407,6 +1427,17 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     for (const l of lines) if (l >= lowest && l <= highest && (best === null || Math.abs(l - edge) < Math.abs(best - edge))) best = l;
     return (best !== null && Math.abs(best - edge) <= 1 && inject !== 'no-magnet') ? best : edge;
   };
+  // ⭐ Flushness observed at the SNAP survives the re-shape. Where a room's far edge was snapped
+  // flush against a NEIGHBOUR's wall (their edges share the line and their spans overlap), and the
+  // printed-size shrink would pull that edge exactly one cell off it, the wall wins: the printed
+  // number and the observed wall disagree by one cell of rounding, and a phantom moat inside the
+  // home (the §2c defect, photographed by the owner) is the worse lie than a room one cell deeper
+  // than its caption. Fires ONLY on observed flushness, only on a one-cell pull-away, and never
+  // against the printed orientation (the agree-guard keeps its veto).
+  const flushRight = (rect) => snapped.some((o) => o.rect !== rect
+    && o.rect.col === right(rect) && o.rect.row < bottom(rect) && rect.row < bottom(o.rect));
+  const flushBottom = (rect) => snapped.some((o) => o.rect !== rect
+    && o.rect.row === bottom(rect) && o.rect.col < right(rect) && rect.col < right(o.rect));
 
   return snapped.map((s, i) => {
     const size = printed[i];
@@ -1441,8 +1472,12 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     // a plain yes/no let a kitchen printed 6'-11"x9'-7" be stretched from deeper-than-wide to square.
     const agree = (ww, hh) => (ratio === 1 ? 2 : ww === hh ? 1 : ((ratio > 1) === (ww > hh) ? 2 : 0));
     const free = agree(w, h);
-    const rightE = magnet(col + w, xLines, col + 1, cols);
-    const bottomE = magnet(row + h, yLines, row + 1, rows);
+    let rightE = magnet(col + w, xLines, col + 1, cols);
+    let bottomE = magnet(row + h, yLines, row + 1, rows);
+    if (inject !== 'no-magnet') {
+      if (col + w === right(s.rect) - 1 && flushRight(s.rect) && right(s.rect) <= cols) rightE = right(s.rect);
+      if (row + h === bottom(s.rect) - 1 && flushBottom(s.rect) && bottom(s.rect) <= rows) bottomE = bottom(s.rect);
+    }
     const [rr, bb] = [[rightE, bottomE], [rightE, row + h], [col + w, bottomE], [col + w, row + h]]
       .find(([x, y]) => agree(x - col, y - row) >= free);
     const out = { col, row, w: rr - col, h: bb - row };
@@ -1960,6 +1995,47 @@ function scanPinnedCases(inject) {
         const minCol = Math.min(...(o.rooms || []).map((r) => r.rect.col));
         if (minCol > 0) {
           problems.push(`owner-flat: the home starts at column ${minCol} — drawn off its own west wall`);
+        }
+      }
+    }
+  }
+
+  // ⭐ tower-D1 — the jittered replica of the owner's FIRST flat, the §2c islands memorial. This
+  // fixture lived ONLY in Kotlin (ScanWallLinesTest) until the grid-fill change broke it there
+  // while every suite here stayed green — a fixture gap is a drift channel, so it is pinned on
+  // both sides now. The two adjacencies are the §2c doctrine itself: rooms that share a wall on
+  // the sheet share a grid line here, through snap, re-shape and trim. The flush-preserving
+  // re-shape is what holds the second one: the master bedroom's printed height disagrees with its
+  // observed walls by one cell of rounding, and the wall must win over the arithmetic.
+  {
+    const towerD1 = {
+      planType: '2D_PLAN', hasRoomLabels: true, planConfidence: 0.95,
+      rooms: [
+        { label: "BALCONY 5'-5\" WIDE", x: 0.183, y: 0.128, w: 0.141, h: 0.089, confidence: 0.9 },
+        { label: "BALCONY 5'-5\" WIDE", x: 0.428, y: 0.058, w: 0.135, h: 0.081, confidence: 0.9 },
+        { label: "MASTER BEDROOM 11'-0\"X12'-3\"", x: 0.161, y: 0.238, w: 0.206, h: 0.196, confidence: 0.9 },
+        { label: "BEDROOM 10'-0\"X12'-0\"", x: 0.396, y: 0.161, w: 0.191, h: 0.212, confidence: 0.9 },
+        { label: "BALCONY 5'-5\" WIDE", x: 0.645, y: 0.288, w: 0.182, h: 0.096, confidence: 0.9 },
+        { label: "MASTER TOILET 8'-6\"X5'-5\"", x: 0.159, y: 0.461, w: 0.143, h: 0.120, confidence: 0.9 },
+        { label: "TOILET 8'-0\"X5'-5\"", x: 0.351, y: 0.459, w: 0.099, h: 0.143, confidence: 0.9 },
+        { label: "LIVING/DINING 19'-0\"X12'-1\"", x: 0.404, y: 0.408, w: 0.419, h: 0.268, confidence: 0.9 },
+        { label: "KITCHEN 11'-0\"X7'-0\"", x: 0.545, y: 0.626, w: 0.216, h: 0.124, confidence: 0.9 },
+        { label: "SERVICE BALCONY 4'-11\" WIDE", x: 0.414, y: 0.643, w: 0.106, h: 0.079, confidence: 0.9 },
+      ],
+    };
+    const td = scanMap(towerD1, 1725 / 2000, opts);
+    if (td.kind !== 'placed') {
+      problems.push(`tower-D1: expected placed, got ${td.kind}/${td.reason || ''}`);
+    } else {
+      const rectOf = (s) => (td.rooms || []).find((r) => String(r.label).startsWith(s))?.rect;
+      const m = rectOf('MASTER BEDROOM'), b = rectOf('BEDROOM'), t = rectOf('MASTER TOILET');
+      if (!m || !b || !t) problems.push('tower-D1: a pinned room did not survive');
+      else {
+        if (m.col + m.w !== b.col) {
+          problems.push(`tower-D1: master.right ${m.col + m.w} != bedroom.col ${b.col} — the shared wall split`);
+        }
+        if (m.row + m.h !== t.row) {
+          problems.push(`tower-D1: master.bottom ${m.row + m.h} != toilet.row ${t.row} — the §2c moat reopened`);
         }
       }
     }

@@ -3038,3 +3038,16 @@ one-dimension balcony caption (`1525 WIDE`), both firsts in the fixture family.
 The audit now prints grid fill and dead edge strips per plan. The dead single-box `snap()` was
 deleted (it still carried the letterbox). `audit-mapper.mjs` exports its corpus and label table
 for the renderer. Device checklist gains Q14–Q18.
+
+## 6. ⭐ What the first CI run caught — a fixture that lived only in Kotlin
+
+The first push went red on the jittered replica of the owner's FIRST flat (the §2c islands
+memorial, `ScanWallLinesTest`) — a fixture the mirror never carried, so every mirror suite stayed
+green while Kotlin failed. Underneath: the wall clusterer cut over-long chains at arrival order
+(now: split at the largest internal gap, recursively), and the printed-size re-shape could pull a
+room one cell off a wall it was read flush against, reopening a moat inside the home (now:
+flushness observed at the snap survives the re-shape — walls beat arithmetic, orientation keeps
+its veto). Both rules measured across all 41 recordings before the re-push: orientation stays
+140/148, dead edges stay 32, and a balcony lost outright on one old-prompt recording RETURNS
+(2 → 1). The tower-D1 fixture is now pinned in the mirror too — a fixture gap is a drift channel,
+the plan-020 lesson from the other direction.
