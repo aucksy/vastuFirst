@@ -2835,3 +2835,20 @@ both red — and closes `no-walls` too, which v0.6.1 had to record as unproven.
   and it is pinned as a stated trade.
 - **A plan that prints no sizes is exactly as good as it was before** — and that is most of what the
   room-count gate still protects.
+
+## 8. ⭐ Looked at before tagging (CLAUDE.md §2b) — and both pictures changed the build
+
+Downloaded from the build and opened, not asserted:
+
+| screen | what it proved |
+|---|---|
+| `editor-scanned-owner` at 412 dp | ⭐ **his flat arrives as a home.** Two bedrooms and a balcony along the north, toilet and passage west, entrance centre, living room in the middle, the east balcony beside it, kitchen and utility east, master bedroom south-west, third balcony south. **All fourteen rooms in the right part of the flat.** |
+| the same at **200 % font** | still legible: names whole, the tall east balcony's label turned on its side, the plan still readable |
+| `editor-scanned-unplaced` at 412 dp | ⚠ **the finding that changed the release.** The heading and the missing shape question were right — and every parked tile was a **blank coloured square**. A one-cell tile cannot print a room's name, so twelve rooms sat under "drag each one to where it really is" with no way to tell which was the kitchen. Now two cells wide. |
+| the L1 geometry gate | counted the same defect as **203 clipped labels** and adopted it as a baseline without complaint. The number was there; only the picture said what it meant. |
+| the same gate, on `scan-retype` | ⚠ failed the build for **3** newly out-of-view elements, because the floor-plate paragraph was merely the *same length* as the line it replaced. Shortened. |
+
+⚠ **Two honest notes on the owner's own screen.** His living room comes out **square** rather than
+wider than deep — better than the inversion it replaces, and it is the residual §7 records. And the
+app asks him **one** shape question, about the top-right corner; that is a fair question with a real
+answer, where the version he complained about asked an impossible one about a parking row.

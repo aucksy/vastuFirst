@@ -639,3 +639,10 @@ you to drag them where they belong — and it no longer asks questions about the
 has not been arranged yet.
 
 Room positions remain the AI's best guess and are always confirmed by the customer, unchanged.
+
+**One more thing we only found by looking at the screens.** When the app cannot place the rooms, it
+lays them out as a row of equal tiles for you to drag onto the plan. Those tiles were too small to
+print the room's name — so you'd be looking at a dozen blank coloured squares while being told to
+drag each one where it belongs, with no way to tell which was the kitchen. They are wider now, and
+every name reads. The automated checks had counted this and let it through; only opening the picture
+showed what the number meant.
