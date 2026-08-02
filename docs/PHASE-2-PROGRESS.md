@@ -2627,3 +2627,90 @@ Downloaded from the build and read, rather than asserted:
 ⚠ **The honest limit, again:** a golden is a viewport. `report-prayer` reaches the not-ideal card and no
 further, which is why the disputes section has a render of its own — and the comment on `report-prayer`
 now says so, so nobody assumes otherwise a release from now.
+
+---
+
+# ⭐⭐ v0.6.1 — a scanned home arrives as a home (2026-08-02)
+
+The owner scanned his own flat — Tower D1/D2, 2B+2T, 1262 sq ft — and got **ten small boxes with
+empty squares between every one of them**, on a sheet where every room shares a wall with its
+neighbour. The app then asked him whether his home was "cut off" in the north-west, pointing at the
+slack beside his master bedroom. Neither answer to that question was right, because the question was
+wrong.
+
+## 1. The cause: every edge was rounded on its own
+
+The mapper already knew adjacency mattered — its own comment says so, and it deliberately rounds each
+EDGE rather than rounding position-plus-size. But independent rounding preserves adjacency **only
+when the reader reports a shared wall at the identical number**, and it never does. The reader draws
+inside the wall thickness and jitters every edge, so one room's right edge comes back at 3.48 cells
+and its neighbour's left edge at 3.52 — four hundredths of a cell apart, rounding to 3 and 4, opening
+a one-cell moat between two rooms that touch in the real home. Every room does it to every neighbour,
+which is why a plan falls apart into islands rather than merely loosening.
+
+⚠ **No existing fixture could reproduce it.** Every scan fixture in the suite has rooms at exactly
+0.0 / 0.3 / 0.4 / 0.7 — perfectly flush — so the defect was invisible to the whole test suite by
+construction. The owner's plan is now in the corpus, read the way a real reader reads it.
+
+## 2. The fix: the plan's own wall lines
+
+Edges within **half a cell** of each other are agreed to be the same wall before anything is rounded.
+Half a cell is not tuned: closer than that, rounding is arbitrary — a hundredth either way flips the
+answer — so the difference carries no information about being different walls. Beyond it, rounding is
+decided and we leave it alone. Single-linkage, with a hard cap on how wide one group may grow, or a
+run of near-misses chains into one enormous "wall" and crushes the rooms between them.
+
+**Measured on the owner's sheet:**
+
+| | before | after |
+|---|---|---|
+| empty squares in the bounding box | 41 of 80 | **26 of 80** |
+| biggest single hole | 28 squares | **11** |
+| separate holes | 3 | 4 (smaller) |
+| real adjacencies restored | — | **all of them** |
+
+Master bedroom to bedroom, master toilet under the master bedroom, toilet to living, kitchen under
+living, service balcony beside kitchen — every wall that touches on the sheet touches on the grid.
+What is left empty is the genuine shape of that flat, which really does have white space at the
+top-right and below the two toilets.
+
+## 3. Re-shaping to the printed size was re-opening the moats
+
+It anchors a room's top-left corner and replaces the extent, so the room shrinks away from the
+neighbour on its right and below. A re-shaped edge now **clicks onto a wall line** when it lands
+within one cell of it.
+
+⚠ **But never at the cost of the room's shape**, and this took two goes:
+
+- The fuzz suite caught the magnet turning a 1 350 × 2 250 toilet into a wider-than-deep room in
+  **363 of 20 000** random replies — the exact error the printed sizes exist to remove.
+- The first guard was a yes/no ("does this still agree with the sheet?"), and **square counts as
+  agreeing** — so CI then caught a kitchen printed 6'-11" × 9'-7" being stretched from
+  deeper-than-wide to square. Not wrong, but no longer right.
+- It is now a **score** — runs the right way / square / runs the wrong way — and the magnet may never
+  make a room agree with its own plan *less* than it already did. Doing nothing always scores the
+  same as itself, so there is always an answer.
+
+## 4. ⭐ The shape question is only asked when it means something
+
+A missing corner **contains a corner** of the bounding box, and is at least a twentieth of the home
+(four squares on the grid a scan uses). Anything else is floor with no room drawn on it — a passage,
+a hall, wall thickness the grid cannot resolve — which belongs to the home whether or not anyone
+draws a room there. The app now says so instead of asking.
+
+On the owner's plan that takes the questions from four to three, and the three that remain are the
+real notches in that flat.
+
+## 5. ⚠ Honest limits, stated
+
+- **Two of the fault injections leave the fuzz suite green** (`no-walls`, `no-magnet`), and that is
+  recorded rather than dressed up: random replies rarely contain adjacent rooms, so "are there gaps?"
+  is not a property that suite can judge. The owner's own plan is pinned in Kotlin instead, which is
+  where the defect actually was.
+- **A quarter to a third of a scanned home's bounding box is still empty**, and on this plan most of
+  that is correct. It costs the score nothing — the footprint is the bounding box minus what the user
+  cuts, so unlabelled floor is still part of the home — but it does mean a scan still looks looser
+  than a hand-drawn plan.
+- **A wall thinner than one cell disappears into a whole empty cell.** That is the drawing grid's
+  resolution, already recorded in `docs/SCORE-ACCURACY-CAVEATS.md` #2, and it is why the confirmation
+  step exists.

@@ -453,3 +453,22 @@ not hand over without; the rest are worth ten minutes if you have them.
   Pre-existing, on the saved-homes list only, and it affects no score and no report. Fixing it means
   changing the row that every list in the app uses, which is not a change to make in the same build
   as a Vastu ruling. Tell me if it bothers you on your own phone and it goes to the top of the list.
+
+## Q · Scanning a real plan  *(new in this build)*
+
+Photographing or uploading a builder's plan used to come back as a scatter of small boxes with empty
+squares between all of them, and then ask whether your home was "cut off" somewhere it plainly is not.
+
+- [ ] **Q1 · ⭐ Scan the same plan you sent me and look at the room layout.** Rooms that share a wall
+      on your sheet should now sit against each other — the master bedroom's right edge touching the
+      second bedroom, the master toilet directly under the master bedroom, the kitchen under the
+      living room. If any two rooms that touch on paper still have a gap between them, send me a
+      screenshot; that is the whole point of this build.
+- [ ] **Q2 · The "is this part of your home?" question should now only point at a real corner.** Your
+      flat genuinely is not a rectangle — it has empty space at the top-right and below the two
+      toilets — so expect to be asked two or three times, and each time it should be pointing at a
+      corner you recognise as not yours. If it ever points at space *between* two rooms, that is a
+      bug and I want to know.
+- [ ] **Q3 · Room shapes against the sheet.** Where your plan prints a size (for example the kitchen
+      at 11'0" x 7'0"), the drawn room should run the same way round — wider than deep, or deeper
+      than wide. Tell me any room that comes out turned the wrong way.

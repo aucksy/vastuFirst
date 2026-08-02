@@ -57,6 +57,37 @@ one, and it is not something we were willing to ship.
 
 ## Week of 28 July – 3 August 2026
 
+### Sunday 2 August, later — reading a plan properly
+
+**You sent a screenshot of your own flat scanned in, and you were right: it was not good enough.**
+Ten small boxes with empty squares between every one of them, on a plan where every room shares a wall
+with its neighbour — and then the app asked whether your home was "cut off" in the north-west, pointing
+at the space beside your master bedroom. Neither answer to that question was right, because the
+question was wrong.
+
+**What was actually happening.** The app rounds each room onto a grid of squares. It was rounding every
+room separately, which only keeps two rooms touching if the plan reader reports their shared wall at
+exactly the same number. It never does — it draws just inside the wall, and wobbles a little on every
+edge — so one room's right-hand wall came back a hair to the left of its neighbour's left-hand wall,
+they rounded to different squares, and a gap opened between two rooms that touch in your real flat.
+Every room did that to every neighbour, which is why the whole plan fell apart instead of just
+loosening slightly.
+
+**The fix.** Two walls within half a square of each other are now treated as the same wall before
+anything is rounded. Rebuilding your sheet the way the reader actually sees it: **41 of 80 squares were
+empty, in one hole big enough to swallow three rooms — now 26 in four small ones**, and every real
+join is back: master bedroom to bedroom, master toilet under the master bedroom, toilet to living,
+kitchen under living. What is still empty is the true shape of your flat, which really does have blank
+space at the top-right and below the two toilets.
+
+**And the "is this part of your home?" question now only appears for a genuine missing corner** — it
+has to sit in a corner of the plan and be big enough to be a piece of building. Loose space between
+rooms is simply counted as part of your home, and the app says so instead of asking.
+
+⚠ **Please re-scan your plan on the next build and tell me whether the rooms now sit against each
+other.** I have matched it against a faithful rebuild of your sheet, but only your phone and your real
+plan can confirm it.
+
 ### Sunday 2 August — the prayer-room decision, applied
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.6.0/vastufirst-v0.6.0.apk

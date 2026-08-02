@@ -48,6 +48,19 @@ the footprint is therefore tiny.
   added, which defeats the thing the chip exists to do. Revisit alongside the outline-capture step
   (#1), which fixes the footprint properly.
 
+### 2c. ⭐ A scanned plan used to arrive as islands — closed 2 August 2026
+Every room's edges were rounded to the grid **independently**, which keeps two rooms flush only when
+the plan reader reports their shared wall at the identical number. It never does — it draws inside the
+wall thickness and jitters every edge — so a shared wall came back as 3.48 from one room and 3.52 from
+its neighbour, rounded to 3 and 4, and opened a one-cell moat between two rooms that touch. Every room
+did it to every neighbour, so a scanned home arrived as a scatter of boxes rather than a floor plan.
+- Silent: **no** — it is glaringly visible, which is how the owner found it. Moves number: yes, via
+  the footprint and therefore every zone band.
+- Fixed: edges within half a cell are now agreed to be the same wall before rounding. Measured on the
+  owner's own sheet, 41 of 80 empty squares → 26, biggest hole 28 → 11, every real adjacency restored.
+- ⚠ **Residual:** a wall thinner than one cell still becomes a whole empty cell — that is #2 above,
+  and it is why the confirmation step exists.
+
 ### 3. North is set by the user and cannot be verified
 The whole zone assignment rotates with North. The user sets it by dial / slider / degree — if their
 compass reading is a few degrees off, rooms near a boundary shift zones. The **device-compass helper
