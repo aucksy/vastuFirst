@@ -159,14 +159,24 @@ class FootprintTest {
     }
 
     @Test
-    fun `⭐ a single stray square is never a missing corner`() {
+    fun `⭐ a nick too small to be a building is never a missing corner`() {
         // One empty cell at a corner is what a rounding error looks like, not what a building does.
-        val gap = Footprint.gaps(listOf(rect(1, 0, 3, 1), rect(0, 1, 4, 3))).single()
-        assertEquals(setOf(Cell(0, 0)), gap.cells)
-        assertTrue(gap.atCorner)
+        val one = Footprint.gaps(listOf(rect(1, 0, 3, 1), rect(0, 1, 4, 3))).single()
+        assertEquals(setOf(Cell(0, 0)), one.cells)
+        assertTrue(one.atCorner)
         assertFalse(
-            gap.looksLikeMissingCorner,
+            one.looksLikeMissingCorner,
             "one square is below the size a real notch can be — offering to cut it invites a wrong answer",
+        )
+
+        // …and "small" is judged against the home, not against a fixed number of squares: two cells
+        // out of a hundred is the drawing grid being coarse, whatever corner they sit in.
+        val big = Footprint.gaps(listOf(rect(2, 0, 8, 10), rect(0, 1, 2, 9))).single()
+        assertEquals(setOf(Cell(0, 0), Cell(1, 0)), big.cells)
+        assertTrue(big.atCorner && big.removable)
+        assertFalse(
+            big.looksLikeMissingCorner,
+            "two squares of a hundred-square home is a rounding artefact, not a missing corner",
         )
     }
 

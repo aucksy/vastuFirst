@@ -425,12 +425,13 @@ object ScanMapper {
             val freeBottom = row + h
             val right = magnet(freeRight, xLines, col + 1, cols)
             val bottom = magnet(freeBottom, yLines, row + 1, rows)
+            val free = agreement(w, h, ratio)
             val (r, b) = listOf(
                 right to bottom,
                 right to freeBottom,
                 freeRight to bottom,
                 freeRight to freeBottom,
-            ).first { (rr, bb) -> orientationAgrees(rr - col, bb - row, ratio) }
+            ).first { (rr, bb) -> agreement(rr - col, bb - row, ratio) >= free }
             candidate to CellRect(col, row, r - col, b - row)
         }
     }
@@ -441,11 +442,21 @@ object ScanMapper {
         return if (best != null && kotlin.math.abs(best - edge) <= MAGNET_REACH) best else edge
     }
 
-    /** Does a [w] × [h] rectangle run the way a room printed at this width-to-depth [ratio] should? */
-    private fun orientationAgrees(w: Int, h: Int, ratio: Double): Boolean = when {
-        ratio > 1.0 -> w >= h
-        ratio < 1.0 -> h >= w
-        else -> true
+    /**
+     * How well a [w] × [h] rectangle runs the way a room printed at this width-to-depth [ratio]
+     * should: **2** it runs the right way, **1** it is square, **0** it runs the wrong way.
+     *
+     * ⚠ A SCORE, not a yes/no, and the difference matters. A plain "does it agree?" test let the
+     * magnet stretch a kitchen printed 6'-11" × 9'-7" from deeper-than-wide to *square* — still not
+     * wrong, but no longer right, and `ScanReshapeTest` caught it. The rule is that clicking onto a
+     * wall may never make a room agree with its own plan LESS than it already did. Doing nothing
+     * always scores the same as itself, so there is always an answer.
+     */
+    private fun agreement(w: Int, h: Int, ratio: Double): Int = when {
+        ratio == 1.0 -> 2
+        w == h -> 1
+        (ratio > 1.0) == (w > h) -> 2
+        else -> 0
     }
 
 

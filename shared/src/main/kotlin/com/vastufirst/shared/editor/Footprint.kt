@@ -51,6 +51,9 @@ data class Gap(
      * missing corner has, and the only shape the engine's cut/extension checks can read.
      */
     val atCorner: Boolean = false,
+    /** How many cells the home's bounding box holds — so "is this notch big enough to be real?"
+     *  can be judged against the size of the home rather than against a fixed number of squares. */
+    val boxCells: Int = 0,
 ) {
     /**
      * ⭐⭐ Is this worth asking "is this part of your home?" about?
@@ -68,15 +71,24 @@ data class Gap(
      * home whether or not a room has been drawn on it. We say so instead of asking.
      */
     val looksLikeMissingCorner: Boolean
-        get() = removable && !enclosed && atCorner && cells.size >= MIN_CUT_CELLS
+        get() = removable && !enclosed && atCorner &&
+            cells.size >= MIN_CUT_CELLS &&
+            cells.size * MIN_CUT_SHARE >= boxCells
 
     companion object {
         /**
          * A single stray square is never a missing corner. Two is the smallest patch that can be a
-         * genuine notch on a grid this coarse, and it is also the smallest that survives the loose
-         * placement a scan produces.
+         * genuine notch on a grid this coarse.
          */
         const val MIN_CUT_CELLS = 2
+
+        /**
+         * …and a notch must also be at least a twentieth of the home. On the eight-by-ten grid a
+         * scanned plan uses, that is four squares: below it, a "missing corner" is the drawing grid
+         * being coarse rather than the building being cut, and asking about it invites an answer
+         * that changes the scored shape for no reason.
+         */
+        const val MIN_CUT_SHARE = 20
     }
 }
 
@@ -226,6 +238,7 @@ object Footprint {
                 removable = removable,
                 enclosed = !touchesEdge,
                 atCorner = patch.any { it in corners },
+                boxCells = box.size,
             )
         }
         return out

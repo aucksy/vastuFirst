@@ -1251,11 +1251,15 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     // ⚠ The magnet may close a gap but must NEVER flip a room against the size its plan prints —
     // this suite caught it doing exactly that on a 1350x2250 toilet. Most-magnetic candidate first;
     // doing nothing always agrees, because the rounding above is monotonic.
-    const agrees = (ww, hh) => (ratio > 1 ? ww >= hh : ratio < 1 ? hh >= ww : true);
+    // A SCORE, not a yes/no: 2 it runs the right way, 1 it is square, 0 it runs the wrong way.
+    // Clicking onto a wall may never make a room agree with its own plan LESS than it already did —
+    // a plain yes/no let a kitchen printed 6'-11"x9'-7" be stretched from deeper-than-wide to square.
+    const agree = (ww, hh) => (ratio === 1 ? 2 : ww === hh ? 1 : ((ratio > 1) === (ww > hh) ? 2 : 0));
+    const free = agree(w, h);
     const rightE = magnet(col + w, xLines, col + 1, cols);
     const bottomE = magnet(row + h, yLines, row + 1, rows);
     const [rr, bb] = [[rightE, bottomE], [rightE, row + h], [col + w, bottomE], [col + w, row + h]]
-      .find(([x, y]) => agrees(x - col, y - row));
+      .find(([x, y]) => agree(x - col, y - row) >= free);
     const out = { col, row, w: rr - col, h: bb - row };
     return { ...s, rect: out, asRead: out };
   });
