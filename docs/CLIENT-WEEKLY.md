@@ -596,3 +596,46 @@ actually moving one), and the faintest grey lettering and the arrow buttons have
 to meet the accessibility standard for readable text.
 
 Room *positions* are still the AI's best guess and are confirmed by the user, unchanged.
+
+### 2 August — the app now reads the room sizes printed on the plan
+
+We tested a third real flat and the result was bad enough to be useful: the app showed thirteen
+identical little squares in a row at the top of an empty grid, and then asked whether the space next
+to them was part of the home. Nothing about that screen was right.
+
+**What we found when we looked at what the AI actually said.** It named all fifteen rooms correctly,
+in the right order, and put each one on the correct side of the home. What it did *not* do was
+measure anything: every room came back as one of only three stock sizes, at tidy round positions,
+with three rooms placed off the bottom of the page. We checked, and it does this on about half of the
+real plans we hold. We also tried telling it not to — that changed nothing.
+
+**The fix is to take the measurements from the plan's own printing.** Nearly every Indian plan prints
+each room's size next to its name — *"3.72m x 4.50m"* — and reading printed text is the one thing
+these AI models are genuinely reliable at. We simply were not asking for it. Now we do:
+
+- on the flat we tested, **all fifteen rooms** came back with their printed size, thirteen of them
+  matching the sheet exactly;
+- across nine real plans, **116 of 129 rooms**;
+- on a plan that prints no sizes at all, it correctly returned none rather than making them up.
+
+**Three other things this uncovered, all now fixed.**
+
+- Rooms the AI placed past the bottom edge were being **deleted**. On this flat that quietly lost one
+  of its three balconies and squashed the utility to a fifth of its depth. The whole reading is now
+  scaled to fit instead, so no room is ever thrown away for being drawn off the page.
+- The drawing area was coming out **too narrow** for this home, so its long living-and-dining room —
+  clearly wider than it is deep on the plan — was drawn the wrong way round. Rooms drawn the wrong
+  shape sit in the wrong Vastu direction, so this matters to the score. Four rooms were affected;
+  now two, and both are visible for the customer to correct.
+- We had a rule that refused to place any plan with more than twelve rooms, on the grounds that it
+  was probably a whole floor of flats. **This flat has fifteen — three balconies, a utility, a
+  vestibule, a passage and a dressing area — which is a perfectly ordinary Indian apartment.** The
+  app now tells a building apart from a home by whether the sheet has a *lift* on it, which is what
+  actually distinguishes them.
+
+**And when the app genuinely cannot place the rooms, it now says so.** Instead of a row of squares
+under the heading "Place your rooms", it says these rooms are not placed yet, explains why, and asks
+you to drag them where they belong — and it no longer asks questions about the shape of a home that
+has not been arranged yet.
+
+Room positions remain the AI's best guess and are always confirmed by the customer, unchanged.

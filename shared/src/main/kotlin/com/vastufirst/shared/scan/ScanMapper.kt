@@ -95,6 +95,24 @@ object ScanMapper {
     const val MAX_OVERFLOW = 2.0
 
     /**
+     * ⭐⭐ …and how many rooms must run past the edge before it counts as the LAYOUT running long
+     * rather than one room being wrong.
+     *
+     * ⚠ This distinction is the whole safety of [shrinkToPage], and the tests caught its absence.
+     * **One** room outside the page is that room's problem: a hallucinated rectangle out on its own,
+     * which has always been clamped back in and flagged, or dropped if it is entirely off the sheet.
+     * Shrinking the whole home to accommodate it would let a single bad box pull every real room
+     * smaller — the exact "one stray rectangle inflates the frame" failure this file already warns
+     * about elsewhere.
+     *
+     * **Several** rooms outside the page is a different animal, and it is what the owner's sheet
+     * produced: the reader lays out a template, the template runs long, and the last three rooms in
+     * the sequence fall off the bottom together. Nothing is wrong with any one of them — the whole
+     * thing is simply drawn at the wrong scale, which is the one case a scale can fix.
+     */
+    const val MIN_SPILLED_ROOMS = 2
+
+    /**
      * ⭐⭐ The Placed/Assisted gate when the plan prints NO sizes: **how many rooms it has**. Above
      * this, the geometry is not trusted and the rooms are handed over unplaced.
      *
@@ -648,6 +666,11 @@ object ScanMapper {
             it.x.isFinite() && it.y.isFinite() && it.w.isFinite() && it.h.isFinite()
         }
         if (real.isEmpty()) return boxes
+        // ⭐ ONE room outside the page is that room being wrong; SEVERAL is the layout running long.
+        // See [MIN_SPILLED_ROOMS] — without this a single hallucinated rectangle shrinks every real
+        // room to make space for it.
+        val spilled = real.count { it.x < 0.0 || it.y < 0.0 || it.x + it.w > 1.0 || it.y + it.h > 1.0 }
+        if (spilled < MIN_SPILLED_ROOMS) return boxes
         val x0 = min(0.0, real.minOf { it.x })
         val y0 = min(0.0, real.minOf { it.y })
         val x1 = max(1.0, real.maxOf { it.x + it.w })

@@ -2714,3 +2714,124 @@ real notches in that flat.
 - **A wall thinner than one cell disappears into a whole empty cell.** That is the drawing grid's
   resolution, already recorded in `docs/SCORE-ACCURACY-CAVEATS.md` #2, and it is why the confirmation
   step exists.
+
+---
+
+# ⭐⭐ v0.6.2 — the plan is read from what it PRINTS (2026-08-02)
+
+The owner scanned a second flat — a 3-bedroom apartment, fifteen named spaces — and got **thirteen
+identical squares parked in a row across the top of an empty grid**, under the heading "Place your
+rooms". The app then asked whether the seven empty squares beside them were "in the south" and not
+part of his home. They were at the top of the grid, directly under the word NORTH.
+
+## 1. ⭐ The first thing done was to get the REAL reply, and it was already on disk
+
+His plan is `plan-010` of the 30-plan corpus — same fifteen captions, same sheet. So the model's
+actual answer for it had been recorded three days earlier and thrown away unexamined. It was also
+**re-read live, twice, on 2 August**: byte-identical to the recording both times.
+
+⚠ **This matters because of what the previous release was validated against.** v0.6.1's fixture is
+the owner's Green Court flat as *re-typed by hand* with plausible noise added. That is validation
+against a guess about the reader, not against the reader, and he said so. `owner-flat.json` is now
+the first recorded reply for one of his own plans, pasted in unedited.
+
+## 2. What the reader actually got wrong: it never measured the plan
+
+| | |
+|---|---|
+| room names | **15 of 15 right**, in the order a person reads the sheet |
+| distinct left edges for 15 rooms | **4** |
+| coordinates on a 0.05 lattice | **100 %** |
+| distinct room sizes | **3** |
+| rooms placed past the bottom of the page | **3** |
+| `planConfidence` | 0.95, as it always is |
+
+That is a **template**, not a reading — the same signature §3j D2 found on a numbered-legend plan,
+but wearing three stock sizes instead of one, so the uniform-box detector (which fires below 0.15
+area variation) sees 0.62 and waves it through. **11 of the 23 real 2D plans in the corpus come back
+with more than 90 % of every coordinate on that lattice.**
+
+⭐ **And it cannot be prompted away.** A variant that explicitly forbids round coordinates and tells
+the model to read the walls was measured: identical lattice, and *more* rooms off the page (6 against
+3). Dropped. This is the fourth independent confirmation of the same thing — the model reads text and
+does not measure drawings.
+
+## 3. What it does read is text, and his sheet prints a size on every room
+
+His plan prints `3.72m X 4.50m ( 12'-2" x 14'-9" )` under all fifteen captions. **We were capturing
+none of them** — the prompt asked for the label and the reader gave the name only.
+
+Asking for the size in its own field, and changing nothing else:
+
+| plan | rooms | with a printed size |
+|---|---|---|
+| **the owner's flat** | 15 | **15** |
+| plan-002 (24-space floor plate) | 24 | 24 |
+| plan-014 | 14 | 14 |
+| plan-008 · plan-020 · plan-022 | 14 · 14 · 13 | all |
+| plan-009 · plan-019 | 13 · 12 | 11 · 11 |
+| **plan-006 — a sheet that prints no sizes** | 10 | **0** ✓ |
+
+**116 of 129 rooms across nine real plans**, thirteen of the owner's fifteen matching his sheet
+exactly — and on the plan that prints nothing it invents nothing. Cost went 2 239 → 2 917 tokens a
+scan, about 20 paise instead of 15.
+
+⚠ The measured accuracy figures in §3e–§3h were taken with the previous wording and no longer strictly
+apply. The prompt change was re-measured across the corpus rather than assumed; the triage half is
+untouched and `plan-031` still classifies as a 3D render.
+
+## 4. Four fixes, each measured before it was written
+
+- **A reply that overruns the page is shrunk onto it, not cut off.** The clamp was deleting one of
+  his three balconies outright and flattening the utility to a third of its depth before anything
+  else ran. The shrink is one uniform scale and offset, which **cancels exactly** against a
+  home-framed grid — so it is a provable no-op for every reply that already fits, and pure rescue for
+  the ones that do not.
+- **The grid widens until the home's biggest room can be drawn the way its plan prints it.** His
+  living/dining is printed 7.25 m × 4.30 m; the reader's four x positions made the flat look so
+  narrow that the grid came out **four columns wide**, where a room that size cannot be wider than
+  deep. It came out inverted and the overlap trimmer then ate into it. Four of eleven rooms were
+  drawn against their printed shape → **two**, and **no other plan in the corpus changes**.
+- **The room count no longer decides a plan whose rooms state their sizes.** Fifteen named spaces —
+  three balconies, a utility, a vestibule, a passage, a dressing area — is an ordinary Indian
+  apartment, and the cut of twelve (whose own comment called it *"a judgement, not a measurement"*)
+  binned the entire home. Where the sizes are printed, the rectangles supply only the arrangement and
+  the text supplies every measurement. Two thirds is the threshold and nothing sits near it: real
+  plans come back at 0 % or 85–100 %.
+- **What separates a floor plate from a home is now said outright: a lift.** Every sheet in the
+  corpus that names one is a shared floor plate; no single-home plan names one, including three
+  genuine 21-room villas. A duct alone is deliberately not enough — flats print those too.
+
+## 5. The screen he was handed now tells the truth
+
+A scan that cannot place its rooms parks them as equal single squares. That row was titled "Place
+your rooms — touch a room and slide to move it", which reads as a finished plan gone wrong; and
+because the home's shape is measured against the box around whatever is placed, the app offered to
+cut away the leftovers of the parking row itself and called them "the south".
+
+The editor now knows the difference. While the rooms are parked it says **"These rooms aren't placed
+yet"**, explains that we read them but could not tell where they go, and **asks no shape questions at
+all** — it says instead that it will ask once they are where they belong. It stops being parked the
+moment the user moves anything.
+
+## 6. ⭐ Two fault injections finally bite
+
+`--inject=no-widen` and `--inject=no-shrink` both left the fuzz suite green, because random replies
+rarely reproduce either case. His real plan, pinned in `sim.mjs` and in `OwnerFlatScanTest`, turns
+both red — and closes `no-walls` too, which v0.6.1 had to record as unproven.
+
+⚠ **`no-magnet` is still unproven and stays recorded rather than dressed up.**
+
+## 7. ⚠ Honest limits, unchanged or new
+
+- **The rectangles are still a template on half of real plans.** Nothing here makes the reader
+  measure; it makes our code stop pretending it did. Arrangement from the rectangles, every dimension
+  from the text.
+- **Two of his rooms are still drawn against their printed shape**, down from four. Both are visible,
+  flagged and correctable, which is what the mandatory confirmation step is for.
+- **His attached master-bedroom toilet is dropped**, because the reader drew it wholly inside the
+  rectangle it gave the living room and sub-areas are dropped by geometry (owner decision D1). A
+  toilet is a scored room. It is shown to the user in the "we also saw…" list rather than vanishing,
+  and it is pinned as a stated trade.
+- **A plan that prints no sizes is exactly as good as it was before** — and that is most of what the
+  room-count gate still protects.

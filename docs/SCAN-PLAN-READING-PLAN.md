@@ -712,3 +712,89 @@ Steps 1–3 are the bulk of the risk and are **unblocked today**.
   all.** It is recorded for diagnostics and never read by a gate.
 - **All three refusal reasons are implemented and separately tested**: 3D render, no labels (which is
   also where an unresolved numbered legend lands), multi-unit sheet.
+
+---
+
+## 3k. ⭐⭐⭐ Measured 2 August 2026 — the rectangles are a TEMPLATE, and the printed sizes are the answer
+
+The owner scanned a second flat (a 3-bedroom apartment, fifteen named spaces) and got thirteen
+identical squares in a row. Its reply was already in the corpus as `plan-010`, and re-reading it live
+twice gave a byte-identical answer both times. `shared/src/main/resources/scan/owner-flat.json` is
+that reply, unedited — **the first recorded reply for one of the owner's own plans**, where every
+earlier fixture was a plan re-typed by hand.
+
+### E8 · The template signature — and it beats the uniform-box detector
+
+| | the owner's flat |
+|---|---|
+| room names right | 15 / 15 |
+| distinct left edges for 15 rooms | 4 |
+| distinct room sizes | 3 |
+| coordinates on a 0.05 lattice | 100 % |
+| rooms past the bottom of the page | 3 |
+| `planConfidence` | 0.95 |
+| **area variation** (the fabrication gate fires below 0.15) | **0.62 — waved through** |
+
+**11 of the 23 real 2D plans in the corpus** have >90 % of every coordinate on a 0.05 lattice. §3j D2
+found this shape once and read it as a numbered-legend quirk; it is the ordinary case.
+
+⭐ **It cannot be prompted away.** A variant adding *"read each room's box off the walls; do not round
+to convenient values; never let x+w exceed 1"* produced the identical lattice and **doubled** the
+off-page rooms (3 → 6). Dropped. This is the fourth independent confirmation of §3e finding 1.
+
+### E7 · Asking for the printed size — the change the whole release rests on
+
+The prompt now asks for the dimensions in their own `size` field. Nothing else about it changed.
+
+| plan | rooms | with a printed size |
+|---|---|---|
+| **owner's flat** | 15 | **15** (13 matching the sheet exactly) |
+| plan-002 · plan-014 · plan-008 · plan-020 · plan-022 | 24 · 14 · 14 · 14 · 13 | all |
+| plan-009 · plan-019 | 13 · 12 | 11 · 11 |
+| **plan-006 — prints no sizes** | 10 | **0** ✓ invents nothing |
+
+**116 of 129 rooms across nine real plans.** Cost 2 239 → 2 917 tokens, ~₹0.20 a scan.
+
+⚠ **The §3e–§3h accuracy numbers were taken with the previous wording** and no longer strictly apply.
+The triage half is untouched and still classifies `plan-031` as a 3D render. This settles **E2**
+(dimension-driven sizing) affirmatively: L2 tier 1 is real and is now the primary geometry signal.
+
+### What that forces, and it revises §3i
+
+**L2 is no longer "the model's rectangles, gated".** It is:
+
+```
+ L2a  ARRANGEMENT   which room is left of / above which   the model's rectangles — reliable
+ L2b  DIMENSION     how big and which way round each is   the size the PLAN PRINTS — 95 %-grade text
+```
+
+The rectangles are never a measurement again. Three consequences shipped:
+
+1. **A reply that overruns the page is shrunk onto it, not cut off.** The clamp deleted one of his
+   three balconies and flattened the utility. A uniform scale and offset cancel exactly against a
+   home-framed grid, so this is a provable no-op for anything already in bounds.
+2. **The grid widens until the biggest room can be drawn the way its plan prints it.** His
+   living/dining is printed 7.25 m × 4.30 m and the template's four x positions produced a four-column
+   grid, where that is impossible. 4 of 11 rooms drawn against their printed shape → 2, and no other
+   plan in the corpus changes.
+3. **The room-count gate applies only where no sizes are printed** (threshold: two thirds of rooms;
+   real plans sit at 0 % or 85–100 %, so it is a cliff). A ceiling of 20 rooms is a stated judgement,
+   not a measurement — the largest genuine single home in the corpus has 21 named spaces and the
+   smallest floor plate 17, so no count separates them cleanly.
+
+### ⭐ And the floor-plate question is answered directly instead of by counting
+
+`MAX_TRUSTED_ROOMS = 12` was calibrated on six overlays (good 10–11, bad 15–24) and its own comment
+admitted *"13 and 14 rooms were never observed, so the exact cut between 11 and 15 is a judgement"*.
+The owner's flat has fifteen. Across the 30-plan corpus, **every sheet naming a LIFT is a shared floor
+plate** (24, 25 and 17 spaces) and **no single-home plan names one**, including three genuine 21-room
+villas. A duct alone is deliberately not enough — flats print those too.
+
+### Experiments still open
+
+| | Experiment | Settles |
+|---|---|---|
+| **E3** | Coverage-threshold calibration | now moot — coverage decides nothing |
+| **E6** | Multi-unit sheet detection | a real case seen in the corpus |
+| **E9** | ⭐ Can the home's true proportions be derived from the printed sizes plus the arrangement? | A first attempt (median mm-per-unit, per axis) got the owner's width right and underestimated his depth, and produced nonsense on one plan. Not shipped. `widenForWidest` is the bounded version of the same idea. |
+| **E10** | ⭐ A plan that prints no sizes is still read from a template with nothing to correct it | The remaining weak case, and the one the room count still guards |

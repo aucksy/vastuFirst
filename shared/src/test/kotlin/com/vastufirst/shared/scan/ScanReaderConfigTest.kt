@@ -43,7 +43,13 @@ class ScanReaderConfigTest {
         assertTrue(prompt.contains("NOT_A_PLAN"), "triage classification")
         // L1 identity — the model's strongest skill, and the actual product.
         assertTrue(prompt.contains("hasRoomLabels"), "labels are a precondition, owner decision")
-        assertTrue(prompt.contains("text exactly as printed"), "verbatim captions, so the user checks our reading")
+        assertTrue(prompt.contains("exactly as printed"), "verbatim captions, so the user checks our reading")
+        // ⭐⭐ L2b — the size the PLAN PRINTS, which is where every measurement now comes from. The
+        // reader's rectangles are a template on half of real plans (three stock sizes, everything on
+        // a 0.05 lattice), and no wording fixes that; printed text is the one thing it reads at ~95 %.
+        // Asking for this took the owner's own flat from 0 of 15 rooms sized to 15 of 15.
+        assertTrue(prompt.contains("\"size\""), "the printed size must be asked for in its own field")
+        assertTrue(prompt.contains("never invent one"), "and never fabricated when the plan prints none")
         // L2 arrangement — normalised to the outer wall, so the model never sees our grid.
         assertTrue(prompt.contains("OUTER WALL"), "coordinates are relative to the building")
         // The three things that are not rooms and would corrupt a footprint if returned as rooms.

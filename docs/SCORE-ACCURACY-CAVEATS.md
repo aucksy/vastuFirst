@@ -61,6 +61,34 @@ did it to every neighbour, so a scanned home arrived as a scatter of boxes rathe
 - ⚠ **Residual:** a wall thinner than one cell still becomes a whole empty cell — that is #2 above,
   and it is why the confirmation step exists.
 
+### 2d. ⭐⭐ The reader does not MEASURE a plan — it lays out a template. Contained 2 August 2026
+On roughly half of real plans the reply is not a reading at all. On the owner's second flat: fifteen
+rooms sharing **three** distinct sizes, **four** distinct left edges, every single coordinate on a
+0.05 lattice, three rooms placed past the bottom of the page — and `planConfidence` 0.95, exactly as
+on a perfect read. **11 of the 23 real 2D plans in the corpus have more than 90 % of every coordinate
+on that lattice.** It cannot be prompted away: a variant explicitly forbidding round coordinates was
+measured and produced the identical lattice with *more* rooms off the page.
+- Silent: **yes, completely** — a template looks like a floor plan. Moves number: yes, via every
+  room's direction. The existing uniform-box detector does not catch it, because three stock sizes
+  give an area variation of 0.62 against a threshold of 0.15.
+- Contained rather than fixed, and the distinction is the point: **the rectangles are now used only
+  for arrangement — which room is left of which, which is above which, and the reader gets that
+  right — while every dimension comes from the size the plan PRINTS**, which is text, which is the
+  one thing this model is reliable at. On the owner's flat, 15 of 15 rooms carry a printed size; 116
+  of 129 across nine real plans.
+- ⚠ **Residual, and it is the live one:** a plan that prints **no** sizes has nothing but the template
+  to go on. Those plans are still gated on room count and mostly arrive unplaced, which is honest but
+  is the weaker product. Two of the owner's eleven placed rooms are still drawn against their printed
+  shape; both are visible and flagged, which is what the mandatory confirmation step is for.
+
+### 2e. ⚠ An attached toilet drawn inside its parent room is dropped
+The reader put the owner's master-bedroom toilet wholly inside the rectangle it gave the living room,
+and sub-areas are dropped by geometry (owner decision D1) — so a TOILET, a 2.5-weight scored room,
+does not reach the grid.
+- Silent: **no** — every drop is listed to the user on the confirmation screen ("we also saw…").
+  Moves number: yes, by omission. Fix path: containment by geometry is right for dressing areas and
+  wardrobes and wrong here; distinguishing them needs a signal we do not yet have.
+
 ### 3. North is set by the user and cannot be verified
 The whole zone assignment rotates with North. The user sets it by dial / slider / degree — if their
 compass reading is a few degrees off, rooms near a boundary shift zones. The **device-compass helper

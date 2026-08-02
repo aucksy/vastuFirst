@@ -472,3 +472,28 @@ squares between all of them, and then ask whether your home was "cut off" somewh
 - [ ] **Q3 · Room shapes against the sheet.** Where your plan prints a size (for example the kitchen
       at 11'0" x 7'0"), the drawn room should run the same way round — wider than deep, or deeper
       than wide. Tell me any room that comes out turned the wrong way.
+
+### Q · continued  *(new 2 August — the second flat, the one that came back as a row of squares)*
+
+- [ ] **Q4 · ⭐ Scan the 3-bedroom flat again — the one that gave you thirteen identical squares.**
+      It should now arrive as a recognisable home: the two bedrooms and a balcony along the top, the
+      living-and-dining running **wide** across the middle, the master bedroom at the bottom, the
+      kitchen and utility down the right. If you get a row of equal squares again, stop and send me a
+      screenshot — that is the exact thing this build is for.
+- [ ] **Q5 · Count your balconies.** That flat has three. All three should be there. One of them was
+      being deleted before you ever saw the plan, so this is a specific thing to count rather than
+      glance at.
+- [ ] **Q6 · Check the room sizes we read.** On the confirmation screen before the grid, each room
+      should show the size **printed on your sheet**. Spot-check three against the paper. If a size is
+      wrong or missing on a room that clearly prints one, tell me which room.
+- [ ] **Q7 · The living-and-dining must be wider than it is deep.** Your sheet prints it 7.25 m x
+      4.30 m. If it is drawn taller than it is wide, it is sitting in the wrong direction and the
+      score is wrong — tell me.
+- [ ] **Q8 · If a plan ever DOES come back unplaced, the screen must admit it.** Try a busy sheet —
+      a whole floor of a building, or a plan with a lift on it. The heading should say the rooms are
+      **not placed yet** and ask you to drag them, and it must **not** ask you anything about your
+      home's shape until you have moved them. A row of squares under the heading "Place your rooms"
+      is the bug.
+- [ ] **Q9 · A plan that prints no room sizes should still behave.** Some plans just print names. That
+      should still work — the rooms arrive, possibly unplaced, and nothing invented. If you see sizes
+      on screen that are not on the paper, that is the worst possible bug and I want it immediately.

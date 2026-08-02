@@ -405,7 +405,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐⭐ a room past the bottom of the page is shrunk onto it, never deleted`() {
+    fun `⭐⭐ a LAYOUT that runs past the bottom of the page is shrunk onto it, never deleted`() {
         // ⚠ The reader routinely returns rooms outside the unit square — it lays out a template and
         // the template runs long. Three of the fifteen on the owner's own sheet did. Cutting them
         // off at the edge DELETED one of his three balconies outright and flattened his utility to
@@ -417,7 +417,8 @@ class ScanMapperTest {
                 box("KITCHEN", 0.5, 0.05, 0.3, 0.3),
                 box("MASTER BEDROOM", 0.05, 0.4, 0.4, 0.3),
                 box("TOILET", 0.5, 0.4, 0.2, 0.2),
-                box("BALCONY", 0.05, 1.05, 0.3, 0.15),
+                box("STORE", 0.5, 0.9, 0.3, 0.15),      // the tail of the template, running long…
+                box("BALCONY", 0.05, 1.05, 0.3, 0.15),  // …and off the bottom with it
             ),
         )
         val placed = assertIs<ScanOutcome.Placed>(out)
@@ -429,19 +430,36 @@ class ScanMapperTest {
     }
 
     @Test
+    fun `⚠ ONE room past the edge is that room being wrong, and is still clamped or dropped`() {
+        // The safety rail on the change above, and the tests that caught its absence. Shrinking a
+        // whole home to accommodate a single hallucinated rectangle would let one bad box pull every
+        // real room smaller — the "one stray rectangle inflates the frame" failure this file warns
+        // about. So the shrink needs the overrun to be SHARED. See ScanMapper.MIN_SPILLED_ROOMS.
+        val one = listOf(
+            box("LIVING ROOM", 0.0, 0.0, 1.0, 0.6),
+            box("KITCHEN", 0.8, 0.6, 0.5, 0.4), // the only room out of bounds
+            box("MASTER BEDROOM", 0.0, 0.6, 0.8, 0.4),
+        )
+        assertEquals(one, ScanMapper.shrinkToPage(one), "one stray room must not rescale the home")
+    }
+
+    @Test
     fun `shrinking to the page leaves a reply that already fits exactly as it was`() {
-        // The safety of the change above: one scale and one offset applied to every room cancel
-        // exactly against a grid framed on the rooms' own bounding box, so this must be a literal
-        // no-op for anything already inside the page.
+        // One scale and one offset applied to every room cancel exactly against a grid framed on the
+        // rooms' own bounding box, so this must be a literal no-op for anything already in the page.
         val rooms = goodDraft().rooms
         assertEquals(rooms, ScanMapper.shrinkToPage(rooms))
     }
 
     @Test
     fun `a reply nowhere near the page is left to the clamp`() {
-        // Beyond twice the page it is not a layout at all, and pretending otherwise would let one
-        // absurd rectangle shrink a whole home to a corner.
-        val rooms = listOf(box("LIVING ROOM", 0.0, 0.0, 0.5, 0.5), box("KITCHEN", 0.0, 8.0, 0.5, 0.5))
+        // Beyond twice the page it is not a layout at all, and pretending otherwise would let two
+        // absurd rectangles shrink a whole home into a corner.
+        val rooms = listOf(
+            box("LIVING ROOM", 0.0, 0.0, 0.5, 0.5),
+            box("KITCHEN", 0.0, 8.0, 0.5, 0.5),
+            box("TOILET", 0.0, 9.0, 0.5, 0.5),
+        )
         assertEquals(rooms, ScanMapper.shrinkToPage(rooms))
     }
 

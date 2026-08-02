@@ -977,6 +977,7 @@ const MAX_TRUSTED_ROOMS = 12;
 const SIZED_SHARE_TO_TRUST = 2 / 3;
 const MAX_ROOMS_EVER = 20;
 const MAX_OVERFLOW = 2.0;
+const MIN_SPILLED_ROOMS = 2;
 /** A sheet naming a lift shows a whole floor, not one home. Mirrors RoomLabels.isFloorPlateLabel. */
 const FLOOR_PLATE_WORDS = ['LIFT', 'ELEVATOR'];
 const isFloorPlateLabel = (raw) => FLOOR_PLATE_WORDS.some((w) => cleanLabel(raw).includes(w));
@@ -1033,6 +1034,11 @@ function shrinkToPage(boxes, inject) {
   const fin = (v) => typeof v === 'number' && Number.isFinite(v);
   const real = boxes.filter((b) => fin(b.x) && fin(b.y) && fin(b.w) && fin(b.h));
   if (!real.length) return boxes;
+  // ⭐ ONE room outside the page is that room being wrong (clamped and flagged, or dropped if it is
+  // entirely off the sheet); SEVERAL is the layout running long, which is the only case a scale can
+  // fix. Mirrors ScanMapper.MIN_SPILLED_ROOMS.
+  const spilled = real.filter((b) => b.x < 0 || b.y < 0 || b.x + b.w > 1 || b.y + b.h > 1).length;
+  if (spilled < MIN_SPILLED_ROOMS) return boxes;
   const x0 = Math.min(0, ...real.map((b) => b.x)), y0 = Math.min(0, ...real.map((b) => b.y));
   const x1 = Math.max(1, ...real.map((b) => b.x + b.w)), y1 = Math.max(1, ...real.map((b) => b.y + b.h));
   const span = Math.max(x1 - x0, y1 - y0);
@@ -1805,15 +1811,20 @@ function scanPinnedCases(inject) {
     }
   }
 
-  // ⭐ A reply that overruns the page is SHRUNK onto it, never cut off at the edge. This is the
-  // reply his sheet produced under the previous prompt: the last room sat past y = 1, and clamping
-  // deleted it outright — a balcony gone from a home before the user ever saw the plan.
+  // ⭐ A reply whose LAYOUT overruns the page is SHRUNK onto it, never cut off at the edge. This is
+  // the shape his sheet produced under the previous prompt: a template that runs long, so the last
+  // rooms in the sequence fall off the bottom together — and clamping deleted one of them outright,
+  // a balcony gone from a home before the user ever saw the plan.
+  //
+  // ⚠ Two rooms past the edge, not one, and that is the point: one stray box is that box being
+  // wrong and must still be clamped or dropped. See ScanMapper.MIN_SPILLED_ROOMS.
   // `--inject=no-shrink` restores the amputation and this goes red.
   const spill = [
     { label: 'LIVING ROOM', x: 0.05, y: 0.05, w: 0.4, h: 0.3, confidence: 0.9 },
     { label: 'KITCHEN', x: 0.5, y: 0.05, w: 0.3, h: 0.3, confidence: 0.9 },
     { label: 'BEDROOM', x: 0.05, y: 0.4, w: 0.4, h: 0.3, confidence: 0.9 },
     { label: 'TOILET', x: 0.5, y: 0.4, w: 0.2, h: 0.2, confidence: 0.9 },
+    { label: 'STORE', x: 0.5, y: 0.9, w: 0.3, h: 0.15, confidence: 0.9 },
     { label: 'BALCONY', x: 0.05, y: 1.05, w: 0.3, h: 0.15, confidence: 0.9 },
   ];
   const sp = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: spill, planConfidence: 0.95 }, 1.0, opts);
