@@ -914,3 +914,90 @@ Corpus after both rules (the release's final numbers): **orientation 140/148 · 
 flat at 15/15 with the west wall reached · tower-D1: both §2c adjacencies held AND the
 living/dining still strictly the biggest room. The plan-020 empty-cell pin re-measured 34 → 37
 (the magnet no longer moves that number; its proof remains the kitchen's 12-vs-9 cells).
+
+## 3n. ⭐⭐⭐ The 336 verdict — a strip's caption is its depth, walls are kept, the grid ends at the home (2 August 2026, v0.6.5)
+
+The owner scanned his THIRD plan (Green Court Category-II, the 336 sq ft 1BHK, from the branded
+square page) and rejected the drawn output outright: *"balcony towering over the rooms, everything
+clumped left, a huge mostly-empty grid, relative sizes wrong."* Same evening, measured: v0.6.2's
+rules on this very reply kept 3 of 7 rooms (it looked cleaner by hiding his home), v0.6.3/v0.6.4
+draw it identically (the release he blamed did not cause it), and the CLEAN copy of the same sheet
+already read close to the paper. Both replies recorded; both now bundled fixtures
+(`greencourt-336-clean`, `greencourt-336-branded`) and audit corpus members — the audit's totals
+now cover every sheet he judges releases by (44 recordings).
+
+### The three drawing rules his verdict forced, each measured before Kotlin
+
+1. **A single-dimension strip caption is the strip's printed DEPTH.** `BALCONY 1825 WIDE` /
+   `5'-5" WIDE` parsed as no size, so every sized room shrank to print scale while the balcony
+   kept the reader's sketch rectangle — a quarter of the page, towering over the bedroom.
+   `RoomDimensions.stripDepth` now reads it; the strip's narrow axis comes from the caption on the
+   same linear scale the pair-sized rooms set, its length and position stay the reader's
+   (arrangement evidence). The anchor is the slide doctrine applied to a resize: keep the long
+   wall shared with a PAIR-SIZED room, open the gap toward the sketch side; both sides sized →
+   the walls outvote the caption (skip); neither → keep the grid edge (the home's outer wall).
+   Strips never join the slide's own evidence test (a strip's caption says nothing about where
+   its long walls sit), which is what keeps tower-D1's master-bedroom slide alive — its four
+   balconies are all strips now, and both §2c adjacency pins hold. Depth capped by the read long
+   axis (a strip may never flip) AND the grid's cross axis (a 10x4 fuzz grid tried to hold a
+   5-cell depth). On his 336: balcony 7x3 → 7x2, strictly shallower than the bedroom; on the 526
+   the "only the balcony strip is fat" note closes (1525 mm = 1 row); on plan-020 nothing changes
+   (its four balconies print PAIRS).
+
+2. **A room read flush against the home's outer wall STAYS on it when it shrinks.** The frame IS
+   the home (§3m), so the grid's east/south edges are the building's own walls — and nothing can
+   stand between a room and the outside of the building. The top-left anchor was abandoning
+   exactly that: his bedroom, read flush to the east wall his sheet puts it on, shrank to print
+   width and drifted two columns west, leaving a dead block on the home's east edge. Now the
+   shrink slack breaks INTERIOR. Same discipline as the slide: the anchor only enters cells no
+   other read rectangle holds, and its guard band is CLIPPED to the room's own read span in the
+   cross axis — a fight the shaped rect's GROWTH picks exists at either position and stays the
+   trimmer's business. (Unclipped, the guard blocked the very bedroom it was built for; unguarded,
+   the anchor shoved plan-009's hall into a neighbouring bedroom's read and the trimmer crushed
+   it to 2x1.) Corpus: orientation 157/166 → 159/166 (159 = old 140 metric + the three live
+   plans), plan-019 old-prompt 8/8, plan-026 10/10, and the "regressions" (plan-015 fill 88→70%)
+   are drift-packing being undone — rooms now hold BOTH walls with the corridor spine honest,
+   which is what the sheets show.
+
+3. **A grid row/column entirely outside the rooms is deleted, edge-inward.** Reshapes shrink rooms
+   to print scale; where the sketch was inflated, whole edge strips of grid went dead — the exact
+   thing Q14 calls a bug. A dead edge strip claims "part of your home, nothing found in it", and
+   the print evidence says the home ENDS where the rooms do. The engine is untouched (it scores
+   the footprint — the rooms' bounding box — which collapse preserves cell-for-cell); only the
+   drawing shrinks, which on a small flat means bigger, more tappable cells. Interior holes are
+   never touched. Never below MIN_GRID. Corpus: dead edge cells 54 → 0 across all 44 recordings;
+   his 336 arrives 7x9 instead of 7x10; three corpus plans lose their 1-column margins.
+
+### E11 · The branded-page experiment — measured, and NOT shipped
+
+*Is honest "place them yourself" better than confidently-wrong placement when the reader's
+arrangement is junk?* The gate needs a detector, and none exists in a single reply: the one
+candidate signal — sized rooms whose READ rectangle runs against their PRINTED orientation
+(aspect-corrected, dead-banded) — scores the owner's own flat at **8 of 15** (the best mapping in
+the corpus) and the branded 336 at **2 of 6, identical to its clean copy**. It measures the
+template-ness of the reader's rectangles, which is universal, not arrangement quality. A gate on
+it would bin his flat and wave the branded page through — exactly backwards. So the branded page
+keeps honest rules on a wrong arrangement, `greencourt-336-branded` pins that (all 7 place, strip
++ collapse hold), and the fix for branded pages stays what Q18 says: a cleaner copy or crop.
+The mandatory confirmation step remains the catch-all, per §6.2b.
+
+### Housekeeping the pins forced
+
+- The mirror's label cleaner deleted dots differently from Kotlin (`W.C` → `W C` vs `WC`), so the
+  reshape-flat fixture resolved 3 of 7 rooms there — found the moment ScanReshapeTest's clean
+  fixture was ported into the mirror (the tower-D1 lesson applied on schedule; it is pinned both
+  sides as `reshape-flat` now). Fixed to match RoomLabels.clean.
+- The mirror's cut-down table gains the 336 family's captions (`BED ROOM`, `WC`, `PASSAGE`,
+  `LOBBY` keyed to the fixture family's context answer), so those pins run end-to-end with the
+  same seven rooms the app sees. With `BED ROOM-1` finally resolving mirror-side, plan-020's
+  kitchen no longer demonstrates the magnet there (6 cells with and without); the magnet's proof
+  moved to the corpus audit (plan-014/017/026 all decay under `--inject=no-magnet`), the no-walls
+  precedent. greedy-trim's red pin moved to the branded 336's lobby (exact trim 4x5, greedy 2x5).
+- New injections, each red on a pinned real plan: `no-strip-captions`, `no-edge-anchor`,
+  `no-edge-collapse`.
+- `render-grid.mjs` / `render-png.py` annotate strips ("1.83m deep"); the audit prints the three
+  live plans as `[live]` rows.
+
+**Corpus, final (44 recordings):** 23 placed · 10 assisted · 11 refused · orientation **159/166**
+· dead edge cells **0** · rooms lost outright 1 (old-prompt, unchanged) · owner's flat untouched
+cell-for-cell · all three of his sheets improved by eye against the paper.

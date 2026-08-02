@@ -3104,3 +3104,82 @@ The real, still-open defects his 336 scan exposes, in his priority order:
 ⚠ Judge ALL of it by rendered pictures of the three real plans (owner flat, greencourt-526,
 greencourt-336 clean + branded) against their sheets — corpus totals held steady today while
 individual rooms crushed, three times.
+
+---
+
+# ⭐⭐ v0.6.5 — the balcony stops towering, rooms keep their walls, the grid ends at the home (2026-08-02)
+
+Started from the owner's device verdict on his THIRD plan (§8 of the v0.6.4 entry): the 336 sq ft
+1BHK's drawn output rejected outright. Every change below was built in the mapper mirror first,
+measured across every recorded reply — now 44: the corpus, the re-reads, his flat, and the three
+live Green Court scans, which join the audit so its totals finally cover the sheets he judges by —
+and rendered as pictures against the sheets before a line of Kotlin. His own flat is untouched
+cell-for-cell; all three Green Court sheets improve by eye.
+
+## 1. ⭐⭐ "BALCONY 1825 WIDE" is the balcony's printed depth — the towering strip comes down
+
+The caption prints ONE dimension: how deep the strip is. It used to parse as no size at all, so
+every sized room shrank to print scale while the balcony kept the reader's sketch rectangle — a
+quarter of the whole page on his 336, drawn three rows deep over a three-row bedroom. The number
+is now read (`1825 WIDE`, `5'-5" WIDE`, `6'-0" WIDE` — all forms on real sheets): the strip keeps
+the wall it was read along (arrangement evidence, like every room's corner) and its narrow axis
+comes from the caption on the same scale the sized rooms set, anchored to the wall it shares with
+a sized room — never opening a gap against a real neighbour, shrinking toward the outside instead.
+His 336: balcony 7x3 → 7x2, strictly shallower than the bedroom. The 526's one noted flaw ("only
+the balcony strip is fat") closes: 1 525 mm is one row. Tower-D1's four strip balconies reshape
+too and both of its pinned §2c adjacencies hold — strips deliberately do NOT count as position
+evidence for the slide rule, which is what keeps that fixture green.
+
+## 2. ⭐⭐ A room read against the home's outer wall stays on it — "clumped to the left" ends
+
+The grid's edges ARE the home's outer walls (the v0.6.4 letterbox fix made that true), and nothing
+can stand between a room and the outside of the building. Yet the reshape anchored every room's
+top-left corner, so a room read flush to the east wall drifted west when it shrank to print scale
+— his bedroom left the very wall his sheet puts it on, and a dead block grew on the east edge. A
+shrinking room now keeps a read-flush east/south wall, with the slide rule's own discipline: only
+into cells no other read rectangle holds, the guard clipped to the room's own read span (its
+growth-fights stay the trimmer's business, as they always were). Corpus: orientation agreement
+159/166 (two old plans go perfect), and his 336's bedroom, lobby and passage all sit on the right
+edge as printed — the slack breaks interior, where the sheet's walls and wardrobes actually are.
+
+## 3. ⭐ Empty edge rows and columns are deleted — a 336 sq ft flat is not a villa grid
+
+After rooms shrink to print scale, whole grid strips outside them went dead — the exact "full
+empty strip down any side" Q14 calls a bug, and part of why his small flat scrolled. Fully-empty
+EDGE rows/columns are now removed (interior holes never touched — an unread corridor is honest;
+never below the editor's minimum). The engine is untouched: it scores the rooms' own bounding
+box, which is preserved cell-for-cell. Dead edge cells across all 44 recordings: 54 → 0. His 336
+arrives 7x9; the drawing is smaller, so every cell on his phone is bigger.
+
+## 4. ⭐ The branded-page experiment — measured, and honestly NOT shipped
+
+His question: when the reader scrambles a branded page's arrangement, is "place them yourself"
+better than confidently-wrong placement? Answer: only with a detector, and none exists in a
+single reply. The one candidate — sized rooms whose read rectangle contradicts their printed
+orientation — scores his own flat 8 of 15 (the corpus's best mapping) and the branded 336 at
+2 of 6, identical to its clean copy. It measures how template-like the reader's rectangles are,
+which is universal, not whether the arrangement is right. A gate would bin his flat and pass the
+branded page. So the branded page draws honestly on a wrong arrangement (pinned as a fixture),
+and the fix remains what Q18 already says: a cleaner copy or crop of just the plan.
+
+## 5. ⭐ What porting the fixtures caught — the tower-D1 lesson, applied on schedule
+
+The clean replica of his Green Court sheet lived only in Kotlin (ScanReshapeTest). Ported into
+the mirror BEFORE any Kotlin was written, it immediately exposed a real divergence: the mirror's
+label cleaner turned `W.C` into `W C` (Kotlin deletes the dot), so the room resolved on the phone
+and silently vanished in the mirror. Fixed; the fixture is pinned both sides (`reshape-flat`),
+as are both 336 recordings. Three new fault injections each go red on a pinned real plan
+(`no-strip-captions`, `no-edge-anchor`, `no-edge-collapse`); the magnet's proof moved to the
+corpus audit (the mirror's wider table changed its old pin's neighbourhood — measured, stated,
+re-pinned at the new numbers), and greedy-trim's red pin moved to the branded 336's lobby, which
+the exact trim keeps at 20 cells and the greedy retraction halves.
+
+## 6. ⚠ Honest limits, restated
+
+- **The branded page's arrangement stays wrong** — bedroom drawn far from where the sheet has it.
+  Reader-side, undetectable from the reply (§4), flagged for the confirmation step.
+- **His kitchen still arrives at one cell on his own flat** (right place, flagged) — unchanged,
+  Q17 stands.
+- **A plan printing no sizes at all is unchanged** — template geometry, room-count gate.
+- Corpus totals: 23 placed · 10 assisted · 11 refused of 44 · rooms lost outright 1 (an
+  old-prompt recording, unchanged since v0.6.4).

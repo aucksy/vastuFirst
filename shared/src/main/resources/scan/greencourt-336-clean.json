@@ -1,0 +1,81 @@
+{
+ "fixture": "greencourt-336-clean",
+ "_note": "The owner's 336 sq ft 1BHK (Green Court, Sector 90 Gurgaon, Category-II) scanned live with scan-live.py on 2 August 2026 from a CLEAN copy of the sheet, after he rejected the branded copy's drawn output outright. The arrangement reads close to the paper (bedroom and lobby on the right, kitchen left, passage south-east). Carries the caption family that caused the towering balcony: 'BALCONY 1825 WIDE', one printed dimension - the strip's depth. Reply verbatim; the plan image stays out of the repo.",
+ "model": "qwen/qwen3.6-27b",
+ "imageSize": [
+  669,
+  976
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "1825 WIDE",
+    "x": 0.0,
+    "y": 0.0,
+    "w": 1.0,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3050X3200",
+    "x": 0.35,
+    "y": 0.25,
+    "w": 0.65,
+    "h": 0.35,
+    "confidence": 0.95
+   },
+   {
+    "label": "WC",
+    "size": "1525X900",
+    "x": 0.0,
+    "y": 0.25,
+    "w": 0.35,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "BATH",
+    "size": "1525X1130",
+    "x": 0.0,
+    "y": 0.4,
+    "w": 0.35,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2920X2100",
+    "x": 0.0,
+    "y": 0.55,
+    "w": 0.35,
+    "h": 0.2,
+    "confidence": 0.95
+   },
+   {
+    "label": "LOBBY",
+    "size": "3050X3900",
+    "x": 0.35,
+    "y": 0.6,
+    "w": 0.65,
+    "h": 0.3,
+    "confidence": 0.95
+   },
+   {
+    "label": "PASSAGE",
+    "size": "1000X2695",
+    "x": 0.65,
+    "y": 0.9,
+    "w": 0.35,
+    "h": 0.1,
+    "confidence": 0.9
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

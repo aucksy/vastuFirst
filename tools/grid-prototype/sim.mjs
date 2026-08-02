@@ -993,6 +993,12 @@ const LABEL_TABLE = {
   'LIVING ROOM': 'LIVING', KITCHEN: 'KITCHEN', 'MASTER BEDROOM': 'MASTER_BEDROOM',
   BEDROOM: 'BEDROOM', TOILET: 'TOILET', BATH: 'BATHROOM', POOJA: 'POOJA', BALCONY: 'BALCONY',
   DINING: 'DINING', STUDY: 'STUDY', STORE: 'STORE', UTILITY: 'UTILITY',
+  // The greencourt-336 fixture family's captions, so its pinned cases run END-TO-END here with
+  // the same seven rooms the app sees (3 of 7 resolving gives a different frame, grid and pins).
+  // ⚠ LOBBY is context-sensitive in the real table (CORRIDOR when the plan also names a living
+  // room, LIVING when — as on this fixture — it does not). This mirror has no context machinery,
+  // so it keys the fixture family's answer; the type-level truth is pinned in RoomLabelsTest.
+  'BED ROOM': 'BEDROOM', WC: 'TOILET', PASSAGE: 'CORRIDOR', LOBBY: 'LIVING',
 };
 const LABEL_DROP = new Set(['DRESS', 'DRESSING', 'DUCT', 'LIFT', 'SHAFT', 'WARDROBE']);
 /** Mirrors RoomLabels.clean: the parenthetical, the feet/inch marks, the printed dimensions, the
@@ -1002,6 +1008,9 @@ function cleanLabel(raw) {
   return String(raw).toUpperCase()
     .replace(/\([^)]*\)/g, ' ')
     .replace(/['"‘’“”′″]/g, ' ')
+    // Dots DELETE, exactly as RoomLabels.clean does — `W.C` must become `WC`, not `W C`, or the
+    // caption resolves to nothing here while Kotlin reads it fine (found by the reshape-flat pin).
+    .replace(/\./g, '')
     .replace(/(?<=[0-9])[ ]*X[ ]*(?=[0-9])/g, ' ')
     .replace(/[^0-9A-Z]/g, ' ')
     .split(' ').filter((t) => t && !/^[0-9]+$/.test(t)).join(' ');
@@ -1396,6 +1405,37 @@ function parsePrinted(label) {
 }
 
 /**
+ * ⭐ A SINGLE-dimension strip caption: `BALCONY 1825 WIDE` / `5'-5" WIDE`. Mirrors
+ * RoomDimensions.stripDepth.
+ *
+ * On real sheets this caption sits on the strips — balconies, service ledges — and the number is
+ * the strip's clear DEPTH (how far it comes out from the home), the one dimension a strip has;
+ * its length is whatever wall it runs along. It used to parse as NO size, which produced the
+ * owner's 336 sq ft plan: every sized room shrank to print scale while the balcony kept the
+ * reader's sketch rectangle — a quarter of the whole page — and towered over every real room.
+ * The pair forms above win first, so `10'X12' WIDE OPEN` can never half-match as a strip.
+ */
+const STRIP_FEET_WIDE = new RegExp(FEET_INCHES + "\\s*WIDE");
+const STRIP_PLAIN_WIDE = /(?<![\d.'"′″])(\d{2,5})\s*(?:MM|CM)?\s*WIDE/;
+
+function parseStripDepth(label) {
+  const s = String(label).toUpperCase();
+  if (parsePrinted(s)) return null;
+  const f = STRIP_FEET_WIDE.exec(s);
+  if (f) {
+    const d = feetInches(f[1], f[2], f[3]);
+    return d > 0 ? d * MM_PER_FOOT : null;
+  }
+  const p = STRIP_PLAIN_WIDE.exec(s);
+  if (p) {
+    const d = Number(p[1]);
+    if (!(d > 0)) return null;
+    return d < FEET_IF_UNDER ? d * MM_PER_FOOT : d;
+  }
+  return null;
+}
+
+/**
  * ScanMapper.reshapeToPrinted. Total area preserved, top-left corner kept, and orientation taken
  * from the PRINTED ORDER (first number is the width).
  *
@@ -1482,15 +1522,48 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     const agree = (ww, hh) => (ratio === 1 ? 2 : ww === hh ? 1 : ((ratio > 1) === (ww > hh) ? 2 : 0));
     const free = agree(w, h);
     let col2 = col, row2 = row;
+    // ⭐ The home's OUTER WALL is the strongest position evidence there is. The frame IS the home
+    // (the letterbox fix), so a room READ flush against the grid's east or south edge was read
+    // against the building's own outer wall — and nothing can stand between a room and the outside
+    // of the building. The top-left anchor was abandoning exactly that: the owner's 336 sq ft
+    // bedroom, read flush to the east wall his sheet puts it on, shrank to its printed width and
+    // drifted two columns off it, leaving a dead block on the home's east edge. The shrink slack
+    // belongs INTERIOR (walls, wardrobes, the sketch's own inflation), never between a room and
+    // an outer wall it was read touching. West and north flushness survive automatically (the
+    // top-left corner is the anchor); this is the same promise for the other two walls. A room
+    // read flush BOTH sides of an axis keeps the top-left default (either end abandons an outer
+    // wall; the evidence ties).
+    //
+    // ⚠ Same discipline as the slide: the anchor may only enter cells NO other read rectangle
+    // holds. Without the guard it shoved plan-009's hall — read mid-plan, flush south — into the
+    // bedroom read below-left of it, and the trimmer crushed the hall to a 2x1 sliver. Closing a
+    // template gap is evidence; opening a fight with a room the reader drew is not.
+    // FAULT INJECTION 'no-edge-anchor' restores the drift.
+    const bandFree = (c0, r0, ww, hh) => ww <= 0 || hh <= 0 || !snapped.some((o) => o.rect !== s.rect
+      && overlaps(o.rect, { col: c0, row: r0, w: ww, h: hh }));
+    // The band is CLIPPED to the room's own read span in the cross axis: an east anchor owns only
+    // the horizontal displacement, so a fight the shaped rect's GROWTH picks (a grown row reaching
+    // a neighbour below — it does so at either position) stays the trimmer's business, exactly as
+    // it is without the anchor.
+    const bandE = [Math.max(row, s.rect.row), Math.min(row + h, bottom(s.rect))];
+    const anchoredE = inject !== 'no-edge-anchor'
+      && right(s.rect) === cols && s.rect.col > 0 && col + w !== cols
+      && bandFree(col + w, bandE[0], (cols - w) - col, bandE[1] - bandE[0]);
+    if (anchoredE) col2 = cols - w;
+    const bandS = [Math.max(col2, s.rect.col), Math.min(col2 + w, right(s.rect))];
+    const anchoredS = inject !== 'no-edge-anchor'
+      && bottom(s.rect) === rows && s.rect.row > 0 && row + h !== rows
+      && bandFree(bandS[0], row + h, bandS[1] - bandS[0], (rows - h) - row);
+    if (anchoredS) row2 = rows - h;
     if (inject !== 'no-magnet') {
       // …and only into cells NO other read rectangle holds: the slide may close a rounding gap,
       // never open a fight with a neighbour the reader actually drew there.
       const stripFree = (c0, r0, ww, hh) => !snapped.some((o) => o.rect !== s.rect
         && overlaps(o.rect, { col: c0, row: r0, w: ww, h: hh }));
-      if (col + w === right(s.rect) - 1 && rightFlushSized(s.rect) && !leftFlushSized(s.rect)
-        && stripFree(col + w, row, 1, h)) { col2 = col + 1; slidRight.push(s.rect); }
-      if (row + h === bottom(s.rect) - 1 && bottomFlushSized(s.rect) && !topFlushSized(s.rect)
-        && stripFree(col2, row + h, w, 1)) { row2 = row + 1; slidDown.push(s.rect); }
+      if (!anchoredE && col2 + w === right(s.rect) - 1 && rightFlushSized(s.rect) && !leftFlushSized(s.rect)
+        && stripFree(col2 + w, row2, 1, h)) { col2 = col2 + 1; slidRight.push(s.rect); }
+      if (!anchoredS && row2 + h === bottom(s.rect) - 1 && bottomFlushSized(s.rect) && !topFlushSized(s.rect)
+        && stripFree(col2, row2 + h, w, 1)) { row2 = row2 + 1; slidDown.push(s.rect); }
     }
     const rightE = magnet(col2 + w, xLines, col2 + 1, cols);
     const bottomE = magnet(row2 + h, yLines, row2 + 1, rows);
@@ -1506,8 +1579,7 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
   // the north edge. One pass, unsized rooms only, one cell, and only into cells that are free once
   // the slide is accounted for; the moved rect becomes the room's own basis, exactly as a re-shaped
   // rect does.
-  if (inject === 'no-magnet') return shaped;
-  return shaped.map((s, i) => {
+  const cascaded = inject === 'no-magnet' ? shaped : shaped.map((s, i) => {
     if (printed[i]) return s;
     let { col, row } = s.rect;
     const { w, h } = s.rect;
@@ -1520,6 +1592,58 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
     if (col === s.rect.col && row === s.rect.row) return s;
     const out = { col, row, w, h };
     return { ...s, rect: out, asRead: out };
+  });
+  // ⭐ The STRIP pass — a room whose caption prints ONE dimension (`BALCONY 1825 WIDE`) gets that
+  // dimension as its printed DEPTH, on the same linear scale the pair-sized rooms set. Its length
+  // and its position stay the reader's (arrangement evidence, exactly like a pair room's corner),
+  // so only the strip's narrow axis changes — a strip may never flip against the way it was read.
+  //
+  // The ANCHOR is the slide doctrine applied to a resize: the strip keeps the long wall it shares
+  // with a PAIR-SIZED room (that neighbour's own re-shape anchors the shared wall — position
+  // evidence) and the gap opens toward the sketch side. Both sides sized → the two walls pin the
+  // strip and its caption is outvoted: skipped. Neither → the grid edge is the home's outer wall
+  // (the frame IS the home since the letterbox fix), so an edge-flush strip keeps the edge.
+  // Runs AFTER the cascade so a strip that rode a slide reshapes from where it now sits.
+  // FAULT INJECTION 'no-strip-captions' restores v0.6.4: the owner's 336 sq ft plan draws its
+  // balcony three rows deep — a quarter of the grid — towering over the bedroom it belongs to.
+  const linear = Math.sqrt(cellsPerSquareMm);
+  return cascaded.map((s, i) => {
+    if (printed[i] || inject === 'no-strip-captions') return s;
+    const depthMm = parseStripDepth(printedTextOf(s.c.box));
+    if (!depthMm || !isFinite(linear) || linear <= 0) return s;
+    const r = s.rect;
+    if (r.w === r.h) return s;              // no long axis — which way the strip runs is unreadable
+    const wide = r.w > r.h;                 // a wide strip's depth is its HEIGHT; a tall one's, its WIDTH
+    const long = wide ? r.w : r.h;
+    // Capped by the long axis (a strip may never flip against the way it was read) AND by the
+    // grid's cross axis (a depth the grid cannot hold — seen on a 10x4 letterbox fuzz grid —
+    // must not push the strip off it).
+    const d = clampInt(Math.round(depthMm * linear), 1, Math.min(long, wide ? rows : cols));
+    if (d === (wide ? r.h : r.w)) return s;
+    const sizedAt = (test) => cascaded.some((o, j) => o !== s && printed[j] && test(o.rect));
+    let out;
+    if (wide) {
+      const below = sizedAt((o) => o.row === bottom(r) && o.col < right(r) && r.col < right(o));
+      const above = sizedAt((o) => bottom(o) === r.row && o.col < right(r) && r.col < right(o));
+      if (below && above) return s;
+      let row;
+      if (below) row = bottom(r) - d;
+      else if (above) row = r.row;
+      else if (bottom(r) === rows && r.row > 0) row = rows - d;
+      else row = r.row;
+      out = { col: r.col, row: clampInt(row, 0, rows - d), w: r.w, h: d };
+    } else {
+      const rightS = sizedAt((o) => o.col === right(r) && o.row < bottom(r) && r.row < bottom(o));
+      const leftS = sizedAt((o) => right(o) === r.col && o.row < bottom(r) && r.row < bottom(o));
+      if (rightS && leftS) return s;
+      let col;
+      if (rightS) col = right(r) - d;
+      else if (leftS) col = r.col;
+      else if (right(r) === cols && r.col > 0) col = cols - d;
+      else col = r.col;
+      out = { col: clampInt(col, 0, cols - d), row: r.row, w: d, h: r.h };
+    }
+    return { ...s, rect: out, asRead: out, strip: depthMm };
   });
 }
 
@@ -1616,7 +1740,7 @@ function scanMap(draft, imageAspect, opts = {}) {
     : scanFrameOf(rooms.map((c) => c.box));
   if (!frame) return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   const roundedAway = [];
-  const [cols, rows] = widenForWidest(
+  let [cols, rows] = widenForWidest(
     scanGridFor(scanHomeAspect(frame, imageAspect), inject), rooms.map((c) => c.box), inject,
   );
   // ⭐ The plan's own WALL LINES: edges within half a cell of each other are the same wall, agreed
@@ -1667,7 +1791,12 @@ function scanMap(draft, imageAspect, opts = {}) {
       // scores, which is worse than a room of the wrong shape (which the user can see and fix).
       let trimmed, basis = s2.rect;
       const blockers = placed.map((p) => p.rect);
-      const ratio = s2.printed ? s2.printed.w / s2.printed.h : null;
+      // A strip has no printed pair, but its rect IS its printed sense (depth from the caption,
+      // length as read) — hand that to the trim so a cut prefers keeping it a strip. Judged from
+      // the caption, not from whether the re-shape moved anything, so Kotlin can mirror it without
+      // carrying the strip flag through placement.
+      const ratio = s2.printed ? s2.printed.w / s2.printed.h
+        : (s2.rect.w !== s2.rect.h && parseStripDepth(printedTextOf(s2.c.box)) ? s2.rect.w / s2.rect.h : null);
       if (inject === 'repack') {
         trimmed = (fitWithoutOverlap([...blockers, s2.rect], cols, rows) || []).slice(-1)[0] || null;
       } else if (inject === 'no-trim') {
@@ -1697,7 +1826,7 @@ function scanMap(draft, imageAspect, opts = {}) {
       // `asRead` is the rectangle this placement was actually DERIVED from, so the anti-relocation
       // check compares like with like whether the printed shape or the read shape was used. It still
       // catches a relocating packer, which moves a room to a free slot unrelated to either.
-      placed.push({ c: s2.c, rect: trimmed, asRead: basis, printed: s2.printed || null, shaped: s2.rect });
+      placed.push({ c: s2.c, rect: trimmed, asRead: basis, printed: s2.printed || null, shaped: s2.rect, strip: s2.strip || null });
     }
     // ⚠ MEASURED AND NOT BUILT: a relaxation pass (each room re-trimmed against everyone's FINAL
     // rectangles until nothing improves, hoping to reclaim cells a mid-queue trim freed). Run
@@ -1738,8 +1867,38 @@ function scanMap(draft, imageAspect, opts = {}) {
   if (placed.length < MIN_PLACED_ROOMS || placed.length < rooms.length * MIN_PLACED_FRACTION) {
     return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   }
+  // ⭐ A grid row or column that ends up entirely OUTSIDE the rooms is deleted, edge-inward.
+  //
+  // The per-axis fill guarantees the READ frame fills the grid — but the re-shapes then shrink
+  // rooms to the size their sheet PRINTS, and where the sketch was inflated (the template's fat
+  // strips, a room read wider than its caption) whole edge strips of grid go dead. A dead edge
+  // strip is a statement — "this is part of your home and we found nothing in it" — and it is
+  // false: the print evidence says the home ENDS where the rooms do. It is also the exact thing
+  // the owner photographs (Q14: "a full empty strip down any side is the bug").
+  //
+  // The engine is untouched by this: it scores the FOOTPRINT — the bounding box of the placed
+  // rooms — which collapse preserves cell-for-cell. Only the drawing gets smaller, which on a
+  // small flat also means bigger, more tappable cells. Interior holes are never touched: an
+  // empty region BETWEEN rooms is honest (an unread corridor), an empty region outside them is
+  // not. Never below the editor's MIN_GRID.
+  // FAULT INJECTION 'no-edge-collapse' keeps the dead strips (the v0.6.4 state).
+  if (inject !== 'no-edge-collapse') {
+    const minC = Math.min(...placed.map((p) => p.rect.col));
+    const minR = Math.min(...placed.map((p) => p.rect.row));
+    const maxC = Math.max(...placed.map((p) => right(p.rect)));
+    const maxR = Math.max(...placed.map((p) => bottom(p.rect)));
+    if (minC > 0 || minR > 0 || maxC < cols || maxR < rows) {
+      for (const p of placed) {
+        for (const k of ['rect', 'asRead', 'shaped']) {
+          if (p[k]) p[k] = { ...p[k], col: p[k].col - minC, row: p[k].row - minR };
+        }
+      }
+      cols = Math.max(maxC - minC, MIN_GRID);
+      rows = Math.max(maxR - minR, MIN_GRID);
+    }
+  }
   const out = placed.slice().sort((a, b) => a.rect.row - b.rect.row || a.rect.col - b.rect.col)
-    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped }));
+    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped, strip: p.strip }));
   return { kind: 'placed', cols, rows, rooms: out, notes: notes(), sanitised: clean, roundedAway, lostWithFreeCorner };
 }
 
@@ -1835,6 +1994,9 @@ const SCAN_LABELS = [
   "BED ROOM 10'-0\"X10'-6\"", "W.C 5'-0\"X2'-11\"", "BATH 5'-0\"X3'-8½\"",
   'BEDROOM 6750X4350', 'KITCHEN 2950X4200', 'TOILET 1350X2250', 'DINING 4175X2975',
   'BALCONY 3300X2000', "STUDY-ROOM 2425X2000",
+  // ⭐ Single-dimension STRIP captions (the strip's printed depth), both conventions — so the
+  // strip re-shape and its anchor rules are fuzzed, not just pinned.
+  'BALCONY 1825 WIDE', "SERVICE BALCONY 4'-11\" WIDE",
 ];
 
 function randomDraft(rnd) {
@@ -2094,10 +2256,15 @@ function scanPinnedCases(inject) {
   // silently again. It also carries FOUR rooms captioned just "BALCONY" at four different printed
   // sizes — the duplicate-caption case.
   //
-  // ⭐ And it is the case that finally proves the MAGNET (`--inject=no-magnet` was recorded as
-  // unproven in v0.6.1 and v0.6.2): the kitchen's printed shape lands one cell short of its
-  // neighbour's wall line, the magnet clicks it on, and without it the kitchen is 3x3 instead of
-  // 3x4 and the home has 37 empty cells instead of 34. Injecting no-magnet goes red HERE.
+  // ⚠ The magnet's proof MOVED to the corpus audit (the no-walls precedent). This pin carried it
+  // from v0.6.3 ("kitchen 12 cells with the magnet, 9 without") — measured while `BED ROOM-1`
+  // did not resolve in this mirror's cut-down table. The greencourt-336 pins needed `BED ROOM`
+  // in that table (v0.6.5); with the bedroom resolving — as it always has in Kotlin — the
+  // mirror's neighbourhood changed and the kitchen here no longer needs the click (6 cells with
+  // and without). The magnet still bites across the full-table corpus: without it plan-014 slips
+  // an orientation and four empties, plan-017 gains eight empties, plan-026 loses an orientation
+  // (tools/scan-eval/audit-mapper.mjs --inject=no-magnet). This pin keeps what the mirror can
+  // honestly hold: every balcony survives, the kitchen survives, and the empties never decay.
   let p020;
   try {
     p020 = JSON.parse(readFileSync(join(FIXTURES, 'plan-020.json'), 'utf8'));
@@ -2114,9 +2281,9 @@ function scanPinnedCases(inject) {
       }
       const kitchen = (o.rooms || []).find((r) => /KITCHEN/.test(r.label));
       if (!kitchen) problems.push('plan-020: the kitchen did not survive');
-      else if (kitchen.rect.w * kitchen.rect.h < 12) {
-        problems.push(`plan-020: KITCHEN ${kitchen.rect.w}x${kitchen.rect.h} — the magnet no longer `
-          + 'clicks it onto its neighbour\'s wall (12 cells with the magnet, 9 without)');
+      else if (kitchen.rect.w * kitchen.rect.h < 6) {
+        problems.push(`plan-020: KITCHEN ${kitchen.rect.w}x${kitchen.rect.h} — measured 3x2 under `
+          + 'the v0.6.5 mirror table; smaller means a placement rule decayed');
       }
       const rects = (o.rooms || []).map((r) => r.rect);
       const minC = Math.min(...rects.map((r) => r.col)), maxC = Math.max(...rects.map((r) => right(r)));
@@ -2124,12 +2291,123 @@ function scanPinnedCases(inject) {
       const cells = new Set();
       for (const r of rects) for (let c = r.col; c < right(r); c++) for (let w = r.row; w < bottom(r); w++) cells.add(`${c},${w}`);
       const empty = (maxC - minC) * (maxR - minR) - cells.size;
-      // Re-measured 2 Aug 2026 under the grid-fill + widest-gap-split rules: 37, and the magnet no
-      // longer moves THIS number (37 with it and without it — the empties sit elsewhere now). The
-      // magnet's proof is the KITCHEN check above (12 cells with it, 9 without); this cap only
-      // stops the plan quietly falling apart.
-      if (empty > 37) {
-        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 37 when pinned`);
+      // Re-measured 2 Aug 2026 (v0.6.5) under the widened mirror table, with the strip, edge-anchor
+      // and edge-collapse rules on: 34. A cap against quiet decay, not a magnet proof — see the
+      // header note for where that proof lives now.
+      if (empty > 34) {
+        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 34 when pinned`);
+      }
+    }
+  }
+
+  // ⭐ reshape-flat — ScanReshapeTest's clean replica of the owner's Green Court Category-II sheet
+  // (his captions, lattice-tidy boxes). It lived ONLY in Kotlin until v0.6.5 — the same fixture
+  // gap that cost v0.6.4 three cloud rounds on tower-D1 — and porting it here immediately caught
+  // a real divergence: this mirror's label cleaner turned `W.C` into `W C` (Kotlin deletes the
+  // dot, giving `WC`), so the room resolved in the app and vanished here. The numbers below are
+  // the measured v0.6.5 outcome; ScanReshapeTest asserts the same ones in Kotlin.
+  {
+    const reshapeFlat = {
+      planType: '2D_PLAN', hasRoomLabels: true, planConfidence: 0.95,
+      rooms: [
+        { label: "BALCONY 6'-0\" WIDE", x: 0.0, y: 0.0, w: 1.0, h: 0.3, confidence: 0.9 },
+        { label: "W.C 5'-0\"X2'-11\"", x: 0.0, y: 0.3, w: 0.4, h: 0.1, confidence: 0.9 },
+        { label: "BATH 5'-0\"X3'-8½\"", x: 0.0, y: 0.4, w: 0.4, h: 0.2, confidence: 0.9 },
+        { label: "KITCHEN 6'-11\"X9'-7\"", x: 0.0, y: 0.6, w: 0.4, h: 0.1, confidence: 0.9 },
+        { label: "BED ROOM 10'-0\"X10'-6\"", x: 0.4, y: 0.3, w: 0.6, h: 0.4, confidence: 0.9 },
+        { label: "LOBBY 10'-0\"X12'-9\"", x: 0.4, y: 0.7, w: 0.6, h: 0.2, confidence: 0.9 },
+        { label: "PASSAGE 2'-3\"X9'-6\"", x: 0.7, y: 0.9, w: 0.3, h: 0.1, confidence: 0.9 },
+      ],
+    };
+    const o = scanMap(reshapeFlat, 1.0, opts);
+    if (o.kind !== 'placed' || (o.rooms || []).length !== 7) {
+      problems.push(`reshape-flat: expected 7 rooms placed, got ${o.kind}/${(o.rooms || []).length}`);
+    } else {
+      const rectOf = (s) => (o.rooms || []).find((r) => r.label.startsWith(s));
+      const balc = rectOf('BALCONY'), passage = rectOf('PASSAGE'), kitchen = rectOf('KITCHEN');
+      const wc = rectOf('W.C'), lobby = rectOf('LOBBY');
+      // The strip: full read width kept, depth from the caption (6'-0" ≈ 2 cells on this plan's
+      // scale), and the row the shrink frees is collapsed — the balcony no longer towers.
+      if (!balc || balc.rect.w !== 10 || balc.rect.h !== 2) {
+        problems.push(`reshape-flat: BALCONY ${balc ? balc.rect.w + 'x' + balc.rect.h : 'missing'} — measured 10x2`);
+      }
+      if (o.rows !== 9) problems.push(`reshape-flat: grid ${o.cols}x${o.rows} — the freed row must collapse to 9`);
+      if (!passage || passage.rect.w !== 1 || passage.rect.h <= passage.rect.w) {
+        problems.push(`reshape-flat: PASSAGE must stay a 1-wide deep strip`);
+      }
+      if (!kitchen || kitchen.rect.h <= kitchen.rect.w) problems.push('reshape-flat: KITCHEN must be deeper than wide');
+      if (!wc || wc.rect.w < wc.rect.h) problems.push('reshape-flat: W.C must not be deeper than wide');
+      if (!lobby || lobby.rect.h < lobby.rect.w || lobby.rect.w * lobby.rect.h < 6) {
+        problems.push('reshape-flat: LOBBY must never be a wide bar, and stays one of the bigger rooms');
+      }
+      if (wc && lobby && lobby.rect.w * lobby.rect.h <= wc.rect.w * wc.rect.h) {
+        problems.push('reshape-flat: the lobby must be drawn bigger than the WC');
+      }
+    }
+  }
+
+  // ⭐⭐ greencourt-336 — the owner's 336 sq ft 1BHK, the plan whose drawn output he rejected
+  // outright on 2 Aug 2026 ("balcony towering over the rooms, everything clumped left, a huge
+  // mostly-empty grid"). Two recordings of the SAME sheet: a clean copy (arrangement reads close
+  // to the paper) and the branded builder page (logo third; arrangement scrambled — bedroom read
+  // full-width when the sheet has it on the right). Both carry the caption family that caused the
+  // towering: `BALCONY 1825 WIDE`, a single printed dimension, which used to parse as NO size, so
+  // the balcony kept the reader's quarter-page sketch rectangle while every sized room shrank to
+  // print scale.
+  //
+  // The pins are the three drawing rules this plan forced, one injection each:
+  //   · the balcony is a STRIP: 1.825 m deep on the plan's own scale = 2 rows, strictly shallower
+  //     than the bedroom behind it (`--inject=no-strip-captions` → 3 rows, red);
+  //   · the grid ends where the home does: 9 rows, no dead edge strip left behind by the shrink
+  //     (`--inject=no-edge-collapse` → 10 rows, red);
+  //   · the bedroom was READ against the home's east wall and STAYS on it when it shrinks to its
+  //     printed width (`--inject=no-edge-anchor` → drifts two columns off, red).
+  // The branded copy is pinned only for what honest rules can promise on a scrambled read: same
+  // strip, same collapse, every room placed. Its arrangement is wrong and stays wrong — measured
+  // (§3n): no signal in a single reply separates it from the clean copy, and the one candidate
+  // (read-vs-print orientation contradictions) scores the owner's own flat WORSE than this page.
+  for (const [id, wantRows] of [['greencourt-336-clean', 9], ['greencourt-336-branded', 9]]) {
+    let rec;
+    try {
+      rec = JSON.parse(readFileSync(join(FIXTURES, `${id}.json`), 'utf8'));
+    } catch {
+      problems.push(`${id}: fixture missing from shared/src/main/resources/scan/`);
+      continue;
+    }
+    const o = scanMap(rec.reply, rec.imageSize[0] / rec.imageSize[1], opts);
+    if (o.kind !== 'placed') {
+      problems.push(`${id}: expected placed, got ${o.kind}/${o.reason || ''}`);
+      continue;
+    }
+    if ((o.rooms || []).length !== 7) problems.push(`${id}: ${o.rooms.length} rooms, expected all 7`);
+    const balc = (o.rooms || []).find((r) => /BALCONY/.test(r.label));
+    const bed = (o.rooms || []).find((r) => /BED/.test(r.label));
+    if (!balc || !bed) { problems.push(`${id}: balcony or bedroom did not survive`); continue; }
+    if (!(balc.rect.h < bed.rect.h)) {
+      problems.push(`${id}: BALCONY ${balc.rect.w}x${balc.rect.h} is not shallower than the `
+        + `bedroom (${bed.rect.w}x${bed.rect.h}) — the 1825 WIDE caption stopped being read`);
+    }
+    if (o.rows !== wantRows) {
+      problems.push(`${id}: grid ${o.cols}x${o.rows}, measured ${wantRows} rows — a dead edge `
+        + 'strip came back');
+    }
+    if (id === 'greencourt-336-clean') {
+      const right = bed.rect.col + bed.rect.w;
+      if (right !== o.cols) {
+        problems.push(`greencourt-336-clean: BED ROOM ends at column ${right} of ${o.cols} — read `
+          + 'flush against the home\'s east wall, must stay on it');
+      }
+    }
+    if (id === 'greencourt-336-branded') {
+      // The LOBBY is this flat's biggest room and the branded read crams it against the passage.
+      // The exact sub-rectangle search keeps it 4x5; the greedy single-edge retraction it replaced
+      // halves it to 2x5 — `--inject=greedy-trim` goes red HERE (and in the audit it still loses
+      // plan-008's parking outright and an orientation on plan-026).
+      const lobby = (o.rooms || []).find((r) => /LOBBY/.test(r.label));
+      if (!lobby) problems.push('greencourt-336-branded: the lobby did not survive');
+      else if (lobby.rect.w * lobby.rect.h < 12) {
+        problems.push(`greencourt-336-branded: LOBBY ${lobby.rect.w}x${lobby.rect.h} — the exact `
+          + 'trim keeps 20 cells here; under 12 means the greedy retraction is back');
       }
     }
   }
@@ -2251,4 +2529,4 @@ if (scan.fails.length === 0) {
 
 // Exported for tools/scan-eval/audit-mapper.mjs, which runs every RECORDED real reply through this
 // mirror and reports per-plan quality. Run it with `--only=X` in argv so no suite fires on import.
-export { scanMap, scanInvariants, parsePrinted, printedTextOf, resolveLabel, cleanLabel };
+export { scanMap, scanInvariants, parsePrinted, parseStripDepth, printedTextOf, resolveLabel, cleanLabel };

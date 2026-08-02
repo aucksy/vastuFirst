@@ -103,12 +103,23 @@ class ScanReshapeTest {
     }
 
     @Test
-    fun `a room whose caption prints no size keeps the shape it was read with`() {
-        // "BALCONY 6'-0\" WIDE" states one dimension, which cannot shape a room. It must be left
-        // exactly as the reader drew it rather than guessed at.
-        val balcony = placed().room("BALCONY").rect!!
-        assertEquals(10, balcony.w, "an undimensioned room keeps the reader's width")
-        assertEquals(3, balcony.h, "an undimensioned room keeps the reader's depth")
+    fun `⭐ a one-dimension strip caption sets the strip's DEPTH, and the freed row collapses`() {
+        // ⚠ This asserts the OPPOSITE of what it used to. "BALCONY 6'-0\" WIDE" was treated as no
+        // size at all, so the balcony kept the reader's sketch rectangle — three rows deep, nearly
+        // a third of the grid — while every sized room around it shrank to print scale. That is
+        // the exact defect the owner rejected v0.6.4 for on his 336 sq ft plan: the balcony
+        // towering over the bedroom it belongs to. The caption means "this strip is six feet
+        // deep": the depth now comes from it (6' ≈ 2 cells on this plan's scale), the LENGTH stays
+        // the full-width wall the reader drew it along, the shrink opens toward the outer edge —
+        // never toward the sized room it touches — and the fully-empty row it leaves behind is
+        // deleted, so the grid ends where the home does. Same numbers pinned in the mirror
+        // (`reshape-flat` in sim.mjs); `--inject=no-strip-captions` restores the tower there.
+        val p = placed()
+        val balcony = p.room("BALCONY").rect!!
+        assertEquals(10, balcony.w, "the strip keeps the reader's full-width length")
+        assertEquals(2, balcony.h, "its depth is the printed 6'-0\" on this plan's own scale")
+        assertEquals(0, balcony.row, "and it still hugs the home's north edge")
+        assertEquals(9, p.rows, "the row the shrink freed is collapsed — the grid ends at the home")
     }
 
     @Test

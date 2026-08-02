@@ -1,0 +1,81 @@
+{
+ "fixture": "greencourt-336-branded",
+ "_note": "The SAME 336 sq ft 1BHK read from the BRANDED builder page (logo and title take a third of the sheet). The reader's arrangement scrambles: the bedroom comes back full-width when the sheet has it on the right. Same '1825 WIDE' balcony caption. Kept as the measured proof that no signal in a single reply separates this from the clean copy (plan doc s3n) - the drawing rules stay honest on it, the arrangement stays wrong. Reply verbatim.",
+ "model": "qwen/qwen3.6-27b",
+ "imageSize": [
+  1100,
+  1100
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "1825 WIDE",
+    "x": 0.0,
+    "y": 0.0,
+    "w": 1.0,
+    "h": 0.25,
+    "confidence": 0.95
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3050X3200",
+    "x": 0.0,
+    "y": 0.25,
+    "w": 1.0,
+    "h": 0.35,
+    "confidence": 0.95
+   },
+   {
+    "label": "WC",
+    "size": "1525X900",
+    "x": 0.0,
+    "y": 0.6,
+    "w": 0.25,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "BATH",
+    "size": "1525X1130",
+    "x": 0.0,
+    "y": 0.75,
+    "w": 0.25,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2920X2100",
+    "x": 0.25,
+    "y": 0.75,
+    "w": 0.25,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "LOBBY",
+    "size": "3050X3900",
+    "x": 0.25,
+    "y": 0.6,
+    "w": 0.75,
+    "h": 0.15,
+    "confidence": 0.95
+   },
+   {
+    "label": "PASSAGE",
+    "size": "1000X2995",
+    "x": 0.5,
+    "y": 0.9,
+    "w": 0.25,
+    "h": 0.1,
+    "confidence": 0.95
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

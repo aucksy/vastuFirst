@@ -541,3 +541,25 @@ squares between all of them, and then ask whether your home was "cut off" somewh
       reading step being confused by the page's logo and margins, not from the drawing rules — the
       same flat read from a plain copy draws almost exactly like the paper. A cleaner photo or crop
       of just the plan should read noticeably better; if you get a chance, try that once.
+
+### Q · continued  *(new in this build — the balcony, the walls, and the grid size)*
+
+- [ ] **Q19 · ⭐ Scan the small 1-bedroom plan again (the page you rejected). The balcony must no
+      longer tower.** The sheet prints the balcony as a strip 1.8 metres deep, and the app now
+      reads that number: expect a shallow band across the top, visibly flatter than the bedroom.
+      If the balcony is still the biggest thing on the grid, send a screenshot — that is the exact
+      bug this build removes.
+- [ ] **Q20 · ⭐ Same scan: the bedroom, lobby and passage should sit against the RIGHT edge**, the
+      way your sheet has them, with the kitchen on the left and the spare space in the middle.
+      "Everything clumped to the left" is the bug to report. (On the branded page the reading
+      itself still scrambles the arrangement — for that page, expect imperfect, and a clean crop
+      of just the plan reads better, as before.)
+- [ ] **Q21 · ⭐ The grid should be smaller — little or no scrolling on the small flat.** Empty
+      rows and columns outside the home are now deleted, so a 336 sq ft flat no longer arrives on
+      a villa-sized grid. A full empty strip along any edge of the grid is a bug: screenshot it.
+- [ ] **Q22 · The 2-bedroom plan (green builder page, clean copy): the balcony should now be a
+      slim one-row strip** — its printed 1.5 metres — instead of the fat band you saw. Everything
+      else on that scan should look the same as before.
+- [ ] **Q23 · Your own 3-bedroom flat should look EXACTLY as it did in the last build.** Same
+      grid, same rooms, same shapes — this build changes none of it. If anything on that scan
+      moved, tell me; nothing should have.

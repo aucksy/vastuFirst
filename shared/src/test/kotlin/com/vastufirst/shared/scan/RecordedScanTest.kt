@@ -213,19 +213,27 @@ class RecordedScanTest {
     /**
      * ⭐ greencourt-526 — a real 2BHK scanned live on 2 August 2026, after the owner reported its
      * branded twin drawing badly on his phone. Two firsts: every size prints in raw MILLIMETRES
-     * (`3285X3350`), and the balcony prints only ONE dimension (`1525 WIDE`) — not a parseable
-     * pair, so the room must ride the rectangle the reader drew for it. On the clean copy the
-     * reader draws that strip right, and the mapper must keep it: a full-width band across the
-     * north, exactly as the sheet has it.
+     * (`3285X3350`), and the balcony prints only ONE dimension (`1525 WIDE`). That caption is not
+     * a pair — [RoomDimensions.of] still reads it as nothing — but since v0.6.5 it is the strip's
+     * printed DEPTH: the balcony keeps the full-width band the reader drew (its length and place
+     * are arrangement evidence) and its depth comes from the sheet's own 1 525 mm, one row on
+     * this plan's scale. The owner's one note on this sheet's clean copy — "only the balcony
+     * strip is fat" — is this line.
      */
     @Test
-    fun `⭐ the millimetre 2BHK places whole, and the one-dimension balcony keeps its full-width strip`() {
+    fun `⭐ the millimetre 2BHK places whole, and the one-dimension balcony is a strip at its printed depth`() {
         val rec = assertNotNull(RecordedScans.load(RecordedScans.GREENCOURT), "greencourt-526 is not bundled")
         assertEquals(7, rec.reply.rooms.size, "the sheet names seven spaces")
         assertEquals(
             6,
             rec.reply.rooms.count { RoomDimensions.of(it) != null },
-            "six spaces print a millimetre pair; '1525 WIDE' is one number, not a size",
+            "six spaces print a millimetre pair; '1525 WIDE' is one number, not a pair",
+        )
+        assertEquals(
+            1525.0,
+            rec.reply.rooms.firstNotNullOf { RoomDimensions.stripDepthOf(it) },
+            1e-6,
+            "…and that one number is the balcony's printed depth",
         )
         val out = ScanMapper.map(rec.reply, imageAspect = 691.0 / 954.0)
         val placed = assertIs<ScanOutcome.Placed>(out, "a dimensioned single 2BHK must place")
@@ -239,6 +247,7 @@ class RecordedScanTest {
             balcony.rect!!.w,
             "the balcony must span the home's full width, as the reader drew it",
         )
+        assertEquals(1, balcony.rect!!.h, "1 525 mm is one row on this plan's scale — the fat strip is gone")
         // Directions from the printed millimetre pairs — the properties, not the trimmer's arithmetic.
         val lobby = placed.rooms.single { it.type == RoomType.LIVING }
         assertTrue(lobby.rect!!.h > lobby.rect!!.w, "LOBBY prints 3135X4535 — deeper than wide")
@@ -246,5 +255,74 @@ class RecordedScanTest {
         assertTrue(toilet.rect!!.w > toilet.rect!!.h, "TOILET prints 2485X1525 — wider than deep")
         val wc = placed.rooms.single { it.label == "W.C" }
         assertTrue(wc.rect!!.h > wc.rect!!.w, "W.C prints 1500X1950 — deeper than wide")
+    }
+
+    /**
+     * ⭐⭐ greencourt-336 — the owner's 336 sq ft 1BHK, the plan whose drawn output he rejected
+     * outright on 2 August 2026: "balcony towering over the rooms, everything clumped left, a huge
+     * mostly-empty grid I have to scroll". Two recordings of the SAME sheet — a clean copy whose
+     * arrangement reads close to the paper, and the branded builder page (logo third) whose
+     * arrangement scrambles. Both carry `BALCONY 1825 WIDE`.
+     *
+     * The three v0.6.5 drawing rules this plan forced, asserted here exactly as the mirror pins
+     * them (sim.mjs, with a fault injection each):
+     *  - the balcony is a STRIP — 1 825 mm deep on the plan's own scale, strictly shallower than
+     *    the bedroom behind it, instead of the reader's quarter-page sketch;
+     *  - the grid ends where the home does — the rows the shrink frees are deleted, so a 336 sq ft
+     *    flat stops arriving on a scrolling villa grid;
+     *  - a room read flush against the home's outer wall STAYS on it when it shrinks to print
+     *    scale: the bedroom his sheet puts on the east wall keeps that wall.
+     */
+    @Test
+    fun `⭐⭐ the 336 clean copy — the balcony stops towering, the grid ends at the home, the bedroom keeps its wall`() {
+        val rec = assertNotNull(
+            RecordedScans.load(RecordedScans.GREENCOURT_336_CLEAN),
+            "greencourt-336-clean is not bundled",
+        )
+        assertEquals(7, rec.reply.rooms.size, "the sheet names seven spaces")
+        assertEquals(
+            1825.0,
+            rec.reply.rooms.firstNotNullOf { RoomDimensions.stripDepthOf(it) },
+            1e-6,
+            "the balcony prints one dimension: its depth",
+        )
+        val out = ScanMapper.map(rec.reply, imageAspect = 669.0 / 976.0)
+        val placed = assertIs<ScanOutcome.Placed>(out, "a fully dimensioned 1BHK must place")
+        assertEquals(7, placed.rooms.size, "every named space places")
+        assertTrue(placed.notes.dropped.isEmpty(), "nothing may be dropped: ${placed.notes.dropped}")
+
+        val balcony = placed.rooms.single { it.type == RoomType.BALCONY }
+        val bedroom = placed.rooms.single { it.type == RoomType.BEDROOM }
+        assertTrue(
+            balcony.rect!!.h < bedroom.rect!!.h,
+            "the balcony (${balcony.rect}) must be shallower than the bedroom (${bedroom.rect}) — " +
+                "it is a 1.8 m strip, not the biggest room on the flat",
+        )
+        assertEquals(9, placed.rows, "the grid ends where the home does — measured 9 rows, not 10")
+        assertEquals(
+            placed.cols,
+            bedroom.rect!!.right,
+            "the bedroom was READ against the home's east wall — his sheet puts it there — and must stay on it",
+        )
+    }
+
+    @Test
+    fun `⭐ the 336 branded copy — the same rules hold on a scrambled read, and every room still places`() {
+        // The branded page's ARRANGEMENT is wrong (the reader returns the bedroom full-width when
+        // the sheet has it on the right) and stays wrong: measured across every recording, no
+        // signal in a single reply separates this copy from the clean one — the one candidate
+        // (read-vs-print orientation contradictions) scores the owner's own flat WORSE than this
+        // page, so a gate would bin the best mapping in the corpus and wave this one through.
+        // What honest drawing rules CAN promise on a scrambled read is pinned here.
+        val rec = assertNotNull(
+            RecordedScans.load(RecordedScans.GREENCOURT_336_BRANDED),
+            "greencourt-336-branded is not bundled",
+        )
+        val out = ScanMapper.map(rec.reply, imageAspect = 1100.0 / 1100.0)
+        val placed = assertIs<ScanOutcome.Placed>(out)
+        assertEquals(7, placed.rooms.size, "all seven rooms place — a scrambled read loses nothing")
+        val balcony = placed.rooms.single { it.type == RoomType.BALCONY }
+        assertEquals(2, balcony.rect!!.h, "the 1 825 mm strip holds on this copy too")
+        assertEquals(9, placed.rows, "and the dead edge rows are gone here too")
     }
 }

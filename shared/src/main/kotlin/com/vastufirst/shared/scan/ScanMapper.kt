@@ -426,12 +426,47 @@ object ScanMapper {
             return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
         }
 
-        val out = chosen.rooms
+        // ⭐ A grid row or column that ends up entirely OUTSIDE the rooms is deleted, edge-inward.
+        //
+        // The per-axis fill guarantees the READ frame fills the grid — but the re-shapes then
+        // shrink rooms to the size their sheet PRINTS, and where the sketch was inflated (the
+        // template's fat strips, a room read wider than its caption) whole edge strips of grid go
+        // dead. A dead edge strip is a statement — "this is part of your home and we found nothing
+        // in it" — and it is false: the print evidence says the home ENDS where the rooms do. It
+        // is also exactly what the owner photographs (Q14: a full empty strip down any side).
+        //
+        // The engine is untouched: it scores the FOOTPRINT — the bounding box of the placed rooms
+        // — which collapse preserves cell-for-cell. Only the drawing gets smaller, which on a
+        // small flat also means bigger, more tappable cells. Interior holes are never touched: an
+        // empty region BETWEEN rooms is honest (an unread corridor), an empty region outside them
+        // is not. Never below the editor's MIN_GRID. Corpus (audit-mapper.mjs): dead edge cells
+        // 54 → 0, no room, orientation or outcome changes anywhere. The mirror pins the collapsed
+        // grid on greencourt-336 and reshape-flat; `--inject=no-edge-collapse` goes red there.
+        val minC = chosen.rooms.minOf { it.second.col }
+        val minR = chosen.rooms.minOf { it.second.row }
+        val maxC = chosen.rooms.maxOf { it.second.right }
+        val maxR = chosen.rooms.maxOf { it.second.bottom }
+        val outCols: Int
+        val outRows: Int
+        val placedRooms: List<Triple<Candidate, CellRect, Boolean>>
+        if (minC > 0 || minR > 0 || maxC < cols || maxR < rows) {
+            outCols = max(maxC - minC, MIN_GRID)
+            outRows = max(maxR - minR, MIN_GRID)
+            placedRooms = chosen.rooms.map { (c, r, t) ->
+                Triple(c, CellRect(r.col - minC, r.row - minR, r.w, r.h), t)
+            }
+        } else {
+            outCols = cols
+            outRows = rows
+            placedRooms = chosen.rooms
+        }
+
+        val out = placedRooms
             .map { (c, rect, _) ->
                 ScannedRoom(c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize)
             }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
-        return ScanOutcome.Placed(cols, rows, out, notes())
+        return ScanOutcome.Placed(outCols, outRows, out, notes())
     }
 
     /** One complete placement pass. Pure: it never touches a [Candidate]'s flags. */
@@ -553,14 +588,47 @@ object ScanMapper {
             // itself a room facing the wrong way, so the candidates are tried most-magnetic first
             // and the first one that still agrees with the sheet wins. Doing nothing always agrees,
             // because the rounding above is monotonic, so there is always an answer.
-            var col2 = col
-            var row2 = row
-            if (col + w == rect.right - 1 && rightFlushSized(rect) && !leftFlushSized(rect) &&
-                stripFree(rect, col + w, row, 1, h)
-            ) { col2 = col + 1; slidRight += rect }
-            if (row + h == rect.bottom - 1 && bottomFlushSized(rect) && !topFlushSized(rect) &&
-                stripFree(rect, col2, row + h, w, 1)
-            ) { row2 = row + 1; slidDown += rect }
+            // ⭐ The home's OUTER WALL is the strongest position evidence there is. The frame IS
+            // the home (the letterbox fix), so a room READ flush against the grid's east or south
+            // edge was read against the building's own outer wall — and nothing can stand between
+            // a room and the outside of the building. The top-left anchor was abandoning exactly
+            // that: the owner's 336 sq ft bedroom, read flush to the east wall his sheet puts it
+            // on, shrank to its printed width and drifted two columns off it, leaving a dead block
+            // on the home's east edge. The shrink slack belongs INTERIOR (walls, wardrobes, the
+            // sketch's own inflation), never between a room and an outer wall it was read
+            // touching. West and north flushness survive automatically (the top-left corner is
+            // the anchor); this is the same promise for the other two walls. A room read flush
+            // BOTH sides of an axis keeps the top-left default — either end abandons an outer
+            // wall, so the evidence ties.
+            //
+            // ⚠ Same discipline as the slide below: the anchor may only enter cells NO other read
+            // rectangle holds, and its band is CLIPPED to the room's own read span in the cross
+            // axis — an east anchor owns only the horizontal displacement, so a fight the shaped
+            // rect's GROWTH picks (a grown row reaching a neighbour below, which it does at
+            // either position) stays the trimmer's business. Without the guard it shoved a hall,
+            // read mid-plan, into the bedroom read beside it, and the trimmer crushed the hall to
+            // a sliver. Corpus (audit-mapper.mjs): orientation 157/166 → 159/166, and the owner's
+            // 336 sq ft plan draws its bedroom, lobby and passage on the east wall his sheet puts
+            // them on. The mirror pins this on greencourt-336-clean; `--inject=no-edge-anchor`
+            // restores the drift and goes red there.
+            fun bandFree(self: CellRect, c0: Int, r0: Int, ww: Int, hh: Int) =
+                ww <= 0 || hh <= 0 || stripFree(self, c0, r0, ww, hh)
+            val bandETop = max(row, rect.row)
+            val bandEBottom = min(row + h, rect.bottom)
+            val anchoredE = rect.right == cols && rect.col > 0 && col + w != cols &&
+                bandFree(rect, col + w, bandETop, (cols - w) - col, bandEBottom - bandETop)
+            var col2 = if (anchoredE) cols - w else col
+            val bandSLeft = max(col2, rect.col)
+            val bandSRight = min(col2 + w, rect.right)
+            val anchoredS = rect.bottom == rows && rect.row > 0 && row + h != rows &&
+                bandFree(rect, bandSLeft, row + h, bandSRight - bandSLeft, (rows - h) - row)
+            var row2 = if (anchoredS) rows - h else row
+            if (!anchoredE && col2 + w == rect.right - 1 && rightFlushSized(rect) && !leftFlushSized(rect) &&
+                stripFree(rect, col2 + w, row2, 1, h)
+            ) { col2 += 1; slidRight += rect }
+            if (!anchoredS && row2 + h == rect.bottom - 1 && bottomFlushSized(rect) && !topFlushSized(rect) &&
+                stripFree(rect, col2, row2 + h, w, 1)
+            ) { row2 += 1; slidDown += rect }
             val freeRight = col2 + w
             val freeBottom = row2 + h
             val right = magnet(freeRight, xLines, col2 + 1, cols)
@@ -581,7 +649,7 @@ object ScanMapper {
         // seventeen-cell hole along the north edge. One pass, unsized rooms only, one cell, only
         // into cells that are free once the slide is accounted for; the moved rect becomes the
         // room's own basis, exactly as a re-shaped rect does.
-        return shaped.mapIndexed { i, pair ->
+        val cascaded = shaped.mapIndexed { i, pair ->
             if (printed[i] != null) return@mapIndexed pair
             val (candidate, r) = pair
             var col = r.col
@@ -595,6 +663,61 @@ object ScanMapper {
                 col + 1 + r.w <= cols
             ) col += 1
             if (col == r.col && row == r.row) pair else candidate to CellRect(col, row, r.w, r.h)
+        }
+        // ⭐ The STRIP pass — a room whose caption prints ONE dimension (`BALCONY 1825 WIDE`) gets
+        // that dimension as its printed DEPTH, on the same linear scale the pair-sized rooms set.
+        // Its length and its position stay the reader's (arrangement evidence, exactly like a pair
+        // room's corner), so only the strip's narrow axis changes — a strip may never flip against
+        // the way it was read, and the depth is also capped by the grid's cross axis (a 10x4
+        // letterbox grid cannot hold a 5-cell depth; the fuzz found it trying).
+        //
+        // The ANCHOR is the slide doctrine applied to a resize: the strip keeps the long wall it
+        // shares with a PAIR-SIZED room (that neighbour's own re-shape anchors the shared wall —
+        // position evidence) and the gap opens toward the sketch side. Both sides sized → the two
+        // walls pin the strip and its caption is outvoted: skipped. Neither → the grid edge is the
+        // home's outer wall, so an edge-flush strip keeps the edge. Runs AFTER the cascade so a
+        // strip that rode a slide re-shapes from where it now sits. Before this rule the owner's
+        // 336 sq ft plan drew its balcony three rows deep — a quarter of the whole grid, printed
+        // 1 825 mm — towering over the bedroom it belongs to. The mirror pins the strip's exact
+        // depth on greencourt-336-clean and reshape-flat; `--inject=no-strip-captions` goes red.
+        val linear = sqrt(cellsPerSquareMm)
+        if (!linear.isFinite() || linear <= 0.0) return cascaded
+        return cascaded.mapIndexed { i, pair ->
+            if (printed[i] != null) return@mapIndexed pair
+            val depthMm = RoomDimensions.stripDepthOf(pair.first.box) ?: return@mapIndexed pair
+            val (candidate, r) = pair
+            if (r.w == r.h) return@mapIndexed pair   // no long axis — which way it runs is unreadable
+            val wide = r.w > r.h                     // a wide strip's depth is its HEIGHT; a tall one's, its WIDTH
+            val long = if (wide) r.w else r.h
+            val d = (depthMm * linear).roundToInt().coerceIn(1, min(long, if (wide) rows else cols))
+            if (d == (if (wide) r.h else r.w)) return@mapIndexed pair
+            fun sizedAt(test: (CellRect) -> Boolean) = cascaded.indices.any { j ->
+                cascaded[j].second !== r && printed[j] != null && test(cascaded[j].second)
+            }
+            val out: CellRect = if (wide) {
+                val below = sizedAt { o -> o.row == r.bottom && o.col < r.right && r.col < o.right }
+                val above = sizedAt { o -> o.bottom == r.row && o.col < r.right && r.col < o.right }
+                if (below && above) return@mapIndexed pair
+                val rowOut = when {
+                    below -> r.bottom - d
+                    above -> r.row
+                    r.bottom == rows && r.row > 0 -> rows - d
+                    else -> r.row
+                }
+                CellRect(r.col, rowOut.coerceIn(0, rows - d), r.w, d)
+            } else {
+                val rightS = sizedAt { o -> o.col == r.right && o.row < r.bottom && r.row < o.bottom }
+                val leftS = sizedAt { o -> o.right == r.col && o.row < r.bottom && r.row < o.bottom }
+                if (rightS && leftS) return@mapIndexed pair
+                val colOut = when {
+                    rightS -> r.right - d
+                    leftS -> r.col
+                    r.right == cols && r.col > 0 -> cols - d
+                    else -> r.col
+                }
+                CellRect(colOut.coerceIn(0, cols - d), r.row, d, r.h)
+            }
+            candidate to out
         }
     }
 
@@ -929,7 +1052,11 @@ object ScanMapper {
             // that never arrived — and neither search ever MOVES a room beyond its own rectangle,
             // which is the rule the whole step exists to keep. A one-cell survivor is simply the
             // smallest sub-rectangle, so the old corner fallback is subsumed.
+            // A strip has no printed pair, but its shaped rect IS its printed sense (depth from the
+            // caption, length as read) — hand that to the trim so a cut prefers keeping it a strip.
             val ratio = RoomDimensions.of(cand.box)?.ratio?.takeIf { it.isFinite() && it > 0.0 }
+                ?: rect.takeIf { it.w != it.h && RoomDimensions.stripDepthOf(cand.box) != null }
+                    ?.let { it.w.toDouble() / it.h }
             val fitted = bestFreeSubRect(rect, blockers, ratio)
                 ?: bestFreeSubRect(asRead, blockers, ratio)
             if (fitted == null) {

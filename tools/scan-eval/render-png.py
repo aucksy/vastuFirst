@@ -86,8 +86,12 @@ def draw_one(path):
         tw = d.textlength(label, font=f)
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         d.text((cx - tw / 2, cy - fs / 2 - (7 if r["printed"] and (y1 - y0) > 46 else 0)), label, fill="#222222", font=f)
+        note = None
         if r["printed"] and (y1 - y0) > 46:
             note = f"{r['printed']['w']/1000:.2f}x{r['printed']['h']/1000:.2f}m -> {rc['w']}x{rc['h']}"
+        elif r.get("strip") and (y1 - y0) > 46:
+            note = f"{r['strip']/1000:.2f}m deep -> {rc['w']}x{rc['h']}"
+        if note:
             nw = d.textlength(note, font=small)
             d.text((cx - nw / 2, cy + fs / 2 - 2), note, fill="#555555", font=small)
     head = font(15)

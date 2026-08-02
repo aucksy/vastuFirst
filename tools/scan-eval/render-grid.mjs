@@ -81,6 +81,9 @@ function svgFor(id, out) {
     const p = r.printed;
     if (p && !vertical && h > 30) {
       bits.push(`<text x="${cxm}" y="${cym + fs * 0.9 + 2}" font-size="8.5" fill="#555" text-anchor="middle">${esc(`${(p.w / 1000).toFixed(2)}x${(p.h / 1000).toFixed(2)}m -> ${r.rect.w}x${r.rect.h}`)}</text>`);
+    } else if (r.strip && !vertical && h > 30) {
+      // a single-dimension strip: show the printed depth the narrow axis came from
+      bits.push(`<text x="${cxm}" y="${cym + fs * 0.9 + 2}" font-size="8.5" fill="#555" text-anchor="middle">${esc(`${(r.strip / 1000).toFixed(2)}m deep -> ${r.rect.w}x${r.rect.h}`)}</text>`);
     }
   }
   bits.push(`<text x="${W / 2}" y="${PAD - 12}" font-size="12" fill="#666" text-anchor="middle" letter-spacing="3">NORTH</text>`);
@@ -117,6 +120,7 @@ for (const job of jobs) {
     rooms: (out.rooms || []).map((r) => ({
       type: r.type, label: r.label, rect: r.rect || null,
       printed: r.printed ? { w: r.printed.w, h: r.printed.h } : null,
+      strip: r.strip || null,
     })),
   }, null, 1));
   const caption = out.kind === 'placed'

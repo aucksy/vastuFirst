@@ -42,8 +42,10 @@ data class PrintedSize(val widthMm: Double, val depthMm: Double) {
  * `X`, `x` or `×` as the separator.
  *
  * Returns null whenever there is no honest PAIR of numbers, which is the common case and must stay
- * cheap: `BALCONY 6'-0" WIDE` states one dimension, `LIFT (8 PERSON)` states a capacity, and
- * `BEDROOM-1` states an index. Guessing a shape from any of those would be worse than not trying.
+ * cheap: `LIFT (8 PERSON)` states a capacity and `BEDROOM-1` states an index. A single-dimension
+ * strip caption — `BALCONY 6'-0" WIDE` — is also not a pair, but it is no longer thrown away:
+ * [stripDepth] reads it as the strip's printed DEPTH, the one dimension a strip has, and the
+ * mapper sets the strip's narrow axis from it while its length stays the wall it was read along.
  */
 object RoomDimensions {
 
@@ -108,6 +110,42 @@ object RoomDimensions {
      */
     fun of(box: ScanBox): PrintedSize? =
         box.printedSize.takeIf { it.isNotBlank() }?.let { parse(it) } ?: parse(box.label)
+
+    /**
+     * ⭐ A SINGLE-dimension strip caption: `BALCONY 1825 WIDE` / `5'-5" WIDE` / `6'-0" WIDE`.
+     *
+     * On real sheets this caption sits on the strips — balconies, service ledges — and the number
+     * is the strip's clear DEPTH (how far it comes out from the home); its length is whatever wall
+     * it runs along. It used to parse as NO size at all, which produced the owner's 336 sq ft
+     * plan: every sized room shrank to print scale while the balcony kept the reader's sketch
+     * rectangle — a quarter of the whole page — and towered over every real room on the grid.
+     *
+     * A full pair wins first, so a caption carrying both never half-matches as a strip. Millimetre
+     * and feet-inches conventions both appear on real sheets (`1825 WIDE` on the 336 sq ft plan,
+     * `5'-5" WIDE` on the tower sheet, `1525 WIDE` on the 526); the bare-number rule is the same
+     * as [PAIR_PLAIN]'s — under [FEET_IF_UNDER] reads as feet, at or above it as millimetres.
+     */
+    fun stripDepthOf(box: ScanBox): Double? =
+        box.printedSize.takeIf { it.isNotBlank() }?.let { stripDepth(it) } ?: stripDepth(box.label)
+
+    fun stripDepth(label: String): Double? {
+        val s = label.uppercase()
+        if (parse(s) != null) return null
+        STRIP_FEET_WIDE.find(s)?.let { m ->
+            val d = feetInches(m.groupValues[1], m.groupValues[2], m.groupValues[3])
+            return if (d > 0.0) d * MM_PER_FOOT else null
+        }
+        STRIP_PLAIN_WIDE.find(s)?.let { m ->
+            val d = m.groupValues[1].toDoubleOrNull() ?: return null
+            if (d <= 0.0) return null
+            return if (d < FEET_IF_UNDER) d * MM_PER_FOOT else d
+        }
+        return null
+    }
+
+    private val STRIP_FEET_WIDE = Regex("$FEET_INCHES\\s*WIDE")
+
+    private val STRIP_PLAIN_WIDE = Regex("(?<![\\d.'\"′″])(\\d{2,5})\\s*(?:MM|CM)?\\s*WIDE")
 
     fun parse(label: String): PrintedSize? {
         val s = label.uppercase()

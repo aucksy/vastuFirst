@@ -78,11 +78,15 @@ measured and produced the identical lattice with *more* rooms off the page.
   of 129 across nine real plans.
 - ⚠ **Residual, and it is the live one:** a plan that prints **no** sizes has nothing but the template
   to go on. Those plans are still gated on room count and mostly arrive unplaced, which is honest but
-  is the weaker product. Three narrower faces of the same residual, all seen on real sheets
-  (2 August 2026): a caption printing ONE dimension (`BALCONY 1525 WIDE` / `5'-0" WIDE`) is not a
-  size pair, so that room rides the reader's rectangle alone; a BRANDED page (logo and title taking a
-  third of the sheet) measurably degrades the reader's rectangles — the same unit mapped cleanly from
-  a plain copy and badly from the branded one on the owner's phone; and on the owner's flat the
+  is the weaker product. Three narrower faces of the same residual were seen on real sheets
+  (2 August 2026), and one of them closed the same day: a caption printing ONE dimension
+  (`BALCONY 1825 WIDE` / `5'-0" WIDE`) **is now read as the strip's printed depth** (v0.6.5) — the
+  strip keeps the wall it was read along and its narrow axis comes from the caption, so the balcony
+  no longer towers over rooms that shrank to print scale. Still open: a BRANDED page (logo and title
+  taking a third of the sheet) measurably degrades the reader's ARRANGEMENT — the same unit mapped
+  cleanly from a plain copy and badly from the branded one, and it was measured (plan doc §3n E11)
+  that no signal in a single reply separates the two, so a scrambled arrangement is drawn honestly
+  rather than gated, and a cleaner copy or crop remains the fix; and on the owner's flat the
   reader's arrangement crams the kitchen's corner of the home, so the kitchen lands at a single cell
   — present, right place, too small — which the flagged confirmation step exists to catch.
 

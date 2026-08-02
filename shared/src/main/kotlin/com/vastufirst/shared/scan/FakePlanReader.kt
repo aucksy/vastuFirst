@@ -109,7 +109,29 @@ object RecordedScans {
      */
     const val GREENCOURT = "greencourt-526"
 
-    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020, GREENCOURT)
+    /**
+     * ⭐⭐ The owner's 336 sq ft 1BHK (Green Court Category-II), scanned live 2 August 2026 from a
+     * CLEAN copy of the sheet — the plan whose drawn output he rejected outright that evening
+     * ("balcony towering over the rooms, everything clumped left, a huge mostly-empty grid").
+     * Carries `BALCONY 1825 WIDE`, the single-dimension strip caption that caused the towering,
+     * and it is the fixture behind all three v0.6.5 drawing rules: the strip depth, the
+     * dead-edge collapse, and the outer-wall anchor.
+     */
+    const val GREENCOURT_336_CLEAN = "greencourt-336-clean"
+
+    /**
+     * ⭐ The SAME 336 sq ft sheet read from the BRANDED builder page (logo and title take a third
+     * of it). The reader's arrangement scrambles — the bedroom comes back full-width when the
+     * sheet has it on the right — and stays scrambled: measured, no signal in a single reply
+     * separates this copy from the clean one, so it is kept as the proof of that limit rather
+     * than gated. The drawing rules stay honest on it; the arrangement stays the reader's error.
+     */
+    const val GREENCOURT_336_BRANDED = "greencourt-336-branded"
+
+    val ids: List<String> = listOf(
+        CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020, GREENCOURT,
+        GREENCOURT_336_CLEAN, GREENCOURT_336_BRANDED,
+    )
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {

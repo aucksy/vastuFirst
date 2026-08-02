@@ -113,6 +113,15 @@ for (const p of load('out/exp-size-field.json')) {
   const o = load('../../shared/src/main/resources/scan/owner-flat.json');
   plans.push({ id: 'owner-flat [sized]', aspect: o.imageSize[0] / o.imageSize[1], reply: o.reply, prompt: 'v3' });
 }
+// ⭐ The live scans of the owner's OTHER plans (see plan doc §3m) — real, paid replies from the
+// app's exact reader, and the very sheets he judges releases by. The audit's numbers must cover
+// them: corpus totals held steady three separate times while single rooms on these plans crushed.
+// out/live is re-recordable by design; these three are ALSO frozen as bundled fixtures the moment
+// they are pinned, so a re-record cannot silently shift a pinned answer.
+for (const name of ['greencourt-526', 'greencourt-336-clean', 'greencourt-336-branded']) {
+  const o = load(`out/live/${name}.json`);
+  plans.push({ id: `${name} [live]`, aspect: o.imageSize[0] / o.imageSize[1], reply: o.reply, prompt: o.prompt || 'v3' });
+}
 
 // ---- measures ----------------------------------------------------------------------------------
 const cellsOf = (rects) => {

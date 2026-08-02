@@ -88,12 +88,39 @@ class RoomDimensionsTest {
     // ── and the far more common case: no honest pair, so no guess ────────────────────────────────
 
     @Test
-    fun `one dimension is not a size`() {
-        // A room cannot be shaped from a single number, and inventing the other one would be worse
-        // than leaving the reader's rectangle alone. Both forms appear on real plans.
+    fun `one dimension is not a size PAIR — it is a strip depth`() {
+        // A pair cannot be invented from a single number, so parse() stays null — but the number is
+        // no longer thrown away: it is the strip's printed DEPTH, read by stripDepth(), and the
+        // mapper sets the strip's narrow axis from it. Before that rule the owner's 336 sq ft plan
+        // drew its balcony at the reader's sketch size — a quarter of the page — towering over the
+        // bedroom, because '1825 WIDE' parsed as nothing at all.
         assertNull(RoomDimensions.parse("BALCONY 6'-0\" WIDE"))
         assertNull(RoomDimensions.parse("5'-0\" WIDE BALCONY"))
         assertNull(RoomDimensions.parse("BALCONY 1500MM WIDE"))
+        assertEquals(6 * mmPerFoot, RoomDimensions.stripDepth("BALCONY 6'-0\" WIDE")!!, 0.01)
+        assertEquals(5 * mmPerFoot, RoomDimensions.stripDepth("5'-0\" WIDE BALCONY")!!, 0.01)
+        assertEquals(1500.0, RoomDimensions.stripDepth("BALCONY 1500MM WIDE")!!, 0.01)
+    }
+
+    @Test
+    fun `⭐ strip depths — every caption form the real sheets print`() {
+        // All read off recorded replies: the owner's 336 sq ft plan, the 526, and the tower sheet.
+        assertEquals(1825.0, RoomDimensions.stripDepth("1825 WIDE")!!, 0.01)
+        assertEquals(1525.0, RoomDimensions.stripDepth("1525 WIDE")!!, 0.01)
+        assertEquals((5 + 5.0 / 12) * mmPerFoot, RoomDimensions.stripDepth("BALCONY 5'-5\" WIDE")!!, 0.01)
+        assertEquals((4 + 11.0 / 12) * mmPerFoot, RoomDimensions.stripDepth("SERVICE BALCONY 4'-11\" WIDE")!!, 0.01)
+        // A full pair wins first — a caption carrying both never half-matches as a strip.
+        assertNull(RoomDimensions.stripDepth("BEDROOM 3050X3200 WIDE OPEN"))
+        // No WIDE, no strip; an index or a capacity still reads as nothing.
+        assertNull(RoomDimensions.stripDepth("BALCONY"))
+        assertNull(RoomDimensions.stripDepth("BEDROOM-1"))
+        assertNull(RoomDimensions.stripDepth("LIFT (8 PERSON)"))
+        // The reader's own size field wins over the caption, exactly as it does for pairs.
+        assertEquals(
+            1825.0,
+            RoomDimensions.stripDepthOf(ScanBox(label = "BALCONY", printedSize = "1825 WIDE"))!!,
+            0.01,
+        )
     }
 
     @Test
