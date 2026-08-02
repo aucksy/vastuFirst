@@ -969,6 +969,17 @@ const FIXTURES = join(HERE, '..', '..', 'shared', 'src', 'main', 'resources', 's
 // badly, and the corpus's highest coverage placed worse than its lowest-but-one. See
 // ScanMapper.MAX_TRUSTED_ROOMS for the table.
 const MAX_TRUSTED_ROOMS = 12;
+// ⭐⭐ …and the room count now only decides a plan that prints NO sizes. Where the rooms state their
+// own dimensions, the reader's rectangles supply the arrangement (which it gets right) and its own
+// printed text supplies every measurement (which it reads at ~95 %). Counting rooms threw out the
+// owner's fifteen-space flat, which is an ordinary Indian apartment. See
+// ScanMapper.SIZED_SHARE_TO_TRUST / MAX_ROOMS_EVER / MAX_OVERFLOW.
+const SIZED_SHARE_TO_TRUST = 2 / 3;
+const MAX_ROOMS_EVER = 20;
+const MAX_OVERFLOW = 2.0;
+/** A sheet naming a lift shows a whole floor, not one home. Mirrors RoomLabels.isFloorPlateLabel. */
+const FLOOR_PLATE_WORDS = ['LIFT', 'ELEVATOR'];
+const isFloorPlateLabel = (raw) => FLOOR_PLATE_WORDS.some((w) => cleanLabel(raw).includes(w));
 const UNIFORM_AREA_VARIATION = 0.15;
 const UNIFORM_MIN_ROOMS = 4;
 const CONTAINMENT_FRACTION = 0.90;
@@ -1006,21 +1017,77 @@ function resolveLabel(raw) {
   return { kind: 'unknown' };
 }
 
+/**
+ * ⭐ A reply that overruns the page is SHRUNK to fit, uniformly, before anything is cut off.
+ * Mirrors ScanMapper.shrinkToPage.
+ *
+ * The reader routinely returns rooms outside the unit square — it lays out a template and the
+ * template runs long. Clamping them at the edge DELETED one of the owner's three balconies and
+ * flattened his utility to a third of its depth. A uniform scale + offset cancels exactly against
+ * the home-framed snap, so it cannot disturb a reply that already fits.
+ *
+ * FAULT INJECTION 'no-shrink' restores the amputation.
+ */
+function shrinkToPage(boxes, inject) {
+  if (inject === 'no-shrink') return boxes;
+  const fin = (v) => typeof v === 'number' && Number.isFinite(v);
+  const real = boxes.filter((b) => fin(b.x) && fin(b.y) && fin(b.w) && fin(b.h));
+  if (!real.length) return boxes;
+  const x0 = Math.min(0, ...real.map((b) => b.x)), y0 = Math.min(0, ...real.map((b) => b.y));
+  const x1 = Math.max(1, ...real.map((b) => b.x + b.w)), y1 = Math.max(1, ...real.map((b) => b.y + b.h));
+  const span = Math.max(x1 - x0, y1 - y0);
+  if (span <= 1 || span > MAX_OVERFLOW) return boxes;
+  const s = 1 / span;
+  return boxes.map((b) => (fin(b.x) && fin(b.y) && fin(b.w) && fin(b.h)
+    ? { ...b, x: (b.x - x0) * s, y: (b.y - y0) * s, w: b.w * s, h: b.h * s }
+    : b));
+}
+
+/**
+ * ⭐ Widen the grid until the home's biggest room can be drawn the way its own plan prints it.
+ * Mirrors ScanMapper.widenForWidest. Never narrows; does nothing unless the printed sizes prove the
+ * grid too narrow to be honest.
+ *
+ * FAULT INJECTION 'no-widen' removes it — the state in which the owner's living/dining, printed
+ * plainly wider than deep, came out taller than wide because the grid had only four columns.
+ */
+function widenForWidest([cols, rows], boxes, inject) {
+  if (inject === 'no-widen') return [cols, rows];
+  const sizes = boxes.map((b) => parsePrinted(printedTextOf(b))).filter((p) => p && p.w * p.h > 0);
+  if (!sizes.length) return [cols, rows];
+  const total = sizes.reduce((a, p) => a + p.w * p.h, 0);
+  const widest = sizes.reduce((a, p) => (p.w * p.h > a.w * a.h ? p : a));
+  const ratio = widest.w / widest.h;
+  if (!Number.isFinite(ratio) || ratio <= 1) return [cols, rows];
+  const share = (widest.w * widest.h) / total;
+  if (!Number.isFinite(share) || share <= 0) return [cols, rows];
+  const need = Math.round(Math.sqrt(cols * rows * share * ratio));
+  if (need < cols) return [cols, rows];
+  return [Math.min(MAX_GRID, need + 1), rows];
+}
+
 function scanSanitise(b, inject) {
   const fin = (v) => typeof v === 'number' && Number.isFinite(v);
   if (!fin(b.x) || !fin(b.y) || !fin(b.w) || !fin(b.h)) return null;
   if (b.w <= 0 || b.h <= 0) return null;
   // FAULT INJECTION 'no-clamp': trust the model's coordinates instead of clamping them into the
   // unit square. A box at x = 1.4 then snaps to cells beyond the grid's east edge.
+  // ⚠ `printedSize` is carried through EVERY branch. Kotlin's sanitise is a `copy()` so it survives
+  // for free there; this mirror rebuilt the object and silently dropped it, which quietly disabled
+  // printed sizes, the widening and their fault injections all at once — and every one of them still
+  // reported green. A mirror that loses a field is a mirror that stops mirroring.
   if (inject === 'no-clamp') {
     const conf = fin(b.confidence) ? b.confidence : 0;
-    return { label: b.label, x: b.x, y: b.y, w: b.w, h: b.h, confidence: conf };
+    return { label: b.label, printedSize: printedTextOf(b), x: b.x, y: b.y, w: b.w, h: b.h, confidence: conf };
   }
   const x0 = clampF(b.x, 0, 1), y0 = clampF(b.y, 0, 1);
   const x1 = clampF(b.x + b.w, 0, 1), y1 = clampF(b.y + b.h, 0, 1);
   if (x1 <= x0 || y1 <= y0) return null;
   const conf = fin(b.confidence) ? clampF(b.confidence, 0, 1) : 0;
-  return { label: b.label, x: x0, y: y0, w: x1 - x0, h: y1 - y0, confidence: conf };
+  return {
+    label: b.label, printedSize: printedTextOf(b),
+    x: x0, y: y0, w: x1 - x0, h: y1 - y0, confidence: conf,
+  };
 }
 
 /** Identical lattice to tools/scan-eval/batch-real.py, which is what the threshold is calibrated on. */
@@ -1185,12 +1252,35 @@ function feetInches(f, i, fr) {
   return Number(f) + (Number(i || 0) + (fr ? (FRACTIONS[fr] || 0) : 0)) / 12;
 }
 
+/**
+ * ⭐ The reader's own `size` field first, the caption second. Mirrors RoomDimensions.of.
+ *
+ * `size` is the name ON THE WIRE (what the model returns and what the recorded fixtures store);
+ * `printedSize` is what Kotlin calls it after deserialising. Both are accepted so a fixture can be
+ * read here exactly as it sits on disk.
+ */
+function printedTextOf(box) {
+  if (!box) return '';
+  const sz = box.printedSize != null ? box.printedSize : box.size;
+  return (typeof sz === 'string' && sz.trim()) ? sz : (box.label || '');
+}
+
+/** Metres as Indian sheets print them: `3.72m X 4.50m`. The M is required after BOTH numbers, or
+ *  `12X14` — a foot pair — would read as a twelve-metre room. Mirrors RoomDimensions.PAIR_METRES. */
+const PAIR_METRES = /(?<![\d.])(\d{1,2}(?:\.\d{1,3})?)\s*M\s*[X×]\s*(\d{1,2}(?:\.\d{1,3})?)\s*M(?![A-Z])/;
+const MM_PER_METRE = 1000;
+
 function parsePrinted(label) {
   const s = String(label).toUpperCase();
   const m = PAIR_FEET_INCHES.exec(s);
   if (m) {
     const a = feetInches(m[1], m[2], m[3]), b = feetInches(m[4], m[5], m[6]);
     return (a > 0 && b > 0) ? { w: a * MM_PER_FOOT, h: b * MM_PER_FOOT } : null;
+  }
+  const me = PAIR_METRES.exec(s);
+  if (me) {
+    const a = Number(me[1]), b = Number(me[2]);
+    return (a > 0 && b > 0) ? { w: a * MM_PER_METRE, h: b * MM_PER_METRE } : null;
   }
   const n = PAIR_PLAIN.exec(s);
   if (n) {
@@ -1211,7 +1301,7 @@ function parsePrinted(label) {
  */
 function reshapeToPrinted(snapped, cols, rows, inject) {
   if (inject === 'no-printed-sizes') return snapped;
-  const printed = snapped.map((s) => parsePrinted(s.c.box.label));
+  const printed = snapped.map((s) => parsePrinted(printedTextOf(s.c.box)));
   let cellTotal = 0, printedTotal = 0;
   snapped.forEach((s, i) => {
     if (printed[i]) { cellTotal += s.rect.w * s.rect.h; printedTotal += printed[i].w * printed[i].h; }
@@ -1269,7 +1359,8 @@ function scanMap(draft, imageAspect, opts = {}) {
   const dropped = [];
   const clean = [];
   const inject = opts.inject || null;
-  for (const b of draft.rooms || []) {
+  // ⭐ Shrink an overrunning reply onto the page BEFORE anything is cut off it. See shrinkToPage.
+  for (const b of shrinkToPage(draft.rooms || [], inject)) {
     const c = scanSanitise(b, inject);
     if (!c) dropped.push({ label: b.label, reason: 'INVALID_GEOMETRY' });
     else clean.push(c);
@@ -1313,7 +1404,20 @@ function scanMap(draft, imageAspect, opts = {}) {
   if (inject !== 'no-uniform-gate' && rooms.length >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
     return { kind: 'assisted', reason: 'UNIFORM_BOXES', rooms: identified, notes: notes() };
   }
-  if (inject !== 'no-roomcount-gate' && rooms.length > MAX_TRUSTED_ROOMS) {
+  // ⭐ A sheet naming a LIFT shows a whole floor, not one home — the distinction the room count was
+  // proxying for, said outright. Checked against everything read, including spaces already dropped
+  // as not habitable, because a lift is exactly the kind of space that gets dropped.
+  if ((draft.rooms || []).some((b) => isFloorPlateLabel(b.label))) {
+    return { kind: 'assisted', reason: 'FLOOR_PLATE', rooms: identified, notes: notes() };
+  }
+  if (rooms.length > MAX_ROOMS_EVER) {
+    return { kind: 'assisted', reason: 'TOO_MANY_ROOMS', rooms: identified, notes: notes() };
+  }
+  // ⭐⭐ …and below that ceiling the count only decides a plan whose rooms state no sizes.
+  const sizedCount = rooms.filter((c) => parsePrinted(printedTextOf(c.box))).length;
+  if (inject !== 'no-roomcount-gate'
+    && sizedCount < rooms.length * SIZED_SHARE_TO_TRUST
+    && rooms.length > MAX_TRUSTED_ROOMS) {
     return { kind: 'assisted', reason: 'TOO_MANY_ROOMS', rooms: identified, notes: notes() };
   }
 
@@ -1331,7 +1435,9 @@ function scanMap(draft, imageAspect, opts = {}) {
     : scanFrameOf(rooms.map((c) => c.box));
   if (!frame) return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   const roundedAway = [];
-  const [cols, rows] = scanGridFor(scanHomeAspect(frame, imageAspect), inject);
+  const [cols, rows] = widenForWidest(
+    scanGridFor(scanHomeAspect(frame, imageAspect), inject), rooms.map((c) => c.box), inject,
+  );
   // ⭐ The plan's own WALL LINES: edges within half a cell of each other are the same wall, agreed
   // once and rounded once. Without it, a shared wall reported as 3.48 by one room and 3.52 by its
   // neighbour rounds to 3 and 4 and opens a moat between two rooms that touch.
@@ -1664,6 +1770,57 @@ function scanPinnedCases(inject) {
   if (dn.kind !== 'assisted' || dn.reason !== 'TOO_MANY_ROOMS') {
     problems.push(`dense-plate: expected assisted/TOO_MANY_ROOMS, got ${dn.kind}/${dn.reason || ''}`);
   }
+
+  // ⭐⭐ THE OWNER'S OWN FLAT — the first REAL recorded reply for one of his plans, and the case this
+  // whole release turns on. Fifteen named spaces, every one of them carrying the size the sheet
+  // prints, and rectangles that are plainly a template: four distinct x positions between them.
+  //
+  // Only geometry is judged here, because this mirror carries a cut-down synonym table and his sheet
+  // says VESTIBULE, DRESS & PASSAGE, MBR TOILET — captions only the real table resolves. The room
+  // list is pinned in Kotlin's OwnerFlatScanTest, where the real table runs.
+  let owner;
+  try {
+    owner = JSON.parse(readFileSync(join(FIXTURES, 'owner-flat.json'), 'utf8'));
+  } catch {
+    problems.push('owner-flat: fixture missing from shared/src/main/resources/scan/');
+  }
+  if (owner) {
+    const o = scanMap(owner.reply, owner.imageSize[0] / owner.imageSize[1], opts);
+    if (o.kind !== 'placed') {
+      // Before this release his flat came back ASSISTED — thirteen identical squares parked in a row
+      // — because it has fifteen rooms and the gate was twelve.
+      problems.push(`owner-flat: expected placed, got ${o.kind}/${o.reason || ''}`);
+    } else {
+      // The grid must be WIDE enough for his living/dining. `--inject=no-widen` leaves 4 columns,
+      // and in four columns a room printed 7.25 m x 4.30 m cannot be drawn wider than it is deep.
+      if (o.cols < 5) problems.push(`owner-flat: grid ${o.cols}x${o.rows} is too narrow for its widest room`);
+      const living = (o.rooms || []).find((r) => /LIVING/.test(r.label));
+      if (!living) problems.push('owner-flat: the living/dining did not survive');
+      else if (living.rect.w <= living.rect.h) {
+        // `--inject=no-printed-sizes` lands here: without the sizes the sheet prints, his main room
+        // comes out taller than wide, which puts it in a different Vastu direction.
+        problems.push(`owner-flat: LIVING/DINING is printed 7.25m x 4.30m but drawn `
+          + `${living.rect.w}x${living.rect.h} — deeper than wide`);
+      }
+    }
+  }
+
+  // ⭐ A reply that overruns the page is SHRUNK onto it, never cut off at the edge. This is the
+  // reply his sheet produced under the previous prompt: the last room sat past y = 1, and clamping
+  // deleted it outright — a balcony gone from a home before the user ever saw the plan.
+  // `--inject=no-shrink` restores the amputation and this goes red.
+  const spill = [
+    { label: 'LIVING ROOM', x: 0.05, y: 0.05, w: 0.4, h: 0.3, confidence: 0.9 },
+    { label: 'KITCHEN', x: 0.5, y: 0.05, w: 0.3, h: 0.3, confidence: 0.9 },
+    { label: 'BEDROOM', x: 0.05, y: 0.4, w: 0.4, h: 0.3, confidence: 0.9 },
+    { label: 'TOILET', x: 0.5, y: 0.4, w: 0.2, h: 0.2, confidence: 0.9 },
+    { label: 'BALCONY', x: 0.05, y: 1.05, w: 0.3, h: 0.15, confidence: 0.9 },
+  ];
+  const sp = scanMap({ planType: '2D_PLAN', hasRoomLabels: true, rooms: spill, planConfidence: 0.95 }, 1.0, opts);
+  if (sp.kind !== 'placed') problems.push(`spill: expected placed, got ${sp.kind}/${sp.reason || ''}`);
+  else if (!(sp.rooms || []).some((r) => /BALCONY/.test(r.label))) {
+    problems.push('spill: the room past the bottom of the page was deleted instead of shrunk onto it');
+  }
   return problems;
 }
 
@@ -1730,6 +1887,9 @@ if (pinned.length === 0) {
   console.log('✅ the recorded Groq replies map exactly as pinned, and both fabrication detectors fire');
   console.log('   (clean render + JPEG + phone photo all Placed — the photo is a known, documented');
   console.log('    miss that only the user\'s confirmation catches; a dense floor plate → Assisted)');
+  console.log('✅ the owner\'s own flat arrives as a HOME: placed, on a grid wide enough for it, with');
+  console.log('   its living/dining drawn the way its plan prints it — and a room past the bottom of');
+  console.log('   the page is shrunk onto it rather than deleted');
 } else {
   console.log('❌ a recorded reply no longer maps as it was measured:');
   for (const p of pinned) console.log(`     ${p}`);

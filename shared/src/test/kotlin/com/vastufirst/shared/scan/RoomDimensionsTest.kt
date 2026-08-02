@@ -145,4 +145,44 @@ class RoomDimensionsTest {
         val sqFt = captions.sumOf { RoomDimensions.parse(it)!!.area } / (mmPerFoot * mmPerFoot)
         assertTrue(sqFt in 340.0..365.0, "expected ~353 sq ft of rooms, got $sqFt")
     }
+
+    // ---- metres, and the field the reader now fills in ----------------------------------------
+
+    @Test
+    fun `⭐ metres are read, because the owner's own plan prints them`() {
+        val living = RoomDimensions.parse("7.25m X 4.30m")!!
+        assertEquals(7250.0, living.widthMm, 1e-6)
+        assertEquals(4300.0, living.depthMm, 1e-6)
+        // No spaces, brackets and a second part — exactly as his utility and his master toilet print.
+        val utility = RoomDimensions.parse("(3.17mX0.90m)+(1.51mX0.40m)")!!
+        assertEquals(3170.0, utility.widthMm, 1e-6)
+        assertEquals(900.0, utility.depthMm, 1e-6)
+    }
+
+    @Test
+    fun `⚠ a bare foot pair is never mistaken for metres`() {
+        // The unit is required after BOTH numbers, and this is the whole safety of the metre rule:
+        // a looser version that accepted "12 X 14 M" would read "12X14" — twelve feet by fourteen —
+        // as a twelve-METRE room, i.e. a room four times too big in each direction.
+        val feet = RoomDimensions.parse("BED ROOM 12X14")!!
+        assertEquals(12 * mmPerFoot, feet.widthMm, 1e-6)
+        assertEquals(14 * mmPerFoot, feet.depthMm, 1e-6)
+        // …and a millimetre pair stays millimetres.
+        val mm = RoomDimensions.parse("BEDROOM 6750X4350")!!
+        assertEquals(6750.0, mm.widthMm, 1e-6)
+    }
+
+    @Test
+    fun `⭐ the reader's own size field wins over the caption, and the caption still works`() {
+        // The reply the owner's flat produces: a clean name, and the size in its own field.
+        val split = ScanBox(label = "LIVING/DINING", printedSize = "7.25m X 4.30m ( 23'-9\" x 14'-1\" )")
+        assertEquals(7.25 * 1000 / mmPerFoot, RoomDimensions.of(split)!!.widthMm / mmPerFoot, 0.05)
+        // Every recorded reply from before that field existed carries the size inside the caption,
+        // and those fixtures are the measurements this feature was built on — so they must keep
+        // working exactly as they did.
+        val inline = ScanBox(label = "BEDROOM 6750X4350")
+        assertEquals(6750.0, RoomDimensions.of(inline)!!.widthMm, 1e-6)
+        // A room with neither has no size, and guessing one would be worse than not trying.
+        assertNull(RoomDimensions.of(ScanBox(label = "BALCONY")))
+    }
 }

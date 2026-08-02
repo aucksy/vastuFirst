@@ -260,6 +260,7 @@ fun GuidedGridScreen(
         onResetShape = vm::resetShape,
         restoredFromDraft = vm.restoredFromDraft,
         onStartAgain = vm::startAgain,
+        roomsUnplaced = vm.roomsUnplaced,
         onNext = onNext,
     )
 }
@@ -304,6 +305,23 @@ fun GuidedGridContent(
     /** True when what is on screen was brought back after Android reclaimed the app in the background. */
     restoredFromDraft: Boolean = false,
     onStartAgain: () -> Unit = {},
+    /**
+     * ⭐⭐ True when these rooms came off a scan that could NOT work out where they go, so they are
+     * parked in a row of equal squares rather than drawn as a plan.
+     *
+     * ⚠ This exists because of the screen the owner was shown for his own flat. Thirteen identical
+     * squares sat in the top two rows of an empty grid under the heading "Place your rooms — touch a
+     * room and slide to move it", which reads as a finished plan; and because the home's shape is
+     * measured against the box around whatever is placed, the app then asked whether the seven empty
+     * squares beside them — the leftovers of the parking row — were "in the south" and not part of
+     * his home. They were at the top of the grid, directly under the word NORTH. **Neither answer to
+     * that question was right, because the box it was measured against was a parking row and not a
+     * home.**
+     *
+     * It stops being true the moment the user changes anything: from then on the layout is theirs,
+     * and every question the screen asks about it is a fair one.
+     */
+    roomsUnplaced: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val haptics = rememberEditorHaptics()
@@ -358,6 +376,11 @@ fun GuidedGridContent(
     val roomsState = rememberUpdatedState(rooms)
     val selected = rooms.firstOrNull { it.id == selectedId }
 
+    // ⭐ The parking row, and the one edit that ends it. See [roomsUnplaced]. Keyed on the room list
+    // the screen opened with, so arriving from a second scan parks again rather than staying live.
+    val arrivedAs = remember(roomsUnplaced) { rooms.map { it.id to it.rect() } }
+    val parked = roomsUnplaced && rooms.map { it.id to it.rect() } == arrivedAs
+
     // ⭐ THE HOME'S TRUE SHAPE (docs/SCORE-ACCURACY-CAVEATS.md #1). Every empty patch inside the
     // home's outline is a question the app must ASK rather than answer for itself: it is either a
     // part of the home nobody has drawn a room on, or the missing corner of an L. Answering it
@@ -372,8 +395,13 @@ fun GuidedGridContent(
     // any removable gap meant that, after a scan, the app asked whether a home was cut off in the
     // north-west while pointing at the loose space beside its master bedroom. Neither answer to that
     // question was right, because the question was wrong. See `Gap.looksLikeMissingCorner`.
-    val pendingGap = undecided.firstOrNull { it.looksLikeMissingCorner }
-    val enclosedGap = undecided.firstOrNull { it.enclosed }
+    // ⭐⭐ …and never at all while the rooms are still PARKED. The home's shape is measured against
+    // the box around whatever is placed, and a parking row is not a home: on the owner's flat that
+    // box was the top two rows of the grid, so the app offered to cut away the leftovers of the row
+    // itself and called them "the south" while they sat directly under the word NORTH. See
+    // [roomsUnplaced].
+    val pendingGap = if (parked) null else undecided.firstOrNull { it.looksLikeMissingCorner }
+    val enclosedGap = if (parked) null else undecided.firstOrNull { it.enclosed }
     // ⚠ Rooms drawn with space between them leave ONE gap that wraps all the way round them, and
     // cutting that would shatter the home into pieces — so it is neither askable nor a courtyard, and
     // it used to fall through to a line inviting the user to "leave that part empty and we'll ask
@@ -381,7 +409,7 @@ fun GuidedGridContent(
     // is the whole reason for looking. It now gets its own sentence.
     // Now also covers a gap that COULD be cut but is not corner-shaped: unlabelled floor between
     // rooms, which belongs to the home whether or not anyone draws a room on it. Told, not asked.
-    val unaskableGap = undecided.any { !it.enclosed && !it.looksLikeMissingCorner }
+    val unaskableGap = !parked && undecided.any { !it.enclosed && !it.looksLikeMissingCorner }
     // The outline as it now stands, for drawing. Null ⇒ a plain rectangle, drawn as one.
     val homeRing = remember(rooms, cutOutCells) {
         if (cutOutCells.isEmpty()) null
@@ -434,7 +462,16 @@ fun GuidedGridContent(
             .padding(VastuTheme.spacing.s6),
     ) {
         VText(
-            if (doorMode) "Mark your front door" else "Place your rooms",
+            when {
+                doorMode -> "Mark your front door"
+                // ⭐ A scan that could not work out WHERE the rooms go parks them in a row of equal
+                // squares. That row is not a floor plan and this screen must not read as though it
+                // were: "Place your rooms" over a strip of identical boxes looks exactly like a
+                // finished plan that has gone wrong. The owner was handed that screen for his own
+                // flat and could not tell whether the app had read it or given up.
+                parked -> "These rooms aren't placed yet"
+                else -> "Place your rooms"
+            },
             style = VastuTheme.type.h2, color = colors.textPrimary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -446,6 +483,8 @@ fun GuidedGridContent(
                 selected != null -> "Drag the room to move it, or pull a corner to resize."
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
+                parked -> "We read these off your plan but couldn't tell where they go, so they're " +
+                    "waiting in a row. Drag each one to where it really is."
                 else -> "Touch a room and slide to move it, or add another below."
             },
             style = VastuTheme.type.body, color = colors.textSecondary,
@@ -870,6 +909,7 @@ fun GuidedGridContent(
                 cutCount = cutOutCells.size,
                 cutZones = remember(cutOutCells, rooms) { cutZoneNames(rooms, cutOutCells) },
                 unaskableGap = unaskableGap,
+                parked = parked,
                 onCut = onCutGap,
                 onKeep = onKeepGap,
                 onReset = onResetShape,
@@ -1017,12 +1057,21 @@ private fun ShapeSection(
     cutCount: Int,
     cutZones: String,
     unaskableGap: Boolean,
+    /** Rooms still sitting in the parking row a scan left them in — see `roomsUnplaced`. */
+    parked: Boolean = false,
     onCut: (Set<Cell>) -> Unit,
     onKeep: (Set<Cell>) -> Unit,
     onReset: () -> Unit,
 ) {
     val colors = VastuTheme.colors
     when {
+        // Nothing here can be answered honestly yet: the shape of a parking row is not the shape of
+        // a home. Say what has to happen first, rather than going quiet — silence on this screen is
+        // what made the app look as though it had missed something obvious.
+        parked -> VText(
+            "Once your rooms are where they belong, we'll ask about any missing corners.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
+        )
         pending != null -> VastuCard(accent = colors.primary) {
             VText(
                 "Is this part of your home?",

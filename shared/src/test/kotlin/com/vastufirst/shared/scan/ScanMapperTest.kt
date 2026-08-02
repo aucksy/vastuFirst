@@ -357,6 +357,95 @@ class ScanMapperTest {
     }
 
     @Test
+    fun `⭐⭐ the same rooms PLACE when the plan prints their sizes`() {
+        // ⚠ THE GATE THAT THREW AWAY THE OWNER'S OWN FLAT. Fourteen rooms is an ordinary Indian
+        // apartment — three balconies, a utility, a vestibule, a passage — and the room count binned
+        // every one of them for being over a limit whose own comment called the cut "a judgement,
+        // not a measurement".
+        //
+        // Where the rooms state their own dimensions, the reader's rectangles decide only which room
+        // is left of which — the thing it gets right — and every measurement comes from text it
+        // reads at ~95 %. So the identical layout that is refused above is trusted here, and the ONLY
+        // difference is that these captions carry the size the plan prints.
+        val names = listOf(
+            "LIVING ROOM", "KITCHEN", "MASTER BEDROOM", "BEDROOM", "TOILET", "BATH", "POOJA",
+            "DINING", "STUDY", "STORE", "BALCONY", "UTILITY", "CORRIDOR", "GUEST ROOM",
+        )
+        val boxes = names.mapIndexed { i, n ->
+            ScanBox(
+                label = n,
+                x = (i % 5) * 0.2, y = (i / 5) * 0.33,
+                w = 0.10 + (i % 4) * 0.03, h = 0.15 + (i % 3) * 0.08,
+                confidence = 0.9,
+                printedSize = "${10 + i}'-0\" X ${8 + (i % 5)}'-0\"",
+            )
+        }
+        val out = ScanMapper.map(draft(*boxes.toTypedArray()))
+        assertIs<ScanOutcome.Placed>(out, "rooms that state their own sizes are placeable")
+    }
+
+    @Test
+    fun `⭐ a sheet that names a lift is a whole floor, not one home`() {
+        // The distinction the room count was proxying for, said outright. Measured across the
+        // 30-plan corpus: every sheet naming a lift is a shared floor plate, and no single-home plan
+        // names one — including three genuine 21-room villas.
+        val out = ScanMapper.map(
+            draft(
+                ScanBox("LIVING ROOM", 0.0, 0.0, 0.4, 0.4, 0.9, "12'-0\" X 14'-0\""),
+                ScanBox("KITCHEN", 0.4, 0.0, 0.3, 0.3, 0.9, "9'-0\" X 11'-0\""),
+                ScanBox("MASTER BEDROOM", 0.0, 0.4, 0.4, 0.4, 0.9, "13'-0\" X 12'-0\""),
+                ScanBox("TOILET", 0.4, 0.4, 0.2, 0.2, 0.9, "5'-0\" X 7'-0\""),
+                ScanBox("LIFT", 0.7, 0.0, 0.2, 0.2, 0.9, "6'-0\" X 6'-0\""),
+            ),
+        )
+        val assisted = assertIs<ScanOutcome.Assisted>(out)
+        assertEquals(AssistReason.FLOOR_PLATE, assisted.reason)
+        assertTrue(assisted.rooms.isNotEmpty(), "the room list still survives — that is the product")
+        assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
+    }
+
+    @Test
+    fun `⭐⭐ a room past the bottom of the page is shrunk onto it, never deleted`() {
+        // ⚠ The reader routinely returns rooms outside the unit square — it lays out a template and
+        // the template runs long. Three of the fifteen on the owner's own sheet did. Cutting them
+        // off at the edge DELETED one of his three balconies outright and flattened his utility to
+        // a third of its depth, before anything else in the mapper had run — and a room that never
+        // arrives is one the user cannot correct.
+        val out = ScanMapper.map(
+            draft(
+                box("LIVING ROOM", 0.05, 0.05, 0.4, 0.3),
+                box("KITCHEN", 0.5, 0.05, 0.3, 0.3),
+                box("MASTER BEDROOM", 0.05, 0.4, 0.4, 0.3),
+                box("TOILET", 0.5, 0.4, 0.2, 0.2),
+                box("BALCONY", 0.05, 1.05, 0.3, 0.15),
+            ),
+        )
+        val placed = assertIs<ScanOutcome.Placed>(out)
+        assertTrue(
+            placed.rooms.any { it.type == RoomType.BALCONY },
+            "the room past the bottom of the page must be shrunk onto it, not amputated: " +
+                placed.rooms.map { it.label },
+        )
+    }
+
+    @Test
+    fun `shrinking to the page leaves a reply that already fits exactly as it was`() {
+        // The safety of the change above: one scale and one offset applied to every room cancel
+        // exactly against a grid framed on the rooms' own bounding box, so this must be a literal
+        // no-op for anything already inside the page.
+        val rooms = goodDraft().rooms
+        assertEquals(rooms, ScanMapper.shrinkToPage(rooms))
+    }
+
+    @Test
+    fun `a reply nowhere near the page is left to the clamp`() {
+        // Beyond twice the page it is not a layout at all, and pretending otherwise would let one
+        // absurd rectangle shrink a whole home to a corner.
+        val rooms = listOf(box("LIVING ROOM", 0.0, 0.0, 0.5, 0.5), box("KITCHEN", 0.0, 8.0, 0.5, 0.5))
+        assertEquals(rooms, ScanMapper.shrinkToPage(rooms))
+    }
+
+    @Test
     fun `⭐ the gate is room count, and coverage decides nothing`() {
         // Guards the correction that cost this feature a wrong answer in BOTH directions. Coverage
         // was the gate until the model's rectangles were drawn back over real plans and looked at:

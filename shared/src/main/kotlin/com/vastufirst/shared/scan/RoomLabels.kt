@@ -259,6 +259,33 @@ object RoomLabels {
     }
 
     /** True when this caption names a whole dwelling unit rather than a room (`UNIT-1`, `FLAT B`). */
+    /**
+     * ⭐ Words that only appear on a sheet showing a whole FLOOR, not one home: a lift, a lift lobby,
+     * a lift well.
+     *
+     * ⚠ Why this replaced counting rooms. The Placed/Assisted gate used to be "more than twelve rooms
+     * and we don't trust the geometry", calibrated by eye on six overlays where good reads had 10–11
+     * rooms and bad ones 15–24. The owner's own flat has **fifteen** named spaces — three balconies,
+     * a utility, a vestibule, a passage and a dressing area — which is entirely ordinary for an
+     * Indian apartment, and it was thrown out on the count alone. Its own code comment admitted the
+     * cut between 11 and 15 was "a judgement, not a measurement".
+     *
+     * A lift is the thing the eye was actually picking up. Measured across the 30-plan corpus, every
+     * sheet naming a lift is a shared floor plate (24, 25 and 17 spaces, thick with ducts and
+     * lobbies); no single-home plan names one, including three genuine 21-room villas. It says the
+     * distinction outright instead of proxying it through a number.
+     *
+     * ⚠ A duct alone is deliberately NOT enough — flats print a duct too, and one of the owner's
+     * would have been condemned by it.
+     */
+    private val FLOOR_PLATE_WORDS = listOf("LIFT", "ELEVATOR")
+
+    /** True when this caption names a lift — see [FLOOR_PLATE_WORDS]. */
+    fun isFloorPlateLabel(raw: String): Boolean {
+        val cleaned = clean(raw)
+        return FLOOR_PLATE_WORDS.any { cleaned.contains(it) }
+    }
+
     fun isUnitLabel(raw: String): Boolean {
         val words = clean(raw).split(' ').filter { it.isNotEmpty() }
         if (words.isEmpty()) return false

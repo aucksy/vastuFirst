@@ -62,6 +62,34 @@ data class ScanBox(
     val w: Double = 0.0,
     val h: Double = 0.0,
     val confidence: Double = 0.0,
+    /**
+     * ⭐⭐ THE SIZE THE PLAN PRINTS BESIDE THIS ROOM, copied verbatim — `3.72m X 4.50m ( 12'-2" x
+     * 14'-9" )`. Empty when the drawing prints none, which is a real and common case.
+     *
+     * ⚠ It sits LAST despite belonging beside [label], and that is deliberate: every recorded
+     * fixture and pinned test in this repo builds a `ScanBox` positionally, and inserting a String
+     * in the middle would have silently rewritten what a dozen of them mean. A trailing parameter
+     * with a default cannot.
+     *
+     * ⚠ This field exists because of the owner's own flat. The reader returned fifteen rectangles
+     * with only three distinct sizes between them, every coordinate on a tidy 0.05 lattice, and
+     * three rooms sitting off the bottom of the page — a plausible-looking template, not a
+     * measurement. Half the real corpus comes back the same way. **The rectangles are an
+     * arrangement, never a measurement, and no wording makes them one**: a prompt that explicitly
+     * forbids round coordinates was tried and changed nothing except pushing more boxes off the page.
+     *
+     * What DOES work is asking for the printed text, because reading text is the one thing this
+     * model does at ~95 %. His sheet prints a size under all fifteen captions and we were capturing
+     * **none of them**; asked for it directly the reader returned **all fifteen**, thirteen matching
+     * the sheet exactly. Across nine real plans: 116 of 129 rooms — and on the one plan that prints
+     * no sizes at all it correctly returned none rather than inventing them.
+     *
+     * Kept SEPARATE from [label] rather than appended to it: the confirmation screen shows the label
+     * to the user ("we read 'MASTER BEDROOM' as a Master bedroom"), and a caption with two
+     * measurement systems bolted on is not something to put in front of someone. Older recorded
+     * replies carry the dimensions inside the label instead, and [RoomDimensions.of] reads both.
+     */
+    @SerialName("size") val printedSize: String = "",
 )
 
 /**
@@ -140,11 +168,20 @@ data class ScannedRoom(
 /** Why the geometry was thrown away and the rooms handed over unplaced. */
 enum class AssistReason {
     /**
-     * ⭐ Too many rooms for the model to keep track of — in practice an apartment floor plate rather
-     * than a single home. Measured by drawing its rectangles back over real plans and looking:
-     * 10–11 rooms placed well, 15–24 placed badly, with no overlap between the two.
+     * ⭐ Too many rooms for the model to keep track of, on a plan that prints no sizes for us to
+     * measure from. Measured by drawing its rectangles back over real plans and looking: 10–11 rooms
+     * placed well, 15–24 placed badly.
+     *
+     * ⚠ No longer the first thing checked — see [ScanMapper.SIZED_SHARE_TO_TRUST]. Counting rooms
+     * threw out the owner's own fifteen-space flat, which is an ordinary Indian apartment.
      */
     TOO_MANY_ROOMS,
+
+    /**
+     * ⭐ The sheet names a lift, so it shows a whole floor of a building rather than one home. The
+     * rooms are still worth handing over; where they sit on the sheet is not.
+     */
+    FLOOR_PLATE,
 
     /** Every rectangle came back the same size — invented, not measured (§3j D2). */
     UNIFORM_BOXES,

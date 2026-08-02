@@ -179,10 +179,15 @@ private fun DoneBody(
             title = "We found ${outcome.rooms.size} rooms",
             body = when (outcome.reason) {
                 AssistReason.TOO_MANY_ROOMS ->
-                    "We read every room name clearly. But this plan has a lot of rooms — that's " +
-                        "usually a whole floor of flats rather than one home — and on plans this " +
-                        "busy we can't tell where each room sits. So we haven't guessed. They're " +
-                        "waiting on the grid in a row: drag each one to where it really is."
+                    "We read every room name clearly. But this plan has a lot of rooms and doesn't " +
+                        "print their sizes, so we can't tell where each one sits. We haven't " +
+                        "guessed. They're waiting on the grid in a row: drag each one to where it " +
+                        "really is."
+                AssistReason.FLOOR_PLATE ->
+                    "We read every room name clearly. But this sheet shows a whole floor of the " +
+                        "building — it has a lift on it — rather than one home, so we can't tell " +
+                        "which parts are yours. They're waiting on the grid in a row: drag the ones " +
+                        "that are yours to where they really are."
                 AssistReason.TOO_FEW_PLACED ->
                     "We could read the room names clearly, but not where they sit on the plan — so " +
                         "we haven't guessed. They're waiting on the grid in a row: drag each one to " +

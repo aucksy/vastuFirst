@@ -64,7 +64,31 @@ object RecordedScans {
      */
     const val DENSE = "real-dense"
 
-    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE)
+    /**
+     * ⭐⭐ **THE OWNER'S OWN FLAT, and the first recorded reply for one of his plans.**
+     *
+     * ⚠ Every scan fixture before this one was a plan somebody rebuilt by hand with plausible noise
+     * added, which is exactly the gap the owner called out: a fix validated against a re-typing of a
+     * plan has been validated against a guess about the reader, not against the reader. This is the
+     * live API's answer to his sheet, captured 2 August 2026 and pasted in unedited.
+     *
+     * It is the case the whole release is built on, and it says three things at once:
+     *
+     *  - **the names are perfect** — all fifteen, in the order a person reads the sheet;
+     *  - **every room carries the size the plan PRINTS**, thirteen of them matching it exactly — and
+     *    under the previous prompt we captured **none of them**;
+     *  - **the rectangles are a template, not a measurement** — four distinct x positions for fifteen
+     *    rooms, every coordinate on a 0.05 lattice, `planConfidence` 0.95 as ever. Half the 30-plan
+     *    corpus comes back the same way, and no wording fixes it: a prompt explicitly forbidding
+     *    round coordinates was tried and only pushed more rooms off the page.
+     *
+     * Fifteen rooms is an ordinary Indian apartment — three balconies, a utility, a vestibule, a
+     * passage, a dressing area — and the old room-count gate threw the whole thing away for being
+     * one room over a limit its own comment called "a judgement, not a measurement".
+     */
+    const val OWNER_FLAT = "owner-flat"
+
+    val ids: List<String> = listOf(CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT)
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {

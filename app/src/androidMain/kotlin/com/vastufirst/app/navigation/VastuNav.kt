@@ -165,6 +165,11 @@ fun VastuNavHost() {
                         planVm.updateRooms(emptyList())
                         planVm.updateGrid(cols, rows)
                         planVm.updateRooms(toGridRooms(outcome.scannedRooms(), cols, rows))
+                        // ⭐ Tell the editor whether these rooms are a PLAN or a parking row. Without
+                        // it the grid says "Place your rooms" over a strip of identical squares and
+                        // then asks whether the leftovers of that strip are part of the home — which
+                        // is the screen the owner was handed for his own flat.
+                        planVm.markRoomsUnplaced(outcome !is com.vastufirst.shared.scan.ScanOutcome.Placed)
                         nav.go(Routes.GUIDED_GRID)
                     },
                     onDrawInstead = { nav.go(Routes.GUIDED_GRID) },

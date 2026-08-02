@@ -12,12 +12,18 @@ Return ONLY JSON:
 {"planType":"2D_PLAN|3D_RENDER|NOT_A_PLAN",
  "hasRoomLabels":<true|false>,
  "northMarked":<true|false>,
- "rooms":[{"label":"<text exactly as printed>","x":<0..1>,"y":<0..1>,"w":<0..1>,"h":<0..1>,"confidence":<0..1>}],
+ "rooms":[{"label":"<room name exactly as printed>",
+           "size":"<the dimensions printed with that room, copied exactly, e.g.
+                    3.72m X 4.50m or 12'-2\" x 14'-9\" or 2950X4200 - \"\" if none is printed>",
+           "x":<0..1>,"y":<0..1>,"w":<0..1>,"h":<0..1>,"confidence":<0..1>}],
  "planConfidence":<0..1>}
 
 Coordinates are fractions of the building's OUTER WALL, origin at its top-left.
 x,y = the room's top-left corner; w,h = its width and height. Ignore the page
 margin, title block, branding and the north arrow.
 Work from the printed ROOM LABELS and the walls around each one.
+Most Indian plans print each room's dimensions beside its name. Copy that text into "size"
+character for character. Do not convert it, do not calculate it, and never invent one - leave
+"size" empty if the drawing does not print it.
 Do NOT report doors, windows, furniture or dimension text as rooms.
 If planType is not "2D_PLAN", return an empty rooms list.

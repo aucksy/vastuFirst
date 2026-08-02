@@ -128,6 +128,24 @@ class NewPlanViewModel(
     var restoredFromDraft by mutableStateOf(false)
         private set
 
+    /**
+     * ⭐ True when the rooms on the grid came off a scan that could not work out WHERE they go, so
+     * they are parked in a row of equal squares rather than drawn as a plan.
+     *
+     * The editor needs to know because a parking row is not a home: it must not be titled "Place
+     * your rooms" as though it were finished, and the app must not ask shape questions about the box
+     * around it. See `GuidedGridContent`'s `roomsUnplaced`.
+     *
+     * ⚠ Deliberately NOT persisted with the draft. A home brought back after Android reclaimed the
+     * app is whatever the user last left, and re-parking it a day later would be the app forgetting
+     * work they had done.
+     */
+    var roomsUnplaced by mutableStateOf(false)
+        private set
+
+    /** Set by the scan flow as it hands its rooms over. Cleared by [startAgain]. */
+    fun markRoomsUnplaced(unplaced: Boolean) { roomsUnplaced = unplaced }
+
     init {
         // Bring back the home that was being drawn when Android last reclaimed the app. A draft row
         // only ever exists for a home that was NEVER saved (it is deleted the moment one becomes a
@@ -382,6 +400,7 @@ class NewPlanViewModel(
         gridCols = GRID
         gridRows = GRID
         restoredFromDraft = false
+        roomsUnplaced = false
         _analysis.value = null
         viewModelScope.launch { withContext(NonCancellable) { repo.clearDraft() } }
     }

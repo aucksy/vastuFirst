@@ -76,10 +76,38 @@ object RoomDimensions {
         Regex("(?<![\\d.'\"′″])(\\d{2,5})\\s*(?:MM|CM)?\\s*[X×]\\s*(\\d{2,5})\\s*(?:MM|CM)?(?!\\d)")
 
     /**
+     * A metre pair as Indian sheets print it: `3.72m X 4.50m`, `(3.17mX0.90m)+(1.51mX0.40m)`.
+     *
+     * ⚠ The `M` is required after **both** numbers, and that is the whole safety of this rule. A
+     * looser version that accepted `12 X 14 M` would also read `12X14` — a foot pair — as a
+     * twelve-metre room. Real sheets print the unit on each number, so demanding it costs nothing
+     * and removes the ambiguity entirely.
+     *
+     * This was added because the owner's own plan prints metres first and feet second on every
+     * caption. The feet half happens to be there too, so it parsed by luck; a metres-only sheet
+     * would have gone through with no size at all.
+     */
+    private val PAIR_METRES =
+        Regex("(?<![\\d.])(\\d{1,2}(?:\\.\\d{1,3})?)\\s*M\\s*[X×]\\s*(\\d{1,2}(?:\\.\\d{1,3})?)\\s*M(?![A-Z])")
+
+    private const val MM_PER_METRE = 1000.0
+
+    /**
      * Below this, a bare pair reads as FEET (`12X14`); at or above it, as millimetres
      * (`6750X4350`). No real room is 100 feet across, and none is 99 mm.
      */
     private const val FEET_IF_UNDER = 100
+
+    /**
+     * The size for one room the reader returned, preferring the field the plan printed.
+     *
+     * ⭐ [ScanBox.printedSize] is the whole point — see the note on that field. It falls back to the
+     * label because the recorded replies this feature was measured against predate the field and
+     * carry the dimensions inside the caption (`BEDROOM 6750X4350`), and a fixture that stops
+     * working is a fixture that stops proving anything.
+     */
+    fun of(box: ScanBox): PrintedSize? =
+        box.printedSize.takeIf { it.isNotBlank() }?.let { parse(it) } ?: parse(box.label)
 
     fun parse(label: String): PrintedSize? {
         val s = label.uppercase()
@@ -88,6 +116,12 @@ object RoomDimensions {
             val a = feetInches(m.groupValues[1], m.groupValues[2], m.groupValues[3])
             val b = feetInches(m.groupValues[4], m.groupValues[5], m.groupValues[6])
             return if (a > 0.0 && b > 0.0) PrintedSize(a * MM_PER_FOOT, b * MM_PER_FOOT) else null
+        }
+
+        PAIR_METRES.find(s)?.let { m ->
+            val a = m.groupValues[1].toDoubleOrNull() ?: return null
+            val b = m.groupValues[2].toDoubleOrNull() ?: return null
+            return if (a > 0.0 && b > 0.0) PrintedSize(a * MM_PER_METRE, b * MM_PER_METRE) else null
         }
 
         PAIR_PLAIN.find(s)?.let { m ->

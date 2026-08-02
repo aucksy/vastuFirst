@@ -49,8 +49,58 @@ object ScanMapper {
     const val DEFAULT_GRID = MAX_GRID
 
     /**
-     * ⭐⭐ The Placed/Assisted gate: **how many rooms the plan has**. Above this, the geometry is not
-     * trusted and the rooms are handed over unplaced.
+     * ⭐⭐ How many of a reply's rooms must carry a size the PLAN PRINTED before its arrangement is
+     * trusted, however many rooms there are.
+     *
+     * ⚠ This is the gate that let the owner's own flat through, and the reasoning is the whole
+     * architecture in one line: **the rectangles are an arrangement and the printed text is the
+     * measurement.** Where every room states its own size, the reader's stock rectangles decide only
+     * which room is left of which — the thing it demonstrably gets right — and every actual
+     * dimension comes from text it reads at ~95 %. Counting rooms was protecting against bad
+     * rectangles; with the sizes present there is far less for it to protect.
+     *
+     * Two thirds, and nothing in the corpus sits anywhere near it: real plans come back at 0 %
+     * (a sheet that prints no sizes at all) or 85–100 %. It is a cliff, not a tuned dial.
+     */
+    const val SIZED_SHARE_TO_TRUST = 2.0 / 3.0
+
+    /**
+     * …and an absolute ceiling that no reply passes, sizes or not.
+     *
+     * ⚠ Stated as a judgement, because that is what it is. The largest genuine single home in the
+     * corpus has 21 named spaces and the smallest floor plate 17, so no number separates them
+     * cleanly and this one does not try to. It is a backstop against a reply so long that its
+     * arrangement cannot be meaningful — not a claim about where houses end and buildings begin.
+     */
+    const val MAX_ROOMS_EVER = 20
+
+    /**
+     * ⭐ A reply may run this far past the edge of the page before we stop treating it as a layout.
+     *
+     * ⚠ The reader routinely returns rooms outside the unit square — three of the fifteen on the
+     * owner's plan — because it is laying out a template rather than measuring, and the template
+     * runs long. [sanitise] used to CUT those rooms off at the edge, which on his sheet deleted one
+     * of his three balconies outright and flattened the utility to a third of its depth before
+     * anything else had a chance to run. A deleted room changes the footprint the engine scores and
+     * the user never knew to look for it.
+     *
+     * Shrinking the whole reply uniformly instead is **provably neutral on everything that already
+     * fits**: the grid is framed on the rooms' own bounding box and fitted to it uniformly, so a
+     * single scale and offset applied to every room cancels out exactly. It changes nothing except
+     * that rooms stop being amputated by an edge that was never a wall.
+     *
+     * Twice the page is generous on purpose — the observed overflow is 1.25× — and beyond it the
+     * reply is not a layout at all, so [sanitise]'s clamp deals with it as before.
+     */
+    const val MAX_OVERFLOW = 2.0
+
+    /**
+     * ⭐⭐ The Placed/Assisted gate when the plan prints NO sizes: **how many rooms it has**. Above
+     * this, the geometry is not trusted and the rooms are handed over unplaced.
+     *
+     * ⚠ No longer the first gate — see [SIZED_SHARE_TO_TRUST] and [RoomLabels.isFloorPlateLabel].
+     * It now applies only to a reply we have no printed measurements for, which is the case it was
+     * always really about: nothing but the reader's own rectangles, and those degrade with count.
      *
      * **This replaced a coverage threshold, and the replacement was forced by looking at pictures.**
      * (E3, `tools/scan-eval/exp-place.py`; overlays in `out/overlay/`.) Until then, no one had ever
@@ -198,8 +248,12 @@ object ScanMapper {
         val dropped = ArrayList<DroppedSpace>()
 
         // ---- 1. sanitise geometry ------------------------------------------------------------
-        val clean = ArrayList<Pair<ScanBox, MutableSet<RoomFlag>>>(draft.rooms.size)
-        for (b in draft.rooms) {
+        // ⭐ …but SHRINK a reply that overruns the page before cutting anything off it. See
+        // [MAX_OVERFLOW]: the clamp below was deleting whole rooms off the bottom of the owner's
+        // plan, and a room that never arrives is one the user cannot correct.
+        val fitted = shrinkToPage(draft.rooms)
+        val clean = ArrayList<Pair<ScanBox, MutableSet<RoomFlag>>>(fitted.size)
+        for (b in fitted) {
             val flags = mutableSetOf<RoomFlag>()
             val c = sanitise(b, flags)
             if (c == null) {
@@ -257,14 +311,28 @@ object ScanMapper {
             .sortedWith(compareBy({ it.box.y }, { it.box.x }))
             .map { ScannedRoom(it.type, it.box.label, rect = null, flags = it.flags.toSet()) }
 
-        // ---- 6. the two objective gates (L2 is a bonus, never a promise) -----------------------
+        // ---- 6. the objective gates (L2 is a bonus, never a promise) ---------------------------
         // ⚠ Coverage is deliberately NOT a gate — see [MAX_TRUSTED_ROOMS]. It is still measured and
         // carried in the notes, because it is worth being able to answer "why did it do that?", but
         // it decides nothing.
         if (rooms.size >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
             return ScanOutcome.Assisted(identified, AssistReason.UNIFORM_BOXES, notes())
         }
-        if (rooms.size > MAX_TRUSTED_ROOMS) {
+        // ⭐ A sheet that names a LIFT is a whole floor, not one home — the distinction the room
+        // count was proxying for, said outright. Checked against everything the reader read,
+        // including the spaces already dropped as not habitable, because a lift is exactly the kind
+        // of space that gets dropped.
+        if (draft.rooms.any { RoomLabels.isFloorPlateLabel(it.label) }) {
+            return ScanOutcome.Assisted(identified, AssistReason.FLOOR_PLATE, notes())
+        }
+        if (rooms.size > MAX_ROOMS_EVER) {
+            return ScanOutcome.Assisted(identified, AssistReason.TOO_MANY_ROOMS, notes())
+        }
+        // ⭐⭐ …and below that ceiling the room count only decides a plan whose rooms state no sizes.
+        // Where they do, the reader's rectangles supply the arrangement and its own printed text
+        // supplies every measurement — see [SIZED_SHARE_TO_TRUST].
+        val sized = rooms.count { RoomDimensions.of(it.box) != null }
+        if (sized < rooms.size * SIZED_SHARE_TO_TRUST && rooms.size > MAX_TRUSTED_ROOMS) {
             return ScanOutcome.Assisted(identified, AssistReason.TOO_MANY_ROOMS, notes())
         }
 
@@ -289,7 +357,7 @@ object ScanMapper {
         //     `sanitise` exists to guarantee and which that injection now fails outright.
         val frame = frameOf(rooms.map { it.box })
             ?: return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
-        val (cols, rows) = gridFor(homeAspect(frame, imageAspect))
+        val (cols, rows) = widenForWidest(gridFor(homeAspect(frame, imageAspect)), rooms.map { it.box })
         // ⭐ Snapped TOGETHER, not one at a time — see [WALL_TOLERANCE]. Rooms that share a wall on
         // the plan must share a grid line here, or the home arrives as a scatter of islands.
         val rects = snapAll(rooms.map { it.box }, frame, imageAspect, cols, rows)
@@ -372,7 +440,7 @@ object ScanMapper {
         cols: Int,
         rows: Int,
     ): List<Pair<Candidate, CellRect>> {
-        val printed = snapped.map { RoomDimensions.parse(it.first.box.label) }
+        val printed = snapped.map { RoomDimensions.of(it.first.box) }
         val cellTotal = snapped.indices.filter { printed[it] != null }
             .sumOf { (snapped[it].second.w * snapped[it].second.h).toDouble() }
         val printedTotal = printed.filterNotNull().sumOf { it.area }
@@ -565,6 +633,68 @@ object ScanMapper {
         } else {
             (MAX_GRID * a).roundToInt().coerceIn(MIN_GRID, MAX_GRID) to MAX_GRID
         }
+    }
+
+    /**
+     * ⭐ A reply that overruns the page is SHRUNK to fit it, uniformly. See [MAX_OVERFLOW] for why
+     * this replaced cutting the overrun off, and for why it cannot disturb a reply that already fits.
+     *
+     * One scale for both axes, so the arrangement is carried across untouched — a per-axis fit would
+     * squash the home in whichever direction the reader happened to overrun, which is the same class
+     * of distortion the printed sizes exist to remove.
+     */
+    internal fun shrinkToPage(boxes: List<ScanBox>): List<ScanBox> {
+        val real = boxes.filter {
+            it.x.isFinite() && it.y.isFinite() && it.w.isFinite() && it.h.isFinite()
+        }
+        if (real.isEmpty()) return boxes
+        val x0 = min(0.0, real.minOf { it.x })
+        val y0 = min(0.0, real.minOf { it.y })
+        val x1 = max(1.0, real.maxOf { it.x + it.w })
+        val y1 = max(1.0, real.maxOf { it.y + it.h })
+        val span = max(x1 - x0, y1 - y0)
+        // Already inside the page, or so far outside that it is not a layout: leave it exactly alone
+        // and let [sanitise] do what it has always done.
+        if (span <= 1.0 || span > MAX_OVERFLOW) return boxes
+        val s = 1.0 / span
+        return boxes.map {
+            if (!it.x.isFinite() || !it.y.isFinite() || !it.w.isFinite() || !it.h.isFinite()) it
+            else it.copy(x = (it.x - x0) * s, y = (it.y - y0) * s, w = it.w * s, h = it.h * s)
+        }
+    }
+
+    /**
+     * ⭐ Widen the drawing grid until the home's BIGGEST room can be drawn the way its own plan
+     * prints it. Never narrows, never exceeds [MAX_GRID], and does nothing at all unless the sizes
+     * printed on the plan prove the grid is too narrow to be honest.
+     *
+     * ⚠ Measured on the owner's flat. The reader's rectangles put fifteen rooms at four distinct
+     * x positions, so the home's apparent proportions came out far narrower than the flat really is
+     * and the grid was built four columns wide. His living/dining is printed 7.25 m × 4.30 m —
+     * plainly wider than deep — and in four columns there was no way to draw it that way, so it came
+     * out taller than wide and the overlap trimmer ate it. Four of his eleven rooms were drawn
+     * against their own printed shape; widening the grid takes that to two, and it changes no other
+     * plan in the corpus, because on every one of them the grid was already wide enough.
+     *
+     * The room's fair share of the grid is its printed area over the total printed area — arithmetic
+     * on text, so it never asks the model anything (S1 untouched).
+     */
+    internal fun widenForWidest(grid: Pair<Int, Int>, boxes: List<ScanBox>): Pair<Int, Int> {
+        val (cols, rows) = grid
+        val sizes = boxes.mapNotNull { RoomDimensions.of(it) }.filter { it.area > 0.0 }
+        if (sizes.isEmpty()) return grid
+        val total = sizes.sumOf { it.area }
+        val widest = sizes.maxByOrNull { it.area } ?: return grid
+        val ratio = widest.ratio
+        if (!ratio.isFinite() || ratio <= 1.0) return grid   // not a wider-than-deep room; nothing to protect
+        val share = widest.area / total
+        if (!share.isFinite() || share <= 0.0) return grid
+        // The cells that room should get, and how wide it must be to keep its printed proportions.
+        val need = sqrt(cols * rows * share * ratio).roundToInt()
+        // It needs a column to spare, or it fills the grid edge to edge and its neighbours have
+        // nowhere to be — which is the state the trimmer turns into a lost or inverted room.
+        if (need < cols) return grid
+        return min(MAX_GRID, need + 1) to rows
     }
 
     /**

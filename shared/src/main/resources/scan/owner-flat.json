@@ -1,0 +1,175 @@
+{
+  "fixture": "owner-flat",
+  "_note": [
+    "THE OWNER SCANNED THIS FLAT AND WAS HANDED THIRTEEN IDENTICAL SQUARES IN A ROW.",
+    "This is the reply the real Groq API returned for that sheet, captured live on 2 August 2026 and",
+    "pasted here unedited - not a plan rebuilt by hand, which is what every previous scan fixture was.",
+    "It is the first recorded reply for one of the owner's own plans.",
+    "",
+    "What it shows, and why the whole release turns on it:",
+    "  - every room name is right, all fifteen, in the order a person reads the sheet",
+    "  - every room carries the size the plan PRINTS, and thirteen of the fifteen match the sheet exactly",
+    "  - the rectangles are a TEMPLATE, not a measurement: four distinct x positions for fifteen rooms,",
+    "    every coordinate on a 0.05 lattice, and planConfidence 0.95 as always",
+    "Half the 30-plan corpus comes back on the same lattice. No wording fixes it - a prompt forbidding",
+    "round coordinates was tried and only pushed more rooms off the page."
+  ],
+  "model": "qwen/qwen3.6-27b",
+  "imageSize": [
+    646,
+    1400
+  ],
+  "usage": {
+    "queue_time": 0.12344002,
+    "prompt_tokens": 1243,
+    "prompt_time": 0.102566328,
+    "completion_tokens": 1674,
+    "completion_time": 3.338737472,
+    "total_tokens": 2917,
+    "total_time": 3.4413038
+  },
+  "reply": {
+    "planType": "2D_PLAN",
+    "hasRoomLabels": true,
+    "northMarked": true,
+    "unreadable": false,
+    "planConfidence": 0.95,
+    "rooms": [
+      {
+        "label": "BEDROOM-01",
+        "size": "3.72m X 4.50m ( 12'-2\" x 14'-9\" )",
+        "x": 0.05,
+        "y": 0.05,
+        "w": 0.35,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "BALCONY",
+        "size": "2.00m X 1.94m ( 6'-6\" x 6'-4\" )",
+        "x": 0.45,
+        "y": 0.05,
+        "w": 0.25,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "BEDROOM-02",
+        "size": "3.75m X 3.60m ( 12'-3\" x 11'-9\" )",
+        "x": 0.45,
+        "y": 0.2,
+        "w": 0.35,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET-01",
+        "size": "2.50m X 1.85m ( 8'-2\" x 6'-1\" )",
+        "x": 0.05,
+        "y": 0.35,
+        "w": 0.15,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "PASSAGE",
+        "size": "2.07m X 1.20m ( 6'-9\" x 3'-11\" )",
+        "x": 0.2,
+        "y": 0.35,
+        "w": 0.15,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "VESTIBULE",
+        "size": "2.21m X 1.55m ( 7'-3\" x 5'-1\" )",
+        "x": 0.25,
+        "y": 0.45,
+        "w": 0.2,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "COMMON TOILET",
+        "size": "2.50m X 1.85m ( 8'-2\" x 6'-1\" )",
+        "x": 0.55,
+        "y": 0.45,
+        "w": 0.15,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "LIVING/DINING",
+        "size": "7.25m X 4.30m ( 23'-9\" x 14'-1\" )",
+        "x": 0.05,
+        "y": 0.55,
+        "w": 0.45,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "BALCONY",
+        "size": "1.50m X 4.30m ( 4'-11\" x 14'-1\" )",
+        "x": 0.55,
+        "y": 0.55,
+        "w": 0.15,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "KITCHEN",
+        "size": "4.07m X 2.50m ( 13'-4\" x 8'-2\" )",
+        "x": 0.45,
+        "y": 0.7,
+        "w": 0.25,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "UTILITY",
+        "size": "(3.17mX0.90m)+(1.51mX0.40m) (10'-5\"X3'-0\")+(5'-0\"X1'-4\")",
+        "x": 0.45,
+        "y": 0.85,
+        "w": 0.15,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "BALCONY",
+        "size": "(2.00mX1.40m)+(1.50mX0.40m) (6'-6\"X4'-7\")+(4'-11\"X1'-4\")",
+        "x": 0.45,
+        "y": 0.9,
+        "w": 0.15,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "MASTER BEDROOM",
+        "size": "4.50m X 3.30m ( 14'-9\" x 10'-10\" )",
+        "x": 0.05,
+        "y": 0.8,
+        "w": 0.3,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "MBR TOILET",
+        "size": "(2.10mX1.45m)+(1.19mX1.02m) (6'-11\"X4'-9\")+(3'-11\"X3'-4\")",
+        "x": 0.05,
+        "y": 0.7,
+        "w": 0.15,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "DRESS & PASSAGE",
+        "size": "2.24m X 2.66m ( 7'-4\" x 8'-8\" )",
+        "x": 0.2,
+        "y": 0.7,
+        "w": 0.15,
+        "h": 0.15,
+        "confidence": 0.95
+      }
+    ]
+  }
+}

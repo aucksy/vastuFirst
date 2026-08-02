@@ -16,6 +16,7 @@ import kotlinx.coroutines.runBlocking
  *   plan-01-jpeg   downscaled + JPEG      6/8 correct, IoU 0.73                      → Placed
  *   plan-01-photo  simulated phone photo  2/8 correct, IoU 0.37                      → Placed ⚠ known miss
  *   real-dense     real 24-space floor plate, names perfect, rectangles scattered    → Assisted
+ *   owner-flat     ⭐ the OWNER'S own 15-room apartment, every room sized on the sheet → Placed
  *
  * ⭐ `real-dense` is the reply that moved the gate from coverage to room count: its coverage (0.421)
  * is *identical* to a real plan that placed well, so coverage could not tell them apart. See
@@ -80,7 +81,11 @@ class RecordedScanTest {
     fun `⭐ a dense floor plate keeps its rooms and throws away its geometry`() {
         val out = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         val assisted = assertIs<ScanOutcome.Assisted>(out)
-        assertEquals(AssistReason.TOO_MANY_ROOMS, assisted.reason)
+        // ⭐ It now says WHY in the sheet's own terms rather than by counting: this plan prints
+        // `LIFT 1850X1850 (8 PERSON)`, so it is a floor of a building and not one home. That reads
+        // better on screen too — "this sheet shows a whole floor, it has a lift on it" is something
+        // the user can look at their own plan and agree with.
+        assertEquals(AssistReason.FLOOR_PLATE, assisted.reason)
         assertTrue(assisted.rooms.size > ScanMapper.MAX_TRUSTED_ROOMS)
         assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
         // The names it read are excellent, which is the whole point of the Assisted path.
@@ -132,6 +137,8 @@ class RecordedScanTest {
         assertIs<ScanOutcome.Placed>(outcomes[1])
         assertIs<ScanOutcome.Placed>(outcomes[2])
         assertIs<ScanOutcome.Assisted>(outcomes[3])
+        // ⭐ The owner's own flat — a real fifteen-room apartment, placed. See OwnerFlatScanTest.
+        assertIs<ScanOutcome.Placed>(outcomes[4])
         // …and it cycles, so a screen can be driven round the states without re-creating it.
         assertIs<ScanOutcome.Placed>(assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome)
     }

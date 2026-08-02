@@ -14,9 +14,11 @@ import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.scan.PlanImageType
+import com.vastufirst.shared.scan.RecordedScans
 import com.vastufirst.shared.scan.ScanBox
 import com.vastufirst.shared.scan.ScanDraft
 import com.vastufirst.shared.scan.ScanMapper
+import com.vastufirst.shared.scan.ScanOutcome
 import org.junit.runner.RunWith
 import org.junit.Test
 import org.robolectric.RobolectricTestRunner
@@ -230,6 +232,79 @@ class EditorScreenshotTest {
             onNext = {},
             cols = cols,
             rows = rows,
+        )
+    }
+
+    /**
+     * ⭐⭐ THE OWNER'S OWN FLAT, from the reply the real API gave for it.
+     *
+     * ⚠ This is the picture of the thing he complained about, and there was no golden of it because
+     * his plan never reached the editor: fifteen named spaces against a gate of twelve meant every
+     * rectangle was thrown away and the rooms were parked in a row. What must be visible here is a
+     * HOME — bedrooms and a balcony along the top, the living/dining running WIDE across the middle
+     * the way his sheet prints it, the master bedroom at the bottom.
+     *
+     * It is driven from the bundled recorded reply rather than a re-typing of it, so the picture and
+     * the pinned test are looking at the same fifteen rooms.
+     */
+    @Test
+    fun editor_scanned_owner_flat() {
+        captureAcrossMatrix("editor-scanned-owner") { ScannedOwnerFlat() }
+        writeManifestAcrossMatrix("editor-scanned-owner") { ScannedOwnerFlat() }
+    }
+
+    @Composable
+    private fun ScannedOwnerFlat() {
+        val outcome = ScanMapper.map(
+            RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply,
+            imageAspect = 646.0 / 1400.0,
+        )
+        val (cols, rows) = gridForOutcome(outcome)
+        GuidedGridContent(
+            rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = cols,
+            rows = rows,
+            roomsUnplaced = outcome !is ScanOutcome.Placed,
+        )
+    }
+
+    /**
+     * ⭐⭐ THE PARKING ROW — the screen the owner was actually handed, and the one nothing had ever
+     * photographed.
+     *
+     * When a scan cannot work out WHERE the rooms go it parks them as equal single squares in a row.
+     * That row used to sit under the heading "Place your rooms — touch a room and slide to move it",
+     * which reads as a finished plan that has gone wrong; and because the home's shape is measured
+     * against the box around whatever is placed, the app then offered to cut away the leftovers of
+     * the row itself and called them "the south" while they sat directly under the word NORTH.
+     *
+     * What this picture has to show: a heading that says these rooms are NOT placed, an instruction
+     * to drag them, and **no shape question at all**. Rendered from the real 24-space floor plate,
+     * which is a genuine Assisted case.
+     */
+    @Test
+    fun editor_scanned_unplaced() {
+        captureAcrossMatrix("editor-scanned-unplaced") { ScannedButUnplaced() }
+        writeManifestAcrossMatrix("editor-scanned-unplaced") { ScannedButUnplaced() }
+    }
+
+    @Composable
+    private fun ScannedButUnplaced() {
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        val (cols, rows) = gridForOutcome(outcome)
+        GuidedGridContent(
+            rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = cols,
+            rows = rows,
+            roomsUnplaced = true,
         )
     }
 
