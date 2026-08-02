@@ -2950,9 +2950,24 @@ to the caption style `BED RM.-01` — its layout had been two-thirds empty becau
 - **A plan that prints no sizes** still rides entirely on the reader's template and the room-count
   gate. Unchanged, and still the weak case.
 
-## 7. Looked at before tagging (CLAUDE.md §2b)
+## 7. Looked at before tagging (CLAUDE.md §2b) — what the pictures actually showed
 
-The three fixture-driven screens re-render with this release: the owner's flat (now fifteen rooms,
-with the master toilet visible west of the living room), the Gurgaon seven-room flat, and the
-floor-plate room list (which now offers all four of its toilets). Goldens re-recorded and read
-before tagging; ratchet movements compared picture-to-picture, not assumed.
+Downloaded from the build's own artifact and read side-by-side, not asserted:
+
+| picture | what it proved |
+|---|---|
+| the owner's flat, before/after | ⭐ the diff contains exactly ONE red square: his master toilet, restored in the previously empty cell west of the living room. Nothing else moved — the change is surgical. |
+| his confirmation list | "We read 15 rooms", the master toilet listed with its full compound printed size (`(2.10mX1.45m)+(1.19mX1.02m)…`) on its own lines, marked CHECK. |
+| the floor-plate list | "We found 19 rooms" — both attached toilets and the common toilet now offered, the honest lift explanation intact. |
+| the parked-tiles screen | nineteen readable, grabbable tiles; the three new toilets park exactly like their peers. |
+
+**Both ratchet rises were judged from those pictures before being blessed** (21 → 22 and 43 → 46):
+every added finding is one of the new toilet tiles measuring 46.5 dp at the 320 dp width — the
+identical, already-baselined shortfall its 1-cell siblings carry, and the alternative to that
+finding is the deleted room it replaces. The palette-chip slivers and the 3 dp button clip in the
+detail print-out predate this release and sit inside the old counts.
+
+⚠ **Process fact this release paid a build to learn:** the release workflow re-verifies the goldens
+from the TAG's own tree. A tag placed on the commit CI validated — but placed before CI's goldens
+commit landed — re-verifies against the old pictures and fails. The tag must go on a real commit
+that sits ON TOP of the goldens commit, once that commit's own CI run is green.
