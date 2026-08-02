@@ -3183,3 +3183,28 @@ the exact trim keeps at 20 cells and the greedy retraction halves.
 - **A plan printing no sizes at all is unchanged** — template geometry, room-count gate.
 - Corpus totals: 23 placed · 10 assisted · 11 refused of 44 · rooms lost outright 1 (an
   old-prompt recording, unchanged since v0.6.4).
+
+## 7. Looked at before tagging (CLAUDE.md §2b) — the ratchet rise judged from the pictures
+
+The first CI run went red on the render-geometry ratchet: the scanned-demo screen (the clean
+replica of his Green Court sheet) went 43 findings → 52, because its plan is exactly what this
+release changes. Judged from the run's own recorded images — the before/after compare, the
+320 dp-wide variant and the double-font variant — before being blessed, per the v0.6.3 precedent:
+
+- **The before/after compare is the release in one picture.** Before: the balcony a three-row
+  monster, the bedroom floating mid-grid, and a whole card asking "Is this part of your home?
+  The 12 squares marked on the plan are in the west…" — about the dead region the old anchoring
+  itself created. After: the balcony a proportionate strip, the bedroom on the east wall where
+  the sheet puts it, the false question GONE (the honest one-line slack note in its place), and
+  the plot controls visible without scrolling.
+- **The +9 findings, family by family:** six chip-row clips left ("PLOT SIZE" family) and six
+  arrived ("Pooja" chip — the same horizontally-scrolling row, shifted); the toilet's spoken
+  zone renamed West → North-West (the 9-row grid moves its centre band); the one-cell rooms'
+  touch-floor shortfalls persist at new sizes (already-baselined class, v0.6.3's exact
+  precedent); genuinely new: the two-row balcony at 320 dp is 46.5 dp tall — 1.5 dp under the
+  touch floor, priced against the three-row lie it replaces — and room labels clip on one-cell
+  rooms at the extreme configs, where they draw as unlabeled colour pills with the full name
+  still in the accessibility description.
+- **Exactly 11 goldens changed — the eleven configs of that one screen.** Nothing else moved;
+  the owner's-flat screen is untouched, as Q23 promises him. The a11y gate was pre-run locally
+  against the run's own manifests: green, no baseline change.
