@@ -64,26 +64,36 @@ fun toGridRooms(rooms: List<ScannedRoom>, cols: Int, rows: Int): List<GridRoom> 
     }
     // Unplaced: a provisional row of equal tiles, packed across the grid and wrapping down.
     //
-    // ⭐⭐ TWO CELLS WIDE, and that is the whole point of the width. Single cells were the first
-    // version — the smallest thing the editor supports, unmistakably not a floor plan, and unable to
-    // overlap by construction — and looking at the rendered screen killed it: **a one-cell tile is
-    // too narrow to print a room's name**, so twelve rooms arrived as twelve blank coloured squares
-    // under an instruction to "drag each one to where it really is". The user could not tell which
-    // one was the kitchen. The geometry gate counted it too — 203 clipped labels across the
-    // configuration matrix — but it took opening the picture to see what that meant.
+    // ⭐⭐ TWO CELLS EACH WAY, and each dimension was bought with a separate defect that only the
+    // rendered picture showed. Single cells were the first version — the smallest thing the editor
+    // supports, unmistakably not a floor plan, unable to overlap by construction — and it failed
+    // twice over:
     //
-    // Two cells fits every room name the palette offers (Bedroom, Kitchen, Balcony, Corridor,
-    // Entrance all render whole at this width elsewhere in the editor), still reads as a uniform
-    // holding row rather than a plan, and still cannot overlap. On the 10 × 10 grid an unplaced scan
-    // always draws on, that is five per row and up to fifty rooms — far more than any plan produces.
+    //  · **TOO NARROW TO NAME.** Sixteen rooms arrived as sixteen blank coloured squares under an
+    //    instruction to "drag each one to where it really is". The user could not tell which one was
+    //    the kitchen. Two cells across fits every name the palette offers.
+    //  · **TOO SMALL TO TAP.** On a 412 dp screen one cell of a ten-wide plan is about 36 dp against
+    //    a 48 dp touch floor, so every tile was an undersized target — the person this app is built
+    //    for failing to grab the very thing they are being told to drag.
+    //
+    // ⚠ The geometry gate COUNTED the second one: 203 findings across the configuration matrix,
+    // nearly all of them the touch floor. It then ADOPTED that number as this screen's baseline
+    // without complaint, because the ratchet only fails a count that RISES — so a defect present
+    // from a screen's very first render is blessed as normal. Widening alone did not move it; the
+    // HEIGHT was what the floor was failing.
+    //
+    // Two by two still reads as a uniform holding block rather than a plan — equal tiles, and the
+    // heading above says outright that they are not placed — still cannot overlap, and on the 10 × 10
+    // grid an unplaced scan always draws on it holds twenty-five rooms, more than any real plan.
     val w = if (cols >= 2) 2 else 1
+    val h = if (rows >= 2) 2 else 1
     var col = 0
     var row = 0
     return rooms.mapIndexedNotNull { i, r ->
-        if (row >= rows) return@mapIndexedNotNull null   // out of canvas; the rest stay unplaced
-        val cell = CellRect(col, row, w, 1)
+        if (row + h > rows) return@mapIndexedNotNull null   // out of canvas; the rest stay unplaced
+        val cell = CellRect(col, row, w, h)
         col += w
-        if (col + w > cols) { col = 0; row++ }
+        if (col + w > cols) { col = 0; row += h }
         r.toGridRoom(i, cell)
     }
 }

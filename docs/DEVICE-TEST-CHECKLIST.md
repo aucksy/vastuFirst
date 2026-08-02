@@ -494,9 +494,11 @@ squares between all of them, and then ask whether your home was "cut off" somewh
       **not placed yet** and ask you to drag them, and it must **not** ask you anything about your
       home's shape until you have moved them. A row of squares under the heading "Place your rooms"
       is the bug.
-- [ ] **Q10 · On the "not placed yet" screen, can you READ every tile?** Each parked room should
-      show its name — Living, Kitchen, Master, Balcony. If any tile is a blank coloured square you
-      cannot identify, tell me which, because then you cannot know what you are dragging.
+- [ ] **Q10 · On the "not placed yet" screen, can you READ every tile, and can you GRAB it?** Each
+      parked room should show its name — Living, Kitchen, Master, Balcony — and each should be big
+      enough to press and drag first time. They used to be about three-quarters the size a finger
+      needs. If any tile is a blank square, or you find yourself missing it and having to try again,
+      tell me which.
 - [ ] **Q9 · A plan that prints no room sizes should still behave.** Some plans just print names. That
       should still work — the rooms arrive, possibly unplaced, and nothing invented. If you see sizes
       on screen that are not on the paper, that is the worst possible bug and I want it immediately.

@@ -640,9 +640,14 @@ has not been arranged yet.
 
 Room positions remain the AI's best guess and are always confirmed by the customer, unchanged.
 
-**One more thing we only found by looking at the screens.** When the app cannot place the rooms, it
-lays them out as a row of equal tiles for you to drag onto the plan. Those tiles were too small to
-print the room's name — so you'd be looking at a dozen blank coloured squares while being told to
-drag each one where it belongs, with no way to tell which was the kitchen. They are wider now, and
-every name reads. The automated checks had counted this and let it through; only opening the picture
-showed what the number meant.
+**Two more things we only found by looking at the screens.** When the app cannot place the rooms, it
+lays them out as a block of equal tiles for you to drag onto the plan. Those tiles were too small in
+both directions. Too narrow to print the room's name — so you'd be looking at sixteen blank coloured
+squares while being told to drag each one where it belongs, with no way to tell which was the
+kitchen. And too small to reliably tap: each was about three-quarters the minimum size a finger
+needs, which is exactly the wrong failure for an older customer. They are bigger both ways now, and
+every name reads.
+
+The automated checks had already counted the tapping problem and simply accepted it as this screen's
+normal, because they only complain when a number gets worse — and it was there from the very first
+render. Worth knowing: those checks tell us a screen is not broken, never that it is usable.
