@@ -905,7 +905,9 @@ Two defects underneath, each with its own rule:
    the UNSIZED side.** A sized neighbour's own re-shape anchors the shared wall, so it is position
    evidence; an unsized neighbour is template sketch. The slide stays inside the room's own read
    span (never relocation), never resizes (printed proportions kept), needs the entered cells free,
-   and is skipped when both sides are sized or both unsized.
+   and is skipped when both sides are sized or both unsized. Its companion: an UNSIZED room read
+   flush on the side a slide vacated rides the one cell along (the balcony stays on its bedroom),
+   so a slide never sets a neighbour adrift or merges the vacated strips into one giant hole.
 
 Corpus after both rules (the release's final numbers): **orientation 140/148 · dead edge cells
 62 → 32 · rooms lost outright 2 → 1** (a balcony on one old-prompt recording returns) · owner's

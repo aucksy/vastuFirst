@@ -516,7 +516,9 @@ object ScanMapper {
         fun stripFree(self: CellRect, c0: Int, r0: Int, ww: Int, hh: Int) =
             snapped.none { (_, o) -> o !== self && o.overlaps(CellRect(c0, r0, ww, hh)) }
 
-        return snapped.mapIndexed { i, (candidate, rect) ->
+        val slidDown = mutableListOf<CellRect>()   // READ rects of rooms the slide moved — the
+        val slidRight = mutableListOf<CellRect>()  // unsized cascade below re-anchors to them
+        val shaped = snapped.mapIndexed { i, (candidate, rect) ->
             val size = printed[i] ?: return@mapIndexed candidate to rect
             val targetCells = size.area * cellsPerSquareMm
             if (!targetCells.isFinite() || targetCells <= 0.0) return@mapIndexed candidate to rect
@@ -555,10 +557,10 @@ object ScanMapper {
             var row2 = row
             if (col + w == rect.right - 1 && rightFlushSized(rect) && !leftFlushSized(rect) &&
                 stripFree(rect, col + w, row, 1, h)
-            ) col2 = col + 1
+            ) { col2 = col + 1; slidRight += rect }
             if (row + h == rect.bottom - 1 && bottomFlushSized(rect) && !topFlushSized(rect) &&
                 stripFree(rect, col2, row + h, w, 1)
-            ) row2 = row + 1
+            ) { row2 = row + 1; slidDown += rect }
             val freeRight = col2 + w
             val freeBottom = row2 + h
             val right = magnet(freeRight, xLines, col2 + 1, cols)
@@ -571,6 +573,28 @@ object ScanMapper {
                 freeRight to freeBottom,
             ).first { (rr, bb) -> agreement(rr - col2, bb - row2, ratio) >= free }
             candidate to CellRect(col2, row2, r - col2, b - row2)
+        }
+        // ⭐ The unsized cascade: a room with no printed size that was read FLUSH on the side a
+        // slide vacated rides one cell along with it. Without this the slide preserved the sized
+        // wall but set its unsized neighbour adrift — on tower-D1 each balcony floated one cell off
+        // the bedroom it belongs to (a fresh §2c moat) and the vacated strips merged into a
+        // seventeen-cell hole along the north edge. One pass, unsized rooms only, one cell, only
+        // into cells that are free once the slide is accounted for; the moved rect becomes the
+        // room's own basis, exactly as a re-shaped rect does.
+        return shaped.mapIndexed { i, pair ->
+            if (printed[i] != null) return@mapIndexed pair
+            val (candidate, r) = pair
+            var col = r.col
+            var row = r.row
+            if (slidDown.any { it.row == r.bottom && it.col < r.right && r.col < it.right } &&
+                shaped.none { (_, o) -> o !== r && o.overlaps(CellRect(col, row + 1, r.w, r.h)) } &&
+                row + 1 + r.h <= rows
+            ) row += 1
+            if (slidRight.any { it.col == r.right && it.row < r.bottom && r.row < it.bottom } &&
+                shaped.none { (_, o) -> o !== r && o.overlaps(CellRect(col + 1, row, r.w, r.h)) } &&
+                col + 1 + r.w <= cols
+            ) col += 1
+            if (col == r.col && row == r.row) pair else candidate to CellRect(col, row, r.w, r.h)
         }
     }
 

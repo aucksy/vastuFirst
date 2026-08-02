@@ -1447,7 +1447,8 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
   const topFlushSized = (rect) => flushSized((o) => o !== rect
     && bottom(o) === rect.row && o.col < right(rect) && rect.col < right(o));
 
-  return snapped.map((s, i) => {
+  const slidDown = [], slidRight = [];   // sized rooms that slid, with their READ rects — the
+  const shaped = snapped.map((s, i) => { // unsized cascade below re-anchors flush neighbours to them
     const size = printed[i];
     if (!size) return s;
     const target = size.w * size.h * cellsPerSquareMm;
@@ -1487,15 +1488,37 @@ function reshapeToPrinted(snapped, cols, rows, inject) {
       const stripFree = (c0, r0, ww, hh) => !snapped.some((o) => o.rect !== s.rect
         && overlaps(o.rect, { col: c0, row: r0, w: ww, h: hh }));
       if (col + w === right(s.rect) - 1 && rightFlushSized(s.rect) && !leftFlushSized(s.rect)
-        && stripFree(col + w, row, 1, h)) col2 = col + 1;
+        && stripFree(col + w, row, 1, h)) { col2 = col + 1; slidRight.push(s.rect); }
       if (row + h === bottom(s.rect) - 1 && bottomFlushSized(s.rect) && !topFlushSized(s.rect)
-        && stripFree(col2, row + h, w, 1)) row2 = row + 1;
+        && stripFree(col2, row + h, w, 1)) { row2 = row + 1; slidDown.push(s.rect); }
     }
     const rightE = magnet(col2 + w, xLines, col2 + 1, cols);
     const bottomE = magnet(row2 + h, yLines, row2 + 1, rows);
     const [rr, bb] = [[rightE, bottomE], [rightE, row2 + h], [col2 + w, bottomE], [col2 + w, row2 + h]]
       .find(([x, y]) => agree(x - col2, y - row2) >= free);
     const out = { col: col2, row: row2, w: rr - col2, h: bb - row2 };
+    return { ...s, rect: out, asRead: out };
+  });
+  // ⭐ The unsized cascade: a room with no printed size that was read FLUSH on the side a slide
+  // vacated rides one cell along with it. Without this the slide preserved the sized wall but set
+  // its unsized neighbour adrift — on tower-D1 each balcony floated one cell off the bedroom it
+  // belongs to (a fresh §2c moat) and the vacated strips merged into a seventeen-cell hole along
+  // the north edge. One pass, unsized rooms only, one cell, and only into cells that are free once
+  // the slide is accounted for; the moved rect becomes the room's own basis, exactly as a re-shaped
+  // rect does.
+  if (inject === 'no-magnet') return shaped;
+  return shaped.map((s, i) => {
+    if (printed[i]) return s;
+    let { col, row } = s.rect;
+    const { w, h } = s.rect;
+    if (slidDown.some((r) => r.row === bottom(s.rect) && r.col < right(s.rect) && s.rect.col < right(r))
+      && !shaped.some((o) => o.rect !== s.rect && overlaps(o.rect, { col, row: row + 1, w, h }))
+      && row + 1 + h <= rows) row += 1;
+    if (slidRight.some((r) => r.col === right(s.rect) && r.row < bottom(s.rect) && s.rect.row < bottom(r))
+      && !shaped.some((o) => o.rect !== s.rect && overlaps(o.rect, { col: col + 1, row, w, h }))
+      && col + 1 + w <= cols) col += 1;
+    if (col === s.rect.col && row === s.rect.row) return s;
+    const out = { col, row, w, h };
     return { ...s, rect: out, asRead: out };
   });
 }

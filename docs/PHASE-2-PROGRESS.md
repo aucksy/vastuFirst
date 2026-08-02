@@ -3051,7 +3051,8 @@ until they tied the living room, and the biggest-room hierarchy is a proportion 
 fixture pins. The rule that honours both: the room SLIDES one cell to stay flush with its SIZED
 neighbour (position evidence — its own print anchors that wall) and the gap breaks toward the
 UNSIZED side; the slide stays inside the room's own read span, never resizes, and only enters
-free cells. Measured across all 41 recordings before the re-push: orientation stays 140/148, dead
+free cells — and an unsized room read flush on the vacated side rides along, so a balcony never
+floats off its bedroom. Measured across all 41 recordings before the re-push: orientation stays 140/148, dead
 edges stay 32, and a balcony lost outright on one old-prompt recording RETURNS (2 → 1). The
 tower-D1 fixture is now pinned in the mirror too — a fixture gap is a drift channel, the plan-020
 lesson from the other direction.
