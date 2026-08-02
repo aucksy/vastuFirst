@@ -798,3 +798,23 @@ villas. A duct alone is deliberately not enough — flats print those too.
 | **E6** | Multi-unit sheet detection | a real case seen in the corpus |
 | **E9** | ⭐ Can the home's true proportions be derived from the printed sizes plus the arrangement? | A first attempt (median mm-per-unit, per axis) got the owner's width right and underestimated his depth, and produced nonsense on one plan. Not shipped. `widenForWidest` is the bounded version of the same idea. |
 | **E10** | ⭐ A plan that prints no sizes is still read from a template with nothing to correct it | The remaining weak case, and the one the room count still guards |
+
+## 3l. ⭐⭐ The standing validation harness — every recorded reply, one command (2 August 2026)
+
+`node tools/scan-eval/audit-mapper.mjs --only=X` runs **every reply the real API has ever returned
+for a real plan** — the 30-plan corpus, the nine size-field re-reads, and the owner's flat — through
+the mapper mirror with the full synonym table, and prints per plan: the outcome, rooms placed of
+rooms read, every drop with its reason, empty cells inside the home's box, and how many rooms'
+final drawn orientation agrees with the printed sheet. `--inject=<fault>` runs the same corpus under
+a fault injection, so "does this machinery change any real answer?" is one diff away instead of an
+argument.
+
+**Any future mapper change gets measured here before it is written in Kotlin.** This is what found
+(v0.6.3): the sub-area drop deleting 24 real rooms and zero real sub-areas; eleven caption styles
+landing as "unrecognised"; the mirror's feet-inches parser never having worked; a relaxation pass
+that changed nothing (removed rather than shipped); and the wall magnet's first real proof.
+
+⚠ Its synonym table is a PORT of `RoomLabels.kt` and must be kept in lock-step by hand —
+`RoomLabelsTest` is the authority whenever they disagree. The corpus JSONs under
+`tools/scan-eval/out/` are recordings of real, paid API calls: never regenerate them casually, and
+never edit them at all.

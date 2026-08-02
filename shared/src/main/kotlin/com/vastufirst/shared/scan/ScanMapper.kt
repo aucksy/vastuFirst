@@ -403,8 +403,8 @@ object ScanMapper {
         // them moves the kitchen and the bedroom into different Vastu directions.
         //
         // ⭐ A room that could not be placed at all is RESCUED: it goes to the front of the queue and
-        // the whole placement is redone. That keeps the ordinary rule — the most confident room keeps
-        // its cells — while making "re-shaping must never cost a room" structural instead of hopeful.
+        // the whole placement is redone. That keeps the ordinary rule — the smallest room keeps its
+        // cells — while making "re-shaping must never cost a room" structural instead of hopeful.
         // Measured across the real corpus: 10 rooms silently lost today, 0 after. Nothing is mutated
         // while trying, so a discarded attempt leaves no trace on the rooms.
         val shaped = reshapeToPrinted(snapped, cols, rows)
