@@ -77,14 +77,19 @@ fun WelcomeContent(
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         SectionLabel("No sign-up · No phone number")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
+        // ⚠ NEUTRAL, and it has to be (v0.6.6). This sits ABOVE the question that decides everything
+        // else, so it cannot branch on the answer — and "fix it on paper before you build" was
+        // written for the one person in three who is still building. Read by somebody choosing
+        // between two flats, or living in a home they cannot rebuild, it promised something the
+        // report deliberately no longer offers them.
         VText(
-            text = "Fix your home's Vastu on paper — before you build.",
+            text = "See your home's Vastu — and exactly what to do about it.",
             style = VastuTheme.type.h1,
             color = colors.textPrimary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
-            text = "Draw your plan. Mark which way North is. See exactly what to change, while changing it is still free.",
+            text = "Upload your plan or draw it. Mark which way North is. Get your score and what to do — whether you're buying, building, or already living there.",
             style = VastuTheme.type.body,
             color = colors.textSecondary,
         )

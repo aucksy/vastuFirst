@@ -25,7 +25,7 @@ import java.io.File
  * PDFs come through `OpenDocument` instead, because the Photo Picker only offers images and video —
  * and a PDF is the input we most want, since skew is what ruins a read and a PDF has none.
  *
- * ⭐⭐ **"Take a photo instead" opens the CAMERA** (v0.6.6). It used to open the gallery: the same
+ * ⭐⭐ **"Take a photo of it now" opens the CAMERA** (v0.6.6). It used to open the gallery: the same
  * picker as the button above it, wearing a different label — so someone holding a printed plan had
  * no way to photograph it from inside the app, and the button looked broken because it was. The
  * capture goes to the phone's own camera app, which needs no permission from us (see the manifest),
