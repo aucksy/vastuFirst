@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 r"""
-Scan ONE plan image with a CANDIDATE reader (Gemini) under the app's exact conditions —
+Scan ONE plan image with a CANDIDATE reader under the app's exact conditions —
 the SAME prompt file and the SAME 1400px/q88 JPEG downscale as scan-live.py — so the only
 variable in a head-to-head against the app's current reader is the model itself.
 
     python tools/scan-eval/scan-candidate.py <image path or URL> [--model=gemini-3.6-flash] [--tag=r1]
+
+Two providers, routed by the model id:
+  no slash   -> Google's Gemini API           (GEMINI_API_KEY),   e.g. gemini-3.6-flash
+  with slash -> OpenRouter, OpenAI-compatible (OPENROUTER_API_KEY), e.g. anthropic/claude-haiku-4.5
 
 Replies land in out/live/<stem>.<model>.<tag>.json — the live class, safe to re-record,
 never the frozen corpus. The file shape matches scan-live.py ({file,imageSize,prompt,reply})
@@ -37,9 +41,11 @@ def main():
 
     prompt_path = os.path.join(ROOT, "shared", "src", "main", "resources", "scan", "plan-read-prompt.txt")
     prompt = open(prompt_path, encoding="utf-8").read()
-    key = scan_live.load_env().get("GEMINI_API_KEY")
+    openrouter = "/" in model
+    key_name = "OPENROUTER_API_KEY" if openrouter else "GEMINI_API_KEY"
+    key = scan_live.load_env().get(key_name)
     if not key:
-        print("no GEMINI_API_KEY in .env")
+        print("no %s in .env" % key_name)
         return 1
 
     raw, name = scan_live.fetch(args[0])
@@ -47,16 +53,31 @@ def main():
     stem = re.sub(r"\.(png|jpg|jpeg|webp|avif|gif)$", "", name, flags=re.I)
     print("scanning %s  %dx%d  %.0f KB upload  model %s  tag %s" % (name, size[0], size[1], len(jpeg) / 1024, model, tag))
 
-    body = {
-        "contents": [{"parts": [
-            {"text": prompt},
-            {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(jpeg).decode()}},
-        ]}],
-        "generationConfig": {"temperature": 0.0, "response_mime_type": "application/json"},
-    }
-    req = urllib.request.Request(ENDPOINT % model, data=json.dumps(body).encode(), headers={
-        "x-goog-api-key": key, "Content-Type": "application/json",
-    })
+    b64 = base64.b64encode(jpeg).decode()
+    if openrouter:
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        body = {
+            "model": model,
+            "messages": [{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + b64}},
+            ]}],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.0,
+        }
+        headers = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
+    else:
+        url = ENDPOINT % model
+        body = {
+            "contents": [{"parts": [
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
+            ]}],
+            "generationConfig": {"temperature": 0.0, "response_mime_type": "application/json"},
+        }
+        headers = {"x-goog-api-key": key, "Content-Type": "application/json"}
+
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=300) as r:
             res = json.loads(r.read())
@@ -64,15 +85,28 @@ def main():
         print("HTTP %s: %s" % (e.code, e.read().decode()[:800]))
         return 1
 
-    parts = res["candidates"][0]["content"]["parts"]
-    text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
-    reply = json.loads(text)
-    usage = res.get("usageMetadata", {})
+    if openrouter:
+        if "choices" not in res:
+            print("no choices in reply: %s" % json.dumps(res)[:500])
+            return 1
+        text = res["choices"][0]["message"]["content"]
+        text = re.sub(r"^```(json)?|```$", "", text.strip(), flags=re.M)
+        reply = json.loads(text)
+        u = res.get("usage", {})
+        usage = {"promptTokenCount": u.get("prompt_tokens"), "candidatesTokenCount": u.get("completion_tokens"),
+                 "thoughtsTokenCount": (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0)}
+        model_version = res.get("model", model)
+    else:
+        parts = res["candidates"][0]["content"]["parts"]
+        text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        reply = json.loads(text)
+        usage = res.get("usageMetadata", {})
+        model_version = res.get("modelVersion", model)
 
     os.makedirs(OUT, exist_ok=True)
-    out_path = os.path.join(OUT, "%s.%s.%s.json" % (stem, model, tag))
+    out_path = os.path.join(OUT, "%s.%s.%s.json" % (stem, model.replace("/", "_"), tag))
     json.dump({"file": name, "imageSize": list(size), "prompt": "v3", "model": model,
-               "modelVersion": res.get("modelVersion", model), "usage": usage, "reply": reply},
+               "modelVersion": model_version, "usage": usage, "reply": reply},
               open(out_path, "w", encoding="utf-8"), indent=1)
     print("planType=%s rooms=%d tokens: in=%s out=%s (thoughts=%s)" % (
         reply.get("planType"), len(reply.get("rooms", [])),
