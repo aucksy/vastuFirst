@@ -1107,3 +1107,34 @@ a fully-SIZED reply reproduced from a second model (nano's 15-room tower... plan
 Recommended shape: **luna as default reader + gemini-3.1-pro as the furnished-class/premium
 escalation, both through OpenRouter (one client, one key, one bill; models stay config).**
 Running scoreboard: `tools/scan-eval/READER-CANDIDATES.md`.
+
+## 3q. ⭐⭐ SHIPPED overnight 4 Aug 2026 — the switch, two dead bugs, and the on-photo review
+
+Owner's "go ahead with the plan" plus one new build ask, executed in one green run (CI on main):
+
+1. **The reader IS the §3p pairing now.** `reader-config.json` → OpenRouter, `openai/gpt-5.6-luna`
+   primary, `google/gemini-3.1-pro-preview` as `escalationModel` — one extra call, made only when
+   the primary's own reply says NOT_2D, used only if it actually reads the plan (GroqPlanReader;
+   the request differs in the model field alone, pinned by test). Key = `OPENROUTER_API_KEY` →
+   `BuildConfig.PLAN_READER_KEY`; the key-check script validates the key AND both models against
+   OpenRouter. ⚠ Until the owner sets the GitHub secret, CI builds are honest keyless builds.
+2. **MAIDS RM lives** (the plural was the gap; both mirrors + tests). **The ASCII-fraction
+   mis-parse died twice**: models type ½ as `1/2`; first fix parsed it, the new tests then caught
+   the survivor — at caption END, `9'-41/2"` read as 41 inches (trailing junk, Kotlin AND js).
+   A `(?!/)` after the inches closes it; digits before a slash are never whole inches. Measured
+   after: client's tower **16/16 · 100% · RIGHT** (above the old hand-made ceiling — UTILITY
+   places from real coordinates); the refused furnished reply **17/18 · 100%**; corpus 44
+   recordings unchanged; TOO_MANY_ROOMS on fully-sized replies is dead with it.
+3. **The on-photo review** (owner: "the scanned image is always visible… I feel this is a better
+   experience"): Settings → "Check a scan: On the photo / On the grid". Photo stays on screen,
+   rooms are a tappable checklist, tapping tints roughly where each was read (`ScannedRoom.source`
+   — reader fractions are BUILDING-framed, so "roughly" is said on screen; a page-box prompt
+   field is the measured V2 if precision matters). Verify-only by design: fixes stay on the grid,
+   one tap away; the same grid is populated invisibly first so the score is identical in both
+   flows, and North now always comes after the review — the §3o compass-wording order complaint
+   dies in this flow. Applies only to Placed scans; everything else keeps the classic path.
+4. **Housekeeping with teeth:** 332 stale CI artifacts (6.3 GB) had filled the storage quota and
+   were reddening builds whose gates had passed — deleted, and both artifact uploads are now
+   non-fatal (goldens are committed into the repo; the install channel is the tagged release).
+   Settings' fold budget rose 1 → 3 deliberately for the toggle row (scrollable screen, nothing
+   unreachable; the two fixed info rows are the owner's space decision if he wants it back).
