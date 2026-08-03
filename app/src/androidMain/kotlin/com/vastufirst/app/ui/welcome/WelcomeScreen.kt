@@ -104,9 +104,14 @@ fun WelcomeContent(
 
         SectionLabel("What brings you here?")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
+        // ⭐ BUYING leads. Most people who open this app are looking at a home somebody else has
+        // already built — the plan is fixed and the question is "should I take it, and what will I
+        // have to live with". Building your own from a plan that is still on paper is the rarer
+        // case, so it sits second. The order is the owner's call (v0.6.6) and it also decides what
+        // the report says: only BUILDING is offered layout changes at all.
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { onIntentChange(Intent.BUILDING) }
             IntentCard("I am buying a home", "Deciding between options", chosen == Intent.BUYING) { onIntentChange(Intent.BUYING) }
+            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { onIntentChange(Intent.BUILDING) }
             IntentCard("I already live here", "Looking for remedies", chosen == Intent.LIVING) { onIntentChange(Intent.LIVING) }
         }
 

@@ -34,7 +34,10 @@ for perm in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION CAMERA RECORD_AUDIO READ
             READ_EXTERNAL_STORAGE WRITE_EXTERNAL_STORAGE READ_PHONE_STATE; do
   if grep -q "android.permission.$perm" "$MANIFEST"; then
     echo "MANIFEST VIOLATION: android.permission.$perm is declared and nothing here needs it."
-    echo "  The system photo picker returns a chosen file without any storage or camera permission."
+    echo "  The system photo picker returns a chosen file without any storage permission, and"
+    echo "  'take a photo' hands the job to the phone's own camera app — which needs the CAMERA"
+    echo "  grant only from an app that DECLARES it. Declaring it here would create the very"
+    echo "  permission prompt this app has never had to show."
     fail=1
   fi
 done

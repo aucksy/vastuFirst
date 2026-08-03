@@ -3,8 +3,11 @@ package com.vastufirst.app.render
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.newplan.buildEnginePlan
+import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlan
 import com.vastufirst.engine.VastuEngine
+import com.vastufirst.shared.editor.DraftRoom
+import com.vastufirst.shared.editor.DraftSnapshot
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.AnalysisNote
 import com.vastufirst.shared.AnalysisQuality
@@ -60,6 +63,40 @@ object RenderFixtures {
     val savedPlans: List<SavedPlan> = listOf(
         savedPlan("p1", "Builder's draft — 2BHK", Intent.BUILDING, 31, updatedAt = FIXED_NOW),
         savedPlan("p2", "Compact 2BHK flat", Intent.BUYING, 68, updatedAt = FIXED_NOW - 2 * ONE_DAY_MS),
+    )
+
+    /**
+     * ⭐ Two homes started and never finished (v0.6.6) — the rows that make "carry on" a choice
+     * instead of something the app does behind the user's back.
+     *
+     * ⚠ One of them has NO name, and that is the ordinary case, not an edge one: a home is only named
+     * when it is first saved, so almost every unfinished home is nameless and the row must read
+     * properly without one. The other carries a name because it was reopened from a scan. Both show a
+     * room count and a time and NO score — nothing here has been through the engine, and putting a
+     * number on it would be inventing one.
+     */
+    val savedDrafts: List<SavedDraft> = listOf(
+        SavedDraft(
+            id = "draft-1",
+            draft = DraftSnapshot(
+                rooms = listOf(
+                    DraftRoom("d1", com.vastufirst.shared.RoomType.LIVING, 0, 0, 3, 2),
+                    DraftRoom("d2", com.vastufirst.shared.RoomType.KITCHEN, 4, 0, 2, 2),
+                    DraftRoom("d3", com.vastufirst.shared.RoomType.MASTER_BEDROOM, 0, 3, 3, 3),
+                    DraftRoom("d4", com.vastufirst.shared.RoomType.TOILET, 5, 4, 1, 1),
+                    DraftRoom("d5", com.vastufirst.shared.RoomType.BALCONY, 0, 7, 6, 1),
+                ),
+            ),
+            updatedAt = FIXED_NOW,
+        ),
+        SavedDraft(
+            id = "draft-2",
+            draft = DraftSnapshot(
+                name = "Green Court 1BHK",
+                rooms = listOf(DraftRoom("e1", com.vastufirst.shared.RoomType.BEDROOM, 1, 1, 2, 3)),
+            ),
+            updatedAt = FIXED_NOW - 3 * ONE_DAY_MS,
+        ),
     )
 
     // --- score-driven screens (Mark North, Score, Report) ---

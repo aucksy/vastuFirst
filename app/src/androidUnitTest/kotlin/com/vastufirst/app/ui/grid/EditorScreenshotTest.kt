@@ -352,11 +352,14 @@ class EditorScreenshotTest {
     }
 
     /**
-     * ⭐ Work brought back after Android reclaimed the app in the background. Restoring it silently
-     * would be worse than losing it — the user would be editing a home they thought they had
-     * abandoned — so it is said, with a way out in the same breath. It is a card at the very top of
-     * the editor, pushing the plan down, which is exactly the sort of change that shatters a layout
-     * at 200 % font on a 320 dp phone. No screenshot can get here by tapping.
+     * ⭐ An unfinished home the user chose to carry on with, from the saved-homes screen (v0.6.6).
+     *
+     * ⚠ The card's WORDS changed with the behaviour. It used to apologise for the phone having closed
+     * the app, because the app restored this work by itself; nothing comes back unless it is asked
+     * for now, so the card confirms a choice instead of explaining an accident. The way out — "start
+     * this home again" — is unchanged and still one tap, because tapping the wrong row must not
+     * trap anybody. It is a card at the very top of the editor, pushing the plan down, which is
+     * exactly the sort of change that shatters a layout at 200 % font on a 320 dp phone.
      */
     @Test
     fun editor_restored_draft() {

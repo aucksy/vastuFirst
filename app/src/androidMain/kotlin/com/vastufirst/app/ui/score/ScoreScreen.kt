@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.billing.Billing
 import com.vastufirst.app.billing.BillingState
@@ -74,6 +75,7 @@ fun ScoreScreen(
     onFix: () -> Unit,
     onDone: () -> Unit,
     onAddDetails: () -> Unit,
+    onChangeNorth: () -> Unit,
     billing: Billing = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
@@ -92,6 +94,7 @@ fun ScoreScreen(
         rows = vm.gridRows,
         siteAnswers = vm.siteAnswers,
         onAddDetails = onAddDetails,
+        onChangeNorth = onChangeNorth,
         billingState = billing.state,
     )
 }
@@ -114,6 +117,12 @@ fun ScoreContent(
     /** The optional extras the user has answered — drives the honest "what this covers" line. */
     siteAnswers: SiteAnswers = SiteAnswers(),
     onAddDetails: () -> Unit = {},
+    /**
+     * ⭐ Back to the North dial. Until v0.6.6 a home that had been saved could only be RENAMED: the
+     * rooms and the North mark — the two things the whole score is built from — had no way back in,
+     * so a wrong North meant deleting the home and drawing it again from nothing.
+     */
+    onChangeNorth: () -> Unit = {},
     /** Drives the price and the notice on the unlock card, so the score screen can never promise
      *  a charge the unlock screen would not make. */
     billingState: BillingState = BillingState(),
@@ -156,7 +165,10 @@ fun ScoreContent(
             )
         }
 
-        else -> ScoreResult(rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows, siteAnswers, onAddDetails, billingState)
+        else -> ScoreResult(
+            rooms, north, intent, a, onUnlock, onDone, unlocked, cols, rows, siteAnswers,
+            onAddDetails, onFix, onChangeNorth, billingState,
+        )
     }
 }
 
@@ -165,7 +177,8 @@ fun ScoreContent(
 private fun ScoreResult(
     rooms: List<GridRoom>, north: Int, intent: Intent?, a: Analysis, onUnlock: () -> Unit,
     onDone: () -> Unit, unlocked: Boolean, cols: Int, rows: Int,
-    siteAnswers: SiteAnswers, onAddDetails: () -> Unit, billingState: BillingState,
+    siteAnswers: SiteAnswers, onAddDetails: () -> Unit,
+    onFix: () -> Unit, onChangeNorth: () -> Unit, billingState: BillingState,
 ) {
     val colors = VastuTheme.colors
     // buildZoneMapModel memoises its own heavy part internally (C14), keyed on rooms/analysis/grid/
@@ -198,6 +211,34 @@ private fun ScoreResult(
                 contentDescription = "Your plan with Vastu zones, North at $north degrees, ${spokenScore(a.score, LocalDecimalMark.current)}.",
             )
         }
+
+        // ⭐⭐ THE WAY BACK IN. Directly under the picture of their home, because that picture is
+        // where someone notices it is wrong — a room in the wrong place, or North pointing the wrong
+        // way. Until v0.6.6 there was no way back at all once a home was saved: the saved-homes list
+        // offered a rename and nothing else, so the only route to a corrected score was to delete the
+        // home and draw it again. Two buttons, each naming exactly what it changes; no icons, because
+        // this screen's reader is more reliably served by words in daylight.
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        VText(
+            "Not quite your home? You can change it — the score follows straight away.",
+            style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        VastuButton(
+            "Change the rooms or the front door",
+            onClick = onFix,
+            style = VastuButtonStyle.SECONDARY,
+            large = false,
+            modifier = Modifier.testTag("score.edit.rooms"),
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VastuButton(
+            "Change which way North is",
+            onClick = onChangeNorth,
+            style = VastuButtonStyle.SECONDARY,
+            large = false,
+            modifier = Modifier.testTag("score.edit.north"),
+        )
 
         // ⭐ WHAT THE NUMBER ACTUALLY LOOKED AT (docs/SCORE-ACCURACY-CAVEATS.md #4). The score has only
         // ever come from rooms, the front door and the shape — but it reads as a complete verdict, and
@@ -282,13 +323,19 @@ private fun ScoreResult(
     }
 }
 
+/**
+ * The one line under the number. It must not promise something the reader cannot do: "fix it while
+ * it is still on paper" is true only for someone still BUILDING. A buyer and a resident are both
+ * looking at a home that is already standing, so both are pointed at remedies — the same ruling the
+ * full report follows (v0.6.6).
+ */
 private fun verdictLine(score: Int, intent: Intent?): String {
-    val living = intent == Intent.LIVING
+    val remediesOnly = intent != null && intent != Intent.BUILDING
     return when {
         score >= 75 -> "Strong — a few refinements left."
-        score >= 50 && living -> "Workable, with real problems worth addressing — remedies can help."
+        score >= 50 && remediesOnly -> "Workable, with real problems worth addressing — remedies can help."
         score >= 50 -> "Workable, with real problems to fix while it is still on paper."
-        living -> "Several core placements work against the tradition — remedies can help."
+        remediesOnly -> "Several core placements work against the tradition — remedies can help."
         else -> "Several core placements work against you — worth fixing now, on paper."
     }
 }

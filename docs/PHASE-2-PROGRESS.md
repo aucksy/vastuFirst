@@ -3224,3 +3224,87 @@ ends where the home does, so a small flat arrives on a small grid with bigger ce
 edge strips, and no false "is this part of your home?" question about a region that was never
 anything; and — on the sheet he rejected — a balcony shallower than the bedroom, with the
 bedroom, lobby and passage on the right edge where the paper puts them.
+
+---
+
+# ⭐⭐ v0.6.6 — an unfinished home waits to be asked for, the camera opens, and a saved home can be changed (2026-08-03)
+
+Five fixes the owner listed, in his priority order. **None of them touch the mapper**: the audit over
+all 44 recordings and the 20 000-seed mirror were run before and after and are byte-identical —
+23 placed · 10 assisted · 11 refused · orientation 159/166 · dead edge cells 0 · drops unchanged.
+Everything in v0.6.5's three drawing rules is exactly as he last saw it (Q23 stands).
+
+## 1. ⭐⭐ Half-finished work is kept, LISTED, and loaded only when he taps it
+
+What he reported: an incomplete scan came back on its own. The cause was structural — one draft row
+called `current`, restored inside the shared ViewModel's `init`, so entering the drawing flow for ANY
+reason silently reloaded it. "Draw it on a grid" and "Upload a plan" both handed back yesterday's
+half-placed home, and the only way to a blank grid was to notice a card and press "start this home
+again". The same single row also meant starting a second home overwrote the first one's only copy.
+
+Now: one row per unfinished home, keyed by an id the session mints on its FIRST real edit (so passing
+through leaves nothing behind, and clearing the grid removes the row rather than listing an empty
+home). The saved-homes screen grows a "Still to finish" group above the finished ones, showing how
+many rooms are on the grid and when it was last touched — and **no score, because nothing here has
+been through the engine**. Tapping the row is the only way one ever comes back; a ✕ throws it away
+behind a confirmation that names what is being lost. The launch decider counts drafts as well as
+saved homes, so a user whose only home is half-drawn still lands on the list that offers it.
+
+⚠ **No migration, deliberately.** The `id` column was already a free-form key, so the old `current`
+row is simply one of the list — an unfinished home drawn on v0.6.5 appears on first launch instead of
+being stranded, and nothing on anyone's phone is rewritten.
+
+Pinned end to end (`UnfinishedHomeTest`) against Robolectric's real SQLite through the app's real
+driver and repository: work saves itself; a NEW session does not adopt it; a second home sits beside
+the first rather than on top of it; asking for one by id restores it exactly; finishing a home removes
+its unfinished row; throwing it away removes the row, not just the rooms on screen. The engine
+dispatcher became a constructor seam so the save path completes inside the test instead of racing it.
+
+## 2. ⭐⭐ "Take a photo" opens the camera — it was opening the gallery
+
+The second button on the upload screen launched `PickVisualMedia`: the same picker as the button
+above it, under a different name. Someone holding a printed plan had no way to photograph it from
+inside the app, which is exactly what he found. It now launches the phone's own camera app into a
+file in one granted cache folder, and the label says what happens ("Take a photo of it now").
+
+**Still no camera permission, and that is not luck.** Android demands the CAMERA grant only from an
+app that DECLARES it; we hand the capture to the camera app instead, so the app's one-permission
+promise is intact and `check-manifest.sh` still fails the build if that line ever appears. Backing
+out of the camera returns to the ask rather than reading a zero-byte file; the pending file survives
+process death (the camera app in the foreground is exactly when Android reclaims ours); a phone with
+no camera app gets a sentence instead of a button that does nothing, and that state has its own
+golden because nothing can reach it by tapping.
+
+## 3. ⭐⭐ A saved home can have its rooms and its North changed
+
+Renaming was the only thing a saved home offered — the rooms and the North mark, which the entire
+score is built from, had no way back in, so a wrong North meant deleting the home and drawing it
+again. Two buttons now sit directly under the coloured plan picture, where somebody notices it is
+wrong: "Change the rooms or the front door" and "Change which way North is". North opened from a
+saved home returns to the score it came from rather than stacking a second copy of it (an explicit
+route flag, not a `popUpTo` route-matching guess).
+
+## 4 & 5. ⭐ Buying leads, and only a builder is offered a layout change
+
+Buying is now the first choice and building the second — most people opening this app are looking at
+a home somebody else has already built.
+
+And that ordering decides the report. It used to branch on ALREADY-LIVING alone: BUYING was drawn
+exactly like BUILDING, with "✦ Change the layout — free now" on every problem and an opening line
+promising nothing was built yet. A buyer cannot move a wall in a flat they are considering. So
+**BUYING and ALREADY LIVING are now remedies only** — the layout block is dropped, not demoted to "if
+you ever renovate", which was a building instruction in a smaller hat. The free score line follows
+("fix it while it is still on paper" was only ever true for a builder), and so does the front door's
+closing advice, which stopped telling people to move a door a few feet along a wall that is built.
+
+Pinned as TEXT (`ReportIntentTest`), not only as a picture: the report is long, so a layout block on
+the fourth problem sits below the fold of every golden and a screenshot alone could not prove it.
+
+## 6. ⚠ Honest limits
+
+- **One unfinished home per session, not per screen.** Leaving the editor and coming back through the
+  list resumes the same row; there is no per-room history and no undo beyond "start this home again".
+- **An unfinished home carries no score anywhere**, including the list. That is correct — it has not
+  been scored — but it means the list cannot be sorted or compared by number until it is finished.
+- **A photo taken in the app is still a photo.** §3e's measurement stands: skew is what ruins a read,
+  so the PDF remains the primary button and the camera the second one.

@@ -1,13 +1,19 @@
--- The ONE home currently being drawn but not yet saved.
+-- The homes that have been started but never finished.
 --
 -- Until this existed, a half-drawn home lived only in memory. Android reclaims a backgrounded app
 -- whenever it needs the RAM — on a cheap phone, taking a phone call is enough — so ten minutes of
 -- placing rooms could vanish with no explanation and nothing to recover.
 --
--- Exactly one row, id = 'current'. A draft is written continuously while the home is being drawn and
--- DELETED the moment that home becomes a real saved row in planEntity, so a draft that exists is
--- always a home that was never finished — which makes "restore it" the obviously correct thing to do
--- rather than a guess.
+-- ⭐ ONE ROW PER UNFINISHED HOME (v0.6.6), where there used to be exactly one row called 'current'.
+-- The single row forced two behaviours the owner rejected: the app RESTORED the leftover work by
+-- itself the moment anybody started a new home, so choosing "draw it on a grid" handed back
+-- yesterday's half-finished plan; and starting a second home overwrote the first one's only copy.
+-- Now an unfinished home is LISTED on the saved-homes screen and is loaded only when its own row is
+-- tapped, and starting a new home cannot touch it. The old 'current' row is a valid id like any
+-- other, so a draft written by v0.6.5 simply appears in that list — no migration, nothing lost.
+--
+-- A row is DELETED the moment its home becomes a real saved row in planEntity, so a draft that
+-- exists is always a home that was never finished.
 --
 -- The body is opaque JSON (com.vastufirst.shared.editor.DraftSnapshot) so the editor can gain fields
 -- without a schema migration; every field there carries a default so an older draft still loads.
@@ -20,6 +26,10 @@ CREATE TABLE draftEntity (
 
 selectDraft:
 SELECT * FROM draftEntity WHERE id = ?;
+
+-- Newest first, to match the ordering of the saved homes listed beside them.
+selectAllDrafts:
+SELECT * FROM draftEntity ORDER BY updatedAt DESC;
 
 upsertDraft:
 INSERT OR REPLACE INTO draftEntity(id, draftJson, updatedAt) VALUES (?, ?, ?);

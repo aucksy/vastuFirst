@@ -178,7 +178,7 @@ fun doorUnnamedNote(d: DoorResult): String? =
  * Why the door matters more than any room, in the reader's words. The 32 named positions have been
  * in the app since the first build and were never shown to anyone.
  */
-fun doorExplanation(d: DoorResult): String {
+fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
     val parts = mutableListOf(
         "The tradition lays 32 named positions around the edge of the plan, eight to a wall, and " +
             "judges the main entrance by which one it stands on. Yours is ${padaStanding(d.verdict)}. " +
@@ -187,10 +187,21 @@ fun doorExplanation(d: DoorResult): String {
     // ⚠ A door can read unfavourably without raising a problem of its own — only the South-West
     // corner arc does that. So the reader would otherwise be told the most important element in the
     // report is unfavourable and given nothing to do about it.
+    //
+    // ⚠ The closing advice splits on whether the home is still on paper. Telling someone who is
+    // buying or already living in a home to move their front door a few feet is advice they cannot
+    // take, and the owner's ruling (v0.6.6) is that neither of them is offered a layout change. The
+    // "same wall" fact stays in both — an unfavourable door must never be a dead end for the reader.
     if (d.verdict != PadaVerdict.AUSPICIOUS) {
-        parts += "Only two or three of the eight positions on any wall are counted favourable, so a " +
-            "door moved a few feet along the same wall can read quite differently. While the plan is " +
-            "still on paper, that is worth walking through with whoever is drawing it."
+        parts += if (remediesOnly) {
+            "Only two or three of the eight positions on any wall are counted favourable, so where " +
+                "a door stands along the same wall matters a great deal — which is why the entrance " +
+                "carries this much weight in your reading."
+        } else {
+            "Only two or three of the eight positions on any wall are counted favourable, so a " +
+                "door moved a few feet along the same wall can read quite differently. While the plan is " +
+                "still on paper, that is worth walking through with whoever is drawing it."
+        }
     }
     if (d.spansTwoPadas) {
         parts += "Your doorway is wide enough to stand across two of these positions; it has been " +

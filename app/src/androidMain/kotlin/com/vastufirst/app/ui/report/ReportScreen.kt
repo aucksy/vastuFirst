@@ -47,9 +47,15 @@ import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
- * Full report (§6.5/§6.6) — branches on intent (§2). BUILDING/BUYING lead with layout changes
- * ("still free to make"); ALREADY LIVING leads with remedies and demotes layout to "if you ever
- * renovate". Every rule carries its provenance tag. Disputes show both readings, no winner.
+ * Full report (§6.5/§6.6) — branches on intent (§2).
+ *
+ * ⭐ ONLY "I am building" is offered layout changes, and that is the owner's ruling (v0.6.6). Someone
+ * BUYING is looking at a home that is already standing, and someone ALREADY LIVING there cannot
+ * rebuild it — telling either of them to move the kitchen is advice they cannot act on, and it
+ * crowds out the advice they can. For both, this screen is remedies only: no "change the layout",
+ * no "if you ever renovate", and nothing about redrawing the plan.
+ *
+ * Every rule carries its provenance tag. Disputes show both readings, no winner.
  *
  * ⭐ WHAT THIS SCREEN IS FOR, restated because it had drifted: it is the thing the customer pays
  * ₹699 for, and it used to explain almost nothing. A problem was a room name, a direction and two
@@ -77,7 +83,10 @@ fun ReportContent(
     val colors = VastuTheme.colors
     val a = analysis
     val resolvedIntent = intent ?: Intent.BUILDING
-    val living = resolvedIntent == Intent.LIVING
+    // ⭐ The one branch in this document. True for BUYING and for ALREADY LIVING — both are looking
+    // at a home whose walls are already up — and it removes every layout suggestion rather than
+    // demoting it. Only BUILDING sees "change the layout", because only BUILDING can.
+    val remediesOnly = resolvedIntent != Intent.BUILDING
 
     if (a == null) {
         // Never a forever spinner: if the draft was reclaimed in the background, offer a way back to
@@ -104,11 +113,14 @@ fun ReportContent(
             IntentBadge(resolvedIntent)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        VText(if (living) "What to do now" else "What to change", style = VastuTheme.type.h2, color = colors.textPrimary)
+        VText(if (remediesOnly) "What to do now" else "What to change", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            if (living) "Walls can't move — so remedies lead here. Layout changes are kept, but demoted to \"if you ever renovate\"."
-            else "Ranked by how much each matters. Nothing is built yet — every layout change below is still free to make.",
+            when (resolvedIntent) {
+                Intent.BUILDING -> "Ranked by how much each matters. Nothing is built yet — every layout change below is still free to make."
+                Intent.BUYING -> "This home is already built, so everything below is something you can do without moving a wall. Ranked by how much each matters."
+                Intent.LIVING -> "Walls can't move, so everything below is something you can do in the home as it stands. Ranked by how much each matters."
+            },
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
@@ -137,16 +149,16 @@ fun ReportContent(
         // the rule data since the first build.
         a.doorResult?.let { door ->
             SectionHeader("Your front door")
-            DoorCard(door, zones)
+            DoorCard(door, zones, remediesOnly)
         }
 
-        SectionHeader(if (living) "What to do, most important first" else "What to change, most important first")
+        SectionHeader(if (remediesOnly) "What to do, most important first" else "What to change, most important first")
         val defects = a.defects
         if (defects.isEmpty()) {
             VText("No defects to rank — the placements read well.", style = VastuTheme.type.body, color = colors.textSecondary)
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-                defects.forEachIndexed { i, d -> DefectCard(i + 1, d, a.roomResults, zones, living) }
+                defects.forEachIndexed { i, d -> DefectCard(i + 1, d, a.roomResults, zones, remediesOnly) }
             }
         }
 
@@ -222,9 +234,9 @@ fun ReportContent(
  * fix. The free score screen showed a one-line version and the paid report showed none.
  */
 @Composable
-private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: List<ZoneInfo>, living: Boolean) {
+private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: List<ZoneInfo>, remediesOnly: Boolean) {
     val colors = VastuTheme.colors
-    VastuCard(accent = if (living) colors.secondary else colors.verdictDefect) {
+    VastuCard(accent = if (remediesOnly) colors.secondary else colors.verdictDefect) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             VerdictPill(VastuVerdict.DEFECT)
             VText("#$rank", style = VastuTheme.type.caption, color = colors.textTertiary)
@@ -246,10 +258,14 @@ private fun DefectCard(rank: Int, d: Defect, rooms: List<RoomResult>, zones: Lis
         // ⭐ Each remedy carries its OWN provenance, not the defect's. Within one problem they
         // genuinely differ — a rite from the Mayamatam and a 20th-century rock-salt bowl can sit two
         // lines apart, and the reader has to be able to tell which is which.
+        //
+        // ⚠ When the home is already standing, the layout line is DROPPED, not demoted. It used to
+        // survive as "if you ever renovate" — which is a building instruction wearing a smaller hat,
+        // and the owner's ruling is that a buyer and a resident should be shown remedies and
+        // nothing else.
         val remedies = d.remedies.map { remedyLine(it) }
-        if (living) {
+        if (remediesOnly) {
             RemedyBlock(remedies, d.remedyNote)
-            d.layoutFix?.let { Spacer(Modifier.height(VastuTheme.spacing.s2)); RenovateBlock(it) }
         } else {
             d.layoutFix?.let { LayoutBlock(it); Spacer(Modifier.height(VastuTheme.spacing.s2)) }
             RemedyBlock(remedies, d.remedyNote)
@@ -292,7 +308,7 @@ private fun RoomVerdictCard(
 
 /** The front door, read on the 32-position table the tradition actually uses. */
 @Composable
-private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
+private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean) {
     val colors = VastuTheme.colors
     VastuCard(accent = padaAccent(d.verdict)) {
         // A TagPill in the door's own words, not a VerdictPill — see [padaBadge].
@@ -310,7 +326,7 @@ private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>) {
             VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(doorExplanation(d), style = VastuTheme.type.bodySm, color = colors.textSecondary)
+        VText(doorExplanation(d, remediesOnly), style = VastuTheme.type.bodySm, color = colors.textSecondary)
     }
 }
 
@@ -324,11 +340,9 @@ private fun padaAccent(v: PadaVerdict) = with(VastuTheme.colors) {
     }
 }
 
+/** Only ever drawn for someone still BUILDING — see `remediesOnly` at the top of this file. */
 @Composable
 private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — free now", text, VastuTheme.colors.primary)
-
-@Composable
-private fun RenovateBlock(text: String) = AdviceBlock("If you ever renovate", text, VastuTheme.colors.textTertiary)
 
 /**
  * The remedies for THIS problem — and, where the classical texts record none, the sentence that says

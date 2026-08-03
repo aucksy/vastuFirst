@@ -197,31 +197,74 @@ class PersistenceTest {
 
     @Test
     fun `a half-drawn home comes back exactly as it was`() = runTest {
-        repo.saveDraft(draft, now = 99L)
-        assertEquals(draft, repo.loadDraft(), "every part of the draft must survive, not just the rooms")
+        repo.saveDraft("d1", draft, now = 99L)
+        assertEquals(draft, repo.loadDraft("d1"), "every part of the draft must survive, not just the rooms")
     }
 
     @Test
     fun `there is no draft until one is written, and none after it is cleared`() = runTest {
-        assertNull(repo.loadDraft())
-        repo.saveDraft(draft, now = 1L)
-        assertNotNull(repo.loadDraft())
-        repo.clearDraft()
-        assertNull(repo.loadDraft(), "finishing a home must leave no draft behind to be restored later")
+        assertNull(repo.loadDraft("d1"))
+        repo.saveDraft("d1", draft, now = 1L)
+        assertNotNull(repo.loadDraft("d1"))
+        repo.clearDraft("d1")
+        assertNull(repo.loadDraft("d1"), "finishing a home must leave no draft behind to be restored later")
     }
 
     @Test
-    fun `only ever one draft is kept`() = runTest {
-        repo.saveDraft(draft, now = 1L)
-        repo.saveDraft(draft.copy(name = "Home 4", north = 5), now = 2L)
-        assertEquals("Home 4", repo.loadDraft()?.name)
-        assertEquals(5, repo.loadDraft()?.north)
+    fun `writing the same unfinished home again replaces it rather than piling up`() = runTest {
+        repo.saveDraft("d1", draft, now = 1L)
+        repo.saveDraft("d1", draft.copy(name = "Home 4", north = 5), now = 2L)
+        assertEquals("Home 4", repo.loadDraft("d1")?.name)
+        assertEquals(5, repo.loadDraft("d1")?.north)
+        assertEquals(1, repo.observeDrafts().first().size, "one home being drawn is one row, not two")
+    }
+
+    /**
+     * ⭐ THE OWNER'S FIX (v0.6.6). Starting a second home must not overwrite the first one's only
+     * copy. Under the old single-row draft it did — silently — and the first home's work was gone
+     * with nothing on screen to say so.
+     */
+    @Test
+    fun `starting a second home does not overwrite the first unfinished one`() = runTest {
+        repo.saveDraft("d1", draft, now = 1L)
+        repo.saveDraft("d2", draft.copy(name = "Home 9", north = 42), now = 2L)
+        assertEquals("Home 3", repo.loadDraft("d1")?.name, "the first unfinished home must survive")
+        assertEquals("Home 9", repo.loadDraft("d2")?.name)
+        val listed = repo.observeDrafts().first()
+        assertEquals(2, listed.size, "both unfinished homes must be offered back")
+        assertEquals(listOf("d2", "d1"), listed.map { it.id }, "newest first, like the finished homes")
+        assertEquals(2, listed.first().roomCount, "the list must say how much is on the grid")
+    }
+
+    /** An empty grid is not work anybody would recognise; it must never be offered back as a home. */
+    @Test
+    fun `an unfinished home with nothing drawn in it is not listed`() = runTest {
+        repo.saveDraft("empty", DraftSnapshot(name = "Home 1"), now = 1L)
+        repo.saveDraft("real", draft, now = 2L)
+        assertEquals(listOf("real"), repo.observeDrafts().first().map { it.id })
     }
 
     @Test
     fun `an unreadable draft is treated as no draft, never as a crash`() = runTest {
         driver.execute(null, "INSERT INTO draftEntity(id, draftJson, updatedAt) VALUES ('current','{{{',1)", 0)
-        assertNull(repo.loadDraft(), "a draft is a convenience; a broken one must not stop a new home")
+        assertNull(repo.loadDraft("current"), "a draft is a convenience; a broken one must not stop a new home")
+        assertTrue(
+            repo.observeDrafts().first().isEmpty(),
+            "and one broken row must not take the whole list down with it",
+        )
+    }
+
+    /**
+     * ⭐ The single `current` row older builds wrote is a perfectly good id, so an unfinished home
+     * drawn on v0.6.5 appears in the new list on first launch instead of being stranded. No migration
+     * — that is the whole reason the id column was already a free-form key.
+     */
+    @Test
+    fun `an unfinished home left by an older build is offered back, not stranded`() = runTest {
+        repo.saveDraft("current", draft, now = 7L)
+        val listed = repo.observeDrafts().first()
+        assertEquals(listOf("current"), listed.map { it.id })
+        assertEquals(draft, listed.single().draft)
     }
 
     @Test
@@ -234,7 +277,7 @@ class PersistenceTest {
                '{"rooms":[{"id":"r1","type":"KITCHEN","col":1,"row":1,"w":2,"h":2}]}', 1)""".trimIndent(),
             0,
         )
-        val loaded = assertNotNull(repo.loadDraft())
+        val loaded = assertNotNull(repo.loadDraft("current"))
         assertEquals(1, loaded.rooms.size)
         assertEquals(0, loaded.north)
         assertNull(loaded.door)
@@ -291,8 +334,8 @@ class PersistenceTest {
                 "and it must not quietly rewrite them either",
             )
             // The thing the upgrade added actually works afterwards.
-            after.saveDraft(draft, now = 3L)
-            assertEquals(draft, after.loadDraft(), "the new draft table must exist after the upgrade")
+            after.saveDraft("d1", draft, now = 3L)
+            assertEquals(draft, after.loadDraft("d1"), "the new draft table must exist after the upgrade")
         } finally {
             old.close()
         }

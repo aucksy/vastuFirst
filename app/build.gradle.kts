@@ -58,6 +58,10 @@ kotlin {
             implementation(libs.roborazzi.compose)
             implementation(libs.roborazzi.junit.rule)
             implementation(libs.roborazzi.accessibility.check)
+            // ⭐ For the unfinished-home tests (v0.6.6). The rule "nothing comes back unless the user
+            // asks for it" lives in a ViewModel with a debounced autosave, so proving it needs a
+            // controllable Main dispatcher and virtual time — the alternative is a claim in a comment.
+            implementation(libs.kotlinx.coroutines.test)
             // Version-matched Compose UI-test rule (createComposeRule / captureRoboImage host).
             // compose.uiTest is flagged experimental by the JB Compose plugin; opt in explicitly.
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
@@ -119,8 +123,8 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 43
-        versionName = "0.6.5"
+        versionCode = 44
+        versionName = "0.6.6"
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.

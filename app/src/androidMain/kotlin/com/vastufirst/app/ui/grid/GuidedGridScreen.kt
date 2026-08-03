@@ -495,20 +495,24 @@ fun GuidedGridContent(
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
 
-        // ⭐ Work brought back after Android reclaimed the app. Restoring it silently would be worse
-        // than losing it: the user would be editing a home they thought they had abandoned, with no
-        // way back to a blank grid. So it is said, and there is a way out in the same breath.
+        // ⭐ An unfinished home the user asked to carry on with, from the saved-homes screen. It is
+        // still SAID out loud, even though they chose it: the way back to a blank grid has to be one
+        // tap away, or "carry on" becomes a trap for anyone who tapped the wrong row.
+        //
+        // ⚠ The wording changed in v0.6.6 with the behaviour. It used to apologise for the phone
+        // having closed the app, because the app restored this by itself; now nothing comes back
+        // unless it is asked for, so the card confirms a choice rather than explaining an accident.
         if (restoredFromDraft && rooms.isNotEmpty()) {
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             VastuCard(accent = colors.primary) {
                 VText(
-                    "We kept the home you were drawing",
+                    "Carrying on with your unfinished home",
                     style = VastuTheme.type.h3, color = colors.textPrimary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    "Your phone closed the app before you finished. Carry on from here, or clear it " +
-                        "and start this home again.",
+                    "This is the home you started earlier, exactly as you left it. Carry on from " +
+                        "here, or clear it and start this home again.",
                     style = VastuTheme.type.body, color = colors.textSecondary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s3))

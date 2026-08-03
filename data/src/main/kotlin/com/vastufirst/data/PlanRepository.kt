@@ -58,6 +58,23 @@ data class SavedPlans(
 )
 
 /**
+ * A home that was started and never finished, as the saved-homes screen shows it.
+ *
+ * ⭐ It carries no score, and that is the point: nothing here has been through the engine. It is the
+ * drawing exactly as the user left it, waiting to be picked up — and it is picked up ONLY when the
+ * user taps this row (v0.6.6). Before that, the app restored the leftover work by itself the moment
+ * anyone started a new home, so "draw it on a grid" quietly handed back an old half-finished plan.
+ */
+data class SavedDraft(
+    val id: String,
+    val draft: DraftSnapshot,
+    val updatedAt: Long,
+) {
+    /** How much is actually on the grid — the only honest thing to put in front of the user. */
+    val roomCount: Int get() = draft.rooms.size
+}
+
+/**
  * The one door to local persistence. Serialises the [Plan] input to JSON so a home can be
  * reopened and re-run fully offline; reads are exposed as cold [Flow]s so the saved-plans
  * screen updates itself. All DB work is pushed onto [io] off the main thread.
@@ -139,34 +156,54 @@ class PlanRepository(
 
     suspend fun deleteAll(): Unit = withContext(io) { queries.deleteAll() }
 
-    // --- the in-progress draft (one row, id = DRAFT_ID) ---
+    // --- the unfinished homes (one row each, keyed by the draft's own id) ---
 
     /**
      * Persist the home currently being drawn, so a background kill cannot lose it. Deliberately
      * total: a draft that cannot be written is not worth crashing the editor over, and the user is
      * still holding the real thing on screen.
      */
-    suspend fun saveDraft(draft: DraftSnapshot, now: Long): Unit = withContext(io) {
+    suspend fun saveDraft(id: String, draft: DraftSnapshot, now: Long): Unit = withContext(io) {
         runCatching {
-            draftQueries.upsertDraft(DRAFT_ID, json.encodeToString(DraftSnapshot.serializer(), draft), now)
+            draftQueries.upsertDraft(id, json.encodeToString(DraftSnapshot.serializer(), draft), now)
         }
         Unit
     }
 
     /**
-     * The unfinished home, or null if there isn't one — or if what is stored can no longer be read,
+     * Every home that was started and never finished, newest first.
+     *
+     * ⚠ Drafts with nothing drawn in them are filtered out, not shown. An empty grid is not work the
+     * user would recognise as "the home I was in the middle of", and offering it back would make the
+     * list longer and less true at the same time. A row that can no longer be DECODED is skipped for
+     * the same reason it always was: a draft is a convenience, and one bad row must never stop the
+     * screen listing the good ones. (Saved homes are treated differently on purpose — those are
+     * COUNTED and reported, because a finished home vanishing without a word is unforgivable.)
+     */
+    fun observeDrafts(): Flow<List<SavedDraft>> =
+        draftQueries.selectAllDrafts().asFlow().mapToList(io).map { rows ->
+            rows.mapNotNull { row ->
+                val snapshot = runCatching {
+                    json.decodeFromString(DraftSnapshot.serializer(), row.draftJson)
+                }.getOrNull() ?: return@mapNotNull null
+                if (snapshot.isEmpty) null else SavedDraft(row.id, snapshot, row.updatedAt)
+            }
+        }
+
+    /**
+     * One unfinished home, or null if there isn't one — or if what is stored can no longer be read,
      * which is treated exactly the same way. A draft is a convenience; failing to decode one must
      * never stop the user starting a home.
      */
-    suspend fun loadDraft(): DraftSnapshot? = withContext(io) {
-        val row = runCatching { draftQueries.selectDraft(DRAFT_ID).executeAsOneOrNull() }.getOrNull()
+    suspend fun loadDraft(id: String): DraftSnapshot? = withContext(io) {
+        val row = runCatching { draftQueries.selectDraft(id).executeAsOneOrNull() }.getOrNull()
             ?: return@withContext null
         runCatching { json.decodeFromString(DraftSnapshot.serializer(), row.draftJson) }.getOrNull()
     }
 
-    /** Drop the draft — called the moment it becomes a real saved home, or the user starts again. */
-    suspend fun clearDraft(): Unit = withContext(io) {
-        runCatching { draftQueries.deleteDraft(DRAFT_ID) }
+    /** Drop one draft — the moment it becomes a real saved home, or the user throws it away. */
+    suspend fun clearDraft(id: String): Unit = withContext(io) {
+        runCatching { draftQueries.deleteDraft(id) }
         Unit
     }
 
@@ -196,9 +233,5 @@ class PlanRepository(
         // Swallowed on purpose, and nothing is deleted: the row stays on disk so a later build that
         // understands it can still bring the home back.
         null
-    }
-
-    private companion object {
-        const val DRAFT_ID = "current"
     }
 }

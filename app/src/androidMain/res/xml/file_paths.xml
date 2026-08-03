@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Where "take a photo" is allowed to write, and nowhere else.
+
+  The phone's own camera app needs somewhere to put the picture it takes, and it can only write to a
+  place we hand it explicitly. This grants ONE folder inside the app's own cache — the camera app
+  gets a one-shot permission to that single file for as long as the capture runs, and nothing else on
+  the phone can read it.
+
+  Cache, deliberately, not files/: a plan photo is an input to one reading, not something the app
+  keeps. Android is free to reclaim it, and the user's own gallery is untouched — the picture we take
+  never appears in it.
+-->
+<paths>
+    <cache-path name="plan-photos" path="plan-photos/" />
+</paths>

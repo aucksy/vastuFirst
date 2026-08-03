@@ -192,6 +192,41 @@ class ReportTextTest {
         }
     }
 
+    /**
+     * ⭐ The door's closing advice must not tell someone to move a door they cannot move (v0.6.6).
+     *
+     * For a home that is already standing — buying it, or living in it — "a door moved a few feet
+     * reads quite differently, walk it through with whoever is drawing the plan" is advice with
+     * nowhere to go. The FACT stays in both readings, because an unfavourable door must never be a
+     * dead end; only the instruction changes.
+     */
+    @Test
+    fun the_door_never_suggests_redrawing_a_home_that_is_already_built() {
+        val door = analysis.doorResult
+        assertNotNull("the sample home has a front door", door)
+        val forAStandingHome = doorExplanation(door!!, remediesOnly = true)
+        listOf("on paper", "drawing it", "moved a few feet").forEach { banned ->
+            assertFalse(
+                "\"$banned\" is advice a buyer or a resident cannot act on",
+                forAStandingHome.contains(banned, ignoreCase = true),
+            )
+        }
+        assertTrue(
+            "the 32-position table is the reading itself and must survive in both",
+            forAStandingHome.contains("32 named positions"),
+        )
+        if (door.verdict != com.vastufirst.shared.PadaVerdict.AUSPICIOUS) {
+            assertTrue(
+                "an unfavourable door must still not be a dead end",
+                forAStandingHome.contains("same wall"),
+            )
+            assertTrue(
+                "and someone still building keeps the advice they CAN act on",
+                doorExplanation(door).contains("still on paper"),
+            )
+        }
+    }
+
     @Test
     fun the_paywall_preview_never_grows_past_three_lines() {
         // Every extra line pushes the payment notice below the fold on a 320 dp phone at large font.

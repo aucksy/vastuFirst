@@ -31,6 +31,30 @@ object Routes {
     const val SCORE = "score"
 
     /**
+     * ⭐ The one door back into an unfinished home (v0.6.6). The editor's destination takes an
+     * optional id: arriving WITHOUT it means "start a fresh home", which is what every other way in
+     * now does; arriving WITH one means "the user tapped this unfinished home on the saved-homes
+     * screen, put it back". Before this, the app restored whatever draft it found by itself, so
+     * choosing "draw it on a grid" handed back a half-finished plan the user had not asked for.
+     *
+     * The ids are the app's own (`draft-<millis>`, plus the single `current` row older builds wrote),
+     * so they contain nothing a route would have to escape.
+     */
+    const val ARG_DRAFT_ID = "draftId"
+    const val GUIDED_GRID_ROUTE = "$GUIDED_GRID?$ARG_DRAFT_ID={$ARG_DRAFT_ID}"
+    fun guidedGridForDraft(draftId: String) = "$GUIDED_GRID?$ARG_DRAFT_ID=$draftId"
+
+    /**
+     * ⭐ North, opened from an already-saved home rather than from the end of the drawing flow
+     * (v0.6.6). The flag decides only the way OUT: back to the score it came from, instead of
+     * pushing a second score on top of the first. Until this release a saved home's North could not
+     * be changed at all — the only thing on offer was renaming it.
+     */
+    const val ARG_FROM_SCORE = "fromScore"
+    const val MARK_NORTH_ROUTE = "$MARK_NORTH?$ARG_FROM_SCORE={$ARG_FROM_SCORE}"
+    fun markNorthFromScore() = "$MARK_NORTH?$ARG_FROM_SCORE=true"
+
+    /**
      * The optional "a few more things" step — water tank, tree, the road outside. Reached from
      * the score rather than placed before it: the free score is meant to be quick, and forcing
      * four more questions on everyone would cost every user time to catch the minority who have

@@ -33,12 +33,14 @@ class ScanScreenshotTest {
     private fun screen(
         state: ScanUiState,
         openRow: Int = -1,
+        noCamera: Boolean = false,
     ): @androidx.compose.runtime.Composable () -> Unit = {
         ScanScreen(
             state = state,
             onPickImage = {}, onTakePhoto = {}, onRetry = {},
             onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
             startOpenRow = openRow,
+            cameraUnavailable = noCamera,
         )
     }
 
@@ -58,6 +60,20 @@ class ScanScreenshotTest {
     fun scanIdle() {
         captureAcrossMatrix("scan-idle", screen(ScanUiState.Idle))
         writeManifestAcrossMatrix("scan-idle", screen(ScanUiState.Idle))
+    }
+
+    /**
+     * ⭐ A phone with no camera app at all, after the camera button has been pressed (v0.6.6).
+     *
+     * ⚠ The button used to open the GALLERY — the same picker as the button above it — so someone
+     * holding a printed plan had no way to photograph it and the button looked broken. It now opens
+     * the camera, which means it can also fail on a phone that has none, and that failure has to be
+     * a sentence rather than a tap that does nothing. No screenshot can reach this state by tapping.
+     */
+    @Test
+    fun scanIdleWithoutCamera() {
+        captureAcrossMatrix("scan-idle-no-camera", screen(ScanUiState.Idle, noCamera = true))
+        writeManifestAcrossMatrix("scan-idle-no-camera", screen(ScanUiState.Idle, noCamera = true))
     }
 
     @Test

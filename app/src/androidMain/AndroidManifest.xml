@@ -12,8 +12,14 @@
       read your plan just now", and the feature looks broken in a way no compiler and no unit test
       would ever mention. scripts/check-manifest.sh fails the build if it goes missing again.
 
-      Note what is NOT here: no camera permission (the system photo picker hands back one chosen
-      item), no storage permission, no location, no network-state.
+      Note what is NOT here: no camera permission, no storage permission, no location, no
+      network-state.
+
+      ⭐ "Take a photo" (v0.6.6) STILL needs no camera permission, and that is not an accident. We
+      hand the job to the phone's own camera app and it hands back the picture — the camera is never
+      opened by us. Android only demands the CAMERA grant from an app that DECLARES it, so declaring
+      it "to be safe" would create the very permission prompt this app has never needed.
+      scripts/check-manifest.sh fails the build if that line ever appears.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -36,6 +42,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          The one folder the phone's camera app is allowed to write into, so "take a photo" can hand
+          the picture back. Not exported: the grant is a one-shot permission on a single file, given
+          to the camera app for the length of one capture and to nothing else. See res/xml/file_paths.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

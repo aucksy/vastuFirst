@@ -27,10 +27,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlan
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.EmptyState
 import com.vastufirst.designsystem.components.IconTapButton
+import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
@@ -56,6 +58,7 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeScreen(
     onAddHome: () -> Unit,
     onOpenPlan: (String) -> Unit,
+    onOpenDraft: (String) -> Unit,
     onSettings: () -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -63,6 +66,7 @@ fun HomeScreen(
     // from a fixture in the screenshot harness — including the empty state (UI-POLISH §6).
     val saved by viewModel.plans.collectAsStateWithLifecycle()
     val scoreChanges by viewModel.scoreChanges.collectAsStateWithLifecycle()
+    val drafts by viewModel.drafts.collectAsStateWithLifecycle()
     HomeContent(
         plans = saved.plans,
         unreadable = saved.unreadable,
@@ -72,6 +76,9 @@ fun HomeScreen(
         onRename = viewModel::rename,
         scoreChanges = scoreChanges,
         onAcknowledgeScoreChanges = viewModel::acknowledgeScoreChanges,
+        drafts = drafts,
+        onOpenDraft = onOpenDraft,
+        onDiscardDraft = viewModel::deleteDraft,
     )
 }
 
@@ -90,11 +97,23 @@ fun HomeContent(
     /** Homes scored under an older set of Vastu rules, re-run under today's. Null = nothing changed. */
     scoreChanges: ScoreChangeNotice? = null,
     onAcknowledgeScoreChanges: (ScoreChangeNotice) -> Unit = {},
+    /**
+     * ⭐ Homes that were started and never finished (v0.6.6). They sit ABOVE the finished ones,
+     * because an unfinished home is the one thing on this screen with something still to do — and
+     * because the app no longer brings them back by itself, this list is the only way in. Before
+     * this release, entering the drawing flow for ANY reason silently reloaded the leftover work.
+     */
+    drafts: List<SavedDraft> = emptyList(),
+    onOpenDraft: (String) -> Unit = {},
+    onDiscardDraft: (String) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     // The home currently being renamed (null = no dialog). Held here so the dialog overlays the whole
     // screen rather than living inside a scrolling row.
     var renaming by remember { mutableStateOf<SavedPlan?>(null) }
+    // The unfinished home the user has asked to throw away, waiting on the confirmation. Throwing one
+    // away cannot be undone, so it is never a single tap.
+    var discarding by remember { mutableStateOf<SavedDraft?>(null) }
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
@@ -127,7 +146,7 @@ fun HomeContent(
             Spacer(Modifier.height(VastuTheme.spacing.s3))
         }
 
-        if (plans.isEmpty()) {
+        if (plans.isEmpty() && drafts.isEmpty()) {
             EmptyState(
                 title = "No plans yet",
                 body = "Add your first floor plan to see its Vastu score.",
@@ -143,6 +162,20 @@ fun HomeContent(
                     item(key = "score-change") {
                         ScoreChangeCard(notice = notice, onAcknowledge = { onAcknowledgeScoreChanges(notice) })
                     }
+                }
+                // The unfinished homes, first and labelled. A heading rather than a different colour:
+                // "still to finish" is a fact about the row, and a word says it to everybody —
+                // including a screen reader and somebody reading in daylight.
+                if (drafts.isNotEmpty()) {
+                    item(key = "drafts-header") { SectionLabel("Still to finish") }
+                    items(drafts, key = { "draft:${it.id}" }) { draft ->
+                        DraftRow(
+                            draft = draft, now = now,
+                            onOpen = { onOpenDraft(draft.id) },
+                            onDiscard = { discarding = draft },
+                        )
+                    }
+                    if (plans.isNotEmpty()) item(key = "plans-header") { SectionLabel("Finished") }
                 }
                 items(plans, key = { it.id }) { plan ->
                     PlanRow(plan = plan, now = now, onOpen = onOpenPlan, onRename = { renaming = plan })
@@ -160,6 +193,97 @@ fun HomeContent(
                 currentName = plan.name,
                 onCancel = { renaming = null },
                 onSave = { newName -> onRename(plan.id, newName); renaming = null },
+            )
+        }
+    }
+
+    discarding?.let { draft ->
+        Dialog(onDismissRequest = { discarding = null }) {
+            DiscardDraftDialogContent(
+                roomCount = draft.roomCount,
+                onCancel = { discarding = null },
+                onDiscard = { onDiscardDraft(draft.id); discarding = null },
+            )
+        }
+    }
+}
+
+/**
+ * One home that was started and never finished.
+ *
+ * ⚠ It shows NO score, on purpose. Nothing here has been through the engine — putting a number on it
+ * would be inventing one, and this app's whole promise is that it does not do that. What it shows
+ * instead is the one true thing: how much is on the grid, and when it was last touched.
+ */
+@Composable
+private fun DraftRow(draft: SavedDraft, now: Long, onOpen: () -> Unit, onDiscard: () -> Unit) {
+    val colors = VastuTheme.colors
+    val rooms = draft.roomCount
+    VastuListRow(
+        title = draft.draft.name ?: "Unfinished home",
+        subtitle = "${rooms} ${if (rooms == 1) "room" else "rooms"} so far · ${relativeUpdated(draft.updatedAt, now)}",
+        modifier = Modifier.clickableTap(
+            role = Role.Button,
+            onClickLabel = "carry on with this home",
+            onClick = onOpen,
+        ),
+        trailing = {
+            // A child tap target, like the pencil on a finished home: it consumes its own tap, so
+            // this throws the home away while the rest of the row carries on with it.
+            IconTapButton(
+                glyph = "✕",
+                contentDescription = "Throw away this unfinished home",
+                onClick = onDiscard,
+            )
+            // ⚠ textSecondary, not the sage accent. Measured on this card the accent is 3.64 : 1
+            // where 4.5 is required at this size — the same defect the scan screen's CHECK pill
+            // shipped with. The "this is a control" signal is carried by the label type style.
+            VText("Carry on", style = VastuTheme.type.label, color = colors.textSecondary)
+        },
+    )
+}
+
+/**
+ * "Throw this away?" — its own composable so the screenshot harness can render it without a live
+ * Dialog window, exactly as the rename box is.
+ *
+ * ⚠ It names what is being lost. "Are you sure?" tells somebody nothing; "the 5 rooms you placed"
+ * tells them whether they mind, and this is the only destructive action on the screen.
+ */
+@Composable
+fun DiscardDraftDialogContent(
+    roomCount: Int,
+    onCancel: () -> Unit,
+    onDiscard: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VastuTheme.shapes.lg)
+            .background(colors.paper)
+            .padding(VastuTheme.spacing.s6),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+    ) {
+        VText("Throw away this unfinished home?", style = VastuTheme.type.h3, color = colors.textPrimary)
+        VText(
+            "The ${roomCount} ${if (roomCount == 1) "room" else "rooms"} you placed will be gone, " +
+                "and we can't bring them back. Your finished homes aren't affected.",
+            style = VastuTheme.type.body, color = colors.textSecondary,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            VastuButton(
+                "Keep it",
+                onClick = onCancel,
+                large = false,
+                modifier = Modifier.weight(1f),
+            )
+            VastuButton(
+                "Throw it away",
+                onClick = onDiscard,
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
+                modifier = Modifier.weight(1f),
             )
         }
     }

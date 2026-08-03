@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vastufirst.data.PlanRepository
+import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlans
 import com.vastufirst.engine.VastuEngine
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,17 @@ class HomeViewModel(
 
     val plans: StateFlow<SavedPlans> = repo.observePlans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SavedPlans())
+
+    /**
+     * ⭐ The homes that were started and never finished (v0.6.6).
+     *
+     * They are LISTED, not restored. The app used to bring the leftover work back by itself the
+     * moment anyone entered the drawing flow — so choosing "draw it on a grid" or "upload a plan"
+     * handed back a half-finished home nobody had asked for. Putting them here makes resuming a
+     * thing the user chooses and makes starting fresh mean what it says.
+     */
+    val drafts: StateFlow<List<SavedDraft>> = repo.observeDrafts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
      * ⭐ The homes whose score was computed under an OLDER set of rules, re-run under today's.
@@ -59,6 +71,9 @@ class HomeViewModel(
     }
 
     fun deleteAll() { viewModelScope.launch { repo.deleteAll() } }
+
+    /** Throw away one unfinished home. Confirmed on screen first — it cannot be undone. */
+    fun deleteDraft(id: String) { viewModelScope.launch { repo.clearDraft(id) } }
 
     /** Rename a saved home (blank is ignored by the repository). The list updates via its flow. */
     fun rename(id: String, name: String) { viewModelScope.launch { repo.rename(id, name) } }

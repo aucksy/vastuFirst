@@ -22,6 +22,7 @@ import com.vastufirst.shared.editor.DraftRoom
 import com.vastufirst.shared.editor.DraftSnapshot
 import com.vastufirst.shared.editor.Footprint
 import com.vastufirst.shared.editor.Gap
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
@@ -71,6 +72,12 @@ class NewPlanViewModel(
     private val engine: VastuEngine,
     private val repo: PlanRepository,
     private val now: () -> Long = { System.currentTimeMillis() },
+    /**
+     * Where scoring runs — off the main thread in the app, and injectable so a test can make the
+     * whole save path deterministic. Without this seam the only way to prove "finishing a home
+     * removes its unfinished row" is to poll and hope, which is how a flaky test enters a codebase.
+     */
+    private val compute: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     var language by mutableStateOf("en")
@@ -121,12 +128,23 @@ class NewPlanViewModel(
 
     /**
      * ⭐ True when what is on screen was brought back from a half-finished draft rather than started
-     * fresh — so the editor can say so, and offer to start again. Silently restoring work is right;
-     * silently restoring it without saying so is how a user ends up editing a home they thought they
-     * had abandoned.
+     * fresh — so the editor can say so, and offer to start again. The user asked for this one by
+     * tapping it on the saved-homes screen (see [resumeDraft]); saying so anyway is what keeps
+     * "carry on" and "throw it away and start this home again" both one tap apart.
      */
     var restoredFromDraft by mutableStateOf(false)
         private set
+
+    /**
+     * ⭐⭐ Which unfinished-home row this session owns, or null when nothing has been drawn yet.
+     *
+     * ⚠ It is minted on the FIRST real edit, never on entry. That is the whole of the owner's fix:
+     * a session that is only passing through — Welcome, "add a home", a look at the scanner — must
+     * leave no row behind and must not adopt anybody else's. And because each session owns its own
+     * id, starting a second home can no longer overwrite the first one's only copy, which the single
+     * 'current' row did silently.
+     */
+    private var draftId: String? = null
 
     /**
      * ⭐ True when the rooms on the grid came off a scan that could not work out WHERE they go, so
@@ -147,28 +165,22 @@ class NewPlanViewModel(
     fun markRoomsUnplaced(unplaced: Boolean) { roomsUnplaced = unplaced }
 
     init {
-        // Bring back the home that was being drawn when Android last reclaimed the app. A draft row
-        // only ever exists for a home that was NEVER saved (it is deleted the moment one becomes a
-        // real saved home), so "there is a draft" always means "you were in the middle of this", and
-        // restoring it is the obviously right answer rather than a guess.
-        viewModelScope.launch {
-            val draft = repo.loadDraft() ?: return@launch
-            if (draft.isEmpty || rooms.isNotEmpty() || planId != null) return@launch
-            applyDraft(draft)
-            restoredFromDraft = true
-            markDirty()
-        }
-
+        // ⭐⭐ NOTHING IS RESTORED HERE, and that is the fix (v0.6.6). This used to load the leftover
+        // draft the moment the flow was entered — so tapping "add a home" and choosing "draw it on a
+        // grid" or "upload a plan" handed back yesterday's half-finished home instead of a clean
+        // start, and the user had to notice a card and press "start this home again" to get the
+        // blank grid they had just asked for. An unfinished home is now listed on the saved-homes
+        // screen and comes back ONLY when its own row is tapped — see [resumeDraft].
         viewModelScope.launch {
             dirty.debounce(50).collectLatest {
                 // ⚠ The draft is written BEFORE the engine runs, not after. Scoring is the slow part,
                 // and the whole point of this row is to survive being killed at an arbitrary moment —
                 // including during that computation.
                 if (planId == null) {
-                    withContext(NonCancellable) { repo.saveDraft(snapshot(), now()) }
+                    withContext(NonCancellable) { persistDraft() }
                 }
                 val plan = buildPlan() ?: run { _analysis.value = null; return@collectLatest }
-                val result = withContext(Dispatchers.Default) { engine.analyze(plan) }
+                val result = withContext(compute) { engine.analyze(plan) }
                 _analysis.value = result
                 // Autosave edits to an ALREADY-saved home (planId != null) so a reopen → Fix → edit →
                 // Back never silently loses them, and the saved-plans list stays in sync. A brand-new
@@ -291,6 +303,25 @@ class NewPlanViewModel(
 
     private fun markDirty() { dirty.tryEmit(Unit) }
 
+    /**
+     * Write (or remove) this session's unfinished-home row.
+     *
+     * Two rules, both of them about what the saved-homes screen is allowed to offer back:
+     *  - a session with nothing on the grid owns no row — so passing through the flow leaves nothing
+     *    behind, and clearing the grid takes the row away rather than leaving an empty home listed;
+     *  - the id is minted here, on the first edit, so it belongs to this home and no other.
+     */
+    private suspend fun persistDraft() {
+        val snap = snapshot()
+        if (snap.isEmpty) {
+            draftId?.let { repo.clearDraft(it) }
+            draftId = null
+            return
+        }
+        val id = draftId ?: "draft-${now()}".also { draftId = it }
+        repo.saveDraft(id, snap, now())
+    }
+
     /** True once the plan has enough to score (at least one room). */
     fun canScore(): Boolean = rooms.isNotEmpty()
 
@@ -312,7 +343,7 @@ class NewPlanViewModel(
                 if (name == null) name = "Home ${repo.nextHomeNumber()}"
                 // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
                 // null): guarantees the stored list-view score equals what a reopen recomputes.
-                val a = withContext(Dispatchers.Default) { engine.analyze(plan) }
+                val a = withContext(compute) { engine.analyze(plan) }
                 _analysis.value = a
                 val saved = SavedPlan(
                     id = id,
@@ -327,10 +358,12 @@ class NewPlanViewModel(
                     updatedAt = now(),
                 )
                 repo.save(saved, now())
-                // ⭐ This home is now a real saved row, so the draft has done its job. Dropping it
-                // here is what makes "a draft exists" mean exactly "you never finished this one" —
-                // and therefore what makes restoring it on the next launch unambiguously right.
-                repo.clearDraft()
+                // ⭐ This home is now a real saved row, so its unfinished-home row has done its job.
+                // Dropping it here is what makes "there is a draft" mean exactly "you never finished
+                // this one" — so the saved-homes screen never lists the same home twice, once as a
+                // finished home and once as an unfinished one.
+                draftId?.let { repo.clearDraft(it) }
+                draftId = null
                 restoredFromDraft = false
             }
         }
@@ -394,6 +427,28 @@ class NewPlanViewModel(
     }
 
     /**
+     * ⭐ Bring back one unfinished home, because the user tapped its row on the saved-homes screen.
+     *
+     * This is the ONLY way a half-finished home returns to the screen (v0.6.6). Everything else —
+     * "add a home", "draw it on a grid", "upload a plan" — starts from nothing, which is what the
+     * owner asked for and what those words already promised.
+     *
+     * Tolerant: a row that has gone missing or can no longer be read leaves the user on a clean
+     * empty grid rather than on an error.
+     */
+    fun resumeDraft(id: String) {
+        if (draftId == id) return                 // already showing it (a recomposition, a rotation)
+        viewModelScope.launch {
+            val draft = repo.loadDraft(id) ?: return@launch
+            if (draft.isEmpty) return@launch
+            applyDraft(draft)
+            draftId = id
+            restoredFromDraft = true
+            markDirty()
+        }
+    }
+
+    /**
      * Throw away the restored draft and start this home from nothing. The only way back to an empty
      * grid once a draft has been brought back — without it, "we kept your home" would be a trap.
      */
@@ -410,7 +465,11 @@ class NewPlanViewModel(
         restoredFromDraft = false
         roomsUnplaced = false
         _analysis.value = null
-        viewModelScope.launch { withContext(NonCancellable) { repo.clearDraft() } }
+        // Drop the row this session owned and forget it, so the next thing drawn starts a new
+        // unfinished home rather than resurrecting the one just thrown away.
+        val discarded = draftId
+        draftId = null
+        viewModelScope.launch { withContext(NonCancellable) { discarded?.let { repo.clearDraft(it) } } }
     }
 
     /** Load an existing saved home into the flow (reopen from the saved-plans list). */
@@ -438,7 +497,7 @@ class NewPlanViewModel(
         gridCols = dc
         gridRows = dr
         viewModelScope.launch {
-            val result = withContext(Dispatchers.Default) { engine.analyze(saved.plan) }
+            val result = withContext(compute) { engine.analyze(saved.plan) }
             _analysis.value = result
             // If the ruleset changed since this home was saved, refresh the stored score + version
             // instead of leaving the list showing a number computed under an older ruleset (§5).

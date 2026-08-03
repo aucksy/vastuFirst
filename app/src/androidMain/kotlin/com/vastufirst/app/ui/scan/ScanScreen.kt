@@ -70,6 +70,13 @@ fun ScanScreen(
      *  cannot tap a row, and the wrapped list of nineteen chips is narrower here than in the editor
      *  (it sits inside a card), so it is a genuinely different layout risk and must be looked at. */
     startOpenRow: Int = -1,
+    /**
+     * True once "take a photo" has been pressed on a phone with no camera app at all — an emulator,
+     * a stripped ROM. The screen then says so in one line instead of the button doing nothing, which
+     * is the shape of the very defect this release fixes. Last in the list on purpose: everything
+     * above it is called positionally by the accessibility pass.
+     */
+    cameraUnavailable: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -82,7 +89,7 @@ fun ScanScreen(
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         when (state) {
-            ScanUiState.Idle -> IdleBody(onPickImage, onTakePhoto, onDrawInstead)
+            ScanUiState.Idle -> IdleBody(onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable)
             ScanUiState.Reading -> ReadingBody()
             is ScanUiState.Done ->
                 DoneBody(state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow)
@@ -98,7 +105,12 @@ fun ScanScreen(
 }
 
 @Composable
-private fun IdleBody(onPickImage: () -> Unit, onTakePhoto: () -> Unit, onDrawInstead: () -> Unit) {
+private fun IdleBody(
+    onPickImage: () -> Unit,
+    onTakePhoto: () -> Unit,
+    onDrawInstead: () -> Unit,
+    cameraUnavailable: Boolean,
+) {
     val colors = VastuTheme.colors
     VText("Upload your plan", style = VastuTheme.type.h2, color = colors.textPrimary)
     Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -114,7 +126,18 @@ private fun IdleBody(onPickImage: () -> Unit, onTakePhoto: () -> Unit, onDrawIns
     // worth more than any model choice. So the PDF is the primary button, not the camera.
     VastuButton("Choose a PDF or picture", onClick = onPickImage)
     Spacer(Modifier.height(VastuTheme.spacing.s3))
-    VastuButton("Take a photo instead", onClick = onTakePhoto, style = VastuButtonStyle.SECONDARY)
+    // ⭐ This opens the CAMERA (v0.6.6). It used to open the gallery — the same picker as the button
+    // above, under a different name — which left someone holding a printed plan with no way to
+    // photograph it, and made the button look broken. The label now describes what happens.
+    VastuButton("Take a photo of it now", onClick = onTakePhoto, style = VastuButtonStyle.SECONDARY)
+    if (cameraUnavailable) {
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(
+            "This phone doesn't have a camera app we can open. Choose a picture or PDF above " +
+                "instead — it reads better anyway.",
+            style = VastuTheme.type.bodySm, color = colors.verdictSuboptimal,
+        )
+    }
 
     Spacer(Modifier.height(VastuTheme.spacing.s6))
     VastuCard {

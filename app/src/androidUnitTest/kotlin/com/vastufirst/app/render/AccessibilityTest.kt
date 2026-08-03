@@ -9,6 +9,7 @@ import com.vastufirst.app.ui.scan.ScanUiState
 import com.vastufirst.shared.scan.RecordedScans
 import com.vastufirst.shared.scan.ScanMapper
 import com.vastufirst.app.ui.grid.GuidedGridContent
+import com.vastufirst.app.ui.home.DiscardDraftDialogContent
 import com.vastufirst.app.ui.home.HomeContent
 import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.legal.LegalScreen
@@ -47,7 +48,18 @@ class AccessibilityTest {
             "welcome" to { WelcomeContent(intent = Intent.BUILDING, onIntentChange = {}, onContinue = {}) },
             "home" to { HomeContent(RenderFixtures.savedPlans, {}, {}, {}, { _, _ -> }, RenderFixtures.FIXED_NOW) },
             "home-empty" to { HomeContent(emptyList(), {}, {}, {}, { _, _ -> }, RenderFixtures.FIXED_NOW) },
+            // ⭐ The unfinished-home rows (v0.6.6). Each carries a tappable row AND a discard button
+            // inside it — the same two-targets-in-one-row shape whose contrast and labelling this
+            // pass has already caught once, on the pencil beside a finished home.
+            "home-unfinished" to {
+                HomeContent(
+                    plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                    onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                    drafts = RenderFixtures.savedDrafts, onOpenDraft = {}, onDiscardDraft = {},
+                )
+            },
             "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },
+            "home-discard" to { DiscardDraftDialogContent(roomCount = 5, onCancel = {}, onDiscard = {}) },
             "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
             "legal" to { LegalScreen(onBack = {}) },
             // UnlockContent, not UnlockScreen: the screen now resolves the billing seam from Koin,

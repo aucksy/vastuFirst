@@ -563,3 +563,42 @@ squares between all of them, and then ask whether your home was "cut off" somewh
 - [ ] **Q23 · Your own 3-bedroom flat should look EXACTLY as it did in the last build.** Same
       grid, same rooms, same shapes — this build changes none of it. If anything on that scan
       moved, tell me; nothing should have.
+
+## R · The five things you asked for  *(new in this build)*
+
+Nothing about how a scanned plan is DRAWN changed in this build — Q14 to Q23 should all still behave
+exactly as they did. Everything below is about getting around the app.
+
+- [ ] **R1 · ⭐⭐ Start a plan, leave it half done, and check it does not follow you around.** Scan or
+      draw a home, place a few rooms, then press Back until you reach your list of homes. Now tap
+      "Add a home" and choose "Draw it on a grid". **You must get an empty grid.** Before this build
+      you got the half-finished home back, without being asked, every time. Try the same with
+      "Upload a plan" — also empty.
+- [ ] **R2 · ⭐⭐ And check it is not lost either.** On your list of homes, above the finished ones,
+      there should be a group headed "Still to finish", with a row saying how many rooms you had
+      placed and when. Tap it: your half-finished home comes back exactly as you left it, with a
+      note at the top confirming that is what happened and a button to clear it and start again.
+- [ ] **R3 · Throwing one away asks first.** On that "still to finish" row there is a small ✕ at the
+      right. Tapping it must ask before deleting, and must tell you how many rooms you are about to
+      lose. "Keep it" must leave it exactly where it was.
+- [ ] **R4 · If you had a half-finished home in the last build, it should be in that list.** Nothing
+      you have already drawn is thrown away by this update — it just moves from "restored at you" to
+      "offered to you".
+- [ ] **R5 · ⭐⭐ "Take a photo of it now" must open the CAMERA.** On the upload screen, that second
+      button opened your gallery before — the same place as the button above it — so there was no way
+      to photograph a printed plan from inside the app. It should now open your camera; take a
+      picture of a plan and it should be read like any other. It must NOT ask you for a camera
+      permission. If you back out of the camera without keeping the picture, you should land calmly
+      back on the upload screen.
+- [ ] **R6 · ⭐⭐ Open a home you saved earlier and look under the coloured plan picture.** There
+      should be two new buttons: "Change the rooms or the front door" and "Change which way North
+      is". Both were missing entirely — renaming was the only thing you could do to a saved home.
+      Change North on a saved home, press "Read my home", and check the score changes and that you
+      land back on that home rather than on a second copy of the same screen.
+- [ ] **R7 · ⭐ Buying comes first.** On the first screen, "I am buying a home" should be the top
+      choice and "I am building a home" the second.
+- [ ] **R8 · ⭐⭐ Pick "I am buying a home", go through to the full report, and read it.** There must
+      be NO suggestion anywhere to change the layout, move a wall, redraw the plan or renovate —
+      every problem should offer remedies only. Same test with "I already live here". Only "I am
+      building a home" should still say "Change the layout — free now". If you see a layout
+      suggestion on either of the other two, that is the bug.

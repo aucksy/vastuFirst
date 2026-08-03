@@ -2,6 +2,7 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import com.vastufirst.app.ui.home.DiscardDraftDialogContent
 import com.vastufirst.app.ui.home.HomeContent
 import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.settings.SettingsContent
@@ -104,6 +105,63 @@ class ViewModelScreensScreenshotTest {
         }
         captureAcrossMatrix("home-scorechange", content)
         writeManifestAcrossMatrix("home-scorechange", content)
+    }
+
+    /**
+     * ⭐⭐ THE UNFINISHED HOMES, LISTED (v0.6.6) — the screen the owner's first fix is really about.
+     *
+     * Until this release a half-finished home was invisible: the app quietly reloaded it the moment
+     * anybody entered the drawing flow, so "draw it on a grid" handed back yesterday's work and there
+     * was no list to choose from. Now they are rows above the finished homes, and this is the picture
+     * that proves the two groups read as two groups — a headed section, a room count and a time where
+     * a finished home carries a score, and a nameless home rendering properly (the ordinary case: a
+     * home is not named until it is first saved).
+     *
+     * Rendered WITH finished homes below, because the risk is exactly that the two look alike.
+     */
+    @Test
+    fun home_with_unfinished() {
+        val content: @Composable () -> Unit = {
+            HomeContent(
+                plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                drafts = RenderFixtures.savedDrafts, onOpenDraft = {}, onDiscardDraft = {},
+            )
+        }
+        captureAcrossMatrix("home-unfinished", content)
+        writeManifestAcrossMatrix("home-unfinished", content)
+    }
+
+    /**
+     * ⭐ The same screen when the ONLY home is an unfinished one — a first-time user who was
+     * interrupted. It must not fall through to "No plans yet", which would tell them their work was
+     * gone while it sat safely on disk one row below.
+     */
+    @Test
+    fun home_only_unfinished() {
+        val content: @Composable () -> Unit = {
+            HomeContent(
+                plans = emptyList(), onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                drafts = RenderFixtures.savedDrafts.take(1), onOpenDraft = {}, onDiscardDraft = {},
+            )
+        }
+        captureAcrossMatrix("home-unfinished-only", content)
+        writeManifestAcrossMatrix("home-unfinished-only", content)
+    }
+
+    /**
+     * ⭐ "Throw away this unfinished home?" — the one destructive action on this screen, and one no
+     * screenshot can reach by tapping. It names what is being lost rather than asking "are you sure",
+     * and its two buttons have to stay side by side and reachable at 200 % font on a 320 dp phone.
+     */
+    @Test
+    fun home_discard_unfinished() {
+        val content: @Composable () -> Unit = {
+            DiscardDraftDialogContent(roomCount = 5, onCancel = {}, onDiscard = {})
+        }
+        captureAcrossMatrix("home-discard", content)
+        writeManifestAcrossMatrix("home-discard", content)
     }
 
     @Test

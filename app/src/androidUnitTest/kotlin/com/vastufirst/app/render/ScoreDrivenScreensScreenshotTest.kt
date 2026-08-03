@@ -145,6 +145,20 @@ class ScoreDrivenScreensScreenshotTest {
     }
 
     /**
+     * ⭐⭐ BUYING — the branch that changed in v0.6.6, and the one the owner ranked fourth and fifth.
+     *
+     * It used to be drawn exactly like BUILDING: "✦ Change the layout — free now" on every problem,
+     * and an opening line promising that nothing was built yet. Someone choosing between two flats
+     * cannot move a wall in either of them, so the layout blocks are gone and the whole document is
+     * remedies. This picture is the proof — if a "change the layout" block is anywhere in it, the
+     * fix did not land.
+     */
+    @Test
+    fun report_buying() = render("report-buying") {
+        ReportContent(analysis = analysis, intent = Intent.BUYING)
+    }
+
+    /**
      * ⭐ THE TWO SECTIONS NO PICTURE HAS EVER SHOWN.
      *
      * ⚠ A golden is a viewport, not a whole document. On the bundled sample the report's "Not ideal"

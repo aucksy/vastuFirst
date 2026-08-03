@@ -65,7 +65,12 @@ fun VastuNavHost() {
             var target by remember { mutableStateOf<String?>(null) }
             LaunchedEffect(Unit) {
                 val hasPlans = repo.observePlans().first().plans.isNotEmpty()
-                target = if (hasPlans) Routes.HOME else Routes.NEWPLAN_GRAPH
+                // ⭐ An unfinished home counts (v0.6.6). Nothing restores a draft by itself any more,
+                // so a user whose only home is half-drawn must land on the list that OFFERS it —
+                // otherwise the flow would open on a blank grid and their work, though safely on
+                // disk, would look exactly like work the app had thrown away.
+                val hasDrafts = repo.observeDrafts().first().isNotEmpty()
+                target = if (hasPlans || hasDrafts) Routes.HOME else Routes.NEWPLAN_GRAPH
             }
             LaunchedEffect(target) {
                 target?.let { dest ->
@@ -84,6 +89,10 @@ fun VastuNavHost() {
             HomeScreen(
                 onAddHome = { nav.go(Routes.NEWPLAN_GRAPH) },
                 onOpenPlan = { id -> nav.go("${Routes.SCORE}?planId=$id") },
+                // ⭐ Straight to the editor with the unfinished home in it — the ONLY route that
+                // brings one back. It lands inside the newplan graph without going through Welcome,
+                // because the user has already answered those questions once; Back returns here.
+                onOpenDraft = { id -> nav.go(Routes.guidedGridForDraft(id)) },
                 onSettings = { nav.go(Routes.SETTINGS) },
             )
         }
@@ -177,15 +186,35 @@ fun VastuNavHost() {
                 )
             }
 
-            composable(Routes.GUIDED_GRID) { entry ->
+            composable(
+                route = Routes.GUIDED_GRID_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_DRAFT_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
                 val vm = sharedVm(nav, entry)
+                // Present ONLY when the user tapped an unfinished home on the saved-homes screen.
+                // Every other way into this editor arrives with no id and therefore a clean grid.
+                val draftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
+                LaunchedEffect(draftId) { if (draftId != null) vm.resumeDraft(draftId) }
                 GuidedGridScreen(vm = vm, onNext = { nav.go(Routes.MARK_NORTH) })
             }
-            composable(Routes.MARK_NORTH) { entry ->
+            composable(
+                route = Routes.MARK_NORTH_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_FROM_SCORE) { type = NavType.BoolType; defaultValue = false },
+                ),
+            ) { entry ->
                 val vm = sharedVm(nav, entry)
+                // ⚠ Which way out. At the END of the drawing flow this screen pushes the score, as it
+                // always has. Opened from an ALREADY-SAVED home's score ("change which way North
+                // is"), it goes BACK to the score it came from instead — pushing a second copy would
+                // put the score behind the score, so Back would land on the same screen again. The
+                // score reads North straight off the shared draft, so returning shows the new number.
+                val fromScore = entry.arguments?.getBoolean(Routes.ARG_FROM_SCORE) ?: false
                 MarkNorthScreen(
                     vm = vm,
-                    onRead = { vm.save(); nav.go(Routes.SCORE) },
+                    onRead = { vm.save(); if (fromScore) nav.popBackStack() else nav.go(Routes.SCORE) },
                     onBack = { nav.popBackStack() },
                 )
             }
@@ -200,7 +229,10 @@ fun VastuNavHost() {
                     vm = vm,
                     // Already paid? go straight to the report rather than the paywall again (B11).
                     onUnlock = { nav.go(if (vm.unlocked) Routes.REPORT else Routes.UNLOCK) },
+                    // No draft id: the home on screen is already loaded into the shared draft, and
+                    // an id here would try to pull an unfinished home over the top of it.
                     onFix = { nav.go(Routes.GUIDED_GRID) },
+                    onChangeNorth = { nav.go(Routes.markNorthFromScore()) },
                     onDone = { nav.goHome() },
                     onAddDetails = { nav.go(Routes.MORE_DETAILS) },
                 )
