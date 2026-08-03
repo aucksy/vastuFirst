@@ -3308,3 +3308,55 @@ the fourth problem sits below the fold of every golden and a screenshot alone co
   been scored — but it means the list cannot be sorted or compared by number until it is finished.
 - **A photo taken in the app is still a photo.** §3e's measurement stands: skew is what ruins a read,
   so the PDF remains the primary button and the camera the second one.
+
+## 7. Looked at before tagging (CLAUDE.md §2b) — the ratchet rise judged from the pictures
+
+The first CI run went red on the render-geometry ratchet: three screens gained findings. Judged
+from that run's own recorded images before the baseline was touched, and the reasoning is its own
+document (`docs/RATCHET-v0.6.6.md`) rather than a line in a commit message, because it is the kind
+of decision that gets re-litigated a release later.
+
+Every finding is the same class — *"clipped: shows W×H, needs W×H"* on a node near the bottom of a
+**scrolling** screen. That is the viewport, not a layout break: nothing overlaps, nothing is
+unreachable, and every one of those nodes is one scroll away.
+
+- **`score` 2 → 5 · `score-covered` 8 → 10.** The two new edit buttons move everything below them
+  down about two rows, so the nodes that were previously just inside the fold now cross it. Looked
+  at: at the ordinary size both buttons are whole, sit directly under the plan picture and read
+  cleanly; at 200 % font each wraps to two lines and the second is cut by the bottom edge — legible,
+  complete, one scroll away. The alternative was not offering a way back into a saved home at all.
+- **`report-living` 4 → 7.** A one-line-longer opening pushes the front-door card down far enough
+  that its long explanation crosses the fold at four configurations. `report-buying` — the same
+  branch — was adopted at the same 7, which confirms the cause, and `report` (BUILDING) is unchanged
+  at 4.
+- **`welcome` was given headroom of 12 and then MEASURED at 3.** The opening paragraph was rewritten
+  after the run that found the other three, so the number could not be measured in time; the gate
+  writes a LOWER count back by itself, and it did — the rewritten opening is shorter on the page than
+  the line it replaced, six findings went away, and the baseline came out **tighter than the 9 it
+  started at**. The headroom was never spent.
+
+**The new screens were adopted at** `editor-restored-unplaced` 31 · `scan-idle-no-camera` 10 ·
+`report-buying` 7 · `home-unfinished` 7 · `home-unfinished-only` 2 · `home-discard` 0, and the
+accessibility ratchet passed with no baseline change at all.
+
+**What the pictures show, screen by screen:** the saved-homes list reads as two clearly headed
+groups — unfinished homes with a room count, a time and no score, finished homes with their number —
+and at 320 dp the name ellipsises exactly as a finished home's does while the room count stays
+readable. The BUYING report opens "What to do now" over "This home is already built, so everything
+below is something you can do without moving a wall", and its front-door paragraph now ends at
+"where a door stands along the same wall matters a great deal" — the instruction to walk it through
+with whoever is drawing the plan is gone. The discard box holds at 200 % font with "Keep it" as the
+filled button and "Throw it away" as the quiet one. The resumed-home card in the editor confirms a
+choice instead of apologising for a crash.
+
+## 8. Released as 0.6.6
+
+Tagged on this release-notes commit, sitting on top of CI's goldens commit after its own green run —
+the standing rule the release workflow's verify-from-the-tag enforces.
+
+**What a user gets that they did not have yesterday:** a half-finished home that stays half-finished
+until they ask for it back, listed on the saved-homes screen instead of being pushed at them the next
+time they start anything; a "take a photo" button that opens the camera rather than the gallery, with
+no new permission; a saved home whose rooms and North can finally be changed instead of only renamed;
+buying offered first; and — for anyone buying a home or already living in one — a report that stops
+telling them to move a wall they cannot move and gives them remedies instead.

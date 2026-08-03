@@ -221,7 +221,7 @@ private fun DraftRow(draft: SavedDraft, now: Long, onOpen: () -> Unit, onDiscard
     val rooms = draft.roomCount
     VastuListRow(
         title = draft.draft.name ?: "Unfinished home",
-        subtitle = "${rooms} ${if (rooms == 1) "room" else "rooms"} so far · ${relativeUpdated(draft.updatedAt, now)}",
+        subtitle = "$rooms ${if (rooms == 1) "room" else "rooms"} so far · ${relativeUpdated(draft.updatedAt, now)}",
         modifier = Modifier.clickableTap(
             role = Role.Button,
             onClickLabel = "carry on with this home",
@@ -267,7 +267,7 @@ fun DiscardDraftDialogContent(
     ) {
         VText("Throw away this unfinished home?", style = VastuTheme.type.h3, color = colors.textPrimary)
         VText(
-            "The ${roomCount} ${if (roomCount == 1) "room" else "rooms"} you placed will be gone, " +
+            "The $roomCount ${if (roomCount == 1) "room" else "rooms"} you placed will be gone, " +
                 "and we can't bring them back. Your finished homes aren't affected.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )

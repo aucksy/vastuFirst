@@ -14,22 +14,26 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 /**
- * The scan screen wired to the platform's file pickers.
+ * The scan screen wired to the platform, by two doors and no more.
  *
- * ⭐ **`PickVisualMedia` needs no runtime permission** — the Photo Picker is a system UI that hands
- * back one item the user chose, so the app never asks for gallery access at all. It works back to
- * API 26 through the AndroidX backport, and it is strictly better than a permission prompt for a
- * feature whose whole problem is asking someone to trust us with their home's layout.
+ * ⭐ **Neither of them asks for a permission, and that is the point.** This feature's whole problem
+ * is asking somebody to trust us with a picture of their home; a permission dialog on top of that is
+ * a cost we have never had to pay, and `scripts/check-manifest.sh` fails the build if one appears.
  *
- * PDFs come through `OpenDocument` instead, because the Photo Picker only offers images and video —
- * and a PDF is the input we most want, since skew is what ruins a read and a PDF has none.
+ * - **"Choose a PDF or picture" → `OpenDocument`.** The system hands back one file the user chose.
+ *   PDF is first in the filter because it is the input that reads best (skew is what ruins a read,
+ *   §3e, and a PDF has none), and `image/*` is why this one door still covers a picture they already
+ *   have.
+ * - **⭐⭐ "Take a photo of it now" → `TakePicture`** (v0.6.6). This used to be `PickVisualMedia` —
+ *   the gallery, i.e. the same door as the button above it wearing a different label — so somebody
+ *   holding a printed plan had no way to photograph it from inside the app, and the button looked
+ *   broken because it was. The capture goes to the phone's OWN camera app, which is why no CAMERA
+ *   permission is needed: Android demands that grant only from an app that declares it. The camera
+ *   writes into one cache folder granted for the length of one shot, and the picture never enters
+ *   the user's gallery.
  *
- * ⭐⭐ **"Take a photo of it now" opens the CAMERA** (v0.6.6). It used to open the gallery: the same
- * picker as the button above it, wearing a different label — so someone holding a printed plan had
- * no way to photograph it from inside the app, and the button looked broken because it was. The
- * capture goes to the phone's own camera app, which needs no permission from us (see the manifest),
- * writes into one cache folder we grant it for the length of one shot, and never touches the user's
- * gallery.
+ * There is deliberately no third door. Two clear choices beat three on a screen whose reader may be
+ * older, less phone-literate, and standing in daylight.
  */
 @Composable
 fun ScanRoute(

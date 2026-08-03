@@ -10,7 +10,7 @@ from the counts.
 | `score` | 2 | 5 | two new buttons pushed the lower half of a scrolling screen past the viewport |
 | `score-covered` | 8 | 10 | the same two buttons, on the same screen with the extras answered |
 | `report-living` | 4 | 7 | a slightly longer opening line pushed the front-door card's paragraph down |
-| `welcome` | 9 | 12 | ⚠ HEADROOM, not a measurement — see the note at the bottom |
+| `welcome` | 9 | **3** | headroom of 12 was set, then MEASURED at 3 — see the note at the bottom |
 
 ## What the findings actually are
 
@@ -57,7 +57,27 @@ other three predates the copy change.
 Two things make this safe rather than a quiet loosening:
 
 1. **The gate tightens itself.** A count BELOW the baseline is written back and committed on the same
-   run, so if `welcome` really measures 10, the file returns to 10 without anyone touching it.
+   run, so if `welcome` really measures less, the file returns to that number without anyone touching
+   it.
 2. **The pictures are still looked at.** The welcome screen's images are reviewed from the next run
    before anything is tagged — a headroom number stops a red build, it does not excuse an unlooked-at
    screen.
+
+### ✅ How it actually came out
+
+**`welcome` measured 3, not 12 — and not 9 either.** The rewritten opening is SHORTER on the page
+than the line it replaced despite reading longer, so six findings went away and CI wrote `3` back by
+itself on the same run. The headroom was never spent, and the baseline is now tighter than it was
+before this release. Looked at (baseline and 200 % font): buying sits first, building second, and
+the neutral headline reads cleanly above them.
+
+**The new screens were adopted at:** `editor-restored-unplaced` 31 · `scan-idle-no-camera` 10 ·
+`report-buying` 7 · `home-unfinished` 7 · `home-unfinished-only` 2 · `home-discard` 0. The a11y
+ratchet passed with no baseline change at all.
+
+⚠ `editor-restored-unplaced` at 31 is the highest of them, and it is not a surprise: it is the
+parking row (which already carries 46 as `editor-scanned-unplaced`) with a card on top of it. Looked
+at: the heading reads *"These rooms aren't placed yet"*, not "Place your rooms", and the line under
+the plan says *"Once your rooms are where they belong, we'll ask about any missing corners"* — i.e.
+the false shape question about the leftovers of a parking row does not appear. That is precisely the
+defect this screen was added to pin.

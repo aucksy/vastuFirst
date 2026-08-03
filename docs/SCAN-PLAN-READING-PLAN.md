@@ -633,10 +633,16 @@ Matching the standard the editor is already held to:
 The app currently has **no HTTP client, no image loading and no camera** — it is fully offline. Scan
 adds the first of each. Kept minimal:
 
-- **Pick an image:** `PickVisualMedia` (Photo Picker) — **no runtime permission**, works API 26+ via
-  the AndroidX backport. Preferred over a gallery permission.
-- **Camera:** `TakePicture` intent first. CameraX only if the owner wants an in-app viewfinder — it is
-  a heavy dependency against a 30 MB APK budget (NFR §10) and currently we sit at 11.5 MB.
+- **Pick a file:** `OpenDocument`, filtered to `application/pdf` + `image/*` — **no runtime
+  permission**; the system hands back the one file the user chose. One door covers both the PDF (the
+  input that reads best) and a picture they already have.
+  ⚠ `PickVisualMedia` (the Photo Picker) was used for a second "pick an image" button until v0.6.6
+  and is now gone: it sat under the label *"take a photo"*, which is not what it did — see below.
+- **Camera:** `TakePicture` into a `FileProvider` URI on one cache folder — **shipped in v0.6.6**,
+  and still no CAMERA permission, because Android demands that grant only from an app that DECLARES
+  it and the capture is done by the phone's own camera app. CameraX only if the owner ever wants an
+  in-app viewfinder — it is a heavy dependency against a 30 MB APK budget (NFR §10) and we sit at
+  11.5 MB.
 - **PDF:** `android.graphics.pdf.PdfRenderer` is **in the platform since API 21** — no dependency.
 - **Downscale + JPEG encode before upload** — bounded cost, bounded latency, and it keeps us far under
   the 20 MB ceiling.
