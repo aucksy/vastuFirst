@@ -50,3 +50,4 @@ tools/scan-eval/corpus/
 # Python bytecode from the eval/gate scripts
 scripts/__pycache__/
 tools/scan-eval/__pycache__/
+Documents/Gemini Key.txt

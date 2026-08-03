@@ -57,6 +57,20 @@ The three non-negotiables:
   screens I verified. "CI is green" is **not** "the screen is right" and must never be presented as
   if it were.
 
+## 2c. ⭐ HARD RULE — image scans need an approved COUNT first (owner rule, 3 Aug 2026)
+
+Before ANY test, experiment or check that sends a plan image to a paid AI reader (Groq, Gemini,
+any provider, any script): tell the owner the EXACT number of image scans about to run, per
+provider, with the cost estimate in rupees, and WAIT for his explicit yes. No scan runs before
+the yes.
+
+- Existing recordings cost nothing and never need approval — reuse them first.
+- An approval covers the stated count only. Anything beyond it — retries, an extra plan, a
+  second model, "just one more check" — is a new count and a new ask. A failed call that
+  consumed a scan still counts as a scan.
+- A budget line in a task prompt is a ceiling, not an approval.
+- This binds every session and every tool, including one-off scans.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."
