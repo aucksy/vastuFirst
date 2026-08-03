@@ -1007,3 +1007,32 @@ The mandatory confirmation step remains the catch-all, per §6.2b.
 **Corpus, final (44 recordings):** 23 placed · 10 assisted · 11 refused · orientation **159/166**
 · dead edge cells **0** · rooms lost outright 1 (old-prompt, unchanged) · owner's flat untouched
 cell-for-cell · all three of his sheets improved by eye against the paper.
+
+## 3o. ⭐ The resemblance scorer — "does the drawing match the paper" as a number (3 August 2026)
+
+The owner's client scanned a fourth sheet (Tower E&F, 1854 sq ft, 16 named spaces, every size
+printed, compass printed with NORTH TO THE LEFT of the page) and rejected the result. Measured:
+
+- **The ceiling test.** The sheet was hand-transcribed into a perfect reply
+  (`tools/scan-eval/truth/towerEF-1854.json` holds the paper truth; the image is
+  `Documents/Sample Floor plans/towerEF-1854.jpg`) and run through the mirror. The mapper drew it
+  RIGHT — arrangement 100 %, the drawing room properly the biggest. The pipeline below the reader
+  is sound; the reader is the binding constraint. Two rooms still fell out at the ceiling:
+  `MAIDS RM` (not in the synonym table — the reader transcribed it correctly and the table
+  discarded it) and `UTILITY` (resolves fine; drop reason not yet pinned down).
+- **The live reader on the same sheet** returned 14 of 16 rooms (a whole OTHER BEDROOM and one
+  balcony never came back), put STORE/PUJA at the wrong end of the page, misread three printed
+  sizes, and read "PUJA" as "PULA". Template lattice as always. Re-scans of the same sheet
+  differ run to run — the client's phone got a worse roll than the recorded one.
+- **`tools/scan-eval/resemblance.mjs`** scores any `out/render/*.geom.json` against a truth file:
+  rooms arrived (type-matched, nearest-centroid), pairwise arrangement agreement, biggest-room
+  preserved, one-cell chip count. Perfect reading scored `14/16 · 100 % · biggest RIGHT`; the
+  live reader `12/16 · 96 % · biggest RIGHT` on its lucky roll. This is the harness candidate
+  readers get judged with — one truth file per plan, written once from the sheet.
+- ⚠ The editor still speaks compass words ("the 3 squares are in the north-east") one screen
+  BEFORE MarkNorth asks where north is (`GuidedGridScreen` → `Routes.MARK_NORTH`), and this sheet
+  proves plans print rotated compasses. Wording fix pending.
+- ⚠ `plan-007` is a straight-overhead FURNISHED render with every size printed and today's triage
+  refuses it as NOT_2D, same as the genuinely unreadable tilted doll-houses (plan-030/031). The
+  refusal class needs splitting: top-down + sized → attempt; perspective → refuse. A competitor
+  (grihafy.com) reads this class fine.

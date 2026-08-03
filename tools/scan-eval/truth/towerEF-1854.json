@@ -1,0 +1,22 @@
+{
+  "_what": "PAPER TRUTH for the client's Tower E&F 1854 sqft plan (image: Documents/Sample Floor plans/towerEF-1854.jpg). Hand-transcribed from the printed sheet on 2026-08-03. cx/cy are each room's centre as a fraction of the sheet; wFt/hFt are the printed size in feet (0 = not printed). Types use the mapper's room types. This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "towerEF-1854",
+  "rooms": [
+    {"name": "M.TOILET",        "type": "TOILET",         "cx": 0.084, "cy": 0.230, "wFt": 9.0,  "hFt": 5.5},
+    {"name": "MASTER BEDROOM",  "type": "MASTER_BEDROOM", "cx": 0.101, "cy": 0.500, "wFt": 12.0, "hFt": 15.25},
+    {"name": "BALCONY (SW)",    "type": "BALCONY",        "cx": 0.119, "cy": 0.763, "wFt": 7.83, "hFt": 4.5},
+    {"name": "OTHER BEDROOM 1", "type": "BEDROOM",        "cx": 0.261, "cy": 0.637, "wFt": 12.0, "hFt": 13.17},
+    {"name": "LOBBY",           "type": "CORRIDOR",       "cx": 0.329, "cy": 0.373, "wFt": 0,    "hFt": 0},
+    {"name": "BATHROOM",        "type": "BATHROOM",       "cx": 0.385, "cy": 0.554, "wFt": 5.0,  "hFt": 9.33},
+    {"name": "OTHER BEDROOM 2", "type": "BEDROOM",        "cx": 0.546, "cy": 0.622, "wFt": 12.0, "hFt": 14.67},
+    {"name": "BATH RM (top)",   "type": "BATHROOM",       "cx": 0.443, "cy": 0.223, "wFt": 8.0,  "hFt": 5.5},
+    {"name": "STORE/PUJA",      "type": "STORE",          "cx": 0.551, "cy": 0.234, "wFt": 5.0,  "hFt": 6.75},
+    {"name": "DRAWING",         "type": "LIVING",         "cx": 0.668, "cy": 0.421, "wFt": 13.0, "hFt": 22.08},
+    {"name": "BALCONY (S)",     "type": "BALCONY",        "cx": 0.693, "cy": 0.759, "wFt": 7.33, "hFt": 4.5},
+    {"name": "E.LOBBY",         "type": "CORRIDOR",       "cx": 0.811, "cy": 0.360, "wFt": 8.0,  "hFt": 5.0},
+    {"name": "KITCHEN",         "type": "KITCHEN",        "cx": 0.809, "cy": 0.569, "wFt": 8.0,  "hFt": 10.0},
+    {"name": "MAIDS RM",        "type": "BEDROOM",        "cx": 0.924, "cy": 0.547, "wFt": 8.0,  "hFt": 7.17},
+    {"name": "UTILITY",         "type": "UTILITY",        "cx": 0.856, "cy": 0.752, "wFt": 7.75, "hFt": 3.25},
+    {"name": "BATH RM (SE)",    "type": "BATHROOM",       "cx": 0.948, "cy": 0.749, "wFt": 3.25, "hFt": 5.75}
+  ]
+}
