@@ -202,6 +202,12 @@ jobs:
 
       - name: Upload rendered screenshots
         if: always()
+        # ⚠ Non-fatal on purpose (4 Aug 2026): the repo hit the artifact STORAGE QUOTA — 332 old
+        # artifacts, 6.3 GB — and the failed upload reddened a build whose gates had all run. The
+        # goldens are committed into the repo by the step above, so the artifact is a convenience
+        # copy; a storage hiccup must never look like a broken build. (Old artifacts were deleted;
+        # GitHub recalculates usage every 6-12 h, so this also covers the lag.)
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: vastufirst-screenshots

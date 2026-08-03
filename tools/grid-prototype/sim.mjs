@@ -1364,8 +1364,10 @@ const FRACTIONS = { '\u00bd': 0.5, '\u00bc': 0.25, '\u00be': 0.75, '\u2153': 1/3
 // mirror, and the PRINTED-ORIENTATION invariant never judged a single feet-inch room while Kotlin
 // parsed them all. Found by the corpus audit: plan-020, sized on every caption, came out ASSISTED
 // here and PLACED in Kotlin. A mirror that quietly skips a branch is a mirror that stops mirroring.
+// The (?!/) after the inches is load-bearing (mirrors RoomDimensions): at the END of a caption
+// nothing forces backtracking, so 9'-41/2" would match as 41 inches with /2" as trailing junk.
 const FRACTION = "(\u00bd|\u00bc|\u00be|\u2153|\u2154|\u215b|1/2|1/4|3/4|1/3|2/3|1/8)";
-const FEET_INCHES = "(\\d+)\\s*['\u2032\u2019]\\s*-?\\s*(\\d+)?\\s*" + FRACTION + "?\\s*[\"\u2033\u201d]?";
+const FEET_INCHES = "(\\d+)\\s*['\u2032\u2019]\\s*-?\\s*(\\d+)?(?!/)\\s*" + FRACTION + "?\\s*[\"\u2033\u201d]?";
 const PAIR_FEET_INCHES = new RegExp(FEET_INCHES + "\\s*[X\u00d7]\\s*" + FEET_INCHES);
 const PAIR_PLAIN = /(?<![\d.'"\u2032\u2033])(\d{2,5})\s*(?:MM|CM)?\s*[X\u00d7]\s*(\d{2,5})\s*(?:MM|CM)?(?!\d)/;
 const MM_PER_FOOT = 304.8, FEET_IF_UNDER = 100;

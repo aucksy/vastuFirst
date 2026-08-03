@@ -74,8 +74,13 @@ object RoomDimensions {
 
     // One feet-inches measurement: 10'-0"  ·  12'1"  ·  9'-10½"  ·  10'-71/2"  ·  10'
     // Built as a string so the two halves of a pair share one definition.
+    //
+    // ⚠ The (?!/) after the inches is load-bearing: at the END of a caption nothing forces the
+    // engine to backtrack, so `9'-41/2"` would happily match as 41 inches with `/2"` left as
+    // trailing junk — a 9-foot room read as 12 feet, silently. Digits directly followed by a
+    // slash can never be whole inches; the lookahead makes the engine retreat into the fraction.
     private const val FEET_INCHES =
-        "(\\d+)\\s*['′’]\\s*-?\\s*(\\d+)?\\s*$FRACTION?\\s*[\"″”]?"
+        "(\\d+)\\s*['′’]\\s*-?\\s*(\\d+)?(?!/)\\s*$FRACTION?\\s*[\"″”]?"
 
     private val PAIR_FEET_INCHES = Regex("$FEET_INCHES\\s*[X×]\\s*$FEET_INCHES")
 
