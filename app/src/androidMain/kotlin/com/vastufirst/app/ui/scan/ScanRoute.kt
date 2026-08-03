@@ -22,8 +22,11 @@ import java.io.File
  *
  * - **"Choose a PDF or picture" → `OpenDocument`.** The system hands back one file the user chose.
  *   PDF is first in the filter because it is the input that reads best (skew is what ruins a read,
- *   §3e, and a PDF has none), and `image/*` is why this one door still covers a picture they already
- *   have.
+ *   §3e, and a PDF has none); the filter's second entry is every image type, which is why this one
+ *   door still covers a picture they already have.
+ *   ⚠ Do not write that second filter string inside a KDoc. Kotlin block comments NEST, so the
+ *   slash-star in it opens a comment the closing marker below then closes — leaving this whole
+ *   comment unterminated and the file failing to compile with "Unclosed comment".
  * - **⭐⭐ "Take a photo of it now" → `TakePicture`** (v0.6.6). This used to be `PickVisualMedia` —
  *   the gallery, i.e. the same door as the button above it wearing a different label — so somebody
  *   holding a printed plan had no way to photograph it from inside the app, and the button looked
