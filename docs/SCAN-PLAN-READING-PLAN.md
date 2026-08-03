@@ -1036,3 +1036,60 @@ printed, compass printed with NORTH TO THE LEFT of the page) and rejected the re
   refuses it as NOT_2D, same as the genuinely unreadable tilted doll-houses (plan-030/031). The
   refusal class needs splitting: top-down + sized → attempt; perspective → refuse. A competitor
   (grihafy.com) reads this class fine.
+
+## 3p. ⭐⭐⭐ The reader head-to-head — Gemini beats today's reader on every sheet (3 August 2026)
+
+Owner rule born the same day (CLAUDE.md §2c, hard): image scans need an approved COUNT before any
+run. 34 approved, 34 run, ≈₹52 total. Method: `scan-candidate.py` calls Gemini under the app's
+exact conditions — same prompt file, same 1400px/q88 downscale — so the only variable is the
+model. Two runs per model per sheet, drawn through the real mapper mirror, scored by
+`resemblance.mjs` against SIX truth files (`truth/`: towerEF-1854 + new plan-010,
+greencourt-526, greencourt-336 [one truth serves clean AND branded — same printed plan],
+plan-007, plan-006). Recordings: `out/live/<plan>.<model>.<r1|r2>.json` (git-ignored, disk only).
+
+**The scoreboard (rooms placed of truth · arrangement · biggest-room · drawn-same-twice):**
+
+| sheet | today (qwen3.6, 2 runs) | gemini-3.6-flash (2 runs) | gemini-pro-latest (2 runs) |
+|---|---|---|---|
+| towerEF-1854 (client) | 12–13/16 · 92–96% · flips WRONG | 14–15/16 · 99–100% · RIGHT | **15/16 · 99% · RIGHT · stable** |
+| plan-010 (owner) | 14/15 · 92% · WRONG ×2 | 15/15 · 98–99% · RIGHT | **15/15 · 98% · RIGHT · stable** |
+| greencourt-526 | 7/7 · 92% · WRONG | 7/7 · **97%** · RIGHT | 7/7 · 92% · RIGHT |
+| greencourt-336 clean | 7/7 · 94% · WRONG | 7/7 · 97% · WRONG | 7/7 · 97% · WRONG |
+| greencourt-336 BRANDED | 7/7 · **74%** · — | 7/7 · **97%** · WRONG | 7/7 · **97%** · WRONG |
+| plan-006 (no sizes) | 10/10 · 100% · RIGHT | 10/10 · 100% · RIGHT | 10/10 · 100% · RIGHT |
+| plan-007 (furnished render) | REFUSED (triage NOT_2D) | refused/13 of 18 (unstable) | **13/18 · 100% · RIGHT ×2** |
+
+What the table and the pictures established:
+
+1. **Gemini wins every sheet, both tiers.** It returned every room the sheet names on every run —
+   including MAIDS RM and UTILITY on the client's tower, and UTILITY on the owner's flat, which
+   today's reader lost on BOTH fresh runs (its earlier 15/15 recording was a lucky roll; the
+   corpus one stays byte-frozen). Rooms Gemini "misses" in the table fall inside the MAPPER.
+2. **The branded-page damage does not exist for Gemini.** §3n E11 measured qwen's arrangement
+   collapsing 94→74% on the branded 336 and found no single-reply gate; Gemini reads the branded
+   page at 97%, equal to the clean copy, both tiers, both runs. The Q18 "send a cleaner copy"
+   advice becomes unnecessary with a better reader.
+3. **The refused class (plan-007) is readable.** Both tiers answer 2D_PLAN. Pro places 13 of 18
+   at 100% arrangement with the master bedroom rightly biggest, twice, identically — the missing
+   five are the one-dimension strips + lobby the reader didn't return, and DRESSING which the
+   synonym table always drops. Today's app refuses this sheet outright.
+   ⚠ Flash run 1 returned all 18 rooms and the mirror REFUSED it as TOO_MANY_ROOMS — a reply
+   with sizes printed tripping the room-count gate is a gate bug to examine before any switch.
+4. **Above the "ceiling":** the hand-made perfect reply loses UTILITY in the mapper (§3o,
+   unexplained); Gemini's tower replies place it. So that drop is COORDINATE-dependent, not
+   label-dependent — it narrows where the §3o bug lives.
+5. **Consistency:** pro = same scores on 7/7 sheets (drawing byte-identical on 4, cell-cosmetic
+   on 3). Flash = materially different twice (tower 14 vs 15 rooms; plan-007 refused vs placed).
+   Today's reader = deterministic on 4/5 but different answers on the CLIENT'S sheet.
+6. **Cost per scan, measured:** today ₹0.21 · pro-latest (`gemini-3.1-pro-preview`) ≈ ₹1.4 ·
+   flash (`gemini-3.6-flash`) ≈ ₹2.2 — flash bills 1.2–4.4k "thinking" tokens per scan at
+   $7.50/M; pro emitted none at $12/M. The cheap-sounding tier is the expensive one here.
+7. **New, small, all-reader:** on the 336 the drawn lobby (truth-biggest, 3.05×3.90 vs bedroom
+   3.05×3.20) loses biggest-room to the bedroom at grid scale on every reader — print-scale
+   rounding at MIN_GRID, mapper-level, not a reader defect.
+
+**Verdict: `gemini-pro-latest` is the reader candidate — most complete, most consistent, reads
+the refused class, immune to the branded page, ≈₹1.4/scan.** Not yet a switch: that needs the
+TOO_MANY_ROOMS gate look (3), the §3o mapper bugs, and the owner's go on cost + a config change
+(`reader-config.json` is data — but the endpoint/auth shape differs, so it is a small code
+change in GroqPlanReader's client, not config alone).
