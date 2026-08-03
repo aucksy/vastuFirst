@@ -130,6 +130,8 @@ fun ScanReviewContent(
         if (image != null) {
             val tint = rooms.getOrNull(selected)
             val tintColor = tint?.type?.editorColor() ?: colors.primary
+            // Read in composable scope: theme locals are not readable inside the draw lambda.
+            val strokeDp = VastuTheme.spacing.s1
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -161,7 +163,7 @@ fun ScanReviewContent(
                         color = tintColor,
                         topLeft = topLeft,
                         size = area,
-                        style = Stroke(width = VastuTheme.spacing.s1.toPx() / 2f),
+                        style = Stroke(width = strokeDp.toPx() / 2f),
                     )
                 }
             }
