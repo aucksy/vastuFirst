@@ -48,6 +48,7 @@
   "scan-refused-3d": 0,
   "scan-refused-labels": 0,
   "scan-retype": 13,
+  "scan-review": 11,
   "score": 5,
   "score-covered": 10,
   "score-insufficient": 0,

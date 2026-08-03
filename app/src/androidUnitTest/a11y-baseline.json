@@ -15,6 +15,7 @@
   "scan-assisted": 0,
   "scan-consent": 0,
   "scan-idle": 0,
+  "scan-review": 1,
   "score": 0,
   "settings": 1,
   "unlock": 4,
