@@ -174,6 +174,51 @@ class UnfinishedHomeTest {
         assertEquals("and it must be in the saved homes", 1, repo.observePlans().first().plans.size)
     }
 
+    /**
+     * ⭐ A scan whose rooms could not be PLACED comes back still parked, not pretending to be a plan.
+     *
+     * ⚠ This is the defect that resuming-on-purpose created. The "these are parked, drag them" flag
+     * was never stored, on the grounds that a home restored after a background kill is whatever the
+     * user last left. Once the user resumes deliberately, that leaves an untouched parking row coming
+     * back under the heading "Place your rooms" — and then being asked whether the gaps between the
+     * squares are part of their home. That is the exact screen the owner was handed for his own flat.
+     */
+    @Test
+    fun `a scan nobody has placed yet comes back still parked`() = runTest(main) {
+        val vm = newSession()
+        vm.updateRooms(someRooms)
+        vm.markRoomsUnplaced(true)          // exactly what the scan hand-over does, in that order
+        advanceUntilIdle()
+        val id = repo.observeDrafts().first().single().id
+
+        val resumed = newSession()
+        resumed.resumeDraft(id)
+        advanceUntilIdle()
+        assertTrue(
+            "an untouched parking row must not come back looking like a finished plan",
+            resumed.roomsUnplaced,
+        )
+    }
+
+    /** And the moment one room is moved it is a plan, and must never be re-parked afterwards. */
+    @Test
+    fun `once a room has been moved the home is never parked again`() = runTest(main) {
+        val vm = newSession()
+        vm.updateRooms(someRooms)
+        vm.markRoomsUnplaced(true)
+        vm.updateRooms(someRooms.map { if (it.id == "r1") it.copy(col = 1) else it })
+        advanceUntilIdle()
+        val id = repo.observeDrafts().first().single().id
+
+        val resumed = newSession()
+        resumed.resumeDraft(id)
+        advanceUntilIdle()
+        assertTrue(
+            "arranging the rooms makes them the user's layout — re-parking would forget their work",
+            !resumed.roomsUnplaced,
+        )
+    }
+
     /** Throwing it away means throwing it away — the row goes, not just the rooms on screen. */
     @Test
     fun `starting this home again removes the row it came from`() = runTest(main) {

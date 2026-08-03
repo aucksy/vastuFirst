@@ -379,6 +379,42 @@ class EditorScreenshotTest {
         )
     }
 
+    /**
+     * ⭐⭐ THE OWNER'S OWN CASE (v0.6.6): a SCAN he never finished placing, picked up again from the
+     * saved-homes list. Two states that had never been drawn together — the "carrying on with your
+     * unfinished home" card AND the parking row — and it is the tallest thing this editor puts above
+     * the plan, on a screen whose heading, instruction, card, button and parked squares all have to
+     * survive 200 % font on a 320 dp phone.
+     *
+     * ⚠ It also pins the defect this release nearly shipped. "These rooms are still parked" was not
+     * stored with the unfinished home, so a scan resumed from the list came back titled "Place your
+     * rooms" over a row of identical squares and then asked whether the gaps between them were part
+     * of the home — the exact screen he was handed for his own flat. If this picture ever shows the
+     * ordinary "touch a room and slide to move it" heading, that regression is back.
+     */
+    @Test
+    fun editor_restored_unplaced_scan() {
+        captureAcrossMatrix("editor-restored-unplaced") { RestoredUnplacedScan() }
+        writeManifestAcrossMatrix("editor-restored-unplaced") { RestoredUnplacedScan() }
+    }
+
+    @Composable
+    private fun RestoredUnplacedScan() {
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        val (cols, rows) = gridForOutcome(outcome)
+        GuidedGridContent(
+            rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = cols,
+            rows = rows,
+            restoredFromDraft = true,
+            roomsUnplaced = true,
+        )
+    }
+
     // L1 measurement manifests (semantics geometry) — the gate reads these to catch zero-size
     // nodes, clipped text, tiny touch targets and unreachable CTAs (UI-POLISH §6.5).
     @Test

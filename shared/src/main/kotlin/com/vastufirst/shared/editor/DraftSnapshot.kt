@@ -43,6 +43,24 @@ data class DraftSnapshot(
     val siteAnswers: Map<String, Zone> = emptyMap(),
     /** Extras the user said there isn't one of. A real answer, and not the same as never asked. */
     val siteDeclined: List<String> = emptyList(),
+    /**
+     * ⭐ True when these rooms are still PARKED in the row a scan left them in, because the reading
+     * could not work out where they go — nobody has moved one yet.
+     *
+     * ⚠ It was deliberately NOT stored until v0.6.6, on the grounds that a home brought back after a
+     * background kill is whatever the user last left, and re-parking it would be the app forgetting
+     * their work. That reasoning breaks the moment resuming becomes an ordinary thing the user does
+     * on purpose — which is exactly what listing unfinished homes made it. Left out, an unplaced scan
+     * picked up from the list comes back titled "Place your rooms" over a row of identical squares
+     * and then asks whether the leftovers of that row are part of the home: the precise screen the
+     * owner was handed for his own flat.
+     *
+     * It costs nothing to store, because it can only ever be true when the user has moved NOTHING —
+     * any edit at all clears it before this snapshot is taken.
+     *
+     * A field appended LAST, with a default, so a draft written by an older build still loads.
+     */
+    val roomsUnplaced: Boolean = false,
 ) {
     /** Nothing drawn yet ⇒ nothing worth restoring, and nothing worth telling the user about. */
     val isEmpty: Boolean get() = rooms.isEmpty()

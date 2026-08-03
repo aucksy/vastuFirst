@@ -154,15 +154,25 @@ class NewPlanViewModel(
      * your rooms" as though it were finished, and the app must not ask shape questions about the box
      * around it. See `GuidedGridContent`'s `roomsUnplaced`.
      *
-     * ⚠ Deliberately NOT persisted with the draft. A home brought back after Android reclaimed the
-     * app is whatever the user last left, and re-parking it a day later would be the app forgetting
-     * work they had done.
+     * ⭐ It IS persisted with the draft as of v0.6.6, having deliberately not been before. The old
+     * reasoning — "re-parking a home a day later would be the app forgetting work they had done" —
+     * stopped holding the moment resuming became something the user does ON PURPOSE from the
+     * saved-homes list. It can only ever be true when nothing has been moved (any edit clears it),
+     * so restoring it never forgets work; leaving it out, an unplaced scan came back titled "Place
+     * your rooms" over a parking row and then asked whether the leftovers of that row were part of
+     * the home.
      */
     var roomsUnplaced by mutableStateOf(false)
         private set
 
-    /** Set by the scan flow as it hands its rooms over. Cleared by [startAgain]. */
-    fun markRoomsUnplaced(unplaced: Boolean) { roomsUnplaced = unplaced }
+    /**
+     * Set by the scan flow as it hands its rooms over. Cleared by [startAgain].
+     *
+     * ⚠ It nudges the save. The scan flow sets the rooms and THEN sets this, so relying on the
+     * debounce window to catch the second change would make "does an unplaced scan come back
+     * unplaced?" a question about timing rather than about behaviour.
+     */
+    fun markRoomsUnplaced(unplaced: Boolean) { roomsUnplaced = unplaced; markDirty() }
 
     init {
         // ⭐⭐ NOTHING IS RESTORED HERE, and that is the fix (v0.6.6). This used to load the leftover
@@ -396,6 +406,7 @@ class NewPlanViewModel(
         kept = keptCells.toList(),
         siteAnswers = siteAnswers.answers.mapKeys { it.key.name },
         siteDeclined = siteAnswers.declined.map { it.name },
+        roomsUnplaced = roomsUnplaced,
     )
 
     /**
@@ -424,6 +435,10 @@ class NewPlanViewModel(
             }.toMap(),
             declined = d.siteDeclined.mapNotNull { k -> SiteItem.entries.firstOrNull { it.name == k } }.toSet(),
         )
+        // ⚠ LAST, and it has to be. Assigning `rooms` above does not run through updateRooms(), so
+        // nothing has cleared this — but any future edit here that does would silently wipe it, and
+        // an unplaced scan would come back pretending to be a finished plan.
+        roomsUnplaced = d.roomsUnplaced
     }
 
     /**

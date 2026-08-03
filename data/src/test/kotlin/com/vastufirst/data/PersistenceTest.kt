@@ -283,6 +283,28 @@ class PersistenceTest {
         assertNull(loaded.door)
     }
 
+    /**
+     * ⭐ A scan nobody has placed yet must come back still parked. The flag was added to this file
+     * format in v0.6.6; every field carries a default precisely so adding one cannot strand a draft
+     * an older build wrote.
+     */
+    @Test
+    fun `an unplaced scan survives the round trip, and an older draft defaults to placed`() = runTest {
+        repo.saveDraft("parked", draft.copy(roomsUnplaced = true), now = 1L)
+        assertEquals(true, repo.loadDraft("parked")?.roomsUnplaced)
+
+        driver.execute(
+            null,
+            """INSERT INTO draftEntity(id, draftJson, updatedAt) VALUES ('old',
+               '{"rooms":[{"id":"r1","type":"KITCHEN","col":1,"row":1,"w":2,"h":2}]}', 1)""".trimIndent(),
+            0,
+        )
+        assertEquals(
+            "a draft written before the flag existed is a home the user was drawing, not a parking row",
+            false, repo.loadDraft("old")?.roomsUnplaced,
+        )
+    }
+
     @Test
     fun `an empty draft knows it is empty`() {
         assertTrue(DraftSnapshot().isEmpty, "nothing drawn means nothing worth restoring")
