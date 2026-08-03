@@ -38,11 +38,12 @@ class IntentNeutralityTest {
             // The ranked problems and every room verdict — the whole of what the reader is shown,
             // in the same order. Only the WRAPPING around them is allowed to differ by intent.
             assertEquals(
-                building.defects.map { it.ruleId to it.zone }, a.defects.map { it.ruleId to it.zone },
+                building.defects.map { it.id to it.zone }, a.defects.map { it.id to it.zone },
                 "the same problems, in the same order, whoever is asking ($intent)",
             )
             assertEquals(
-                building.roomResults.map { it.id to it.verdict }, a.roomResults.map { it.id to it.verdict },
+                building.roomResults.map { it.roomId to it.verdict },
+                a.roomResults.map { it.roomId to it.verdict },
                 "and the same verdict on every room ($intent)",
             )
             assertEquals(
