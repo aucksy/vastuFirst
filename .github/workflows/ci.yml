@@ -239,6 +239,11 @@ jobs:
         run: python3 scripts/check-apk-signature.py "app/build/outputs/apk/debug/*.apk"
 
       - name: Upload debug APK
+        # ⚠ Non-fatal like the screenshots upload above, and for the same measured reason (4 Aug
+        # 2026): the artifact STORAGE QUOTA reddened a build whose every gate had passed. The
+        # signature check has already run by this point; the owner's install channel is the tagged
+        # release, not this convenience artifact.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: vastufirst-debug-apk
