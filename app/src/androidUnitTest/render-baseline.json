@@ -28,7 +28,7 @@
  "report": 4,
  "report-clean": 3,
  "report-disputes": 3,
- "report-living": 4,
+ "report-living": 7,
  "report-notideal": 4,
  "report-prayer": 11,
  "scan-assisted": 11,
@@ -42,13 +42,13 @@
  "scan-refused-3d": 0,
  "scan-refused-labels": 0,
  "scan-retype": 13,
- "score": 2,
- "score-covered": 8,
+ "score": 5,
+ "score-covered": 10,
  "score-insufficient": 0,
  "score-loading": 0,
  "settings": 1,
  "unlock": 1,
  "unlock-paid": 1,
  "unlock-unreachable": 1,
- "welcome": 9
+ "welcome": 12
 }
