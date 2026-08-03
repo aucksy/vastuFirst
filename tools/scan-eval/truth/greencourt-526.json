@@ -1,0 +1,13 @@
+{
+  "_what": "PAPER TRUTH for Green Court Category-III, the 526 sq ft 2BHK (image: Documents/Sample Floor plans/greencourt-526.png). Hand-transcribed from the printed sheet on 2026-08-03. cx/cy are each room's centre as a fraction of the sheet; wFt/hFt convert the printed millimetres to feet (/304.8). The balcony prints one dimension only ('1525 WIDE') — that is its DEPTH (hFt); its length is unprinted (wFt 0). LOBBY is this flat's living space and the mapper resolves it to LIVING (verified against the recorded scan). This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "greencourt-526",
+  "rooms": [
+    {"name": "LOBBY",        "type": "LIVING",  "cx": 0.511, "cy": 0.735, "wFt": 10.29, "hFt": 14.88},
+    {"name": "BALCONY",      "type": "BALCONY", "cx": 0.432, "cy": 0.267, "wFt": 0,     "hFt": 5.00},
+    {"name": "BED ROOM (N)", "type": "BEDROOM", "cx": 0.314, "cy": 0.434, "wFt": 10.78, "hFt": 10.99},
+    {"name": "TOILET",       "type": "TOILET",  "cx": 0.590, "cy": 0.388, "wFt": 8.15,  "hFt": 5.00},
+    {"name": "KITCHEN",      "type": "KITCHEN", "cx": 0.612, "cy": 0.515, "wFt": 8.15,  "hFt": 7.84},
+    {"name": "W.C",          "type": "TOILET",  "cx": 0.281, "cy": 0.622, "wFt": 4.92,  "hFt": 6.40},
+    {"name": "BED ROOM (S)", "type": "BEDROOM", "cx": 0.201, "cy": 0.791, "wFt": 10.50, "hFt": 10.01}
+  ]
+}

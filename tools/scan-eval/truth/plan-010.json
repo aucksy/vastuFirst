@@ -1,0 +1,21 @@
+{
+  "_what": "PAPER TRUTH for the owner's flat (image: Documents/Sample Floor plans/plan-010.webp). Hand-transcribed from the printed sheet on 2026-08-03. cx/cy are each room's centre as a fraction of the sheet; wFt/hFt are the printed size in feet (the sheet prints both metres and feet-inches; the feet line is used). Compound captions like (2.10x1.45)+(1.19x1.05) use their MAIN part. Types use the mapper's room types (VESTIBULE resolves to ENTRANCE, DRESS & PASSAGE to CORRIDOR — verified against the synonym table). This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "plan-010",
+  "rooms": [
+    {"name": "BEDROOM-01",      "type": "BEDROOM",        "cx": 0.260, "cy": 0.193, "wFt": 12.21, "hFt": 14.75},
+    {"name": "BALCONY (N)",     "type": "BALCONY",        "cx": 0.523, "cy": 0.135, "wFt": 6.54,  "hFt": 6.35},
+    {"name": "BEDROOM-02",      "type": "BEDROOM",        "cx": 0.612, "cy": 0.265, "wFt": 12.29, "hFt": 11.79},
+    {"name": "PASSAGE",         "type": "CORRIDOR",       "cx": 0.336, "cy": 0.310, "wFt": 6.79,  "hFt": 3.96},
+    {"name": "TOILET-01",       "type": "TOILET",         "cx": 0.206, "cy": 0.380, "wFt": 8.38,  "hFt": 5.08},
+    {"name": "VESTIBULE",       "type": "ENTRANCE",       "cx": 0.428, "cy": 0.383, "wFt": 7.25,  "hFt": 5.08},
+    {"name": "COMMON TOILET",   "type": "TOILET",         "cx": 0.652, "cy": 0.379, "wFt": 8.38,  "hFt": 5.08},
+    {"name": "LIVING/DINING",   "type": "LIVING",         "cx": 0.412, "cy": 0.526, "wFt": 23.75, "hFt": 14.13},
+    {"name": "BALCONY (E)",     "type": "BALCONY",        "cx": 0.820, "cy": 0.534, "wFt": 4.92,  "hFt": 14.08},
+    {"name": "MBR TOILET",      "type": "TOILET",         "cx": 0.184, "cy": 0.650, "wFt": 6.92,  "hFt": 4.75},
+    {"name": "DRESS & PASSAGE", "type": "CORRIDOR",       "cx": 0.390, "cy": 0.664, "wFt": 7.33,  "hFt": 8.71},
+    {"name": "KITCHEN",         "type": "KITCHEN",        "cx": 0.683, "cy": 0.648, "wFt": 13.38, "hFt": 8.21},
+    {"name": "UTILITY",         "type": "UTILITY",        "cx": 0.680, "cy": 0.729, "wFt": 10.42, "hFt": 3.00},
+    {"name": "MASTER BEDROOM",  "type": "MASTER_BEDROOM", "cx": 0.287, "cy": 0.783, "wFt": 14.75, "hFt": 10.83},
+    {"name": "BALCONY (S)",     "type": "BALCONY",        "cx": 0.601, "cy": 0.810, "wFt": 6.67,  "hFt": 7.33}
+  ]
+}

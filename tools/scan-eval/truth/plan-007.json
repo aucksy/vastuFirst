@@ -1,0 +1,24 @@
+{
+  "_what": "PAPER TRUTH for plan-007 (image: Documents/Sample Floor plans/plan-007.jpg) — the straight-overhead FURNISHED RENDER with every size printed, the class today's triage wrongly refuses as NOT_2D (see plan doc 3o). Hand-transcribed on 2026-08-03. cx/cy are each room's centre as a fraction of the sheet; wFt/hFt are the printed feet-inches as decimal feet. Strip captions printing one dimension ('6 WIDE LOBBY', '5 WIDE BALCONY', '4 WIDE UTILITY', the west balcony) carry that dimension in their narrow axis and 0 in the unprinted one. DRESSING is typed STORE for want of a mapper type — the synonym table deliberately drops the label, so every reader will show it missing; that ceiling is the recorded bug, not a reader defect. LEDGE is page furniture, not a room, and is excluded. This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "plan-007",
+  "rooms": [
+    {"name": "CHILDREN BEDROOM", "type": "BEDROOM",        "cx": 0.272, "cy": 0.184, "wFt": 15.00, "hFt": 12.50},
+    {"name": "TOILET (top W)",   "type": "TOILET",         "cx": 0.478, "cy": 0.150, "wFt": 5.00,  "hFt": 8.00},
+    {"name": "TOILET (top E)",   "type": "TOILET",         "cx": 0.598, "cy": 0.150, "wFt": 5.00,  "hFt": 8.00},
+    {"name": "GUEST BEDROOM",    "type": "GUEST_BEDROOM",  "cx": 0.811, "cy": 0.186, "wFt": 12.25, "hFt": 12.50},
+    {"name": "LOBBY (6' wide)",  "type": "CORRIDOR",       "cx": 0.822, "cy": 0.351, "wFt": 0,     "hFt": 6.00},
+    {"name": "LIVING HALL",      "type": "LIVING",         "cx": 0.288, "cy": 0.403, "wFt": 13.25, "hFt": 13.25},
+    {"name": "BALCONY (W)",      "type": "BALCONY",        "cx": 0.075, "cy": 0.398, "wFt": 4.37,  "hFt": 0},
+    {"name": "DRAWING",          "type": "LIVING",         "cx": 0.545, "cy": 0.442, "wFt": 10.63, "hFt": 15.00},
+    {"name": "BEDROOM (E)",      "type": "BEDROOM",        "cx": 0.859, "cy": 0.485, "wFt": 12.00, "hFt": 10.00},
+    {"name": "TOILET (SW)",      "type": "TOILET",         "cx": 0.122, "cy": 0.594, "wFt": 4.29,  "hFt": 9.38},
+    {"name": "DRESSING",         "type": "STORE",          "cx": 0.227, "cy": 0.594, "wFt": 4.33,  "hFt": 9.38},
+    {"name": "C. TOILET",        "type": "TOILET",         "cx": 0.349, "cy": 0.573, "wFt": 6.00,  "hFt": 6.00},
+    {"name": "DINING",           "type": "DINING",         "cx": 0.557, "cy": 0.695, "wFt": 10.63, "hFt": 10.00},
+    {"name": "POOJA",            "type": "POOJA",          "cx": 0.886, "cy": 0.619, "wFt": 5.25,  "hFt": 5.25},
+    {"name": "MASTER BEDROOM",   "type": "MASTER_BEDROOM", "cx": 0.274, "cy": 0.786, "wFt": 15.38, "hFt": 12.96},
+    {"name": "KITCHEN",          "type": "KITCHEN",        "cx": 0.836, "cy": 0.743, "wFt": 10.00, "hFt": 10.00},
+    {"name": "BALCONY (S)",      "type": "BALCONY",        "cx": 0.571, "cy": 0.864, "wFt": 0,     "hFt": 5.00},
+    {"name": "UTILITY",          "type": "UTILITY",        "cx": 0.842, "cy": 0.866, "wFt": 0,     "hFt": 4.00}
+  ]
+}

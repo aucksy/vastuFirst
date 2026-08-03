@@ -1,0 +1,13 @@
+{
+  "_what": "PAPER TRUTH for Green Court Category-II, the 336 sq ft 1BHK. ONE truth for BOTH copies of the sheet — clean (greencourt-336-clean.png) and branded (greencourt-336-branded.png) — because the printed plan is identical; only the page around it differs. cx/cy are each room's centre as a fraction of the CLEAN sheet; wFt/hFt convert the printed millimetres to feet (/304.8). The balcony prints one dimension only ('1825 WIDE') — that is its DEPTH (hFt); its length is unprinted (wFt 0). LOBBY is this flat's living space and the mapper resolves it to LIVING (verified against the recorded scan). This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "greencourt-336",
+  "rooms": [
+    {"name": "LOBBY",    "type": "LIVING",   "cx": 0.424, "cy": 0.617, "wFt": 10.01, "hFt": 12.80},
+    {"name": "BALCONY",  "type": "BALCONY",  "cx": 0.341, "cy": 0.194, "wFt": 0,     "hFt": 5.99},
+    {"name": "BED ROOM", "type": "BEDROOM",  "cx": 0.432, "cy": 0.367, "wFt": 10.01, "hFt": 10.50},
+    {"name": "WC",       "type": "TOILET",   "cx": 0.182, "cy": 0.347, "wFt": 5.00,  "hFt": 2.95},
+    {"name": "BATH",     "type": "BATHROOM", "cx": 0.182, "cy": 0.427, "wFt": 5.00,  "hFt": 3.71},
+    {"name": "KITCHEN",  "type": "KITCHEN",  "cx": 0.179, "cy": 0.543, "wFt": 9.58,  "hFt": 6.89},
+    {"name": "PASSAGE",  "type": "CORRIDOR", "cx": 0.530, "cy": 0.855, "wFt": 3.28,  "hFt": 8.84}
+  ]
+}

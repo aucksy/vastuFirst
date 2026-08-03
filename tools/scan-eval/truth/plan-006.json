@@ -1,0 +1,16 @@
+{
+  "_what": "PAPER TRUTH for plan-006 (image: Documents/Sample Floor plans/plan-006.webp) — the coloured whole-site sheet that prints NO sizes, the recorded weak case (plan doc 3k E10: nothing but the template to go on). Hand-transcribed on 2026-08-03. The sheet is mostly compound/road, so cx/cy here are fractions of the HOME's own outline, not the page — the drawn grid is home-framed, so this is the comparable frame. wFt/hFt are 0 throughout (nothing is printed); the LIVING ROOM is listed FIRST because with no printed sizes the scorer takes the first row as the biggest room, and on this sheet the living room visibly is. PORTICO and STEPS lie outside the home's walls and are excluded. This file is the measuring stick — it never changes unless the sheet was misread.",
+  "id": "plan-006",
+  "rooms": [
+    {"name": "LIVING ROOM",    "type": "LIVING",         "cx": 0.500, "cy": 0.380, "wFt": 0, "hFt": 0},
+    {"name": "POOJA",          "type": "POOJA",          "cx": 0.152, "cy": 0.128, "wFt": 0, "hFt": 0},
+    {"name": "KITCHEN",        "type": "KITCHEN",        "cx": 0.851, "cy": 0.128, "wFt": 0, "hFt": 0},
+    {"name": "BEDROOM (NW)",   "type": "BEDROOM",        "cx": 0.152, "cy": 0.440, "wFt": 0, "hFt": 0},
+    {"name": "DINING",         "type": "DINING",         "cx": 0.855, "cy": 0.386, "wFt": 0, "hFt": 0},
+    {"name": "BATH (E)",       "type": "BATHROOM",       "cx": 0.855, "cy": 0.579, "wFt": 0, "hFt": 0},
+    {"name": "BEDROOM (SW)",   "type": "BEDROOM",        "cx": 0.154, "cy": 0.816, "wFt": 0, "hFt": 0},
+    {"name": "BATH (S mid-W)", "type": "BATHROOM",       "cx": 0.402, "cy": 0.877, "wFt": 0, "hFt": 0},
+    {"name": "BATH (S mid-E)", "type": "BATHROOM",       "cx": 0.610, "cy": 0.877, "wFt": 0, "hFt": 0},
+    {"name": "MASTER BEDROOM", "type": "MASTER_BEDROOM", "cx": 0.859, "cy": 0.816, "wFt": 0, "hFt": 0}
+  ]
+}
