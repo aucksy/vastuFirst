@@ -26,12 +26,22 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `reasoning stays off`() {
-        // Not a style preference: qwen3.6 is a reasoning model, reasoning tokens bill as output, and
-        // plan reading is extraction rather than deliberation. Measured at 21 paise a scan with this
-        // off against 62 with it on. If this ever changes it should be because someone decided to
-        // triple the cost, not because a config file drifted.
-        assertEquals("none", recipe.config.reasoningEffort)
+    fun `no reasoning lever is set for the OpenRouter reader`() {
+        // The Groq-era `reasoning_effort: none` was that provider's cost lever. On OpenRouter the
+        // primary model spends ~350 hidden reasoning tokens a scan unprompted (measured, plan doc
+        // §3p) and the field would be forwarded to providers that may reject it. Absent is the
+        // deliberate state; if someone sets it, they should be re-measuring cost, not drifting.
+        assertEquals(null, recipe.config.reasoningEffort)
+    }
+
+    @Test
+    fun `the second opinion is configured, and it is a different model`() {
+        // The primary refuses straight-overhead furnished renders as not-2D; the escalation model
+        // is the only measured candidate that reads that class (plan doc §3p). Blank would silently
+        // turn the feature off; the same model would double-spend for the same answer.
+        val escalation = recipe.config.escalationModel
+        assertTrue(!escalation.isNullOrBlank(), "an escalation model must be named")
+        assertTrue(escalation != recipe.config.model, "the second opinion must be a different model")
     }
 
     @Test

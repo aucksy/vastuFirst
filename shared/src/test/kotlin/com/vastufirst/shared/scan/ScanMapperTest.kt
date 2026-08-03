@@ -399,6 +399,33 @@ class ScanMapperTest {
     }
 
     @Test
+    fun `⭐ sizes with ASCII fractions count as sizes at the gate`() {
+        // The furnished-render regression (plan doc §3p): the sheet prints ½ but the reader TYPES
+        // 1/2, the glyph-only parser failed those pairs, and an 18-room reply carrying a printed
+        // size on nearly every room was refused as TOO_MANY_ROOMS. The same layout as above, with
+        // every second caption in the reader's ASCII form, must still count as sized and place.
+        val names = listOf(
+            "LIVING ROOM", "KITCHEN", "MASTER BEDROOM", "BEDROOM", "TOILET", "BATH", "POOJA",
+            "DINING", "STUDY", "STORE", "BALCONY", "UTILITY", "CORRIDOR", "GUEST ROOM",
+        )
+        val boxes = names.mapIndexed { i, n ->
+            ScanBox(
+                label = n,
+                x = (i % 5) * 0.2, y = (i / 5) * 0.33,
+                w = 0.10 + (i % 4) * 0.03, h = 0.15 + (i % 3) * 0.08,
+                confidence = 0.9,
+                printedSize = if (i % 2 == 0) {
+                    "${10 + i}'-71/2\" X ${8 + (i % 5)}'-31/2\""
+                } else {
+                    "${10 + i}'-0\" X ${8 + (i % 5)}'-0\""
+                },
+            )
+        }
+        val out = ScanMapper.map(draft(*boxes.toTypedArray()))
+        assertIs<ScanOutcome.Placed>(out, "ASCII-fraction sizes must count at the gate")
+    }
+
+    @Test
     fun `⭐ a sheet that names a lift is a whole floor, not one home`() {
         // The distinction the room count was proxying for, said outright. Measured across the
         // 30-plan corpus: every sheet naming a lift is a shared floor plate, and no single-home plan

@@ -23,7 +23,9 @@ jobs:
       # the interim arrangement for private test builds). Absent locally and in forks, and an absent
       # key is a supported state: the app then SAYS it cannot read plans rather than pretending to.
       # Nothing here logs it, and GitHub masks it in output regardless.
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      # Since 4 Aug 2026 the reader speaks to OpenRouter (reader head-to-head, plan doc §3p) —
+      # set at Settings → Secrets and variables → Actions → OPENROUTER_API_KEY.
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

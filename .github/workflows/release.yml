@@ -19,8 +19,9 @@ jobs:
     env:
       # ⭐ Without this secret the released APK cannot read plans — it will say so on screen rather
       # than fail quietly, but the feature the release is FOR would be missing. Set it at
-      # Settings → Secrets and variables → Actions → GROQ_API_KEY.
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      # Settings → Secrets and variables → Actions → OPENROUTER_API_KEY.
+      # (OpenRouter since 4 Aug 2026 — the reader head-to-head, plan doc §3p.)
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       # ⭐ The Play Store signing key, in the only form a GitHub secret can hold: base64 text.
       # Lifted to the job env so the decode step can ASK WHETHER IT EXISTS — the `secrets` context is
       # not readable from a step `if:`, and without that test a repo with no key set would fail every

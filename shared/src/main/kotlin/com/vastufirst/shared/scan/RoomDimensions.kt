@@ -51,20 +51,31 @@ object RoomDimensions {
 
     private const val MM_PER_FOOT = 304.8
 
-    /** Vulgar fractions as they are actually printed on Indian architectural sheets. */
+    /**
+     * Vulgar fractions as they are actually printed on Indian architectural sheets — and as the
+     * reader TYPES them, which is not the same thing.
+     *
+     * ⭐ The ASCII forms are a measured bug, not a nicety (plan doc §3p): the models transcribe a
+     * printed `½` as the three characters `1/2`, so `10'-7½"` arrives as `10'-71/2"`. The old
+     * glyph-only rule then failed the whole pair, the room lost its printed size, and on the
+     * furnished-render sheet enough rooms lost theirs that the room-count gate refused a fully
+     * dimensioned reply as TOO_MANY_ROOMS. Backtracking resolves the ambiguity: for `71/2` the
+     * engine first tries inches=71 (leaving `/2` unmatched), retreats, and lands on 7 + 1/2.
+     *
+     * ⚠ Honest limit: `11/2` (a transcribed 11½) parses as 1½ — ten inches under. The ASCII form
+     * is genuinely ambiguous and under-reading it costs less than refusing the size outright.
+     */
     private val FRACTIONS = mapOf(
-        '½' to 0.5,     // half
-        '¼' to 0.25,    // quarter
-        '¾' to 0.75,    // three quarters
-        '⅓' to 1.0 / 3, // third
-        '⅔' to 2.0 / 3, // two thirds
-        '⅛' to 0.125,   // eighth
+        "½" to 0.5, "¼" to 0.25, "¾" to 0.75, "⅓" to 1.0 / 3, "⅔" to 2.0 / 3, "⅛" to 0.125,
+        "1/2" to 0.5, "1/4" to 0.25, "3/4" to 0.75, "1/3" to 1.0 / 3, "2/3" to 2.0 / 3, "1/8" to 0.125,
     )
 
-    // One feet-inches measurement: 10'-0"  ·  12'1"  ·  9'-10½"  ·  10'
+    private const val FRACTION = "(½|¼|¾|⅓|⅔|⅛|1/2|1/4|3/4|1/3|2/3|1/8)"
+
+    // One feet-inches measurement: 10'-0"  ·  12'1"  ·  9'-10½"  ·  10'-71/2"  ·  10'
     // Built as a string so the two halves of a pair share one definition.
     private const val FEET_INCHES =
-        "(\\d+)\\s*['′’]\\s*-?\\s*(\\d+)?\\s*([½¼¾⅓⅔⅛])?\\s*[\"″”]?"
+        "(\\d+)\\s*['′’]\\s*-?\\s*(\\d+)?\\s*$FRACTION?\\s*[\"″”]?"
 
     private val PAIR_FEET_INCHES = Regex("$FEET_INCHES\\s*[X×]\\s*$FEET_INCHES")
 
@@ -178,7 +189,7 @@ object RoomDimensions {
     private fun feetInches(feet: String, inches: String, fraction: String): Double {
         val f = feet.toDoubleOrNull() ?: return 0.0
         val i = inches.toDoubleOrNull() ?: 0.0
-        val fr = fraction.firstOrNull()?.let { FRACTIONS[it] } ?: 0.0
+        val fr = FRACTIONS[fraction] ?: 0.0
         return f + (i + fr) / 12.0
     }
 }

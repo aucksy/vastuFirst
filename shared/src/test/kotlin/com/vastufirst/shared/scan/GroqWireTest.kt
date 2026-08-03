@@ -47,18 +47,36 @@ class GroqWireTest {
 
     @Test
     fun `reasoning effort is sent when configured and omitted when it is not`() {
-        // ⭐ The cost lever: reasoning tokens bill as output, and reading a plan is extraction rather
-        // than deliberation. 21 paise a scan with this off, 62 with it on.
+        // The Groq-era cost lever, kept working for any provider that wants it — but the BUNDLED
+        // config leaves it absent on purpose (see ScanReaderConfigTest), so the omitted branch is
+        // the live one and the sent branch is exercised through a copy.
+        val with = recipe.copy(config = recipe.config.copy(reasoningEffort = "none"))
         assertEquals(
             "none",
-            GroqWire.parseObject(GroqWire.requestBody(recipe, "QUJD"))["reasoning_effort"]
+            GroqWire.parseObject(GroqWire.requestBody(with, "QUJD"))["reasoning_effort"]
                 ?.jsonPrimitive?.content,
         )
 
-        val without = recipe.copy(config = recipe.config.copy(reasoningEffort = null))
-        assertNull(GroqWire.parseObject(GroqWire.requestBody(without, "QUJD"))["reasoning_effort"])
+        assertNull(GroqWire.parseObject(GroqWire.requestBody(recipe, "QUJD"))["reasoning_effort"])
         val blank = recipe.copy(config = recipe.config.copy(reasoningEffort = "  "))
         assertNull(GroqWire.parseObject(GroqWire.requestBody(blank, "QUJD"))["reasoning_effort"])
+    }
+
+    @Test
+    fun `⭐ the second-opinion request differs ONLY in the model`() {
+        // The escalation call (GroqPlanReader) must be comparable to the primary by construction:
+        // same prompt, same image, same shape — a different model and nothing else. If these
+        // bodies ever drift apart in any other field, the two replies stop being a fair pair.
+        val primary = GroqWire.parseObject(GroqWire.requestBody(recipe, "QUJD"))
+        val second = GroqWire.parseObject(
+            GroqWire.requestBody(recipe, "QUJD", model = recipe.config.escalationModel!!),
+        )
+        assertEquals(recipe.config.escalationModel, second["model"]?.jsonPrimitive?.content)
+        assertEquals(
+            primary.filterKeys { it != "model" },
+            second.filterKeys { it != "model" },
+            "everything but the model must be identical",
+        )
     }
 
     @Test

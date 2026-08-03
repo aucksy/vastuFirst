@@ -21,6 +21,14 @@ data class ScanReaderConfig(
     val model: String = "",
     /** `none` keeps a reasoning model from billing deliberation tokens on an extraction job. */
     val reasoningEffort: String? = null,
+    /**
+     * ⭐ The second-opinion model, asked ONCE when the primary classifies the image as not a 2D
+     * plan. Measured (plan doc §3p): the primary reads every classic sheet best-in-class for a
+     * tenth of a rupee but refuses straight-overhead furnished renders; this model is the only
+     * candidate that reads that class. Blank or absent = no escalation, exactly the old
+     * behaviour.
+     */
+    val escalationModel: String? = null,
     val temperature: Double = 0.0,
     /** Cloudflare fronts the API and 403s an unrecognised client before it reaches Groq. */
     val userAgent: String = "",

@@ -81,7 +81,11 @@ kotlin {
 // extractable, which is acceptable for a free-tier key with no money attached and NOT acceptable for
 // the Play Store — the reader sits behind an interface precisely so moving to a server proxy is a
 // one-file change later.
-val groqApiKey: String = (project.findProperty("groqApiKey") as String?)
+// Since 4 Aug 2026 the reader speaks to OpenRouter (see reader-config.json for why, and
+// tools/scan-eval/READER-CANDIDATES.md for the measurements). The old GROQ_API_KEY is still read
+// as a last resort so a stale environment fails loud at the key check, not silently here.
+val planReaderKey: String = (project.findProperty("planReaderKey") as String?)
+    ?: System.getenv("OPENROUTER_API_KEY")
     ?: System.getenv("GROQ_API_KEY")
     ?: ""
 
@@ -128,8 +132,8 @@ android {
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.
-        val escapedKey = groqApiKey.replace("\\", "\\\\").replace("\"", "\\\"")
-        buildConfigField("String", "GROQ_API_KEY", "\"$escapedKey\"")
+        val escapedKey = planReaderKey.replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "PLAN_READER_KEY", "\"$escapedKey\"")
         buildConfigField("boolean", "PAYMENTS_ENABLED", paymentsEnabled.toString())
     }
 

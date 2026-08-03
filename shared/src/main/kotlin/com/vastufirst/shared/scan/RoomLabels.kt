@@ -93,6 +93,10 @@ object RoomLabels {
             // Read off real plans in the corpus audit: `BED RM.-01`, a bare `KIDS`, `SERV. RM`.
             // Each cleans to the form here (dots deleted, the index a measurement token).
             "BED RM", "KIDS", "SERV RM", "SERV ROOM",
+            // `MAIDS RM.` — the client's Tower E&F sheet (plan doc §3o): every reader transcribed
+            // it faithfully and this table discarded it, deleting a scored bedroom from a paid
+            // report. The plural was the whole gap — `MAID ROOM` was already here.
+            "MAIDS RM", "MAIDS ROOM", "MAID RM", "MAIDS",
         )
         put(RoomType.GUEST_BEDROOM, "GUEST BEDROOM", "GUEST ROOM", "GUEST BED ROOM")
         put(

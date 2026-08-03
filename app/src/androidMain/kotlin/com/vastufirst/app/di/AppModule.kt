@@ -48,7 +48,7 @@ val appModule = module {
     // plan, every upload produced the same room list — which looks precisely like a broken feature.
     // Recorded replies still drive the tests and the render goldens, where they belong; the app now
     // either reads the user's plan or says it cannot.
-    single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.GROQ_API_KEY) }
+    single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.PLAN_READER_KEY) }
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
     single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
 
@@ -74,7 +74,7 @@ val appModule = module {
             decode = get(),
             // A build made without the key cannot read anything, and the screen says so rather than
             // offering a picker that leads nowhere.
-            canRead = BuildConfig.GROQ_API_KEY.isNotBlank(),
+            canRead = BuildConfig.PLAN_READER_KEY.isNotBlank(),
         )
     }
 }

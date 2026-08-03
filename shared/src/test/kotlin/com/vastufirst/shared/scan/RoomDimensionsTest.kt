@@ -48,6 +48,33 @@ class RoomDimensionsTest {
         assertFeet("W.C 4'-11\"X6'-4½\"", 4.9167, 6.375)
     }
 
+    @Test
+    fun `fractions the reader types as ASCII are read too`() {
+        // ⭐ The sheet prints ½; the models TYPE it as the three characters 1/2 (plan doc §3p).
+        // These are verbatim transcriptions from the furnished-render sheet (plan-007): with the
+        // glyph-only rule they all failed, enough rooms lost their printed size, and the
+        // room-count gate refused a fully dimensioned 18-room reply as TOO_MANY_ROOMS.
+        assertFeet("DRAWING 10'-71/2\" X 15'-0\"", 10.625, 15.0)
+        assertFeet("TOILET 4'-31/2\" X 9'-41/2\"", 4.2917, 9.375)
+        // A space before the fraction, as the west balcony's caption prints it.
+        assertFeet("4'-4 1/2\" X 9'-0\"", 4.375, 9.0)
+    }
+
+    @Test
+    fun `an ASCII eleven-and-a-half under-reads as one-and-a-half, by design`() {
+        // 15'-41/2" is unambiguous (4 + 1/2); 12'-11/2" is not — the true printed value was 11½
+        // but the ASCII form cannot say so. Backtracking lands on 1 + 1/2, ten inches under.
+        // Documented rather than fixed: under-reading one dimension beats refusing the size.
+        assertFeet("MASTER BEDROOM 15'-41/2\" X 12'-11/2\"", 15.375, 12.125)
+    }
+
+    @Test
+    fun `an ASCII fraction works in a strip caption too`() {
+        val d = RoomDimensions.stripDepth("4'-4 1/2\" WIDE BALCONY")
+            ?: throw AssertionError("strip depth not read")
+        assertEquals(4.375, d / mmPerFoot, 0.01)
+    }
+
     // ── millimetres, the commoner convention in the corpus ───────────────────────────────────────
 
     @Test

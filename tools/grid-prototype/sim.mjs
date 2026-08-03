@@ -999,6 +999,9 @@ const LABEL_TABLE = {
   // room, LIVING when — as on this fixture — it does not). This mirror has no context machinery,
   // so it keys the fixture family's answer; the type-level truth is pinned in RoomLabelsTest.
   'BED ROOM': 'BEDROOM', WC: 'TOILET', PASSAGE: 'CORRIDOR', LOBBY: 'LIVING',
+  // The client's Tower E&F `MAIDS RM.` — added the day every reader was found transcribing it
+  // faithfully while the table discarded it (plan doc §3p; the plural was the whole gap).
+  'MAIDS RM': 'BEDROOM', 'MAIDS ROOM': 'BEDROOM', 'MAID RM': 'BEDROOM', MAIDS: 'BEDROOM',
 };
 const LABEL_DROP = new Set(['DRESS', 'DRESSING', 'DUCT', 'LIFT', 'SHAFT', 'WARDROBE']);
 /** Mirrors RoomLabels.clean: the parenthetical, the feet/inch marks, the printed dimensions, the
@@ -1349,14 +1352,20 @@ function bestFreeSubRect(cand, blockers, printedRatio) {
 // ---- printed room sizes (RoomDimensions.kt) --------------------------------------------------
 // The reader reads TEXT at ~95 % and guesses rectangles at 40-70 %, so where a caption prints the
 // room's size that number beats the rectangle it arrived with. Mirrors RoomDimensions.parse.
-const FRACTIONS = { '\u00bd': 0.5, '\u00bc': 0.25, '\u00be': 0.75, '\u2153': 1/3, '\u2154': 2/3, '\u215b': 0.125 };
+// ASCII forms too (plan doc \u00a73p): the models transcribe a printed \u00bd as the three characters 1/2,
+// so 10'-7\u00bd" arrives as 10'-71/2". Regex backtracking resolves it: inches=71 leaves /2 unmatched,
+// the engine retreats to 7 + 1/2. (A transcribed 11\u00bd parses as 1\u00bd \u2014 ambiguous ASCII, under-read
+// on purpose: ten inches under beats refusing the size.) Mirrors RoomDimensions.FRACTIONS.
+const FRACTIONS = { '\u00bd': 0.5, '\u00bc': 0.25, '\u00be': 0.75, '\u2153': 1/3, '\u2154': 2/3, '\u215b': 0.125,
+  '1/2': 0.5, '1/4': 0.25, '3/4': 0.75, '1/3': 1/3, '2/3': 2/3, '1/8': 0.125 };
 // \u26a0 DOUBLE-escaped, because this is a plain string fed to `new RegExp`. It was written with single
 // backslashes once, and JavaScript silently reads "\d" in a string literal as the letter d \u2014 so the
 // pattern could never match, every feet-inches size in the corpus silently failed to parse in this
 // mirror, and the PRINTED-ORIENTATION invariant never judged a single feet-inch room while Kotlin
 // parsed them all. Found by the corpus audit: plan-020, sized on every caption, came out ASSISTED
 // here and PLACED in Kotlin. A mirror that quietly skips a branch is a mirror that stops mirroring.
-const FEET_INCHES = "(\\d+)\\s*['\u2032\u2019]\\s*-?\\s*(\\d+)?\\s*([\u00bd\u00bc\u00be\u2153\u2154\u215b])?\\s*[\"\u2033\u201d]?";
+const FRACTION = "(\u00bd|\u00bc|\u00be|\u2153|\u2154|\u215b|1/2|1/4|3/4|1/3|2/3|1/8)";
+const FEET_INCHES = "(\\d+)\\s*['\u2032\u2019]\\s*-?\\s*(\\d+)?\\s*" + FRACTION + "?\\s*[\"\u2033\u201d]?";
 const PAIR_FEET_INCHES = new RegExp(FEET_INCHES + "\\s*[X\u00d7]\\s*" + FEET_INCHES);
 const PAIR_PLAIN = /(?<![\d.'"\u2032\u2033])(\d{2,5})\s*(?:MM|CM)?\s*[X\u00d7]\s*(\d{2,5})\s*(?:MM|CM)?(?!\d)/;
 const MM_PER_FOOT = 304.8, FEET_IF_UNDER = 100;

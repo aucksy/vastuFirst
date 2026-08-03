@@ -47,9 +47,19 @@ object GroqWire {
      * braces and newlines, and hand-escaping it is a bug waiting to happen in the one place where a
      * malformed body looks exactly like a model failure.
      */
-    fun requestBody(recipe: PlanReadRecipe, base64Image: String, mime: String = "image/jpeg"): String =
+    /**
+     * [model] defaults to the config's primary; the escalation call passes
+     * [ScanReaderConfig.escalationModel] and everything else about the request stays identical —
+     * same prompt, same image, same shape — so the two replies are comparable by construction.
+     */
+    fun requestBody(
+        recipe: PlanReadRecipe,
+        base64Image: String,
+        mime: String = "image/jpeg",
+        model: String = recipe.config.model,
+    ): String =
         buildJsonObject {
-            put("model", recipe.config.model)
+            put("model", model)
             putJsonArray("messages") {
                 addJsonObject {
                     put("role", "user")

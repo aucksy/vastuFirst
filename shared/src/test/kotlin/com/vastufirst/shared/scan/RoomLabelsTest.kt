@@ -99,6 +99,17 @@ class RoomLabelsTest {
     }
 
     @Test
+    fun `⭐ the client's maid's room is a bedroom — the plural was the whole gap`() {
+        // The Tower E&F sheet prints `MAIDS RM.` and every measured reader transcribed it
+        // faithfully (plan doc §3p) — then this table discarded it, deleting a scored bedroom
+        // from a paid report. `MAID ROOM` was already a synonym; `MAIDS` was not.
+        assertEquals(RoomType.BEDROOM, type("MAIDS RM."))
+        assertEquals(RoomType.BEDROOM, type("MAIDS RM. 8'-0\"X7'-2\""))
+        assertEquals(RoomType.BEDROOM, type("MAIDS ROOM"))
+        assertEquals(RoomType.BEDROOM, type("MAID RM"))
+    }
+
+    @Test
     fun `site features and furniture drop as not-a-room, never as unrecognised`() {
         // A lawn and a pathway are ground outside the home; a crockery unit is a cabinet drawn on
         // the sheet. "We didn't recognise the name" was dishonest for these — we read them fine;
