@@ -1093,3 +1093,17 @@ the refused class, immune to the branded page, ≈₹1.4/scan.** Not yet a switc
 TOO_MANY_ROOMS gate look (3), the §3o mapper bugs, and the owner's go on cost + a config change
 (`reader-config.json` is data — but the endpoint/auth shape differs, so it is a small code
 change in GroqPlanReader's client, not config alone).
+
+### §3p addendum — round 2, the cheap seats (4 Aug 2026)
+
+42 more approved scans (₹13 measured) via OpenRouter: `gpt-5-nano`, `gpt-5.6-luna`,
+`claude-haiku-4.5`. The verdict sharpened: **`gpt-5.6-luna` equals the round-1 winner on every
+classic-2D sheet — best of ALL models on the client's tower (15/16 · 100% · RIGHT, twice) and
+branded-immune — at ₹0.09/scan, cheaper than today's reader.** Its two limits: the model itself
+answers NOT_2D on the furnished-render class (gemini-3.1-pro remains the only reader of that
+class), and one of its fourteen runs dropped a corridor on the owner's flat. Haiku inherits
+qwen's branded-page disease (69%); nano loses rooms everywhere. The TOO_MANY_ROOMS gate refusing
+a fully-SIZED reply reproduced from a second model (nano's 15-room tower... plan-007 reply).
+Recommended shape: **luna as default reader + gemini-3.1-pro as the furnished-class/premium
+escalation, both through OpenRouter (one client, one key, one bill; models stay config).**
+Running scoreboard: `tools/scan-eval/READER-CANDIDATES.md`.

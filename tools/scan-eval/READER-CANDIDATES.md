@@ -11,13 +11,20 @@ comparable across rounds:
   (`render-grid.mjs`), scored by `resemblance.mjs` against the hand-checked truth files in `truth/`
 - ⚠ every scan needs the owner's approved COUNT first — CLAUDE.md §2c, hard rule
 
-## Overall ranking (after round 1, 3 Aug 2026)
+## Overall ranking (after round 2, 4 Aug 2026)
 
-| rank | model | source | quality (6 sheets) | same answer twice | ₹/scan (measured) |
+| rank | model | source | quality | same answer twice | ₹/scan (MEASURED) |
 |---|---|---|---|---|---|
-| **1** | `gemini-3.1-pro-preview` (= gemini-pro-latest) | Google or OpenRouter | best on every sheet; reads the refused furnished class 13/18 · 100% ×2 | scores identical 7/7 | **₹1.4** |
-| 2 | `gemini-3.6-flash` | Google or OpenRouter | near-pro, but materially unstable twice | 1/7 drawings identical | ₹2.2 (thinking tokens) |
-| 3 | `qwen/qwen3.6-27b` (today's app reader) | Groq | loses 1–4 rooms on the two most important sheets; 74% on the branded page; refuses plan-007 | 4/5, but varies on the CLIENT's sheet | ₹0.21 |
+| **1 value** | `openai/gpt-5.6-luna` | OpenRouter | equals the quality king on every classic-2D sheet — BEST on the client's tower (15/16 · 100% · RIGHT ×2), branded-proof (97%) — but refuses furnished renders (NOT_2D ×2) and once dropped a corridor on the owner's flat | scores stable, drawings wobble cosmetically (1/7 identical) | **₹0.09** |
+| **1 quality** | `gemini-3.1-pro-preview` (= gemini-pro-latest) | Google or OpenRouter | best all-round; the ONLY model that reads the furnished class (13/18 · 100% · RIGHT ×2) | scores identical 7/7 | ₹1.39 |
+| 3 | `anthropic/claude-haiku-4.5` | OpenRouter | steadiest drawings (6/7 identical) but weak where it matters: tower 83% · biggest WRONG; branded page collapses to 69% (qwen's disease) | 6/7 | ₹0.61 |
+| 4 | `gemini-3.6-flash` | Google or OpenRouter | near-pro, materially unstable twice | 1/7 | ₹2.18 (thinking tokens) |
+| 5 | `openai/gpt-5-nano` | OpenRouter | loses 1–3 rooms on almost every sheet, flips biggest-room run to run, furnished refused | 0/7 | ₹0.23 |
+| 6 | `qwen/qwen3.6-27b` (today's app reader) | Groq | loses 1–4 rooms on the two most important sheets; 74% on the branded page; refuses plan-007 | 4/5, but varies on the CLIENT's sheet | ₹0.21 |
+
+**Verdict "cheapest yet best": `gpt-5.6-luna` as the default reader (9 paise, beats today's
+reader on every sheet and costs LESS), with `gemini-3.1-pro-preview` as the escalation for the
+furnished-render class once the triage gate is split — both through the ONE OpenRouter door.**
 
 ## Round 1 detail — per sheet (rooms placed of truth · arrangement · biggest-room)
 
@@ -35,17 +42,28 @@ comparable across rounds:
 ² flash returned all 18 rooms and the TOO_MANY_ROOMS gate refused a fully-sized reply — gate bug,
 noted in §3p, to fix before any switch.
 
-## Round 2 — the cheap seats (OpenRouter), PENDING the owner's key
+## Round 2 detail — the cheap seats via OpenRouter (42 scans, ₹13 measured, 4 Aug 2026)
 
-Goal: the cheapest model that holds round-1-winner quality. One source for everything —
-OpenRouter also serves the round-1 winner at the same price. Approved: 42 scans (~₹15 est).
-Blocked on: `OPENROUTER_API_KEY` in `.env` (line exists, empty).
+Per sheet (rooms placed of truth · arrangement · biggest-room), runs shown when they differ:
 
-| model | list price in/out $/M | est. ₹/scan | result |
+| sheet | gpt-5-nano | gpt-5.6-luna | claude-haiku-4.5 |
 |---|---|---|---|
-| `openai/gpt-5-nano` | 0.05 / 0.40 | ~0.07 | *pending* |
-| `openai/gpt-5.6-luna` | 0.10 / 0.60 | ~0.10 | *pending* |
-| `anthropic/claude-haiku-4.5` | 1.00 / 5.00 | ~0.8–1.0 | *pending* |
+| towerEF-1854 (client) | 13–14/16 · 77–81% · flips | **15/16 · 100% · RIGHT ×2** | 14/16 · 83% · WRONG ×2 |
+| plan-010 (owner) | 14/15 · 87–89% · flips | 14–15/15 · 91–97% · RIGHT | 14/15 · 94–95% · RIGHT |
+| greencourt-526 | 6/7 · 92–96% · flips | **7/7 · 94–100% · RIGHT** | 7/7 · 92% · WRONG |
+| greencourt-336 clean | 7/7 · 86–97% · WRONG¹ | 7/7 · 97% · WRONG¹ | 7/7 · 89% · RIGHT |
+| greencourt-336 branded | 6–7/7 · 83–94% | **7/7 · 97% ×2** | 7/7 · **69%** ×2 |
+| plan-006 (no sizes) | 9/10 · 93–95% | **10/10 · 100% · RIGHT ×2** | 10/10 · 100% · RIGHT ×2 |
+| plan-007 (furnished) | returned 15 rooms, gate refused ×2² | model itself says NOT_2D ×2 | 14/18 · 97% ×2 |
+
+¹ the all-reader 336 lobby-vs-bedroom rounding nit (see round 1).
+² second sighting of the TOO_MANY_ROOMS gate refusing a fully-sized reply (first: flash r1, 18
+rooms) — the gate bug is now reproducible from two models.
+
+Notes: nano and luna burn hidden reasoning tokens (nano ~7k/scan — that is why its measured cost
+is 3× list estimate); luna's reasoning is modest (~350/scan). Haiku's failure mode is qwen-like
+branded-page arrangement damage, not room loss. Luna's one real slip across 14 runs: DRESS &
+PASSAGE (a corridor) missing on one owner's-flat run.
 
 ## How to reproduce any row
 
