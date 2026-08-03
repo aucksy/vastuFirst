@@ -300,8 +300,8 @@ class PersistenceTest {
             0,
         )
         assertEquals(
-            "a draft written before the flag existed is a home the user was drawing, not a parking row",
             false, repo.loadDraft("old")?.roomsUnplaced,
+            "a draft written before the flag existed is a home the user was drawing, not a parking row",
         )
     }
 
