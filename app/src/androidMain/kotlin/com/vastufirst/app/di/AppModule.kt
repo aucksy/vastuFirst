@@ -10,8 +10,11 @@ import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.scan.AndroidImageDecoder
 import com.vastufirst.app.ui.scan.AndroidPlanReadingConsent
+import com.vastufirst.app.ui.scan.AndroidScanReviewStyle
 import com.vastufirst.app.ui.scan.ImageDecoder
 import com.vastufirst.app.ui.scan.PlanReadingConsent
+import com.vastufirst.app.ui.scan.ScanReviewHandover
+import com.vastufirst.app.ui.scan.ScanReviewStyle
 import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.shared.scan.GroqPlanReader
@@ -51,6 +54,10 @@ val appModule = module {
     single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.PLAN_READER_KEY) }
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
     single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
+    // The on-photo scan review (owner request, 4 Aug 2026): the Settings toggle that picks the
+    // confirmation surface, and the one-field handover slot the scan writes before navigating.
+    single<ScanReviewStyle> { AndroidScanReviewStyle(androidContext()) }
+    single { ScanReviewHandover() }
 
     // ⭐ The ₹699 checkout. Built in full, SWITCHED OFF by a build flag — and the "off" path is a
     // real, honest implementation rather than a disabled button: NoBilling unlocks locally and the

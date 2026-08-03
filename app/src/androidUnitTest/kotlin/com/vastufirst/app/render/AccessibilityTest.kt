@@ -79,6 +79,17 @@ class AccessibilityTest {
             // The privacy gate carries more prose than any other screen, and the contrast trap this
             // check already caught once on the scan screen lives in exactly that kind of copy.
             "scan-consent" to { ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {}) },
+            // ⭐ The on-photo review: a canvas with a semantic description plus a tappable row per
+            // room — the same two shapes (described image, actionable list row) this pass guards
+            // everywhere else. Driven by the real recorded clean read through the real mapper.
+            "scan-review" to {
+                com.vastufirst.app.ui.scan.ScanReviewContent(
+                    image = null,
+                    rooms = (ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
+                        as com.vastufirst.shared.scan.ScanOutcome.Placed).rooms,
+                    startSelected = 1,
+                )
+            },
             "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
             "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
             // ⭐ The selected-room panel had never reached this pass, because it appears only once a

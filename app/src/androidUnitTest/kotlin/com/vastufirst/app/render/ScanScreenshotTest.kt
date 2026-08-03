@@ -1,6 +1,7 @@
 package com.vastufirst.app.render
 
 import android.app.Application
+import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanScreen
 import com.vastufirst.app.ui.scan.ScanUiState
@@ -60,6 +61,29 @@ class ScanScreenshotTest {
     fun scanIdle() {
         captureAcrossMatrix("scan-idle", screen(ScanUiState.Idle))
         writeManifestAcrossMatrix("scan-idle", screen(ScanUiState.Idle))
+    }
+
+    /**
+     * ⭐ The ON-PHOTO review (owner request, 4 Aug 2026): the scanned picture with one room's
+     * reading tinted over it, and the room list beneath. Driven by the real recorded clean read
+     * through the real mapper, so the list is what a user would actually be checking; the "photo"
+     * is a flat stand-in bitmap (the harness has no real photograph, and the overlay geometry —
+     * the thing this golden guards — is the same over any pixels).
+     */
+    @Test
+    fun scanReview() {
+        val placedOutcome = placed() as com.vastufirst.shared.scan.ScanOutcome.Placed
+        val photo = android.graphics.Bitmap.createBitmap(1400, 990, android.graphics.Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = photo.asImageBitmap(),
+                rooms = placedOutcome.rooms,
+                startSelected = 2,
+            )
+        }
+        captureAcrossMatrix("scan-review", content)
+        writeManifestAcrossMatrix("scan-review", content)
     }
 
     /**

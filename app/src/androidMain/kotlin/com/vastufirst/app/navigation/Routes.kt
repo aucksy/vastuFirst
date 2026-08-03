@@ -26,6 +26,15 @@ object Routes {
      */
     const val SCAN_CONSENT = "scan_consent"
     const val SCAN = "scan"
+
+    /**
+     * ⭐ The ON-PHOTO review (owner request, 4 Aug 2026; Settings toggle). The user's own scanned
+     * picture stays on screen and the extracted rooms are a tappable checklist over it — the
+     * alternative to confirming on the guided grid, reached only when the toggle is on AND the
+     * scan placed its rooms; every other scan still confirms on the grid, which remains the only
+     * surface that can FIX a wrong read.
+     */
+    const val SCAN_REVIEW = "scan_review"
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
     const val SCORE = "score"

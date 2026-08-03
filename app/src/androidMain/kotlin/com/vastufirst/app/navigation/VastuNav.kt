@@ -156,6 +156,8 @@ fun VastuNavHost() {
             composable(Routes.SCAN) { entry ->
                 val planVm = sharedVm(nav, entry)
                 val scanVm: ScanViewModel = koinViewModel()
+                val reviewStyle = koinInject<com.vastufirst.app.ui.scan.ScanReviewStyle>()
+                val reviewHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 ScanRoute(
                     vm = scanVm,
                     onUseRooms = { outcome ->
@@ -179,9 +181,37 @@ fun VastuNavHost() {
                         // then asks whether the leftovers of that strip are part of the home — which
                         // is the screen the owner was handed for his own flat.
                         planVm.markRoomsUnplaced(outcome !is com.vastufirst.shared.scan.ScanOutcome.Placed)
-                        nav.go(Routes.GUIDED_GRID)
+                        // ⭐ The on-photo review (Settings toggle) replaces the GRID step only —
+                        // and only for a scan whose geometry was trusted. The grid rooms above are
+                        // populated IDENTICALLY first, so the score is the same in both flows and
+                        // "fix on the grid" from the review lands on a ready grid.
+                        if (
+                            reviewStyle.onPhoto() &&
+                            outcome is com.vastufirst.shared.scan.ScanOutcome.Placed
+                        ) {
+                            reviewHandover.data = com.vastufirst.app.ui.scan.ScanReviewData(
+                                imageBytes = scanVm.lastImage?.bytes,
+                                rooms = outcome.rooms,
+                            )
+                            nav.go(Routes.SCAN_REVIEW)
+                        } else {
+                            nav.go(Routes.GUIDED_GRID)
+                        }
                     },
                     onDrawInstead = { nav.go(Routes.GUIDED_GRID) },
+                    onBack = { nav.popBackStack() },
+                )
+            }
+
+            composable(Routes.SCAN_REVIEW) {
+                val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                com.vastufirst.app.ui.scan.ScanReviewScreen(
+                    handover = handover,
+                    // North comes right after — which also retires the old ordering complaint
+                    // (compass words spoken a screen before North was asked): this flow never
+                    // draws a grid before North is set.
+                    onContinue = { nav.go(Routes.MARK_NORTH) },
+                    onEditGrid = { nav.go(Routes.GUIDED_GRID) },
                     onBack = { nav.popBackStack() },
                 )
             }

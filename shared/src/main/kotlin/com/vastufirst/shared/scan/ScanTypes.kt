@@ -176,6 +176,17 @@ data class ScannedRoom(
      * exactly what §6.2b means by checking our reading rather than just our answer.
      */
     val printedSize: String = "",
+    /**
+     * ⭐ WHERE ON THE PICTURE this room was read — the sanitised [ScanBox], in the reader's own
+     * fraction coordinates. Carried so the on-photo review screen can tint the part of the image a
+     * room came from; the grid pipeline never reads it (the [rect] is the placed answer).
+     *
+     * ⚠ Approximate BY THE PROMPT'S OWN FRAME: coordinates are fractions of the building's outer
+     * wall, not of the page, so on a sheet with wide margins the tint sits offset. The screen says
+     * "roughly" in as many words. Appended LAST with a default — fixture code builds ScannedRoom
+     * positionally (see the note on [ScanBox]).
+     */
+    val source: ScanBox? = null,
 )
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */

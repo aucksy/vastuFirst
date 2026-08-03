@@ -34,6 +34,14 @@ class ScanViewModel(
 
     private var lastSource: Any? = null
 
+    /**
+     * ⭐ The decoded picture the reply was read FROM, kept for the on-photo review screen — which
+     * shows the user their own plan with our reading tinted over it. Never persisted, never logged
+     * (same privacy rule as the reader); it lives exactly as long as this one-shot ViewModel.
+     */
+    var lastImage: DecodedImage? = null
+        private set
+
     /** Read the picked file. [source] is whatever the platform picker handed back (a Uri). */
     fun scan(source: Any?) {
         if (!canRead) { state = ScanUiState.NotConfigured; return }
@@ -43,6 +51,7 @@ class ScanViewModel(
         viewModelScope.launch {
             val image = decode.toJpeg(source)
             if (image == null) { state = ScanUiState.BadImage; return@launch }
+            lastImage = image
             state = when (val r = reader.read(image.bytes, image.aspect)) {
                 is ScanResult.Read -> ScanUiState.Done(r.outcome)
                 is ScanResult.Busy -> ScanUiState.Busy(r.retryAfterSeconds)

@@ -340,7 +340,7 @@ object ScanMapper {
             .map {
                 ScannedRoom(
                     it.type, it.box.label, rect = null, flags = it.flags.toSet(),
-                    printedSize = it.box.printedSize,
+                    printedSize = it.box.printedSize, source = it.box,
                 )
             }
 
@@ -463,7 +463,7 @@ object ScanMapper {
 
         val out = placedRooms
             .map { (c, rect, _) ->
-                ScannedRoom(c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize)
+                ScannedRoom(c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize, source = c.box)
             }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
         return ScanOutcome.Placed(outCols, outRows, out, notes())

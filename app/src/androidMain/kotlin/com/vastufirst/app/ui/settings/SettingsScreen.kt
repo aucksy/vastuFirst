@@ -39,6 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.scan.PlanReadingConsent
+import com.vastufirst.app.ui.scan.ScanReviewStyle
 import com.vastufirst.app.CrashLog
 import com.vastufirst.app.ui.common.screenRoot
 
@@ -54,10 +55,12 @@ fun SettingsScreen(
     onBack: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
     consent: PlanReadingConsent = koinInject(),
+    reviewStyle: ScanReviewStyle = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
     // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
     var allowed by remember { mutableStateOf(consent.isGranted()) }
+    var photoReview by remember { mutableStateOf(reviewStyle.onPhoto()) }
     val context = LocalContext.current
     // ⭐ A crash the app recorded last time. Read once, so the offer does not flicker in and out as
     // the screen recomposes, and cleared the moment the user acts either way — nobody should be
@@ -70,6 +73,8 @@ fun SettingsScreen(
         onDeleteAll = homeViewModel::deleteAll,
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
+        photoReview = photoReview,
+        onSetPhotoReview = { onPhoto -> reviewStyle.set(onPhoto); photoReview = onPhoto },
         hasCrashReport = crash != null,
         onSendCrash = {
             crash?.let { text -> sendCrashEmail(context, text) }
@@ -116,6 +121,9 @@ fun SettingsContent(
     onDeleteAll: () -> Unit,
     planReadingAllowed: Boolean = false,
     onSetPlanReading: (Boolean) -> Unit = {},
+    /** Where a scan is checked: on the photo itself (new, owner request) or on the guided grid. */
+    photoReview: Boolean = false,
+    onSetPhotoReview: (Boolean) -> Unit = {},
     onPrivacy: () -> Unit = {},
     /** True when the app recorded a crash last time it ran. */
     hasCrashReport: Boolean = false,
@@ -141,6 +149,14 @@ fun SettingsContent(
             // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
             // label on a narrow phone at a large font.
             RowItem("Vastu reading", trailing = "8 zones")
+            // ⭐ The two scan-checking experiences, side by side by design (owner request, 4 Aug
+            // 2026): "On the photo" keeps the scanned picture on screen with the rooms as a
+            // checklist; "On the grid" is the classic editor. Tap to switch, take a scan, compare.
+            RowItem(
+                "Check a scan",
+                trailing = if (photoReview) "On the photo" else "On the grid",
+                onClick = { onSetPhotoReview(!photoReview) },
+            )
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
