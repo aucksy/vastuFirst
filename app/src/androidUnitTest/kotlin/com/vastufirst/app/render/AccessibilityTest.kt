@@ -68,12 +68,21 @@ class AccessibilityTest {
             "privacy" to { PrivacyScreen(onBack = {}) },
             "addhome" to { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) },
             "scan-idle" to {
-                ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {})
+                // With the reader-comparison picker showing, so its chips face the same contrast
+                // and touch-target checks as every other control (owner request, 4 Aug 2026).
+                ScanScreen(
+                    ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {},
+                    modelChoices = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview"),
+                )
             },
             "scan-assisted" to {
                 ScanScreen(
-                    ScanUiState.Done(ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)),
+                    ScanUiState.Done(
+                        ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply),
+                        readBy = "openai/gpt-5.6-luna",
+                    ),
                     {}, {}, {}, {}, { _, _ -> }, {}, {},
+                    modelChoices = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview"),
                 )
             },
             // The privacy gate carries more prose than any other screen, and the contrast trap this

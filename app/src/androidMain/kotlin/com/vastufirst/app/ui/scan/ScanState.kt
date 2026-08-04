@@ -18,8 +18,12 @@ sealed interface ScanUiState {
     /** The image is on its way. */
     data object Reading : ScanUiState
 
-    /** We have an answer about the plan. [ScanOutcome] says which of the three it is. */
-    data class Done(val outcome: ScanOutcome) : ScanUiState
+    /**
+     * We have an answer about the plan. [ScanOutcome] says which of the three it is. [readBy] is the
+     * model id that produced it, shown on the results screen so the owner's model-comparison rescans
+     * are attributable (4 Aug 2026 request); null in fixtures that predate the field.
+     */
+    data class Done(val outcome: ScanOutcome, val readBy: String? = null) : ScanUiState
 
     /** ⭐ Rate-limited. A wait, not an error — see [ScanResult.Busy]. */
     data class Busy(val retryAfterSeconds: Int?) : ScanUiState

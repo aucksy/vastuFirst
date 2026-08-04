@@ -115,6 +115,12 @@ fun ScanRoute(
         onCorrectRoom = vm::correctRoom,
         onDrawInstead = onDrawInstead,
         onBack = onBack,
+        // The owner's reader-comparison levers (4 Aug 2026): pick the model before a scan, or
+        // rescan the same picture with a named model from any result.
+        modelChoices = vm.modelChoices,
+        chosenModel = vm.chosenModel,
+        onChooseModel = vm::chooseModel,
+        onRescanWith = vm::rescanWith,
     )
 }
 

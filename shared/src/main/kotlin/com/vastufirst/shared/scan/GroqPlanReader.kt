@@ -48,13 +48,32 @@ class GroqPlanReader(
 
         val base64 = Base64.getEncoder().encodeToString(image)
         val primary = postOnce(GroqWire.requestBody(recipe, base64), imageAspect)
+            .attributedTo(recipe.config.model)
 
         val escalation = recipe.config.escalationModel
         if (escalation.isNullOrBlank() || !refusedAsNot2d(primary)) return@withContext primary
 
         val second = postOnce(GroqWire.requestBody(recipe, base64, model = escalation), imageAspect)
+            .attributedTo(escalation)
         if (second is ScanResult.Read && second.outcome !is ScanOutcome.Refused) second else primary
     }
+
+    /**
+     * ⭐ One model, by name, no escalation (owner's testing lever, 4 Aug 2026). The results screen
+     * offers "rescan with …" for each configured model so reads can be compared on the same picture;
+     * an explicit choice must be deterministic, so the second-opinion machinery deliberately does
+     * not run here.
+     */
+    override suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?): ScanResult =
+        withContext(io) {
+            if (apiKey.isBlank() || image.isEmpty() || model.isBlank()) return@withContext ScanResult.Unavailable
+            val base64 = Base64.getEncoder().encodeToString(image)
+            postOnce(GroqWire.requestBody(recipe, base64, model = model), imageAspect).attributedTo(model)
+        }
+
+    /** Stamp which model produced a successful answer; failures pass through untouched. */
+    private fun ScanResult.attributedTo(model: String): ScanResult =
+        if (this is ScanResult.Read) copy(readBy = model) else this
 
     /** True when the model itself said "this image is not a 2D plan" — the only escalation cue. */
     private fun refusedAsNot2d(result: ScanResult): Boolean {

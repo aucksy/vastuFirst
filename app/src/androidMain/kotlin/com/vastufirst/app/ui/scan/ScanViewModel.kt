@@ -27,10 +27,27 @@ class ScanViewModel(
      * and not a silent fallback to recorded replies.
      */
     private val canRead: Boolean = true,
+    /**
+     * ⭐ The model ids a tester may pick from — the primary and the second-opinion model out of
+     * `reader-config.json`, in that order (owner request, 4 Aug 2026: compare the readers from the
+     * phone). Empty hides every picker and keeps the shipping behaviour exactly as before.
+     */
+    val modelChoices: List<String> = emptyList(),
 ) : ViewModel() {
 
     var state by mutableStateOf<ScanUiState>(if (canRead) ScanUiState.Idle else ScanUiState.NotConfigured)
         private set
+
+    /**
+     * The model the next scan must use, or null for Auto — the shipping primary-plus-second-opinion
+     * path. An explicit pick reads with that one model only, deterministically.
+     */
+    var chosenModel by mutableStateOf<String?>(null)
+        private set
+
+    fun chooseModel(model: String?) {
+        chosenModel = if (model != null && model in modelChoices) model else null
+    }
 
     private var lastSource: Any? = null
 
@@ -52,11 +69,31 @@ class ScanViewModel(
             val image = decode.toJpeg(source)
             if (image == null) { state = ScanUiState.BadImage; return@launch }
             lastImage = image
-            state = when (val r = reader.read(image.bytes, image.aspect)) {
-                is ScanResult.Read -> ScanUiState.Done(r.outcome)
-                is ScanResult.Busy -> ScanUiState.Busy(r.retryAfterSeconds)
-                ScanResult.Unavailable -> ScanUiState.Unavailable
-            }
+            state = readToState(image)
+        }
+    }
+
+    /**
+     * ⭐ Same picture, a named model (owner's testing lever, 4 Aug 2026) — offered on the results
+     * screen so two readers can be compared on the identical bytes. Reuses the decoded image; no
+     * re-pick, no re-decode. Each call is one more paid read of the same photo, which the button's
+     * own caption says.
+     */
+    fun rescanWith(model: String) {
+        val image = lastImage ?: return
+        if (!canRead || model !in modelChoices) return
+        state = ScanUiState.Reading
+        viewModelScope.launch { state = readToState(image, forcedModel = model) }
+    }
+
+    private suspend fun readToState(image: DecodedImage, forcedModel: String? = null): ScanUiState {
+        val pick = forcedModel ?: chosenModel
+        val r = if (pick != null) reader.readWith(pick, image.bytes, image.aspect)
+        else reader.read(image.bytes, image.aspect)
+        return when (r) {
+            is ScanResult.Read -> ScanUiState.Done(r.outcome, readBy = r.readBy ?: pick)
+            is ScanResult.Busy -> ScanUiState.Busy(r.retryAfterSeconds)
+            ScanResult.Unavailable -> ScanUiState.Unavailable
         }
     }
 
@@ -73,7 +110,8 @@ class ScanViewModel(
     fun correctRoom(index: Int, type: RoomType) {
         val done = state as? ScanUiState.Done ?: return
         val corrected = done.outcome.withRoomType(index, type)
-        if (corrected !== done.outcome) state = ScanUiState.Done(corrected)
+        // copy() keeps readBy: a correction changes what the user says, not which model read it.
+        if (corrected !== done.outcome) state = done.copy(outcome = corrected)
     }
 
     /** Back to the ask, so the user can choose a different file. */

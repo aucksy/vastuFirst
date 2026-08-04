@@ -297,8 +297,13 @@ sealed interface ScanOutcome {
  * trying again.
  */
 sealed interface ScanResult {
-    /** We got an answer. It may still be a refusal — that is a property of the plan, not of the call. */
-    data class Read(val outcome: ScanOutcome) : ScanResult
+    /**
+     * We got an answer. It may still be a refusal — that is a property of the plan, not of the call.
+     * [readBy] is the model id that actually produced this answer (the escalation model when the
+     * second opinion was used) — shown on the result screen so the owner's model-comparison rescans
+     * (4 Aug 2026 request) are attributable. Null from readers that predate the field.
+     */
+    data class Read(val outcome: ScanOutcome, val readBy: String? = null) : ScanResult
 
     /**
      * ⭐ HTTP 429 — and a **first-class state, not an error**. The free tier allows 8 000 tokens a
@@ -325,4 +330,12 @@ sealed interface ScanResult {
 interface PlanReader {
     /** [image] is the encoded bytes of a downscaled JPEG. Never throws — failures are [ScanResult]s. */
     suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult
+
+    /**
+     * ⭐ The testing lever (owner request, 4 Aug 2026): read with ONE named model — no escalation,
+     * no fallback — so two models can be compared on the same picture from the results screen.
+     * Default: an ordinary read, so recorded/fake readers need not care which model was asked for.
+     */
+    suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?): ScanResult =
+        read(image, imageAspect)
 }

@@ -36,6 +36,8 @@ class ScanGatesTest {
     private fun vm(canRead: Boolean) =
         ScanViewModel(reader = neverCalled, decode = neverDecodes, canRead = canRead)
 
+    private val twoModels = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview")
+
     @Test
     fun `a build without the reading key says so from the first frame`() {
         assertEquals(ScanUiState.NotConfigured, vm(canRead = false).state)
@@ -101,5 +103,49 @@ class ScanGatesTest {
         val compound = "(3.17mX0.90m)+(1.51mX0.40m) (10'-5\"X3'-0\")+(5'-0\"X1'-4\")"
         assertEquals(compound, shortSize(compound), "a compound size must survive whole")
         assertEquals("", shortSize(""), "a plan that prints no size shows none")
+    }
+
+    // ── the reader-comparison levers (owner request, 4 Aug 2026) ───────────────────────────────
+
+    /** The picker and the rescan buttons speak product names, not API ids. */
+    @Test
+    fun `a model id is spoken like a product name`() {
+        assertEquals("GPT 5.6 Luna", shortModelName("openai/gpt-5.6-luna"))
+        assertEquals("Gemini 3.1 Pro", shortModelName("google/gemini-3.1-pro-preview"))
+        // A future config edit with no vendor prefix must not crash the label.
+        assertEquals("Some Model", shortModelName("some-model"))
+    }
+
+    @Test
+    fun `an explicit model pick only accepts a model that is on offer`() {
+        val model = ScanViewModel(
+            reader = neverCalled, decode = neverDecodes, canRead = true, modelChoices = twoModels,
+        )
+        assertEquals(null, model.chosenModel, "Auto — the shipping path — is the default")
+        model.chooseModel(twoModels[1])
+        assertEquals(twoModels[1], model.chosenModel)
+        // A stale or mistyped id (say, after a config edit) silently falls back to Auto rather
+        // than sending a request for a model that no longer exists.
+        model.chooseModel("openai/some-retired-model")
+        assertEquals(null, model.chosenModel)
+    }
+
+    /**
+     * A gate, same family as the key gates above: a build that cannot read must not rescan either,
+     * and a rescan without a picture in hand must be a no-op rather than a crash.
+     */
+    @Test
+    fun `rescan refuses without a key or without a picture`() {
+        val keyless = ScanViewModel(
+            reader = neverCalled, decode = neverDecodes, canRead = false, modelChoices = twoModels,
+        )
+        keyless.rescanWith(twoModels[0])
+        assertEquals(ScanUiState.NotConfigured, keyless.state, "keyless build: rescan never starts")
+
+        val noPicture = ScanViewModel(
+            reader = neverCalled, decode = neverDecodes, canRead = true, modelChoices = twoModels,
+        )
+        noPicture.rescanWith(twoModels[0])
+        assertEquals(ScanUiState.Idle, noPicture.state, "no picture yet: rescan is a no-op")
     }
 }

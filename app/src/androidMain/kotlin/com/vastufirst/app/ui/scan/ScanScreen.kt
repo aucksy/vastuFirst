@@ -33,6 +33,7 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.RoomType
@@ -73,10 +74,21 @@ fun ScanScreen(
     /**
      * True once "take a photo" has been pressed on a phone with no camera app at all — an emulator,
      * a stripped ROM. The screen then says so in one line instead of the button doing nothing, which
-     * is the shape of the very defect this release fixes. Last in the list on purpose: everything
-     * above it is called positionally by the accessibility pass.
+     * is the shape of the very defect this release fixes. Kept after the positional params:
+     * everything above it is called positionally by the accessibility pass.
      */
     cameraUnavailable: Boolean = false,
+    /**
+     * ⭐ The reader-comparison levers (owner request, 4 Aug 2026 — a testing aid he asked to keep on
+     * the screen): the model ids on offer (from `reader-config.json`; empty hides every picker),
+     * which one the next scan must use (null = Auto, today's shipping path), the picker callback,
+     * and rescan-this-picture-with-a-named-model from any result. Defaults keep old call sites and
+     * the accessibility pass unchanged.
+     */
+    modelChoices: List<String> = emptyList(),
+    chosenModel: String? = null,
+    onChooseModel: (String?) -> Unit = {},
+    onRescanWith: (String) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -89,10 +101,17 @@ fun ScanScreen(
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         when (state) {
-            ScanUiState.Idle -> IdleBody(onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable)
+            ScanUiState.Idle ->
+                IdleBody(
+                    onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable,
+                    modelChoices, chosenModel, onChooseModel,
+                )
             ScanUiState.Reading -> ReadingBody()
             is ScanUiState.Done ->
-                DoneBody(state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow)
+                DoneBody(
+                    state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow,
+                    readBy = state.readBy, modelChoices = modelChoices, onRescanWith = onRescanWith,
+                )
             is ScanUiState.Busy -> BusyBody(state.retryAfterSeconds, onRetry, onDrawInstead)
             ScanUiState.Unavailable -> UnavailableBody(onRetry, onDrawInstead)
             ScanUiState.BadImage -> BadImageBody(onRetry, onDrawInstead)
@@ -110,6 +129,9 @@ private fun IdleBody(
     onTakePhoto: () -> Unit,
     onDrawInstead: () -> Unit,
     cameraUnavailable: Boolean,
+    modelChoices: List<String> = emptyList(),
+    chosenModel: String? = null,
+    onChooseModel: (String?) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     VText("Upload your plan", style = VastuTheme.type.h2, color = colors.textPrimary)
@@ -155,8 +177,47 @@ private fun IdleBody(
         )
     }
 
+    if (modelChoices.isNotEmpty()) {
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        ReaderPicker(modelChoices, chosenModel, onChooseModel)
+    }
+
     Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
+}
+
+/**
+ * ⭐ Which AI reads the plan — the owner's comparison lever (4 Aug 2026: "I should be able to change
+ * the model before scanning too"). Auto is today's shipping path (the primary model, with the
+ * second-opinion escalation when its own reply says the image is not a 2D plan); a named pick reads
+ * with that one model only, deterministically. A wrapping FlowRow, per the design rule that chips
+ * that can overflow never side-scroll.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ReaderPicker(
+    modelChoices: List<String>,
+    chosenModel: String?,
+    onChooseModel: (String?) -> Unit,
+) {
+    val colors = VastuTheme.colors
+    SectionLabel("Which AI reads it · testing")
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+    ) {
+        VastuChip("Auto", selected = chosenModel == null, onClick = { onChooseModel(null) })
+        modelChoices.forEach { m ->
+            VastuChip(shortModelName(m), selected = chosenModel == m, onClick = { onChooseModel(m) })
+        }
+    }
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    VText(
+        "Auto is the normal choice — it asks ${shortModelName(modelChoices.first())} and gets a " +
+            "second opinion when needed.",
+        style = VastuTheme.type.bodySm, color = colors.textTertiary,
+    )
 }
 
 @Composable
@@ -180,6 +241,9 @@ private fun DoneBody(
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
     startOpenRow: Int,
+    readBy: String? = null,
+    modelChoices: List<String> = emptyList(),
+    onRescanWith: (String) -> Unit = {},
 ) {
     when (outcome) {
         is ScanOutcome.Placed -> RoomsBody(
@@ -198,6 +262,9 @@ private fun DoneBody(
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
             startOpenRow = startOpenRow,
+            readBy = readBy,
+            modelChoices = modelChoices,
+            onRescanWith = onRescanWith,
         )
 
         is ScanOutcome.Assisted -> RoomsBody(
@@ -235,10 +302,69 @@ private fun DoneBody(
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
             startOpenRow = startOpenRow,
+            readBy = readBy,
+            modelChoices = modelChoices,
+            onRescanWith = onRescanWith,
         )
 
-        is ScanOutcome.Refused -> RefusedBody(outcome.reason, onRetry, onDrawInstead)
+        is ScanOutcome.Refused ->
+            RefusedBody(outcome.reason, onRetry, onDrawInstead, readBy, modelChoices, onRescanWith)
     }
+}
+
+/**
+ * The model id, spoken like a product name: "openai/gpt-5.6-luna" → "GPT 5.6 Luna",
+ * "google/gemini-3.1-pro-preview" → "Gemini 3.1 Pro". Vendor prefix and the "-preview" suffix are
+ * dropped; nobody comparing two readers needs either.
+ */
+internal fun shortModelName(id: String): String =
+    id.substringAfterLast('/')
+        .split('-')
+        .filter { it.isNotBlank() && !it.equals("preview", ignoreCase = true) }
+        .joinToString(" ") { word ->
+            when {
+                // An acronym has no vowels (GPT, GLM); "pro" and "luna" are words and stay words.
+                word.none { it.isDigit() } && word.none { it in "aeiou" } -> word.uppercase()
+                word.first().isDigit() -> word
+                else -> word.replaceFirstChar { it.uppercase() }
+            }
+        }
+
+/**
+ * ⭐ "Rescan with …" — the owner's model-comparison lever on every scan RESULT (4 Aug 2026: the new
+ * reader "Not Good still"; he compares the two configured models on the same picture, from the
+ * phone). Says which model produced the read on screen, offers each configured model as one honest
+ * button, and says plainly that a rescan sends the same picture again — each send is a paid read.
+ */
+@Composable
+private fun RescanWithSection(
+    readBy: String?,
+    modelChoices: List<String>,
+    onRescanWith: (String) -> Unit,
+) {
+    val colors = VastuTheme.colors
+    SectionLabel("Which AI read it · testing")
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    VText(
+        if (readBy != null) "This read came from ${shortModelName(readBy)}."
+        else "This read used the automatic choice.",
+        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+    )
+    Spacer(Modifier.height(VastuTheme.spacing.s3))
+    modelChoices.forEachIndexed { i, m ->
+        if (i > 0) Spacer(Modifier.height(VastuTheme.spacing.s3))
+        VastuButton(
+            "Rescan with ${shortModelName(m)}",
+            onClick = { onRescanWith(m) },
+            style = VastuButtonStyle.SECONDARY,
+            large = false,
+        )
+    }
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    VText(
+        "A rescan sends the same picture again.",
+        style = VastuTheme.type.bodySm, color = colors.textTertiary,
+    )
 }
 
 /**
@@ -273,6 +399,9 @@ private fun RoomsBody(
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
     startOpenRow: Int,
+    readBy: String? = null,
+    modelChoices: List<String> = emptyList(),
+    onRescanWith: (String) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     // At most one row's type list is open at a time: two open lists on a phone is more chips than
@@ -326,6 +455,10 @@ private fun RoomsBody(
     VastuButton(cta, onClick = onUseRooms)
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     VastuButton("Try a different picture", onClick = onRetry, style = VastuButtonStyle.SECONDARY)
+    if (modelChoices.isNotEmpty()) {
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        RescanWithSection(readBy, modelChoices, onRescanWith)
+    }
     Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
 }
@@ -444,7 +577,14 @@ private fun CheckPill() {
 }
 
 @Composable
-private fun RefusedBody(reason: RefusalReason, onRetry: () -> Unit, onDrawInstead: () -> Unit) {
+private fun RefusedBody(
+    reason: RefusalReason,
+    onRetry: () -> Unit,
+    onDrawInstead: () -> Unit,
+    readBy: String? = null,
+    modelChoices: List<String> = emptyList(),
+    onRescanWith: (String) -> Unit = {},
+) {
     // Each refusal names the ONE thing the user can change. A generic "couldn't read it" would leave
     // them with nothing to do, and these are the three failures real uploads actually hit.
     val (title, body) = when (reason) {
@@ -470,6 +610,13 @@ private fun RefusedBody(reason: RefusalReason, onRetry: () -> Unit, onDrawInstea
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             VastuButton("Draw it on a grid instead", onClick = onDrawInstead, style = VastuButtonStyle.SECONDARY)
         }
+    }
+    // A refusal is a result too — and the place model comparison matters most, because the
+    // second-opinion class (a furnished overhead render) is exactly what one model refuses
+    // and the other reads.
+    if (modelChoices.isNotEmpty()) {
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        RescanWithSection(readBy, modelChoices, onRescanWith)
     }
 }
 

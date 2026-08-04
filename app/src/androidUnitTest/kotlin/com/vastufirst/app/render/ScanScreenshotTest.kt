@@ -31,6 +31,15 @@ import org.robolectric.annotation.GraphicsMode
 @Config(application = Application::class)
 class ScanScreenshotTest {
 
+    /**
+     * ⭐ The reader-comparison levers (owner request, 4 Aug 2026) render in every golden, from the
+     * REAL config — so a model swap in `reader-config.json` changes these pictures, which is the
+     * point: the picker can never photograph models the reader no longer calls.
+     */
+    private val models: List<String> =
+        com.vastufirst.shared.scan.ScanReaderConfigLoader.load().config
+            .let { listOfNotNull(it.model.ifBlank { null }, it.escalationModel) }
+
     private fun screen(
         state: ScanUiState,
         openRow: Int = -1,
@@ -42,6 +51,7 @@ class ScanScreenshotTest {
             onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
             startOpenRow = openRow,
             cameraUnavailable = noCamera,
+            modelChoices = models,
         )
     }
 
@@ -108,7 +118,7 @@ class ScanScreenshotTest {
 
     @Test
     fun scanPlaced() {
-        val s = ScanUiState.Done(placed())
+        val s = ScanUiState.Done(placed(), readBy = models.firstOrNull())
         captureAcrossMatrix("scan-placed", screen(s))
         writeManifestAcrossMatrix("scan-placed", screen(s))
     }
@@ -133,6 +143,7 @@ class ScanScreenshotTest {
                 RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply,
                 imageAspect = 646.0 / 1400.0,
             ),
+            readBy = models.firstOrNull(),
         )
         captureAcrossMatrix("scan-placed-sizes", screen(s))
         writeManifestAcrossMatrix("scan-placed-sizes", screen(s))
@@ -140,7 +151,7 @@ class ScanScreenshotTest {
 
     @Test
     fun scanAssisted() {
-        val s = ScanUiState.Done(assisted())
+        val s = ScanUiState.Done(assisted(), readBy = models.firstOrNull())
         captureAcrossMatrix("scan-assisted", screen(s))
         writeManifestAcrossMatrix("scan-assisted", screen(s))
     }
@@ -155,7 +166,7 @@ class ScanScreenshotTest {
      */
     @Test
     fun scanRetype() {
-        val s = ScanUiState.Done(assisted())
+        val s = ScanUiState.Done(assisted(), readBy = models.firstOrNull())
         captureAcrossMatrix("scan-retype", screen(s, openRow = 0))
         writeManifestAcrossMatrix("scan-retype", screen(s, openRow = 0))
     }
@@ -163,14 +174,14 @@ class ScanScreenshotTest {
     /** The refusal a real upload hits most: one in five of the 30 real plans was a 3D render. */
     @Test
     fun scanRefused3d() {
-        val s = ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NOT_2D, ScanNotes(0.0, 0.0, 0.0)))
+        val s = ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NOT_2D, ScanNotes(0.0, 0.0, 0.0)), readBy = models.firstOrNull())
         captureAcrossMatrix("scan-refused-3d", screen(s))
         writeManifestAcrossMatrix("scan-refused-3d", screen(s))
     }
 
     @Test
     fun scanRefusedNoLabels() {
-        val s = ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NO_LABELS, ScanNotes(0.0, 0.0, 0.0)))
+        val s = ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NO_LABELS, ScanNotes(0.0, 0.0, 0.0)), readBy = models.firstOrNull())
         captureAcrossMatrix("scan-refused-labels", screen(s))
         writeManifestAcrossMatrix("scan-refused-labels", screen(s))
     }

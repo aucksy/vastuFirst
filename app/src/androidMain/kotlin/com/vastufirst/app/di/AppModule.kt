@@ -51,7 +51,11 @@ val appModule = module {
     // plan, every upload produced the same room list — which looks precisely like a broken feature.
     // Recorded replies still drive the tests and the render goldens, where they belong; the app now
     // either reads the user's plan or says it cannot.
-    single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.PLAN_READER_KEY) }
+    // The recipe is loaded ONCE and shared: the reader speaks it, and the scan screen's testing
+    // picker lists its two model ids — so a config edit can never leave the picker naming models
+    // the reader no longer calls.
+    single { com.vastufirst.shared.scan.ScanReaderConfigLoader.load() }
+    single<PlanReader> { GroqPlanReader(apiKey = BuildConfig.PLAN_READER_KEY, recipe = get()) }
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
     single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
     // The on-photo scan review (owner request, 4 Aug 2026): the Settings toggle that picks the
@@ -76,12 +80,15 @@ val appModule = module {
     viewModel { HomeViewModel(repo = get(), engine = get()) }
     viewModel { NewPlanViewModel(engine = get(), repo = get()) }
     viewModel {
+        val recipe = get<com.vastufirst.shared.scan.PlanReadRecipe>()
         ScanViewModel(
             reader = get(),
             decode = get(),
             // A build made without the key cannot read anything, and the screen says so rather than
             // offering a picker that leads nowhere.
             canRead = BuildConfig.PLAN_READER_KEY.isNotBlank(),
+            // The testing picker's choices: the primary model first, then the second-opinion model.
+            modelChoices = listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel),
         )
     }
 }
