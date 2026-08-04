@@ -340,7 +340,7 @@ object ScanMapper {
             .map {
                 ScannedRoom(
                     it.type, it.box.label, rect = null, flags = it.flags.toSet(),
-                    printedSize = it.box.printedSize, source = it.box,
+                    printedSize = it.box.printedSize, source = pageSource(draft.building, it.box),
                 )
             }
 
@@ -463,10 +463,38 @@ object ScanMapper {
 
         val out = placedRooms
             .map { (c, rect, _) ->
-                ScannedRoom(c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize, source = c.box)
+                ScannedRoom(
+                    c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize,
+                    source = pageSource(draft.building, c.box),
+                )
             }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
         return ScanOutcome.Placed(outCols, outRows, out, notes())
+    }
+
+    /**
+     * ⭐ The tint fix (owner, 4 Aug 2026: the tapped-room boxes are "mostly bigger"). Room boxes are
+     * BUILDING-framed by prompt contract; the on-photo review draws [ScannedRoom.source] on the
+     * whole photo. When the reply carries a sane building box (prompt v4), compose the room onto
+     * the page: page = building.origin + room × building.size. Measured on 35 approved scans:
+     * Green Court centre error 0.18–0.28 → 0.007–0.033 of the sheet; every overlay eyeballed.
+     *
+     * Without a sane box (older replies, recordings, a model that omits it) the room box passes
+     * through untouched — exactly today's behaviour, which the "roughly" caption already covers.
+     * Sanity: a real box, mostly inside the page, no sliver — a mad box must not fling every tint
+     * into one corner.
+     */
+    fun pageSource(building: ScanBox?, box: ScanBox): ScanBox {
+        val b = building ?: return box
+        val sane = b.w > 0.05 && b.h > 0.05 && b.w <= 1.0 && b.h <= 1.0 &&
+            b.x >= -0.02 && b.y >= -0.02 && b.x + b.w <= 1.05 && b.y + b.h <= 1.05
+        if (!sane) return box
+        return box.copy(
+            x = b.x + box.x * b.w,
+            y = b.y + box.y * b.h,
+            w = box.w * b.w,
+            h = box.h * b.h,
+        )
     }
 
     /** One complete placement pass. Pure: it never touches a [Candidate]'s flags. */

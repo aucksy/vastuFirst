@@ -8,9 +8,11 @@
 // where on the picture it was read, so "did it find my kitchen?" is answerable at a glance.
 //
 // ⚠ HONESTY LIMITS, stated on screen rather than hidden:
-//   · The tint is APPROXIMATE. The reader reports each room as fractions of the BUILDING's outer
-//     wall, not of the page (prompt contract), so on a sheet with wide margins the tint sits
-//     offset. The subtitle says "roughly" in as many words.
+//   · The tint is APPROXIMATE. Room boxes are fractions of the BUILDING's outer wall (prompt
+//     contract). Since prompt v4 (4 Aug 2026) the reply also carries the building's own box on the
+//     page, and ScanMapper.pageSource composes the two — measured on 35 approved scans, this took
+//     Green Court's tint centres from 0.18–0.28 of the sheet off to 0.007–0.033. Older replies
+//     carry no building box and draw as before. Either way the subtitle keeps saying "roughly".
 //   · This screen VERIFIES; it does not fix. A wrong or missing room is corrected on the guided
 //     grid, one tap away — that is what the "Fix on the grid instead" button is for, and why the
 //     classic flow stays the toggle's default.

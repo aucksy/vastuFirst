@@ -108,6 +108,18 @@ data class ScanDraft(
     /** ⚠ RECORDED FOR DIAGNOSTICS ONLY. Never gate on this — S2. */
     val planConfidence: Double = 0.0,
     val unreadable: Boolean = false,
+    /**
+     * ⭐ Prompt v4 (4 Aug 2026): the building's outer wall as a box on the IMAGE — the frame every
+     * room box is measured in. It exists because the owner saw the on-photo tints "mostly bigger":
+     * room fractions are building-framed, the review drew them across the whole photo, and on
+     * margin-heavy sheets the tints claimed up to 97 % of the page with centres 0.28 of the sheet
+     * off. Measured over 35 approved scans against the paper truth: composing rooms through this
+     * box lands Green Court's centres at 0.007–0.033 (from 0.17–0.28) and every eyeballed overlay
+     * snaps to the real rooms. Null on older replies and pre-v4 recordings — everything degrades
+     * to today's drawing. Used ONLY for the tint ([ScannedRoom.source]); the mapper's placement
+     * maths never reads it, so scores are untouched by design.
+     */
+    val building: ScanBox? = null,
 )
 
 /** Why a space the model reported did not become a room. Always surfaced, never silent. */

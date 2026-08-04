@@ -630,6 +630,57 @@ class ScanMapperTest {
         assertEditorInvariants(placed)
     }
 
+    // ---- the tint frame (prompt v4 building box, owner 4 Aug 2026) ---------------------------------
+
+    /**
+     * The on-photo tint's fix: a sane building box composes each room's SOURCE onto the page;
+     * no box, or a mad one, leaves the source exactly as today. Placement maths never reads it.
+     */
+    @Test
+    fun `a sane building box composes the tint source onto the page`() {
+        val b = ScanBox(x = 0.25, y = 0.10, w = 0.50, h = 0.80)
+        val room = ScanBox(label = "KITCHEN", x = 0.0, y = 0.0, w = 1.0, h = 0.5)
+        val page = ScanMapper.pageSource(b, room)
+        assertEquals(0.25, page.x, 1e-9)
+        assertEquals(0.10, page.y, 1e-9)
+        assertEquals(0.50, page.w, 1e-9)
+        assertEquals(0.40, page.h, 1e-9)
+        assertEquals("KITCHEN", page.label, "everything but the frame survives")
+    }
+
+    @Test
+    fun `no building box, or a mad one, leaves the tint source untouched`() {
+        val room = ScanBox(label = "LOBBY", x = 0.2, y = 0.2, w = 0.3, h = 0.3)
+        assertEquals(room, ScanMapper.pageSource(null, room), "older replies pass through")
+        assertEquals(room, ScanMapper.pageSource(ScanBox(x = 0.0, y = 0.0, w = 0.01, h = 0.9), room), "a sliver is not a building")
+        assertEquals(room, ScanMapper.pageSource(ScanBox(x = 0.9, y = 0.0, w = 0.5, h = 0.9), room), "a box off the page is ignored")
+    }
+
+    @Test
+    fun `a v4 reply's building box is parsed and reaches every source box`() {
+        val draft = RecordedScans.parseDraft(
+            """{"planType":"2D_PLAN","hasRoomLabels":true,
+                "building":{"x":0.4,"y":0.2,"w":0.5,"h":0.6},
+                "rooms":[
+                  {"label":"KITCHEN","size":"2920X2100","x":0.0,"y":0.0,"w":0.5,"h":0.5,"confidence":0.9},
+                  {"label":"LOBBY","size":"3050X3900","x":0.5,"y":0.5,"w":0.5,"h":0.5,"confidence":0.9}
+                ],"planConfidence":0.9}""",
+        )
+        checkNotNull(draft)
+        val building = checkNotNull(draft.building) { "the building box must parse" }
+        assertEquals(0.5, building.w, 1e-9)
+        val out = ScanMapper.map(draft)
+        val sources = out.scannedRoomsForTest().map { it.source!! }
+        assertTrue(sources.all { it.x >= 0.4 - 1e-9 && it.x + it.w <= 0.9 + 1e-9 },
+            "every tint stays inside the building's page box: $sources")
+    }
+
+    private fun ScanOutcome.scannedRoomsForTest(): List<ScannedRoom> = when (this) {
+        is ScanOutcome.Placed -> rooms
+        is ScanOutcome.Assisted -> rooms
+        is ScanOutcome.Refused -> emptyList()
+    }
+
     // ---- helpers ------------------------------------------------------------------------------------
 
     private fun outcomeNotes(out: ScanOutcome): ScanNotes = out.notes
