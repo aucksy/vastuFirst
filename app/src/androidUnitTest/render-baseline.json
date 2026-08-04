@@ -42,7 +42,7 @@
   "scan-idle": 10,
   "scan-idle-no-camera": 10,
   "scan-not-configured": 0,
-  "scan-placed": 4,
+  "scan-placed": 8,
   "scan-placed-sizes": 11,
   "scan-reading": 0,
   "scan-refused-3d": 0,
