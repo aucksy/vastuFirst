@@ -135,7 +135,10 @@ class ReportTextTest {
             assertTrue("${it.type} in ${it.zone} is counted but never explained", why.length > 80)
             assertTrue(
                 "${it.type} in ${it.zone} must be told where the tradition does put one",
-                why.contains("that is the") || why.contains("neither"),
+                // The copy cut (4 Aug 2026) rephrased the pointer; the claim is the same — either
+                // the preferred zones are named, or the rule is admitted to name none.
+                why.contains("the tradition puts one in") || why.contains("neither") ||
+                    why.contains("doesn't place one here"),
             )
         }
     }

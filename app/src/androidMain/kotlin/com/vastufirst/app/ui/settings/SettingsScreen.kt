@@ -210,9 +210,10 @@ fun SettingsContent(
             Group {
                 Column(Modifier.padding(VastuTheme.spacing.s4)) {
                     VText(
-                        "The app closed unexpectedly last time you used it. Sending us what happened " +
-                            "helps us fix it. It opens your email app so you can read it first, and it " +
-                            "contains nothing about you or your homes.",
+                        // Copy cut (4 Aug 2026): 37 -> 26 words; read-first and nothing-personal
+                        // claims kept whole.
+                        "The app crashed last time. Emailing us what happened helps us fix it. " +
+                            "You read it first, and it says nothing about you or your homes.",
                         style = VastuTheme.type.bodySm, color = colors.textSecondary,
                     )
                     Spacer(Modifier.height(VastuTheme.spacing.s3))

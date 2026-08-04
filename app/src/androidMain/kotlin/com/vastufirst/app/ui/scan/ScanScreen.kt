@@ -137,8 +137,10 @@ private fun IdleBody(
     VText("Upload your plan", style = VastuTheme.type.h2, color = colors.textPrimary)
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "We'll read the room names off your plan so you don't have to type them. " +
-            "You then place them on the grid and check everything before anything is scored.",
+        // Copy cut (4 Aug 2026): 29 words -> 20; every claim kept - we read, you check, no
+        // score until you say so.
+        "We read the room names so you don't type them. " +
+            "You place and check every room before anything is scored.",
         style = VastuTheme.type.body, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -155,8 +157,8 @@ private fun IdleBody(
     if (cameraUnavailable) {
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            "This phone doesn't have a camera app we can open. Choose a picture or PDF above " +
-                "instead — it reads better anyway.",
+            "No camera app on this phone. Choose a picture or PDF above — it reads " +
+                "better anyway.",
             style = VastuTheme.type.bodySm, color = colors.verdictSuboptimal,
         )
     }
@@ -272,27 +274,26 @@ private fun DoneBody(
             // list, which is measured to be excellent, and claims nothing about placement.
             title = "We found ${outcome.rooms.size} rooms",
             body = when (outcome.reason) {
+                // Copy cut (4 Aug 2026), and a truth fix with it: the old body claimed the plan
+                // "doesn't print their sizes", which is false for a >20-room fully-sized sheet
+                // (the room-count ceiling reuses this reason). The new body claims nothing about
+                // sizes, so it is true in both sub-cases.
                 AssistReason.TOO_MANY_ROOMS ->
-                    "We read every room name clearly. But this plan has a lot of rooms and doesn't " +
-                        "print their sizes, so we can't tell where each one sits. We haven't " +
-                        "guessed. They're waiting on the grid in a row: drag each one to where it " +
-                        "really is."
+                    "We read every room name, but we can't trust where each one sits — and we " +
+                        "don't guess. Drag each one to its real place."
                 // ⚠ SHORTER than the line it replaces, deliberately. This screen already carries a
                 // row per room, and with a room's type list open the geometry gate measured three
                 // more elements pushed out of view when this paragraph was merely the same length.
                 // A caption on a crowded screen is not a free place to explain things.
                 AssistReason.FLOOR_PLATE ->
-                    "We read every room name clearly. But this sheet has a lift on it, so it shows " +
-                        "a whole floor of the building rather than one home. Drag the rooms that " +
-                        "are yours to where they belong."
+                    "This sheet shows a whole floor, not one home. Drag the rooms that are " +
+                        "yours to where they belong."
                 AssistReason.TOO_FEW_PLACED ->
-                    "We could read the room names clearly, but not where they sit on the plan — so " +
-                        "we haven't guessed. They're waiting on the grid in a row: drag each one to " +
-                        "where it really is."
+                    "We read the room names but not where they sit — and we don't guess. " +
+                        "Drag each one to its real place."
                 AssistReason.UNIFORM_BOXES ->
-                    "We could read the room names clearly, but the shapes we got back all came out " +
-                        "identical, which means they weren't really measured. They're waiting on the " +
-                        "grid in a row: drag each one to where it really is."
+                    "We read the room names, but the shapes came back identical — not really " +
+                        "measured. Drag each one to its real place."
             },
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },
@@ -598,8 +599,8 @@ private fun RefusedBody(
             "The rooms on this plan aren't named, or the names are too small to read. Please upload " +
                 "a plan with the rooms named — or draw your home instead, which takes a few minutes."
         RefusalReason.MULTI_UNIT -> "There's more than one home on this sheet" to
-            "This looks like a floor plate with several flats on it. Please crop the picture to just " +
-                "your own home and try again."
+            "This sheet shows several flats. Please crop the picture to just your own home " +
+                "and try again."
         RefusalReason.NO_ROOMS -> "We couldn't pick out any rooms" to
             "The plan looks right, but nothing on it came through as a room we recognise. " +
                 "A clearer picture often fixes it."
@@ -632,8 +633,8 @@ private fun BusyBody(retryAfterSeconds: Int?, onRetry: () -> Unit, onDrawInstead
     }
     GuidanceState(
         title = "We're reading a lot of plans right now",
-        body = "Your plan is fine — we just need a moment. $wait " +
-            "You can also draw your home on the grid, which works straight away and needs no internet.",
+        body = "Your plan is fine — we're just busy. $wait " +
+            "Or draw your home on the grid — it works now, no internet needed.",
     ) {
         Column {
             VastuButton("Try again", onClick = onRetry)
@@ -680,7 +681,7 @@ private fun NotConfiguredBody(onDrawInstead: () -> Unit) {
     // feature was broken rather than absent.
     GuidanceState(
         title = "This copy of the app can't read plans",
-        body = "Plan reading was left switched off when this version was built, so there's nothing " +
+        body = "Plan reading is switched off in this version, so there's nothing " +
             "behind the upload button. It isn't your plan or your phone. Drawing your home on the " +
             "grid works normally and gives exactly the same score.",
     ) {
@@ -710,7 +711,7 @@ private fun OfflineAlternative(onDrawInstead: () -> Unit) {
             VText("Rather not upload anything?", style = VastuTheme.type.bodyLg, color = colors.textPrimary)
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
-                "Drawing your home on the grid takes a few minutes, stays entirely on your phone, " +
+                "Drawing on the grid takes a few minutes, stays on your phone, " +
                     "and gives exactly the same score.",
                 style = VastuTheme.type.bodySm, color = colors.textSecondary,
             )

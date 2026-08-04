@@ -115,18 +115,21 @@ fun whyNotIdeal(r: RoomResult): String {
         "This rule names no preferred direction for a $prose, so the ${r.zone.short()} is neither " +
             "right nor wrong for it."
     } else {
-        "The ${r.zone.short()} is neither a direction this rule calls right for a $prose nor one it " +
-            "rules out. It is simply not where the tradition puts one" +
-            (if (rule.ideal.isEmpty()) "." else " — that is ${zoneList(rule.ideal)}.")
+        // Copy cut (4 Aug 2026): both halves of the precision claim kept — not called right,
+        // not ruled out.
+        "The ${r.zone.short()} is not wrong for a $prose, and not right either" +
+            (if (rule.ideal.isEmpty()) " — the tradition simply doesn't place one here."
+             else " — the tradition puts one in ${zoneList(rule.ideal)}.")
     }
     return listOf(head, rule.rationale.orEmpty()).filter { it.isNotBlank() }.joinToString(" ")
 }
 
 /** The whole "not ideal" band in one honest line, so nobody has to guess what it costs them. */
+// Copy cut (4 Aug 2026): 38 words -> 25; the three claims survive whole — not a defect, not
+// prohibited, still counted in the score.
 const val NOT_IDEAL_INTRO: String =
-    "None of these is a defect and none of them is prohibited — each is simply not the direction " +
-        "the tradition prefers. They do count towards your score, which is why they are listed here " +
-        "rather than left out."
+    "None of these is a defect, and none is prohibited — just not the direction the tradition " +
+        "prefers. They still count in your score, so we list them."
 
 // ---- the front door -------------------------------------------------------------------------
 
@@ -171,8 +174,8 @@ fun doorPlaceLine(d: DoorResult): String {
  */
 fun doorUnnamedNote(d: DoorResult): String? =
     if (d.pada.name != null) null
-    else "The 32 positions come from the classical sources, and this one is left unnamed in them. " +
-        "We say so rather than invent a name for it; the reading itself is unaffected."
+    else "The classical sources leave this position unnamed. We say so rather than invent " +
+        "a name; the reading is unaffected."
 
 /**
  * Why the door matters more than any room, in the reader's words. The 32 named positions have been
@@ -180,9 +183,9 @@ fun doorUnnamedNote(d: DoorResult): String? =
  */
 fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
     val parts = mutableListOf(
-        "The tradition lays 32 named positions around the edge of the plan, eight to a wall, and " +
-            "judges the main entrance by which one it stands on. Yours is ${padaStanding(d.verdict)}. " +
-            "The front door carries more weight in this reading than any single room.",
+        "The tradition lays 32 named positions around the plan's edge, eight to a wall, and " +
+            "judges the entrance by the one it stands on. Yours is ${padaStanding(d.verdict)}. " +
+            "The front door carries more weight here than any single room.",
     )
     // ⚠ A door can read unfavourably without raising a problem of its own — only the South-West
     // corner arc does that. So the reader would otherwise be told the most important element in the
@@ -193,19 +196,20 @@ fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
     // take, and the owner's ruling (v0.6.6) is that neither of them is offered a layout change. The
     // "same wall" fact stays in both — an unfavourable door must never be a dead end for the reader.
     if (d.verdict != PadaVerdict.AUSPICIOUS) {
+        // Copy cut (4 Aug 2026): the door's weight was stated in the opening paragraph and
+        // again here — once is enough.
         parts += if (remediesOnly) {
-            "Only two or three of the eight positions on any wall are counted favourable, so where " +
-                "a door stands along the same wall matters a great deal — which is why the entrance " +
-                "carries this much weight in your reading."
+            "Only two or three of the eight positions on any wall count favourable — the exact " +
+                "spot along the same wall matters."
         } else {
-            "Only two or three of the eight positions on any wall are counted favourable, so a " +
-                "door moved a few feet along the same wall can read quite differently. While the plan is " +
-                "still on paper, that is worth walking through with whoever is drawing it."
+            "Only two or three positions on each wall count favourable, so a door moved a few " +
+                "feet along the same wall can read differently. While the plan is still on paper, " +
+                "walk this through with whoever is drawing it."
         }
     }
     if (d.spansTwoPadas) {
-        parts += "Your doorway is wide enough to stand across two of these positions; it has been " +
-            "read on the one it mostly sits on."
+        parts += "Your doorway spans two of these positions; it is read on the one it mostly " +
+            "sits on."
     }
     return parts.joinToString(" ")
 }
@@ -267,9 +271,11 @@ fun unlockPreviewLines(a: Analysis, shownFree: Int): List<String> {
     val more = (a.defects.size - shownFree).coerceAtLeast(0)
     out += when {
         a.defects.isEmpty() -> "The full reading, with the reasoning behind every placement"
-        more > 0 -> "All ${a.defects.size} problems — $more you haven't seen — each with the whole " +
-            "reason and remedies for that problem in that direction"
-        else -> "The whole reason behind each problem, and remedies for that problem in that direction"
+        // Copy cut (4 Aug 2026), payment honesty: the counts and the reason+remedies promise
+        // are unchanged; only the wind is gone.
+        more > 0 -> "All ${a.defects.size} problems — $more new to you — each with its full " +
+            "reason and remedies"
+        else -> "The full reason behind each problem, with remedies"
     }
     val notIdeal = a.roomResults.count { it.verdict == Verdict.SUBOPTIMAL }
     if (notIdeal > 0) {

@@ -69,9 +69,9 @@ fun MoreDetailsContent(
         VText("A few more things", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            "Your score so far comes from your rooms, your front door and your home's shape. " +
-                "Answer any of these and we can check more. Skip anything you don't know — " +
-                "we'll say it wasn't checked rather than guess.",
+            // Copy cut (4 Aug 2026): 37 words -> 26; the refusal-to-guess claim kept whole.
+            "So far we scored your rooms, front door and shape. Answer these to check more. " +
+                "Skip what you don't know — we say so, we don't guess.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s6))

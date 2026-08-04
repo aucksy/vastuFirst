@@ -220,7 +220,7 @@ private fun ScoreResult(
         // this screen's reader is more reliably served by words in daylight.
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         VText(
-            "Not quite your home? You can change it — the score follows straight away.",
+            "Not quite right? Change it — the score follows.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -311,7 +311,10 @@ private fun ScoreResult(
         // looks more precise than the same score written whole, and this is the one line that can
         // say so plainly, for free, right under it.
         VText(
-            "The score out of 10 is VastuFirst's own way of summarising the report — a summary, not a measurement, and not part of the tradition. Vastu is traditional guidance for your own decisions, not a guaranteed outcome.",
+            // Copy cut (4 Aug 2026): 36 words -> 21. All four claims survive: our own summary,
+            // not a measurement, not part of the tradition, no promised outcome.
+            "This score is our own summary — not a measurement, and not part of the tradition. " +
+                "Vastu is guidance, not a promise.",
             style = VastuTheme.type.bodySm, color = colors.textTertiary,
         )
 

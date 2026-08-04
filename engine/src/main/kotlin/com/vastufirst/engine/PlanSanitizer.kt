@@ -53,7 +53,9 @@ internal object PlanSanitizer {
         }
         if (droppedRooms > 0) {
             quality = AnalysisQuality.DEGRADED
-            notes += AnalysisNote("skipped-rooms", "Skipped $droppedRooms room(s) we couldn't read clearly.", NoteLevel.WARNING)
+            // "room(s)" was programmer plural on a user-facing note (4 Aug 2026 audit).
+            val noun = if (droppedRooms == 1) "room" else "rooms"
+            notes += AnalysisNote("skipped-rooms", "Skipped $droppedRooms $noun we couldn't read clearly.", NoteLevel.WARNING)
         }
 
         // Outline — clean, then recover if unusable, then tidy a self-touching trace.

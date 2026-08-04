@@ -488,8 +488,8 @@ fun GuidedGridContent(
                 selected != null -> "Drag the room to move it, or pull a corner to resize."
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
-                parked -> "We read these off your plan but couldn't tell where they go, so they're " +
-                    "waiting in a row. Drag each one to where it really is."
+                // Copy cut (4 Aug 2026): 26 words -> 14; the read-but-not-placed refusal claim kept.
+                parked -> "We read these rooms but not where they go. Drag each one to its real place."
                 else -> "Touch a room and slide to move it, or add another below."
             },
             style = VastuTheme.type.body, color = colors.textSecondary,
@@ -511,8 +511,7 @@ fun GuidedGridContent(
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    "This is the home you started earlier, exactly as you left it. Carry on from " +
-                        "here, or clear it and start this home again.",
+                    "Your home, exactly as you left it. Carry on, or start it again.",
                     style = VastuTheme.type.body, color = colors.textSecondary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -1090,10 +1089,10 @@ private fun ShapeSection(
             VText(
                 "The ${squares(pending.cells.size)} marked on the plan " +
                     "${if (pending.cells.size == 1) "is" else "are"} in the " +
-                    "${pending.zone.short().lowercase()} and ${if (pending.cells.size == 1) "has" else "have"} " +
-                    "no room on ${if (pending.cells.size == 1) "it" else "them"} yet. " +
-                    "If your home is cut off there — an L-shape, or a corner that isn't yours — say so " +
-                    "and we'll score the real shape instead of a full rectangle.",
+                    "${pending.zone.short().lowercase()}, with no room on " +
+                    "${if (pending.cells.size == 1) "it" else "them"}. " +
+                    "If your home is cut off there — an L-shape, a missing corner — say so " +
+                    "and we'll score the real shape.",
                 style = VastuTheme.type.body, color = colors.textSecondary,
             )
             Spacer(Modifier.height(VastuTheme.spacing.s4))
@@ -1120,7 +1119,7 @@ private fun ShapeSection(
             )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
-                "We're scoring that real shape, so the missing-corner checks can run.",
+                "We're scoring your home's real shape.",
                 style = VastuTheme.type.body, color = colors.textSecondary,
             )
             Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -1139,8 +1138,8 @@ private fun ShapeSection(
             )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
-                "It's surrounded by rooms, so it's part of your home either way. If it's an open " +
-                    "courtyard, add it as a Courtyard — the centre of a home matters in Vastu.",
+                "It's surrounded by rooms, so it's part of your home. If it's open to the sky, " +
+                    "add it as a Courtyard — the centre of a home matters in Vastu.",
                 style = VastuTheme.type.body, color = colors.textSecondary,
             )
         }
@@ -1154,14 +1153,13 @@ private fun ShapeSection(
         // screen — the room palette among them. A caption on the tallest screen in the app is not a
         // free place to explain things.
         unaskableGap -> VText(
-            "The empty squares between your rooms count as part of your home — usually right, " +
-                "since homes have passages between rooms.",
+            "Empty squares between rooms count as part of your home — most homes have passages there.",
             style = VastuTheme.type.caption, color = colors.textTertiary,
         )
 
         else -> VText(
-            "We're treating your home as a full rectangle. If a corner of your home is missing, " +
-                "leave that part of the grid empty and we'll ask about it.",
+            "We treat your home as a full rectangle. If a corner is missing, leave it empty — " +
+                "we'll ask.",
             style = VastuTheme.type.caption, color = colors.textTertiary,
         )
     }

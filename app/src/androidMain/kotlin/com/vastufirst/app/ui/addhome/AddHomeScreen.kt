@@ -52,13 +52,14 @@ fun AddHomeScreen(
         Spacer(Modifier.height(VastuTheme.spacing.s6))
 
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            // Upload leads, because it is the shortcut — but the subtitle promises only what the
-            // model is measured to be good at. It reads room NAMES (~95 %); it does not reliably
-            // know where they are, and you always place and confirm them yourself.
+            // Upload leads, because it is the shortcut. The subtitle was "we read the room names,
+            // you place them" — written in the assisted-only era; since the §3q reader most scans
+            // come back fully placed, so the honest constant across both outcomes is: we read, YOU
+            // check, nothing is scored until you say it's right (the card below says the rest).
             MethodCard(
                 icon = "⤒",
                 title = "Upload a plan",
-                subtitle = "Photo or PDF · we read the room names, you place them",
+                subtitle = "Photo or PDF · we read it, you check every room",
                 onClick = onScan,
             )
             MethodCard(

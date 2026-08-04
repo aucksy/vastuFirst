@@ -89,7 +89,9 @@ fun WelcomeContent(
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
-            text = "Upload your plan or draw it. Mark which way North is. Get your score and what to do — whether you're buying, building, or already living there.",
+            // Copy cut (4 Aug 2026): the buying/building/living clause repeated the intent cards
+            // directly below, so it paid rent twice. 26 words → 14, no claim lost.
+            text = "Upload or draw your plan. Mark North. See your score and what to do.",
             style = VastuTheme.type.body,
             color = colors.textSecondary,
         )
@@ -103,7 +105,7 @@ fun WelcomeContent(
             listOf("हिन्दी", "தமிழ்", "తెలుగు", "मराठी", "বাংলা").forEach { SoonPill(it) }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText("More languages are coming soon — the app is in English for now.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
+        VText("English for now — more languages soon.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
 
         Divider()
 

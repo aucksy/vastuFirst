@@ -196,8 +196,8 @@ fun MarkNorthContent(
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    "If that is not how your home really is, turn the dial above until it is. " +
-                        "Every direction in your report depends on this one answer.",
+                    "Not right? Turn the dial until it is. " +
+                        "Every direction in your report depends on this.",
                     style = VastuTheme.type.bodySm, color = colors.textSecondary,
                 )
             }

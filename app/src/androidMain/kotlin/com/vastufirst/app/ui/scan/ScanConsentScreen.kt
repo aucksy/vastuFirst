@@ -55,8 +55,9 @@ fun ScanConsentScreen(
         VText("Your plan leaves this phone", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            "Everything else in this app happens on your phone. Reading a plan is the one thing that " +
-                "doesn't, so we'd rather tell you exactly what happens than bury it.",
+            // Copy cut (4 Aug 2026): consent framing kept; the fact pairs below are untouched.
+            "Everything else happens on your phone. Reading a plan does not — so here is " +
+                "exactly what happens.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
 

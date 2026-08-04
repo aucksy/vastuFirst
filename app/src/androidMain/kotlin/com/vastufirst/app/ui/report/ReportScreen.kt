@@ -116,10 +116,13 @@ fun ReportContent(
         VText(if (remediesOnly) "What to do now" else "What to change", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
+            // Copy cut (4 Aug 2026): "Ranked by how much each matters" dropped from all three —
+            // the section header right below says "most important first", so it was said twice on
+            // every report.
             when (resolvedIntent) {
-                Intent.BUILDING -> "Ranked by how much each matters. Nothing is built yet — every layout change below is still free to make."
-                Intent.BUYING -> "This home is already built, so everything below is something you can do without moving a wall. Ranked by how much each matters."
-                Intent.LIVING -> "Walls can't move, so everything below is something you can do in the home as it stands. Ranked by how much each matters."
+                Intent.BUILDING -> "Nothing is built yet — every change below is still free to make."
+                Intent.BUYING -> "This home is already built, so everything below can be done without moving a wall."
+                Intent.LIVING -> "Walls can't move, so everything below works in the home as it stands."
             },
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
