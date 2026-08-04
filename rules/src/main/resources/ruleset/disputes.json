@@ -1,53 +1,53 @@
 [
   {
     "id": "W-01", "title": "A toilet in the East", "appliesTo": "TOILET", "appliesToZone": "E",
-    "readingA": { "label": "A defect", "text": "The East is the sun's quarter, and the tradition treats a toilet there as spoiling it.", "school": "Traditional" },
-    "readingB": { "label": "Acceptable in part of it", "text": "The 16-zone school divides the East more finely and allows a toilet in the strip nearest the South-East.", "school": "16-zone" }
+    "readingA": { "label": "A defect", "text": "Tradition holds a toilet spoils the East, the sun's quarter.", "school": "Traditional" },
+    "readingB": { "label": "Acceptable in one strip", "text": "The 16-zone school divides the East more finely and allows a toilet in the strip nearest the South-East.", "school": "16-zone" }
   },
   {
     "id": "W-02", "title": "A kitchen in the North", "appliesTo": "KITCHEN", "appliesToZone": "N",
-    "readingA": { "label": "Not ideal", "text": "The North belongs to Kubera and the tradition reads it as water, which it does not want set against the kitchen's fire.", "school": "Traditional" },
-    "readingB": { "label": "Not ideal, but not a fault", "text": "Modern practice treats a northern kitchen as less than best rather than as something that needs correcting.", "school": "Modern" }
+    "readingA": { "label": "Not ideal", "text": "The North belongs to Kubera, lord of wealth. Tradition reads it as water, unsuited to the kitchen's fire.", "school": "Traditional" },
+    "readingB": { "label": "Not ideal, not a fault", "text": "Modern practice calls a northern kitchen less than best, not a fault to correct.", "school": "Modern" }
   },
   {
     "id": "W-03", "title": "The main bedroom in the West", "appliesTo": "MASTER_BEDROOM", "appliesToZone": "W",
-    "readingA": { "label": "Acceptable", "text": "The West is the other settled, heavier quarter, and the tradition accepts it in place of the South-West.", "school": "Traditional" },
-    "readingB": { "label": "Advised against", "text": "The 16-zone school reads the west-south-west as the quarter of study, and keeps the main bedroom out of it.", "school": "16-zone" }
+    "readingA": { "label": "Acceptable", "text": "Tradition accepts the West, the other settled, heavier quarter, instead of the South-West.", "school": "Traditional" },
+    "readingB": { "label": "Advised against", "text": "The 16-zone school keeps the main bedroom out of the west-south-west, its quarter of study.", "school": "16-zone" }
   },
   {
     "id": "W-04", "title": "A front door in the South-East",
-    "readingA": { "label": "Acceptable in the right position", "text": "The 32 named door positions already separate the good ones from the bad within the South-East, so the exact position decides it rather than the direction.", "school": "Modern" },
-    "readingB": { "label": "A defect", "text": "The Manasara says a home should never face the South-East at all.", "school": "Classical" }
+    "readingA": { "label": "Acceptable in the right position", "text": "The 32 named door positions sort good from bad within the South-East. Exact position, not direction, decides.", "school": "Modern" },
+    "readingB": { "label": "A defect", "text": "The Manasara, a classical Vastu treatise, says a home should never face the South-East.", "school": "Classical" }
   },
   {
     "id": "W-05", "title": "Which way to sleep with your head",
-    "readingA": { "label": "Head to the South is best", "text": "The tradition ranks head-to-South first, the East next, and the West as neutral.", "school": "Traditional" },
-    "readingB": { "label": "Avoid head to the North", "text": "The one point every school agrees on. We pass it on as tradition and make no claim about your health.", "school": "All" }
+    "readingA": { "label": "Head to the South is best", "text": "Tradition ranks head-to-South first, East next, West neutral.", "school": "Traditional" },
+    "readingB": { "label": "Avoid head to the North", "text": "The one point every school agrees on. We pass it on as tradition, claiming nothing about your health.", "school": "All" }
   },
   {
     "id": "W-06", "title": "Which way the idols face", "appliesTo": "POOJA",
-    "readingA": { "label": "Against the West or South-West wall", "text": "The classical arrangement stands the idols against the West or South-West wall, so the person praying faces East.", "school": "Traditional" },
-    "readingB": { "label": "Against the East wall", "text": "Modern practice often stands them against the East wall instead, facing West.", "school": "Modern" }
+    "readingA": { "label": "Against the West or South-West wall", "text": "Classically, idols stand against the West or South-West wall, so the worshipper faces East.", "school": "Traditional" },
+    "readingB": { "label": "Against the East wall", "text": "Modern practice often stands them against the East wall, facing West.", "school": "Modern" }
   },
   {
     "id": "W-09", "title": "Where a septic tank belongs",
-    "readingA": { "label": "The sources contradict each other", "text": "The North, the North-West and the South-East are each insisted on by serious sources.", "school": "Contested" },
-    "readingB": { "label": "Too sharp a conflict to rule on", "text": "Choosing one would be inventing a tradition, so we report it as not checked unless you tell us where yours is.", "school": "All" }
+    "readingA": { "label": "The sources contradict each other", "text": "The North, North-West and South-East are each insisted on by serious sources.", "school": "Contested" },
+    "readingB": { "label": "Too sharp to rule on", "text": "Choosing one would invent a tradition. We report it as not checked unless you say where yours is.", "school": "All" }
   },
   {
     "id": "W-10", "title": "A road pointing straight at the plot",
-    "readingA": { "label": "It depends which direction", "text": "A road arriving from the North-East, North or East is harmless; from the South, South-West, South-East or North-West it is the thrust the tradition warns about.", "school": "Traditional" },
-    "readingB": { "label": "Always harmful", "text": "The strict school treats any road pointing at a plot as a wound, whichever direction it comes from.", "school": "Strict" }
+    "readingA": { "label": "It depends which direction", "text": "A road from the North-East, North or East is harmless. From the South, South-West, South-East or North-West comes the thrust tradition warns of.", "school": "Traditional" },
+    "readingB": { "label": "Always harmful", "text": "The strict school treats any such road as a wound, from any direction.", "school": "Strict" }
   },
   {
     "id": "W-11", "title": "A corner that sticks out",
-    "readingA": { "label": "A North-East extension is welcome", "text": "The tradition treats extra space in the North-East as a good sign rather than a fault.", "school": "Traditional" },
-    "readingB": { "label": "Every extension is a fault", "text": "The strict school treats any part of a home that sticks out as a fault, the North-East included.", "school": "Strict" }
+    "readingA": { "label": "A North-East extension is welcome", "text": "Tradition reads a North-East extension as a good sign, not a fault.", "school": "Traditional" },
+    "readingB": { "label": "Every extension is a fault", "text": "The strict school treats anything that sticks out as a fault, the North-East included.", "school": "Strict" }
   },
   {
     "id": "W-12", "title": "Where the prayer room belongs", "appliesTo": "POOJA",
-    "readingA": { "label": "Classical — the centre", "text": "The classical position: the family deity holds the centre of the home, as the Manasara sets it out.", "school": "Classical" },
+    "readingA": { "label": "Classical — the centre", "text": "The family deity holds the centre of the home, as the Manasara sets out.", "school": "Classical" },
     "readingB": { "label": "Modern — the North-East", "text": "Near-universal modern practice places the prayer room in the North-East.", "school": "Modern" },
-    "howWeScore": "Your score follows the modern reading: the North-East is treated as the ideal place, and the North and East as acceptable. No position is counted as a defect — including the classical centre — so choosing this reading never turns the other school's advice into a fault."
+    "howWeScore": "Your score follows the modern reading: North-East ideal, North and East acceptable. No position counts as a defect, the classical centre included. The other school's advice never becomes a fault."
   }
 ]

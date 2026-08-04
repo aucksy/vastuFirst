@@ -4,56 +4,56 @@
     "ideal": [], "acceptable": [], "prohibited": [],
     "provenance": "DERIV", "sourceId": "R-01", "excludeFromScore": true,
     "note": "Facing direction carries no score. Scored via the 32-pada door analysis (§4.3).",
-    "rationale": "The main entrance is judged on its own finer scale — the 32 named door positions laid around the edge of the mandala — rather than by which of the nine zones it falls in. It is the highest-weighted single element in the whole reading."
+    "rationale": "The main entrance is judged on a finer scale than the nine zones. It is read on the 32 named door positions along the mandala grid's edge. It is the highest-weighted single element in the whole reading."
   },
   {
     "roomType": "KITCHEN", "weight": 3.0,
     "ideal": ["SE"], "acceptable": ["NW"], "prohibited": ["NE", "SW", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-02", "note": "North contested — see W-02.",
-    "rationale": "The kitchen is the household's fire, so it belongs in the fire quarter: the South-East, Agneya, Agni's own corner. The North-West is the accepted second choice because it is Vayu's quarter of air, and air feeds fire. The water corner and the heavy corner are the two the tradition keeps it out of."
+    "rationale": "The kitchen is the household's fire. It belongs in the fire quarter: the South-East, Agneya, Agni's own corner. The North-West is the accepted second choice. It is Vayu's quarter of air, and air feeds fire. The tradition keeps the kitchen out of the water corner and the heavy corner."
   },
   {
     "roomType": "MASTER_BEDROOM", "weight": 3.0,
     "ideal": ["SW"], "acceptable": ["S", "W"], "prohibited": ["NE", "SE", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-03", "note": "SE bedroom is the one all sources warn against.",
-    "rationale": "The head of the household is meant to rest on the heaviest, most settled ground: the South-West, Nairritya, the element of earth and the Purusha's feet. The South and the West are the accepted alternatives because they are the same, heavier half of the home."
+    "rationale": "The head of the household should rest on the heaviest, most settled ground. That is the South-West — Nairritya, the corner of earth. It holds the feet of the Purusha, the figure laid over the plan. The South and West are accepted: the same heavier half of the home."
   },
   {
     "roomType": "BEDROOM", "weight": 1.5,
     "ideal": ["W", "NW"], "acceptable": ["N", "E", "S"], "prohibited": ["SE", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-04",
-    "rationale": "Ordinary bedrooms sit best in the West, Varuna's quarter, or the North-West, Vayu's — settled enough for rest without taking the South-West, which is kept for the head of the household. The fire corner is the one the tradition keeps sleeping out of."
+    "rationale": "Ordinary bedrooms sit best in the West, Varuna's quarter, or the North-West, Vayu's. Varuna rules water; Vayu rules air. Both quarters are settled enough for rest. The South-West is kept for the head of the household. The tradition keeps sleeping out of the fire corner."
   },
   {
     "roomType": "POOJA", "weight": 2.0,
     "ideal": ["NE"], "acceptable": ["N", "E"], "prohibited": [],
     "provenance": "MOD", "sourceId": "R-05",
     "note": "Ruled for the modern North-East on 1 August 2026 (W-12). Nothing prohibited — the classical centre reading is declined, not condemned, and is still shown to the reader.",
-    "rationale": "A prayer room belongs in the North-East, Ishanya — the quarter named for Ishana, and the one the tradition treats as the lightest and most sensitive part of a home. The North and the East are accepted next: they are Kubera's and Indra's quarters, the two the tradition also asks to be kept open, and a person at prayer still faces the rising sun from either. No direction is ruled out, because the classical texts place the shrine at the very centre — a reading we have chosen not to follow but will not call a defect."
+    "rationale": "A prayer room belongs in the North-East — Ishanya, the quarter named for Ishana. The tradition treats it as the home's lightest, most sensitive part. The North and East, which the tradition also asks be kept open, are accepted next. They belong to Kubera, lord of wealth, and Indra, lord of the East. From either, a person at prayer still faces the rising sun. No direction is ruled out. The classical texts place the shrine at the very centre. We have chosen not to follow that reading, but we will not call it a defect."
   },
   {
     "roomType": "TOILET", "weight": 2.5,
     "ideal": ["NW", "W"], "acceptable": ["S"], "prohibited": ["NE", "SW", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-06", "note": "East contested — W-01. No classical verse exists.",
-    "rationale": "What leaves the house belongs in the quarter of movement: the North-West, Vayavya, Vayu's own corner, or the West. The tradition keeps the toilet off the North-East, which it treats as the most sensitive square, and off the South-West, which is the home's anchor."
+    "rationale": "What leaves the house belongs in the quarter of movement. That is the North-West — Vayavya, Vayu's own corner — or the West. The tradition keeps the toilet off the North-East, its most sensitive square. It keeps it off the South-West too — the home's anchor."
   },
   {
     "roomType": "LIVING", "weight": 1.5,
     "ideal": ["N", "E", "NE"], "acceptable": ["W", "NW"], "prohibited": ["SW", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-07",
-    "rationale": "The living room is where the household gathers and guests are received, so it belongs on the lighter, more open half — the North, the East and the North-East, the quarters of Kubera, Indra and Ishana. The heavy, private corner is the one it is kept out of."
+    "rationale": "The living room is where the household gathers and guests are received. It belongs on the lighter, more open half: the North, the East and the North-East. These are the quarters of Kubera, Indra and Ishana. It is kept out of the heavy, private corner."
   },
   {
     "roomType": "STAIRCASE", "weight": 2.0,
     "ideal": ["S", "SW", "W"], "acceptable": ["NW"], "prohibited": ["NE", "BRAHMASTHAN"],
     "provenance": "DERIV", "sourceId": "R-08",
-    "rationale": "A staircase is the heaviest permanent structure in most homes, so it goes where the tradition wants weight: the South, the South-West and the West. It is kept off the North-East, which should stay light, and off the centre, which the Manasara asks to be left open."
+    "rationale": "A staircase is the heaviest permanent structure in most homes. It goes where the tradition wants weight: the South, the South-West and the West. It is kept off the North-East, which should stay light. The Manasara, a classical text, asks that the centre be left open."
   },
   {
     "roomType": "STUDY", "weight": 1.0,
     "ideal": ["W", "NW"], "acceptable": ["N", "E", "NE"], "prohibited": ["S", "SW"],
     "provenance": "DERIV", "sourceId": "R-09", "note": "User faces E or N when working.",
-    "rationale": "The study is placed so that the person at the desk faces East or North while working — the West, Varuna's quarter, which the tradition associates with learning, or the North-West. The two heavy southern corners are kept for rest and storage rather than work."
+    "rationale": "The study is placed so the person at the desk faces East or North while working. That points to the West — Varuna's quarter, which the tradition links with learning — or the North-West. The two heavy southern corners are kept for rest and storage, not work."
   },
   {
     "roomType": "DINING", "weight": 1.0,
@@ -65,31 +65,31 @@
     "roomType": "STORE", "weight": 0.8,
     "ideal": ["SW", "W", "S"], "acceptable": [], "prohibited": ["NE"],
     "provenance": "DERIV", "sourceId": "R-11",
-    "rationale": "A store is stacked weight that seldom moves, so it belongs in the heavy half: the South-West, the West or the South. The one corner it is kept out of is the North-East, which the tradition wants lightest and clearest."
+    "rationale": "A store is stacked weight that seldom moves. It belongs in the heavy half: the South-West, the West or the South. Only the North-East is ruled out — the tradition wants that corner lightest and clearest."
   },
   {
     "roomType": "GUEST_BEDROOM", "weight": 0.8,
     "ideal": ["NW"], "acceptable": ["W"], "prohibited": [],
     "provenance": "DERIV", "sourceId": "R-12",
-    "rationale": "The North-West is Vayavya, Vayu's quarter — the tradition associates it with movement and with things that come and go, which is exactly what a guest room is for. The West is accepted. Nothing is outright prohibited."
+    "rationale": "The North-West is Vayavya, Vayu's quarter of movement. The tradition links it with things that come and go — exactly what a guest room is for. The West is accepted. Nothing is outright prohibited."
   },
   {
     "roomType": "GARAGE", "weight": 0.8,
     "ideal": ["NW", "SE"], "acceptable": [], "prohibited": ["NE", "SW"],
     "provenance": "DERIV", "sourceId": "R-13",
-    "rationale": "A vehicle comes and goes, so the North-West, the quarter of movement, suits it; the South-East is the other accepted place. It is kept off the North-East, which must stay light, and off the South-West, which must stay undisturbed. The garage is a modern room the classical texts never had to place, so this rule is reasoned from what those two corners are for."
+    "rationale": "A vehicle comes and goes, so the North-West, the quarter of movement, suits it. The South-East is the other accepted place. It is kept off the North-East, which must stay light, and the South-West, which must stay undisturbed. The garage is a modern room the classical texts never placed. The rule is reasoned from what those two corners are for."
   },
   {
     "roomType": "BALCONY", "weight": 0.8,
     "ideal": ["N", "E", "NE"], "acceptable": [], "prohibited": ["SW"],
     "provenance": "DERIV", "sourceId": "R-14",
-    "rationale": "A balcony is an opening in a wall, so it belongs on the light half — the North, East and North-East. The South-West is the corner the tradition wants solid and closed, which is why it is the one place a balcony is ruled out."
+    "rationale": "A balcony is an opening in a wall. It belongs on the light half: the North, East and North-East. The tradition wants the South-West solid and closed. So it is the one place a balcony is ruled out."
   },
   {
     "roomType": "BASEMENT", "weight": 0.8,
     "ideal": [], "acceptable": [], "prohibited": [],
     "provenance": "MOD", "sourceId": "R-15", "excludeFromScore": true,
     "note": "Traditionally discouraged entirely; MahaVastu permits S and W plots. NOT_SCORED pending a ruling (§4.4.1).",
-    "rationale": "The tradition discourages a basement altogether rather than placing it in a direction, and the modern schools that do permit one disagree about where. We do not score a basement at all rather than pick a side."
+    "rationale": "The tradition discourages a basement altogether, rather than placing it in a direction. The modern schools that do permit one disagree about where. We do not score a basement at all rather than pick a side."
   }
 ]

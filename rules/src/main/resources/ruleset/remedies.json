@@ -1,45 +1,45 @@
 [
   { "id": "structural-correction", "kind": "MOVE_IT", "text": "Move or resize the element on the drawing so it leaves the wrong zone — free while the plan is still on paper.", "provenance": "TEXT", "rank": 0 },
 
-  { "id": "keep-centre-open", "kind": "REMEDY_IT", "text": "Keep the centre of the home open and unweighted — no heavy furniture, no storage, nothing built on it. The Manasara states this directly; it is the one instruction about the centre the texts give in so many words.", "provenance": "TEXT", "rank": 2 },
+  { "id": "keep-centre-open", "kind": "REMEDY_IT", "text": "Keep the centre of the home open and unweighted — no heavy furniture, no storage, nothing built on it. The Manasara, a classical text, states this directly. It is the texts' one explicit instruction about the centre.", "provenance": "TEXT", "rank": 2 },
   { "id": "lighten-ne", "kind": "REMEDY_IT", "text": "Keep the North-East itself light: low furniture, no heavy storage, nothing piled up, and as much daylight as the room allows.", "provenance": "DERIV", "rank": 2 },
-  { "id": "weight-sw", "kind": "REMEDY_IT", "text": "Put the household's heaviest things — the tallest wardrobe, the stored trunks — against the South and West walls, so weight still gathers where the mandala places it.", "provenance": "DERIV", "rank": 2 },
+  { "id": "weight-sw", "kind": "REMEDY_IT", "text": "Put the household's heaviest things against the South and West walls — the tallest wardrobe, the stored trunks. Weight then still gathers where the mandala grid places it.", "provenance": "DERIV", "rank": 2 },
 
-  { "id": "kitchen-platform-se", "kind": "REMEDY_IT", "text": "Wherever the kitchen ends up, set the cooking platform against the South-East corner of that room and stand facing East to cook. The tradition fixes the hearth's own direction, not only the room's.", "provenance": "DERIV", "rank": 3 },
+  { "id": "kitchen-platform-se", "kind": "REMEDY_IT", "text": "Wherever the kitchen ends up, set the cooking platform against that room's South-East corner. Stand facing East to cook. The tradition fixes the hearth's own direction, not only the room's.", "provenance": "DERIV", "rank": 3 },
   { "id": "kitchen-water-apart", "kind": "REMEDY_IT", "text": "Keep water and fire apart inside the kitchen — sink and filter towards the North-East side, stove and gas towards the South-East side, not side by side.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "toilet-contained", "kind": "REMEDY_IT", "text": "Keep the toilet door shut, the room dry and ventilated, and its floor a step higher than the rooms around it. This is 20th-century practice — no classical verse prescribes it.", "provenance": "MOD", "rank": 7 },
+  { "id": "toilet-contained", "kind": "REMEDY_IT", "text": "Keep the toilet door shut and the room dry and ventilated. Keep its floor a step higher than the rooms around it. This is 20th-century practice — no classical verse prescribes it.", "provenance": "MOD", "rank": 7 },
   { "id": "salt-bowl", "kind": "REMEDY_IT", "text": "A rock-salt bowl in the affected corner. 20th-century practice; no textual basis.", "provenance": "MOD", "rank": 9, "productSku": "ROCK-SALT-BOWL" },
 
-  { "id": "sleep-head-south", "kind": "REMEDY_IT", "text": "Sleep with your head to the South or the East, and never to the North. Of all the direction rules this is the one every school states alike.", "provenance": "DERIV", "rank": 3 },
-  { "id": "bed-to-sw-corner", "kind": "REMEDY_IT", "text": "Move the bed into the South-West corner of whichever room you sleep in, so the sleeper still rests on the heaviest part of that room.", "provenance": "DERIV", "rank": 3 },
+  { "id": "sleep-head-south", "kind": "REMEDY_IT", "text": "Sleep with your head to the South or the East, never to the North. Of all the direction rules, this is the one every school states alike.", "provenance": "DERIV", "rank": 3 },
+  { "id": "bed-to-sw-corner", "kind": "REMEDY_IT", "text": "Move the bed into the South-West corner of whichever room you sleep in. The sleeper then still rests on the heaviest part of that room.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "stair-clockwise", "kind": "REMEDY_IT", "text": "Have the stair turn clockwise as you climb, and keep the space beneath it open — not closed in as a store or a toilet.", "provenance": "DERIV", "rank": 3 },
+  { "id": "stair-clockwise", "kind": "REMEDY_IT", "text": "Have the stair turn clockwise as you climb. Keep the space beneath it open — not closed in as a store or a toilet.", "provenance": "DERIV", "rank": 3 },
 
   { "id": "study-face-east", "kind": "REMEDY_IT", "text": "Sit facing East or North at the desk. Which way the person faces is fixed as firmly in the tradition as where the room sits.", "provenance": "DERIV", "rank": 3 },
 
   { "id": "store-keep-light", "kind": "REMEDY_IT", "text": "Keep only light, seldom-used things in it — no heavy metal, no water drums, nothing stacked high — and keep the floor visible.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "living-heavy-south-west", "kind": "REMEDY_IT", "text": "Keep the seating towards the North and East half of the room and the heavy pieces against its South and West walls.", "provenance": "DERIV", "rank": 3 },
+  { "id": "living-heavy-south-west", "kind": "REMEDY_IT", "text": "Keep the seating towards the North and East half of the room. Keep the heavy pieces against its South and West walls.", "provenance": "DERIV", "rank": 3 },
 
   { "id": "garage-park-nose-out", "kind": "REMEDY_IT", "text": "Park nose-out and keep the rest of that corner clear rather than using it for storage. 20th-century practice; no classical basis.", "provenance": "MOD", "rank": 7 },
 
-  { "id": "balcony-weight-sw", "kind": "REMEDY_IT", "text": "Keep a South-West balcony roofed and screened rather than left open, and put the heavier planters and furniture on it.", "provenance": "DERIV", "rank": 3 },
+  { "id": "balcony-weight-sw", "kind": "REMEDY_IT", "text": "Keep a South-West balcony roofed and screened rather than left open. Put the heavier planters and furniture on it.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "pooja-separate-wall", "kind": "REMEDY_IT", "text": "Give the prayer space its own wall — a full-height cupboard, a shelf run or a service duct between it and the toilet is enough separation.", "provenance": "DERIV", "rank": 3 },
+  { "id": "pooja-separate-wall", "kind": "REMEDY_IT", "text": "Give the prayer space its own wall. A full-height cupboard, a shelf run or a service duct between it and the toilet is enough separation.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "door-threshold", "kind": "REMEDY_IT", "text": "Give the entrance a raised threshold and keep the approach to it clear, lit and unobstructed. The threshold is a real element in the texts, not a modern addition.", "provenance": "DERIV", "rank": 3 },
-  { "id": "door-daily-use", "kind": "REMEDY_IT", "text": "If there is another doorway on the North or East wall, make that the one the household uses every day and keep this one for service.", "provenance": "DERIV", "rank": 3 },
+  { "id": "door-threshold", "kind": "REMEDY_IT", "text": "Give the entrance a raised threshold. Keep the approach to it clear, lit and unobstructed. The threshold is a real element in the texts, not a modern addition.", "provenance": "DERIV", "rank": 3 },
+  { "id": "door-daily-use", "kind": "REMEDY_IT", "text": "If there is another doorway on the North or East wall, make that the household's everyday door. Keep this one for service.", "provenance": "DERIV", "rank": 3 },
 
-  { "id": "ne-corner-open", "kind": "REMEDY_IT", "text": "Leave the ground at the missing North-East corner open, clean and a little lower than the rest — not filled in with a shed, a store or a parked vehicle.", "provenance": "DERIV", "rank": 3 },
+  { "id": "ne-corner-open", "kind": "REMEDY_IT", "text": "Leave the ground at the missing North-East corner open, clean and a little lower than the rest. Do not fill it in with a shed, a store or a parked vehicle.", "provenance": "DERIV", "rank": 3 },
   { "id": "tulsi", "kind": "REMEDY_IT", "text": "A Tulsi plant near the North-East. Genuinely traditional (unlike money plant or lucky bamboo).", "provenance": "DERIV", "rank": 5 },
 
-  { "id": "water-follow-mandala", "kind": "REMEDY_IT", "text": "Follow the mandala with water: overhead storage towards the South-West or West, underground water and the borewell towards the North-East, North or East.", "provenance": "DERIV", "rank": 3 },
-  { "id": "tree-relocate", "kind": "REMEDY_IT", "text": "Keep heavy trees off the North-East and off the centre — light planting, grass or open ground there instead, and the big canopy to the South or West.", "provenance": "DERIV", "rank": 3 },
-  { "id": "road-buffer", "kind": "REMEDY_IT", "text": "Screen the side the road points at with a boundary wall or a line of planting. Note that the schools disagree on whether the direction of the thrust matters at all.", "provenance": "DISP", "rank": 3 },
+  { "id": "water-follow-mandala", "kind": "REMEDY_IT", "text": "Follow the mandala grid with water. Overhead storage towards the South-West or West; underground water and the borewell towards the North-East, North or East.", "provenance": "DERIV", "rank": 3 },
+  { "id": "tree-relocate", "kind": "REMEDY_IT", "text": "Keep heavy trees off the North-East and off the centre. Put light planting, grass or open ground there instead. Keep the big canopy to the South or West.", "provenance": "DERIV", "rank": 3 },
+  { "id": "road-buffer", "kind": "REMEDY_IT", "text": "Screen the side the road points at with a boundary wall or a line of planting. The schools disagree on whether the direction of the thrust matters at all.", "provenance": "DISP", "rank": 3 },
   { "id": "mirror-beam-reposition", "kind": "REMEDY_IT", "text": "Turn the mirror so it does not face the bed, or box the beam in behind a false ceiling. Modern practice; no classical basis found for either.", "provenance": "MOD", "rank": 7 },
 
-  { "id": "vastu-shanti", "kind": "RITUAL", "text": "Vastu Shanti / Vastu Puja — the genuine traditional pacification, prescribed in the Mayamatam.", "provenance": "TEXT", "rank": 6 },
+  { "id": "vastu-shanti", "kind": "RITUAL", "text": "Vastu Shanti / Vastu Puja — the genuine traditional pacification, prescribed in the Mayamatam, a classical treatise.", "provenance": "TEXT", "rank": 6 },
 
   { "id": "copper-strip", "kind": "REMEDY_IT", "text": "A copper strip along the zone boundary. Modern practice; efficacy not established.", "provenance": "MOD", "rank": 8, "productSku": "COPPER-STRIP-1M" },
   { "id": "vastu-pyramid", "kind": "REMEDY_IT", "text": "A Vastu pyramid on the wall. 20th-century 'pyramid power'; claims of antiquity are marketing.", "provenance": "MOD", "rank": 10, "productSku": "VASTU-PYRAMID-9" }

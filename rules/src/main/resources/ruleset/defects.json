@@ -1,65 +1,65 @@
 [
   {
     "id": "X-01", "title": "Toilet in the North-East", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
-    "explanation": "A toilet stands on the corner the tradition guards most closely. The North-East is Ishanya — Shiva's quarter, the element of water, and in the mandala the Purusha's head: the most sensitive square of the whole home, and the one the tradition associates with clarity. Putting the household's waste on it is held the single most serious placement across every school examined. A toilet's own quarter is the North-West, Vayu's, where air and movement carry away what leaves the house.",
+    "explanation": "A toilet stands in the North-East, the corner the tradition guards most closely. This is Ishanya — Shiva's quarter, the water element, the home's most sensitive square, linked with clarity. In the mandala grid it is the head of the Purusha, the cosmic being. Every school examined calls waste here the single most serious placement. A toilet belongs in the North-West — Vayu's quarter, whose moving air carries waste out.",
     "layoutFix": "Move the toilet to the North-West, or to the West. Leave the North-East for something light — a window, a prayer space, or nothing built at all.",
-    "remedyNote": "No classical text prescribes a way to correct this that leaves the toilet where it is. The texts say where a toilet belongs; they record no cure for putting it elsewhere. Vastu Shanti is a general pacification, not a fix for this in particular, and everything else below is 20th-century practice.",
+    "remedyNote": "The texts say where a toilet belongs; they record no cure for one built elsewhere. Vastu Shanti is a general pacification, not a fix for this in particular. Everything else below is 20th-century practice.",
     "remedyIds": ["structural-correction", "lighten-ne", "toilet-contained", "salt-bowl", "vastu-shanti"],
     "appliesTo": [ { "roomType": "TOILET", "zone": "NE" } ]
   },
   {
     "id": "X-02", "title": "Kitchen in the North-East", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
-    "explanation": "The kitchen's fire stands in the water quarter. The North-East is Ishanya, whose element is water; the kitchen is the household's fire, and its own quarter is the South-East — Agneya, Agni's, the element of fire itself. A kitchen in the North-East opposes the element of the zone it stands in, which is why every school warns against it.",
+    "explanation": "The kitchen's fire stands in the North-East, Ishanya, the water quarter. A kitchen belongs in the South-East — Agneya, Agni's quarter, fire's own element. Fire set against water opposes the zone's element, so every school warns against this.",
     "layoutFix": "Move the kitchen to the South-East. If that corner is already taken, the North-West is the classical second choice.",
-    "remedyNote": "The texts fix where the hearth belongs; they record no correction for a kitchen built in the wrong quarter. The two practical steps below are traditional practice about the hearth itself, not a cure for the room's position.",
+    "remedyNote": "The texts fix where the hearth belongs; they record no cure for a kitchen built wrongly. The two steps below are traditional hearth practice, not a fix for the room's position.",
     "remedyIds": ["structural-correction", "kitchen-platform-se", "kitchen-water-apart", "lighten-ne", "vastu-shanti"],
     "appliesTo": [ { "roomType": "KITCHEN", "zone": "NE" } ]
   },
   {
     "id": "X-03", "title": "Staircase or heavy weight in the centre", "severity": "MAJOR", "provenance": "TEXT", "tier": "A",
-    "explanation": "The centre of the home is carrying weight it is meant to be free of. The centre is the Brahmasthan — Brahma's own square, the element of space, and the one part of the plan the Manasara says in so many words must stay open and unweighted. A staircase or a heavy fixture standing on it is not a matter of interpretation; it is a direct textual violation, and it is the reason the tradition leaves a courtyard or an open well of light at the middle of a house.",
+    "explanation": "A staircase or heavy weight stands on the centre, which the texts say must stay open. The centre is the Brahmasthan — Brahma's own square, the element of space. The Manasara, a core text, says outright it must stay open and unweighted. This is a direct textual violation, not a matter of interpretation. It is why tradition keeps a courtyard or light well at a home's middle.",
     "layoutFix": "Relocate the staircase to the South, the South-West or the West, and leave the middle of the plan open.",
     "remedyIds": ["structural-correction", "keep-centre-open", "stair-clockwise", "vastu-shanti"],
     "appliesTo": [ { "roomType": "STAIRCASE", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-04", "title": "Cut or missing North-East corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
-    "explanation": "The plan is missing part of its North-East corner. That corner is Ishanya, the mandala's head and its most auspicious square, so a cut there removes the part of the plot the tradition values most — which is why a North-East extension is welcomed in the same tradition that treats a North-East cut as a serious defect.",
+    "explanation": "The plan is missing part of its North-East corner, the ground the tradition values most. That corner is Ishanya — the head of the mandala grid, its most auspicious square. The same tradition welcomes a North-East extension, yet calls a cut there a serious defect.",
     "layoutFix": "Extend the footprint to square off the North-East corner while the plan is still on paper.",
     "remedyNote": "There is no classical remedy for a corner that is simply not there. What follows is how the tradition asks you to treat the ground instead.",
     "remedyIds": ["structural-correction", "ne-corner-open", "tulsi", "vastu-shanti"]
   },
   {
     "id": "X-05", "title": "South-West extension", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
-    "explanation": "The plan pushes out at the South-West, the corner meant to stay square. That corner is Nairritya — the element of earth, the Purusha's feet, and the quarter the tradition treats as the heaviest and most settled part of the home. It is meant to be the firm, square corner that everything else rests against; pushing it outward unbalances the very corner that is supposed to hold still.",
+    "explanation": "The plan pushes out at the South-West, the corner meant to stay square and still. That corner is Nairritya — the element of earth, the feet of the Purusha, the cosmic being. The tradition wants it heaviest and most settled — the firm corner the home rests against. Pushing it outward unbalances exactly that.",
     "layoutFix": "Trim the South-West projection back so the footprint is square at that corner.",
     "remedyIds": ["structural-correction", "weight-sw", "vastu-shanti"]
   },
   {
     "id": "X-06", "title": "Main entrance on the South-West corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
-    "explanation": "Your entrance is on the South-West corner. It stands where the southern and western walls meet — the positions the 32-position table names Yama and Gandharva. This is the one door prohibition every school examined agrees on: the South-West is the mandala's heaviest and most closed corner, meant to be solid, and the main entrance is the highest-weighted single element in the whole reading, so where it stands counts for more than any single room.",
+    "explanation": "The main entrance stands on the South-West corner — the one door placement every school examined prohibits. It sits where the southern and western walls meet. The 32-position door table names these positions Yama and Gandharva. In the mandala grid this is the heaviest, most closed corner, meant to stay solid. The entrance is the reading's highest-weighted element, so its position outweighs any single room.",
     "layoutFix": "Move the main entrance onto a favourable position on the North or the East wall.",
-    "remedyNote": "The texts prescribe where a door belongs and are silent on correcting one built in the wrong place. The steps below are traditional practice around entrances generally, not a recorded cure for this position.",
+    "remedyNote": "The texts say where a door belongs; they are silent on correcting one built wrongly. The steps below are traditional entrance practice, not a recorded cure for this position.",
     "remedyIds": ["structural-correction", "door-daily-use", "door-threshold", "vastu-shanti"]
   },
   {
     "id": "X-07", "title": "Master bedroom in the North-East or South-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The master bedroom is in a light corner when it needs a heavy one. The head of the household is meant to rest in the heaviest, most settled quarter — the South-West, Nairritya, the element of earth. The North-East is the opposite: the lightest and most sensitive square, which the tradition wants kept open rather than occupied by the household's heaviest sleeper. The South-East is Agni's fire quarter, which the tradition holds to be no place for rest at all.",
+    "explanation": "The master bedroom sits in a light corner — the North-East or South-East — not the heavy South-West. The head of the household should rest in the South-West: Nairritya, earth's element, the most settled quarter. The North-East is the lightest, most sensitive square, kept open rather than slept in. The South-East is Agneya, Agni's fire quarter — held no place for rest.",
     "layoutFix": "Move the master bedroom to the South-West. The South or the West are the accepted alternatives.",
     "remedyIds": ["structural-correction", "bed-to-sw-corner", "sleep-head-south", "weight-sw", "vastu-shanti"],
     "appliesTo": [ { "roomType": "MASTER_BEDROOM", "zone": "NE" }, { "roomType": "MASTER_BEDROOM", "zone": "SE" } ]
   },
   {
     "id": "X-08", "title": "Toilet in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "A toilet stands on the corner the whole home is anchored by. The South-West is Nairritya, the element of earth and the corner the tradition treats as the home's anchor — the heaviest, most settled quarter, meant to be solid and undisturbed. A toilet is the one room the tradition treats as impure and wants placed where things leave, so putting it on the anchoring corner works directly against what that corner is for.",
+    "explanation": "A toilet stands in the South-West, the corner that anchors the whole home. The South-West is Nairritya — the element of earth, meant to stay heavy, solid and undisturbed. A toilet is the one room the tradition holds impure, placed where things leave the house. Setting it on the anchoring corner works directly against that.",
     "layoutFix": "Move the toilet to the North-West, or to the West.",
-    "remedyNote": "No classical correction exists for a toilet in the wrong quarter. The containment steps below are 20th-century practice, and are labelled as such.",
+    "remedyNote": "No classical correction exists for a toilet in the wrong quarter. The containment steps below are 20th-century practice, labelled as such.",
     "remedyIds": ["structural-correction", "weight-sw", "toilet-contained", "salt-bowl", "vastu-shanti"],
     "appliesTo": [ { "roomType": "TOILET", "zone": "SW" } ]
   },
   {
     "id": "X-09", "title": "Water stored against the mandala", "severity": "MODERATE", "provenance": "DERIV", "tier": "C",
-    "explanation": "The water is stored the opposite way round from the mandala. Water follows the mandala: it is drawn towards the North-East, Ishanya, whose element is water, and weight is carried by the South-West, Nairritya, whose element is earth. So underground water and the borewell belong in the North-East, North or East, and the heavy overhead tank belongs over the South-West or West. This home has that the wrong way round — weight in the light corner, or water under the heavy one.",
+    "explanation": "The water is stored the wrong way round — weight in the light corner, or water under the heavy one. The mandala grid draws water to the North-East — Ishanya, the water element. It sends weight to the South-West — Nairritya, the earth element. So underground water and the borewell belong North-East, North or East. The heavy overhead tank belongs over the South-West or West.",
     "layoutFix": "Put the overhead tank over the South-West or West, and the sump or borewell towards the North-East, North or East.",
     "notCheckedLabel": "Where your water tank and borewell sit",
     "notCheckedHow": "Answer the few extra questions on the score screen and we will check this.",
@@ -68,13 +68,13 @@
   },
   {
     "id": "X-10", "title": "Prayer room against a toilet, or a room tucked under the stairs", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The prayer space and the toilet share a wall, or a room is tucked under the stairs. The tradition keeps the pure and the impure apart, and it does so by adjacency rather than by direction — so a prayer space sharing a wall with a toilet is held wrong wherever in the home the two of them are. The same reasoning closes the space beneath a staircase to a store or a toilet: what is walked over should not be what is prayed beside or kept in.",
+    "explanation": "The prayer space and the toilet share a wall, or a room is tucked under the stairs. The tradition separates pure from impure by adjacency, not direction. A prayer space on a toilet wall is wrong anywhere in the home. The same logic bars a store or toilet beneath a staircase. What is walked over should not be prayed beside, or kept in.",
     "layoutFix": "Separate the prayer space from the toilet wall, and leave the space beneath the stairs open.",
     "remedyIds": ["structural-correction", "pooja-separate-wall", "stair-clockwise", "vastu-shanti"]
   },
   {
     "id": "X-11", "title": "A road pointing straight at the plot", "severity": "MODERATE", "provenance": "DISP", "tier": "D",
-    "explanation": "A road points straight at the plot. A road running directly at the plot is Veedhi Shoola, the 'street spear'. The reading we follow treats a thrust from the South, South-West, South-East or North-West as harmful and one from the North, North-East or East as benign. The stricter school calls every road-arrow harmful regardless of direction — the schools genuinely disagree here, so this is shown to you but never counted against your score.",
+    "explanation": "A road runs straight at the plot — Veedhi Shoola, the 'street spear'. Our reading treats a thrust from the South, South-West, South-East or North-West as harmful. From the North, North-East or East it is benign. A stricter school calls every road-arrow harmful. The schools genuinely disagree, so this is shown but never counted in your score.",
     "layoutFix": "Buffer the affected side with a boundary wall or a line of planting.",
     "notCheckedLabel": "Whether a road points straight at your plot",
     "notCheckedHow": "Answer the few extra questions on the score screen and we will check this.",
@@ -83,7 +83,7 @@
   },
   {
     "id": "X-12", "title": "Heavy trees in the North-East or the centre", "severity": "MINOR", "provenance": "DERIV", "tier": "C",
-    "explanation": "A heavy tree stands where the ground is meant to stay light. The North-East is meant to stay the lightest and most open part of the property, and the centre is Brahma's square, which the Manasara asks to be left unweighted. A large tree standing on either puts real, permanent weight and shade on ground the tradition wants kept clear — the same reasoning that keeps heavy storage out of those two places.",
+    "explanation": "A heavy tree stands in the North-East or the centre — ground meant to stay light. The North-East should be the property's lightest, most open part. The centre is Brahma's square, which the Manasara, a core text, wants unweighted. A big tree sets permanent weight and shade on that ground. The same reasoning bars heavy storage from both places.",
     "layoutFix": "Keep the North-East and the centre free of heavy planting; the big canopy belongs to the South or West.",
     "notCheckedLabel": "Where the large trees on your property stand",
     "notCheckedHow": "Answer the few extra questions on the score screen and we will check this.",
@@ -92,7 +92,7 @@
   },
   {
     "id": "X-13", "title": "A mirror facing the bed, or a beam over a bed or desk", "severity": "MINOR", "provenance": "MOD", "tier": "C",
-    "explanation": "A mirror faces the bed, or a beam runs over it. Both of these are 20th-century additions to Vastu. We looked for a classical basis for either and found none — no text we examined places a mirror or a ceiling beam under a rule. They are included because customers expect to see them, and labelled honestly as modern rather than dressed up as ancient.",
+    "explanation": "A mirror faces the bed, or a beam runs over it. Both rules are 20th-century additions to Vastu. We searched for a classical basis and found none — no text we examined rules on either. They are included because customers expect them, and labelled honestly as modern rather than ancient.",
     "layoutFix": "Reposition the mirror, or route the beam away from directly over the bed or the desk.",
     "notCheckedLabel": "Mirrors facing a bed, or a beam running over one",
     "notCheckedHow": "Answer the few extra questions on the score screen and we will check this.",
@@ -101,15 +101,15 @@
   },
   {
     "id": "X-15", "title": "The home is long and narrow", "severity": "MINOR", "provenance": "DERIV", "tier": "B",
-    "explanation": "The home is more than twice as long as it is wide. The mandala the whole reading rests on is a square, and the tradition treats a square — or a rectangle within about one-to-two — as the balanced shape, because the nine zones then come out roughly equal in size. This plan is more than twice as long as it is wide, so its zones are stretched thin in one direction and the reading is less even than a squarer plan would give.",
+    "explanation": "The home is more than twice as long as it is wide. The mandala grid behind the reading is a square. The tradition calls a square, or a rectangle within about one-to-two, balanced. Only then do the nine zones come out roughly equal. This plan stretches its zones thin one way, so the reading is less even.",
     "layoutFix": "Where the plot allows, keep the built footprint closer to a one-to-one-and-a-half proportion.",
-    "remedyNote": "There is no classical remedy for the shape of a plot. This is stated as a limitation of the reading, not as something to be corrected with an object.",
+    "remedyNote": "There is no classical remedy for a plot's shape. This is a limitation of the reading, not something an object can correct.",
     "remedyIds": ["structural-correction", "vastu-shanti"]
   },
 
   {
     "id": "X-20", "title": "Kitchen in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The kitchen's fire and bustle sit in the corner meant to be stillest. The South-West is Nairritya, the element of earth and the Purusha's feet — the corner the tradition wants heaviest, most settled and least disturbed, which is why the master bedroom and the heavy storage belong there. A kitchen is the busiest, hottest room in the house, so it sets constant fire and movement in the one corner meant to hold still. Fire's own quarter is the South-East.",
+    "explanation": "The kitchen's fire and bustle sit in the South-West, the corner meant to be stillest. The South-West is Nairritya — earth's element, the feet of the Purusha, the cosmic being. The tradition keeps it heaviest and least disturbed; hence the master bedroom and heavy storage there. A kitchen, the busiest and hottest room, sets constant fire and movement there instead. Fire's own quarter is the South-East.",
     "layoutFix": "Move the kitchen to the South-East. The North-West is the accepted second choice.",
     "remedyNote": "The texts fix the hearth's quarter and record no correction for a kitchen built elsewhere. What follows is traditional practice about the hearth itself.",
     "remedyIds": ["structural-correction", "kitchen-platform-se", "weight-sw", "vastu-shanti"],
@@ -117,101 +117,101 @@
   },
   {
     "id": "X-21", "title": "Kitchen in the centre", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The kitchen stands on the square the texts ask to be left open. The centre is the Brahmasthan, Brahma's square and the element of space, and the Manasara asks for it to be left open and unbuilt. A kitchen there is the opposite of open: the most heavily serviced room in the home, with weight, heat and plumbing, standing on the one square the text says to keep clear. Fire's own quarter is the South-East.",
+    "explanation": "The kitchen stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan — Brahma's square, the element of space. The Manasara, a core text, asks it be left open and unbuilt. A kitchen is the opposite: heavily serviced, full of weight, heat and plumbing. Fire's own quarter is the South-East.",
     "layoutFix": "Move the kitchen to the South-East and leave the middle of the plan open.",
     "remedyIds": ["structural-correction", "keep-centre-open", "kitchen-platform-se", "vastu-shanti"],
     "appliesTo": [ { "roomType": "KITCHEN", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-22", "title": "Master bedroom in the centre", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The master bedroom stands on the square the texts ask to be left open. The centre is Brahma's square, which the Manasara asks to be kept open and unweighted — traditionally the courtyard, the light well, the part of the plan nothing stands on. The master bedroom is the heaviest permanent room in the home, and its own quarter is the South-West, Nairritya, the element of earth, where that weight is meant to gather.",
+    "explanation": "The master bedroom stands on the centre, the square the texts ask to be left open. It is Brahma's square — traditionally the open courtyard or light well. The Manasara, a core text, asks it stay open and unweighted. The master bedroom is the home's heaviest permanent room. Its quarter is the South-West — Nairritya, earth, where weight should gather.",
     "layoutFix": "Move the master bedroom to the South-West and leave the middle of the plan open.",
     "remedyIds": ["structural-correction", "keep-centre-open", "bed-to-sw-corner", "sleep-head-south", "vastu-shanti"],
     "appliesTo": [ { "roomType": "MASTER_BEDROOM", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-23", "title": "Bedroom in the South-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "A bedroom sits in the fire corner. The South-East is Agneya — Agni's quarter, the element of fire, the corner the tradition gives to the kitchen and to whatever generates heat. Rest is the opposite kind of activity, so the tradition keeps sleeping out of the fire corner. A bedroom's own quarters are the West, Paschima, and the North-West, Vayavya.",
+    "explanation": "A bedroom sits in the South-East, the fire corner. The South-East is Agneya — Agni's quarter, the element of fire. The tradition gives it to the kitchen and whatever generates heat. Rest is the opposite, so the tradition keeps sleeping out of the fire corner. A bedroom's own quarters are the West, Paschima, and the North-West, Vayavya.",
     "layoutFix": "Move the bedroom to the West or the North-West. The North, East and South are all acceptable too.",
     "remedyIds": ["structural-correction", "bed-to-sw-corner", "sleep-head-south", "vastu-shanti"],
     "appliesTo": [ { "roomType": "BEDROOM", "zone": "SE" } ]
   },
   {
     "id": "X-24", "title": "Bedroom in the centre", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "A bedroom stands on the square the texts ask to be left open. The centre is the Brahmasthan, and the Manasara asks for it to be left open and unweighted rather than built on. A bedroom is a permanent, enclosed, furnished room — the opposite of open ground. A bedroom's own quarters are the West and the North-West.",
+    "explanation": "A bedroom stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan, which the Manasara, a core text, wants open and unweighted. A bedroom — permanent, enclosed, furnished — is the opposite of open ground. Its own quarters are the West and the North-West.",
     "layoutFix": "Move the bedroom to the West or the North-West and leave the middle of the plan open.",
     "remedyIds": ["structural-correction", "keep-centre-open", "sleep-head-south", "vastu-shanti"],
     "appliesTo": [ { "roomType": "BEDROOM", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-25", "title": "Toilet in the centre", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The toilet stands on the square the texts ask to be left open. The centre is Brahma's own square, which the Manasara asks to be kept open, and which the tradition reserves for the family's own deity. A toilet is the one room the tradition treats as impure. Putting it on that square puts the least pure room of the home on the most reserved part of the plan — and a toilet's own quarter is the North-West, where air carries away what leaves the house.",
+    "explanation": "The toilet stands on the centre, the square the texts ask to be left open. The demand comes from the Manasara, a core text. The centre is Brahma's own square, reserved for the family's own deity. A toilet — the one room held impure — thus stands on the plan's most reserved square. A toilet's own quarter is the North-West, where air carries waste out.",
     "layoutFix": "Move the toilet to the North-West or the West, and leave the middle of the plan open.",
-    "remedyNote": "No classical text records a correction for this that leaves the toilet where it is. The containment steps below are 20th-century practice.",
+    "remedyNote": "No classical text corrects this while the toilet stays where it is. The containment steps below are 20th-century practice.",
     "remedyIds": ["structural-correction", "keep-centre-open", "toilet-contained", "vastu-shanti"],
     "appliesTo": [ { "roomType": "TOILET", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-26", "title": "Living room in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The busiest room in the home sits in its most private corner. The South-West is Nairritya, the element of earth — the quarter the tradition wants heaviest, most private and least disturbed, which is why the master bedroom and the storage belong there. A living room is the busiest and most public room in the home, with people coming and going all day, so it works against what that corner is for. A living room's own quarters are the North, the East and the North-East.",
+    "explanation": "The living room — the home's busiest room — sits in the South-West, its most private corner. The South-West is Nairritya, the element of earth, kept heaviest and least disturbed. That is why the master bedroom and storage belong there. All-day coming and going works against that corner's purpose. A living room's own quarters are the North, East and North-East.",
     "layoutFix": "Move the living room to the North, East or North-East. The West and North-West are acceptable.",
     "remedyIds": ["structural-correction", "living-heavy-south-west", "weight-sw", "vastu-shanti"],
     "appliesTo": [ { "roomType": "LIVING", "zone": "SW" } ]
   },
   {
     "id": "X-27", "title": "Living room in the centre", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The living room stands on the square the texts ask to be left open. The centre is the Brahmasthan, and the Manasara asks for it to be left open and unweighted — in traditional homes it is the courtyard rather than a room. A living room in the middle is not automatically wrong to live in, but it is built ground on the one square the text asks to be kept clear, and the heavier the furniture standing there, the further it goes from what the rule is about.",
+    "explanation": "The living room stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan, which the Manasara, a core text, wants open and unweighted. In traditional homes it is the courtyard, not a room. Living here is not automatically wrong, but it is built ground on a square meant to stay clear. The heavier the furniture, the further from the rule.",
     "layoutFix": "Move the living room towards the North, East or North-East, and keep the middle of the plan as open as the layout allows.",
     "remedyIds": ["structural-correction", "keep-centre-open", "living-heavy-south-west", "vastu-shanti"],
     "appliesTo": [ { "roomType": "LIVING", "zone": "BRAHMASTHAN" } ]
   },
   {
     "id": "X-28", "title": "Staircase in the North-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The heaviest structure in the home sits in its lightest corner. A staircase is the heaviest single structure in most homes — solid, permanent, and carrying the weight of everyone who uses it. The North-East is Ishanya, the mandala's head, the square the tradition wants lightest and most open. Weight belongs in the opposite corner, which is why a staircase's own quarters are the South, the South-West and the West.",
+    "explanation": "The staircase — usually the home's heaviest structure — sits in the North-East, its lightest corner. A staircase is solid, permanent, and carries everyone who uses it. The North-East is Ishanya, the head of the mandala grid, kept lightest and most open. Weight belongs opposite, so a staircase's quarters are the South, South-West and West.",
     "layoutFix": "Move the staircase to the South, the South-West or the West. The North-West is acceptable.",
     "remedyIds": ["structural-correction", "lighten-ne", "stair-clockwise", "vastu-shanti"],
     "appliesTo": [ { "roomType": "STAIRCASE", "zone": "NE" } ]
   },
   {
     "id": "X-29", "title": "Study in the South", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The study sits in the half of the home the tradition gives to rest. The South is Dakshina, Yama's quarter, which the tradition associates with rest and with discipline rather than with study — it is the half of the home given to sleeping and to weight. Study belongs where the person at the desk can face East or North: the West, Paschima, Varuna's quarter of learning, or the North-West.",
+    "explanation": "The study sits in the South, the half of the home the tradition gives to rest. The South is Dakshina, Yama's quarter — given to rest, discipline, sleeping and weight, not study. Study belongs where the desk can face East or North. That means the West — Paschima, Varuna's quarter of learning — or the North-West.",
     "layoutFix": "Move the study to the West or the North-West. The North, East and North-East are acceptable.",
     "remedyIds": ["structural-correction", "study-face-east", "vastu-shanti"],
     "appliesTo": [ { "roomType": "STUDY", "zone": "S" } ]
   },
   {
     "id": "X-30", "title": "Study in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The study sits in the corner given to rest and storage. The South-West is Nairritya, the element of earth, the heaviest and most settled corner — the tradition gives it to sleeping and to storage, not to work. A study belongs where the person at the desk faces East or North: the West, Varuna's quarter of learning, or the North-West.",
+    "explanation": "The study sits in the South-West, the corner given to rest and storage. The South-West is Nairritya, earth's element — the heaviest, most settled corner. The tradition gives it to sleeping and storage, not work. A study belongs where the desk faces East or North. That means the West — Varuna's quarter of learning — or the North-West.",
     "layoutFix": "Move the study to the West or the North-West. The North, East and North-East are acceptable.",
     "remedyIds": ["structural-correction", "study-face-east", "weight-sw", "vastu-shanti"],
     "appliesTo": [ { "roomType": "STUDY", "zone": "SW" } ]
   },
   {
     "id": "X-31", "title": "Store in the North-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "Stacked weight sits in the corner meant to stay lightest. A store is stacked weight that rarely moves, and the North-East is Ishanya — the mandala's head, the square the tradition wants lightest, cleanest and most open. Storage belongs in the opposite corner: the South-West, the West or the South, where the tradition wants weight to gather.",
+    "explanation": "A store's stacked weight sits in the North-East, the corner meant to stay lightest. A store is weight that rarely moves. The North-East is Ishanya, the head of the mandala grid, kept lightest, cleanest and most open. Storage belongs opposite — the South-West, West or South, where weight should gather.",
     "layoutFix": "Move the store to the South-West, the West or the South.",
     "remedyIds": ["structural-correction", "store-keep-light", "lighten-ne", "vastu-shanti"],
     "appliesTo": [ { "roomType": "STORE", "zone": "NE" } ]
   },
   {
     "id": "X-32", "title": "Garage in the North-East", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The garage sits in the corner meant to stay lightest and most open. A garage is heavy, closed and used for storing metal — everything the North-East is not meant to hold. Ishanya is the mandala's head, the square the tradition wants kept light and open. A vehicle belongs in the North-West, Vayavya, the quarter of air and movement, or in the South-East.",
+    "explanation": "The garage sits in the North-East, the corner meant to stay lightest and most open. A garage is heavy, closed and full of metal — everything this corner should not hold. Ishanya, the head of the mandala grid, is kept light and open. A vehicle belongs in Vayavya — the North-West, quarter of air and movement — or the South-East.",
     "layoutFix": "Move the garage to the North-West or the South-East.",
-    "remedyNote": "The garage is a modern room the classical texts never had to place. The rule here is reasoned from what the North-East is for, and the practical step below is 20th-century practice.",
+    "remedyNote": "The classical texts never had to place a garage. This rule is reasoned from the North-East's purpose. The practical step below is 20th-century practice.",
     "remedyIds": ["structural-correction", "lighten-ne", "garage-park-nose-out", "vastu-shanti"],
     "appliesTo": [ { "roomType": "GARAGE", "zone": "NE" } ]
   },
   {
     "id": "X-33", "title": "Garage in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The one thing that moves every day sits in the corner meant to stay still. The South-West is Nairritya, the corner the tradition wants most settled and least disturbed — it is meant to be the anchor the rest of the home rests against. A garage is the one place in a house where something large moves in and out every day, so it unsettles exactly the corner that is supposed to stay still. A vehicle belongs in the North-West, the quarter of movement, or in the South-East.",
+    "explanation": "The garage — the one thing that moves every day — sits in the South-West, the corner meant to stay still. The South-West is Nairritya, the anchor corner, kept most settled and least disturbed. A garage sends something large in and out daily, unsettling exactly that corner. A vehicle belongs in the North-West, the quarter of movement, or the South-East.",
     "layoutFix": "Move the garage to the North-West or the South-East.",
-    "remedyNote": "The garage is a modern room the classical texts never had to place. The rule here is reasoned from what the South-West is for, and the practical step below is 20th-century practice.",
+    "remedyNote": "The classical texts never had to place a garage. This rule is reasoned from the South-West's purpose. The practical step below is 20th-century practice.",
     "remedyIds": ["structural-correction", "weight-sw", "garage-park-nose-out", "vastu-shanti"],
     "appliesTo": [ { "roomType": "GARAGE", "zone": "SW" } ]
   },
   {
     "id": "X-34", "title": "Balcony in the South-West", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "The corner meant to be most solid has been opened up. A balcony is an opening — it takes weight out of a wall and lets the corner breathe. The South-West is Nairritya, the element of earth, the corner the tradition wants heaviest and most closed, so opening it up runs against the one thing that corner is meant to do. Balconies belong on the light side: the North, the East and the North-East.",
+    "explanation": "A balcony opens up the South-West, the corner meant to be most solid. A balcony takes weight out of a wall and lets the corner breathe. The South-West is Nairritya, earth's element, kept heaviest and most closed. Opening it defeats that purpose. Balconies belong on the light side: the North, East and North-East.",
     "layoutFix": "Put the balcony on the North, East or North-East side, and keep the South-West corner solid.",
     "remedyIds": ["structural-correction", "balcony-weight-sw", "weight-sw", "vastu-shanti"],
     "appliesTo": [ { "roomType": "BALCONY", "zone": "SW" } ]
@@ -219,9 +219,9 @@
 
   {
     "id": "X-GEN", "title": "Room in a prohibited zone", "severity": "MODERATE", "provenance": "DERIV", "tier": "A",
-    "explanation": "This element sits in a part of the plan its own rule prohibits. We hold a specific, sourced reason for every placement the app rules on; this is the fallback that catches anything outside that list, so it is deliberately general rather than pretending to a detail we do not have.",
+    "explanation": "This element sits in a part of the plan its own rule prohibits. We hold a specific, sourced reason for every placement the app rules on. This fallback catches anything outside that list. So it stays deliberately general, claiming no detail we do not have.",
     "layoutFix": "Move the element out of the prohibited zone.",
-    "remedyNote": "Because this is the general case rather than a named one, we do not offer a remedy specific to it. Moving it is the tradition's own answer.",
+    "remedyNote": "This is the general case rather than a named one, so no specific remedy is offered. Moving it is the tradition's own answer.",
     "remedyIds": ["structural-correction", "vastu-shanti"]
   }
 ]
