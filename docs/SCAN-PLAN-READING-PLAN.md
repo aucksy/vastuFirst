@@ -1242,3 +1242,64 @@ future piece of work, and the ratchet now holds the number).
 (audit G4/G5 — the honest copy shipped, the delete surface didn't). **Not started:** D2 (tall
 captures of report/score/unlock bottom halves), Phase C copy inventory beyond §3r, Phase D
 delight list, dormant billing fixes.
+
+## 3t. ⭐⭐ SHIPPED 4 Aug 2026 (night) — Phase B part 3: the six next fixes + the bottom halves
+
+The session after §3s, continuing straight down docs/FULL-AUDIT-2026-08-04.md with the owner's
+"go". Everything below is on main, green, and every changed screen plus every new bottom-half
+golden was looked at by eye (tag v0.7.4):
+
+1. **The Honesty & sources page reads at every font size (C4).** At 200 % font each tag pill was
+   wider than the row, and its explanation rendered one-to-three letters per line down the right
+   edge — a BLOCKER on the page whose only job is being read. Each pill now sits above its
+   explanation; nothing shares a row that can squeeze. Seen fixed in the re-recorded golden.
+
+2. **The report's top row wraps instead of colliding (C5, C6).** "FULL REPORT" and the intent
+   pill are a FlowRow now: at 200 % font the pill takes its own line whole. The zone toggle says
+   "16 zones (soon)" — parenthesised so a wrap breaks into complete pieces, never a stranded dot
+   (seen wrapping exactly so at 200 %).
+
+3. **The Mark-North mini-map never speaks in colour alone (C8).** Room labels degrade on the
+   editor tiles' measured ladder — full name, then the plan letter-code ("K", "BR"), never
+   "Poo…" — and the verdict line (direction + tick/cross) is now the LAST ink to die on a
+   shrinking tile, not the first: when only one line fits, the verdict wins it. The 200 % golden
+   shows every tile carrying a mark.
+
+4. **List rows keep their facts (C10).** Saved and unfinished home rows wrap to two lines before
+   any ellipsis. At 320 dp everything survives in full; at 200 % font the name and room count
+   are complete and only the tail of the longest date still cuts ("Updated 3 d…") — a stated
+   blemish, not a hidden one; a third line would buy the tail at the cost of pushing more rows
+   off the first screenful.
+
+5. **The score-change card answers "what happened to MY home" first (C12).** The per-home
+   numbers moved above the reason; "6.8 → 7.1" is glued with no-break spaces so the pair can
+   never wrap apart. At 200 % the numbers AND the "Got it" button now sit inside the first
+   screenful.
+
+6. **Welcome leads with its question (C9).** The six language chips — inert in an English-only
+   build — moved to the footer below Continue. At 200 % font all three intent cards are on the
+   first screenful; before, none were.
+
+7. **The no-camera phone stops offering a camera (C14).** Once the phone has shown it has no
+   camera app, "Take a photo of it now" renders properly disabled with the reason and the way
+   forward directly beneath it.
+
+8. **The bottom half of every long document is finally photographed (D2).**
+   `LongScreenBottomScreenshotTest` scrolls report / report-living / score / unlock-paid to each
+   screen's true last element in the baseline window and keeps `__bottom` + `__bottom_font2_0`
+   goldens — anchored on the final string, so a changed ending fails loudly. First-ever sightings
+   all came back CLEAN: the disputes payoff and disclaimers read well, the score's ranked
+   problems and ₹699 card wrap as words at 200 %, the unlock feature list and "nothing renews"
+   line hold. UI-POLISH §6.4 documents the new captures.
+
+**Ratchet outcome:** one hand-adoption — welcome 11 → 13, all thirteen findings being elements
+straddling the first-screenful edge of a screen that scrolls (the reorder changed WHICH elements
+sit on the fold, not what a reader can reach). The same run measured five home-screen counts
+LOWER and the green run auto-tightened them (home 3→0, score-change 7→4, unfinished 9→4,
+unfinished-only 2→0, unreadable 3→2) — the two-line rows and the reordered card genuinely
+removed clipped text.
+
+**Parked, still needing the owner:** the "remove this home" button on unreadable rows (audit
+B7/G4/G5) — asked twice now, still unanswered. **Not started:** Phase C copy cut (incl. the
+rules-JSON prose), Phase D delight list, dormant billing fixes, dark-mode decision, a real
+landscape editor layout (ratcheted at 43).
