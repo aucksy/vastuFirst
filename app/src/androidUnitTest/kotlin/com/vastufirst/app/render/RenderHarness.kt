@@ -17,7 +17,7 @@ import java.io.File
  * an absolute path removes every base-resolution ambiguity: record and verify use the exact same
  * file. `File("…").absolutePath` resolves against the same module-root working directory.
  */
-private fun goldenPath(screen: String, config: String): String =
+internal fun goldenPath(screen: String, config: String): String =
     File("src/androidUnitTest/roborazzi/$screen/${screen}__$config.png").absolutePath
 
 /**

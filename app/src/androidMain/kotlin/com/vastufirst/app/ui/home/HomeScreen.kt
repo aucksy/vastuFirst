@@ -319,8 +319,11 @@ private fun ScoreChangeCard(notice: ScoreChangeNotice, onAcknowledge: () -> Unit
     VastuCard(accent = colors.info) {
         VText(scoreChangeTitle(notice), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(notice.reason, style = VastuTheme.type.body, color = colors.textSecondary)
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        // The user's own numbers come BEFORE the explanation (audit C12): at 200 % font this card
+        // fills the whole first screenful, and with the reason first the fold cut the card off
+        // mid-paragraph with the numbers below it — the one part that answers "what happened to MY
+        // home". Numbers under the heading keep that answer on screen at every font size; the why
+        // reads on below it.
         notice.changes.forEach { change ->
             VText(
                 scoreChangeLine(change) { scoreOutOfTen(it, mark) },
@@ -328,6 +331,8 @@ private fun ScoreChangeCard(notice: ScoreChangeNotice, onAcknowledge: () -> Unit
                 color = colors.textPrimary,
             )
         }
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        VText(notice.reason, style = VastuTheme.type.body, color = colors.textSecondary)
         // s3 rather than s4, measured: at 200 % font the button was showing 33 dp of its 50.5 and
         // losing the rest to the bottom of the list. Every dp above it is a dp of button.
         Spacer(Modifier.height(VastuTheme.spacing.s3))

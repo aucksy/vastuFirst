@@ -98,17 +98,6 @@ fun WelcomeContent(
 
         Divider()
 
-        SectionLabel("Language")
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
-            VastuChip(text = "English", selected = true, onClick = {})
-            listOf("हिन्दी", "தமிழ்", "తెలుగు", "मराठी", "বাংলা").forEach { SoonPill(it) }
-        }
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText("English for now — more languages soon.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
-
-        Divider()
-
         SectionLabel("What brings you here?")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         // ⭐ BUYING leads. Most people who open this app are looking at a home somebody else has
@@ -124,6 +113,22 @@ fun WelcomeContent(
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
+
+        // ⭐ The language story moved to the FOOTER (audit C9). Six chips for an English-only app sat
+        // in the prime slot above the intent question, and at 200 % font they pushed all three intent
+        // cards — the screen's whole purpose — below the fold, with the first screenful ending
+        // mid-sentence in the language note. Down here they still make the promise ("more languages
+        // soon") without costing the main action its place. Chips stay tappable-inert exactly as
+        // before; this is a move, not a redesign.
+        Divider()
+        SectionLabel("Language")
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
+            VastuChip(text = "English", selected = true, onClick = {})
+            listOf("हिन्दी", "தமிழ்", "తెలుగు", "मराठी", "বাংলা").forEach { SoonPill(it) }
+        }
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText("English for now — more languages soon.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }

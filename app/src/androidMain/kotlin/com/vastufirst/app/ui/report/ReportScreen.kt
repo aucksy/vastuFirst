@@ -6,6 +6,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,6 +76,7 @@ fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit) {
 }
 
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReportContent(
     analysis: Analysis?,
@@ -108,8 +111,15 @@ fun ReportContent(
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("Full report")
+        // FlowRow, not Row (audit C5): at 200 % font "FULL REPORT" and the intent pill are together
+        // wider than the screen, and a Row drew them into each other. Here the pill drops to its own
+        // line instead, where it can wrap on word boundaries with the full width to itself.
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+        ) {
+            SectionLabel("Full report", modifier = Modifier.align(Alignment.CenterVertically))
             IntentBadge(resolvedIntent)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -133,13 +143,15 @@ fun ReportContent(
             Spacer(Modifier.height(VastuTheme.spacing.s4))
         }
 
-        // The 16-zone reading isn't built yet, so its segment is shown disabled ("· soon") and is not
+        // The 16-zone reading isn't built yet, so its segment is shown disabled ("(soon)") and is not
         // tappable — no live-looking control that silently does nothing (E2E-ASSESSMENT §B10).
         // ⚠ Short words, and that is a constraint not a preference. At 200 % font "Traditional" was
         // wider than its half of the row and the reader saw "Iraditional 9-zone" — every word here
         // must fit a half-width segment on its own. The caption below carries the full meaning.
+        // "(soon)" not "· soon" (audit C6): when the label wraps at 200 % font it must break into
+        // whole readable pieces — "· soon" stranded its dot at the end of the first line.
         VastuSegmented(
-            options = listOf("8 zones", "16 zones · soon"),
+            options = listOf("8 zones", "16 zones (soon)"),
             selectedIndex = 0,
             onSelect = {},
             disabledIndices = setOf(1),

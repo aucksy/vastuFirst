@@ -75,7 +75,8 @@ class ScoreChangeTest {
         assertEquals(31, change.oldScore)
         assertEquals(34, change.newScore)
         assertTrue("the card must know this one really moved", change.moved)
-        assertEquals("Dwarka flat: 3.1 → 3.4", scoreChangeLine(change) { s -> "${s / 10}.${s % 10}" })
+        //  : the pair of numbers is glued with no-break spaces so it can never wrap apart (C12).
+        assertEquals("Dwarka flat: 3.1 → 3.4", scoreChangeLine(change) { s -> "${s / 10}.${s % 10}" })
     }
 
     /**
@@ -97,7 +98,7 @@ class ScoreChangeTest {
         assertEquals(0, notice.movedCount)
         assertTrue("the same number is said in words, not hidden", !notice.changes.first().moved)
         assertEquals(
-            "Home 1: 3.1 — unchanged",
+            "Home 1: 3.1 — unchanged",
             scoreChangeLine(notice.changes.first()) { s -> "${s / 10}.${s % 10}" },
         )
         assertEquals("We changed a rule — your score is unchanged", scoreChangeTitle(notice))

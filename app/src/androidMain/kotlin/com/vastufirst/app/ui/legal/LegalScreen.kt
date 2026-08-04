@@ -71,8 +71,10 @@ fun LegalScreen(onBack: () -> Unit) {
 
 @Composable
 private fun TagRow(provenance: VastuProvenance, description: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3), verticalAlignment = Alignment.Top) {
+    // Pill above text, never beside it: at font scale 2.0 the pill's intrinsic width squeezed a
+    // weighted sibling to a letters-per-line sliver (4 Aug audit C4).
+    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
         ProvenanceTag(provenance)
-        VText(description, style = VastuTheme.type.bodySm, color = VastuTheme.colors.textSecondary, modifier = Modifier.weight(1f))
+        VText(description, style = VastuTheme.type.bodySm, color = VastuTheme.colors.textSecondary)
     }
 }

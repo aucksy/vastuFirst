@@ -31,6 +31,10 @@ data class ZoneMapRoom(
     val fill: Color,
     val stroke: Color,
     val zoneTextColor: Color,
+    /** The plan letter-code ("K", "BR") drawn when [label] is too wide — never an ellipsis. */
+    val microLabel: String = "",
+    /** The verdict mark alone ("✓"/"✕"/"△") — the last ink to survive on a shrinking tile. */
+    val verdictGlyph: String = "",
 )
 
 /** One directional wedge of the compass ring, in fixed order N, NE, E, SE, S, SW, W, NW. */
@@ -128,22 +132,30 @@ fun ZoneMap(
             if (showLabels) {
                 val cx = tl.x + sz.width / 2f
                 val cy = tl.y + sz.height / 2f
-                // Labels must never overrun their tile (B7): at font scale 2.0 the room name + verdict
-                // are ~2× taller and would spill over the neighbouring room. The tile is a fixed-size
-                // Canvas rect, so we clamp to it — cut the name to one ellipsised line no wider than the
-                // tile, and degrade by how much vertical room the current font scale actually leaves:
-                // both lines when they fit, name-only when only one line fits, nothing when even one
-                // line won't (the tile colour still carries the verdict).
+                // Labels must never overrun their tile (B7), and they degrade on a MEASURED ladder,
+                // never an ellipsis (audit C8): a name too wide for its tile falls back to its plan
+                // letter-code ("K", "BR" — the editor tiles' own rung), because "Poo…" says less than
+                // "PJ". And the VERDICT mark dies last, not first: when only one line fits, the old
+                // code kept the name and dropped the tick/cross, leaving colour as the only verdict
+                // signal — which §2 rule 3 forbids. The direction+mark line degrades to the bare mark
+                // before it disappears.
                 val maxW = sz.width - 2f * s
+                fun fitted(vararg candidates: String): String? =
+                    candidates.firstOrNull { it.isNotEmpty() && measurer.measure(it, zoneStyle).size.width.toFloat() <= maxW }
+                val name = fitted(r.label, r.microLabel)
+                val verdict = fitted(r.zoneText, r.verdictGlyph)
                 val lineH = measurer.measure("Wg", zoneStyle).size.height.toFloat()
                 when {
-                    maxW <= 0f -> Unit
-                    sz.height >= lineH * 2.2f -> {
+                    maxW <= 0f || sz.height < lineH -> Unit
+                    sz.height >= lineH * 2.2f && name != null && verdict != null -> {
                         val dy = lineH * 0.6f
-                        drawCentered(measurer, r.label, Offset(cx, cy - dy), zoneStyle.copy(color = roomLabelInk), maxW)
-                        drawCentered(measurer, r.zoneText, Offset(cx, cy + dy), zoneStyle.copy(color = r.zoneTextColor), maxW)
+                        drawCentered(measurer, name, Offset(cx, cy - dy), zoneStyle.copy(color = roomLabelInk), maxW)
+                        drawCentered(measurer, verdict, Offset(cx, cy + dy), zoneStyle.copy(color = r.zoneTextColor), maxW)
                     }
-                    sz.height >= lineH -> drawCentered(measurer, r.label, Offset(cx, cy), zoneStyle.copy(color = roomLabelInk), maxW)
+                    // One line's worth of room (or only one of the two fits at all): on a scored map
+                    // the verdict wins the line; an unscored map has no verdict and the name takes it.
+                    verdict != null -> drawCentered(measurer, verdict, Offset(cx, cy), zoneStyle.copy(color = r.zoneTextColor), maxW)
+                    name != null -> drawCentered(measurer, name, Offset(cx, cy), zoneStyle.copy(color = roomLabelInk), maxW)
                     else -> Unit
                 }
             }

@@ -55,7 +55,9 @@ fun VastuChip(
  *
  * An index in [disabledIndices] renders dimmed and is **not tappable** — so a "coming soon" option
  * looks unavailable instead of a live-looking control that silently does nothing (UI-POLISH §3.F,
- * "no dead controls"). Give it a "· soon"-style label so the state is spoken, not only shown.
+ * "no dead controls"). Give it a "(soon)"-style label so the state is spoken, not only shown —
+ * parenthesised, not "· soon": a label that wraps at 200 % font must break into whole readable
+ * pieces, and a bare separator dot gets stranded at a line end (4 Aug audit C6).
  */
 @Composable
 fun VastuSegmented(

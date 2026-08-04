@@ -339,6 +339,14 @@ not re-flag them):
 - **landscape renders real landscape only since 4 Aug 2026.** The config's qualifier string lacked
   the `-land` token, so Robolectric normalised it to a 480 dp-wide portrait — every earlier
   "landscape" golden was actually a narrow portrait phone (audit D1).
+- **Long documents also get BOTTOM-HALF goldens (audit D2, added 4 Aug 2026 late).** A golden is a
+  viewport, not a document: every matrix capture starts at the top, so the report's disputes payoff,
+  the score's ranked problems and the unlock feature list had never been photographed at any config.
+  `LongScreenBottomScreenshotTest` renders report / report-living / score / unlock-paid in the
+  baseline window, scrolls to the screen's true last element, and keeps that picture as
+  `<screen>__bottom.png` and `<screen>__bottom_font2_0.png`. The scroll anchor is the screen's
+  bottom-most string — if a screen's ending changes, the test fails loudly instead of quietly
+  photographing the wrong place. These are eye-pass goldens only; they emit no L1 manifest.
 
 ### 6.5 Assertions on the rendered tree — what a picture cannot show
 

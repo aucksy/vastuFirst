@@ -153,7 +153,15 @@ private fun IdleBody(
     // ⭐ This opens the CAMERA (v0.6.6). It used to open the gallery — the same picker as the button
     // above, under a different name — which left someone holding a printed plan with no way to
     // photograph it, and made the button look broken. The label now describes what happens.
-    VastuButton("Take a photo of it now", onClick = onTakePhoto, style = VastuButtonStyle.SECONDARY)
+    // Disabled once the phone has shown it has no camera app (audit C14): a normal-looking button
+    // directly above "no camera app on this phone" invited a tap that does nothing. The line below
+    // says why it is off and where to go instead — never a silent grey mystery.
+    VastuButton(
+        "Take a photo of it now",
+        onClick = onTakePhoto,
+        style = VastuButtonStyle.SECONDARY,
+        enabled = !cameraUnavailable,
+    )
     if (cameraUnavailable) {
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(

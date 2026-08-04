@@ -34,7 +34,9 @@ object RenderMatrix {
     // capture pass. The geometry gate then reported phantom clipping on dozens of screens that were
     // never touched. `-port` on every portrait config makes each entry self-contained, so no config
     // can be polluted by whichever ran before it.
-    private const val BASE = "+w412dp-h915dp-port-xhdpi"
+    // Public so the scrolled bottom-half captures (LongScreenBottomScreenshotTest) render in the
+    // exact same window the rest of the matrix uses — one definition of "the baseline phone".
+    const val BASE = "+w412dp-h915dp-port-xhdpi"
 
     val configs: List<RenderConfig> = listOf(
         // 1 — the baseline / design-reference size, light, scale 1.0, English.

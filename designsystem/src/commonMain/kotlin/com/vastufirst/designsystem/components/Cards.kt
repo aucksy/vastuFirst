@@ -96,8 +96,12 @@ fun VastuListRow(
             Box(Modifier.width(VastuTheme.spacing.s3))
         }
         Column(Modifier.weight(1f)) {
-            VText(text = title, style = VastuTheme.type.h3, color = VastuTheme.colors.textPrimary, maxLines = 1)
-            VText(text = subtitle, style = VastuTheme.type.bodySm, color = VastuTheme.colors.textSecondary, maxLines = 1)
+            // Two lines before the ellipsis, not one (audit C10): at 200 % font a single line kept
+            // only "Unfinished …" of a name and "5 rooms so f…" of a date — the row lost everything
+            // it existed to say. Two lines carry the full name and the whole count-and-date at every
+            // font size in the matrix; the ellipsis remains as the true-overflow backstop.
+            VText(text = title, style = VastuTheme.type.h3, color = VastuTheme.colors.textPrimary, maxLines = 2)
+            VText(text = subtitle, style = VastuTheme.type.bodySm, color = VastuTheme.colors.textSecondary, maxLines = 2)
         }
         trailing?.invoke(this)
     }

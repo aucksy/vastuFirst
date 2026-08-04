@@ -69,10 +69,12 @@ fun scoreChangesFor(
     return if (changes.isEmpty()) null else ScoreChangeNotice(reason = reason, changes = changes)
 }
 
-/** One home's line in the card, in the reader's words. Pure, so the wording is unit-tested. */
+/** One home's line in the card, in the reader's words. Pure, so the wording is unit-tested.
+ *  The number pair is joined with no-break spaces (audit C12): at 200 % font "6.8 → 7.1" used to
+ *  wrap after the arrow, stranding the new number alone on the next line. */
 fun scoreChangeLine(change: ScoreChange, out: (Int) -> String): String =
-    if (change.moved) "${change.name}: ${out(change.oldScore)} → ${out(change.newScore)}"
-    else "${change.name}: ${out(change.newScore)} — unchanged"
+    if (change.moved) "${change.name}: ${out(change.oldScore)} → ${out(change.newScore)}"
+    else "${change.name}: ${out(change.newScore)} — unchanged"
 
 /** The card's heading, which must never overstate what happened. */
 fun scoreChangeTitle(notice: ScoreChangeNotice): String = when {

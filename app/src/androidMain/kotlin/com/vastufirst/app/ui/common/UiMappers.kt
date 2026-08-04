@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.common
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
@@ -183,6 +184,8 @@ fun buildZoneMapModel(
                 fill = fill,
                 stroke = stroke,
                 zoneTextColor = v?.let { colorOf(it) } ?: neutralInk,
+                microLabel = r.type.microLabel(),
+                verdictGlyph = v?.glyph() ?: "",
             )
         }
         val wedges = listOf(
