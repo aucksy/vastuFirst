@@ -76,6 +76,7 @@ fun ScoreScreen(
     onDone: () -> Unit,
     onAddDetails: () -> Unit,
     onChangeNorth: () -> Unit,
+    onRestart: () -> Unit = {},
     billing: Billing = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen (incl. its loading and
@@ -96,6 +97,7 @@ fun ScoreScreen(
         onAddDetails = onAddDetails,
         onChangeNorth = onChangeNorth,
         billingState = billing.state,
+        onRestart = onRestart,
     )
 }
 
@@ -126,17 +128,38 @@ fun ScoreContent(
     /** Drives the price and the notice on the unlock card, so the score screen can never promise
      *  a charge the unlock screen would not make. */
     billingState: BillingState = BillingState(),
+    /** Back to the flow's first question — the recovery path when rooms survived a process kill
+     *  but the intent answer did not. Rooms stay on the shared draft the whole way. */
+    onRestart: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val a = analysis
 
     when {
-        // Draft present but the engine is still computing (normal, ~50 ms): a calm loading line.
-        a == null && rooms.isNotEmpty() -> Box(
+        // Draft present AND complete, engine still computing (normal, ~50 ms): a calm loading line.
+        // ⚠ `intent != null` is part of "complete": without it the engine can never produce a
+        // result (buildEnginePlan returns null), so this branch would be a spinner with no exit —
+        // exactly what a process-killed session used to land on (4 Aug 2026 audit, B1).
+        a == null && rooms.isNotEmpty() && intent != null -> Box(
             Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
             contentAlignment = Alignment.Center,
         ) {
             LoadingState("Reading your home…")
+        }
+
+        // Rooms survived but the first answer didn't (the app was closed by the phone mid-flow,
+        // on an older build that didn't restore it). The rooms are safe; only the "what brings
+        // you here" answer is missing — so send the user to answer exactly that, keeping their
+        // rooms, instead of spinning forever or dead-ending at the plans list.
+        a == null && rooms.isNotEmpty() -> Box(
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
+            contentAlignment = Alignment.Center,
+        ) {
+            GuidanceState(
+                title = "One answer went missing",
+                body = "Your rooms are safe. The first question — what brings you to Vastu — was lost when the app closed. Answer it again and we'll read your home.",
+                action = { VastuButton("Answer the first question", onClick = onRestart) },
+            )
         }
 
         // No draft AND nothing computed — the OS reclaimed the in-progress plan (process death on a

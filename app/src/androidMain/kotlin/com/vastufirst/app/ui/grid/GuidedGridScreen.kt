@@ -242,10 +242,13 @@ private fun describe(type: RoomType, rect: CellRect, cols: Int, rows: Int): Stri
 fun GuidedGridScreen(
     vm: NewPlanViewModel,
     onNext: () -> Unit,
+    /** Open straight on the door step — how the on-photo review asks for the front door (B2). */
+    startInDoorMode: Boolean = false,
 ) {
     // Thin wrapper: it is the ONLY thing that touches the ViewModel, so the whole editor below can
     // be rendered headlessly from fixture state by the screenshot harness (GuidedGridContent).
     GuidedGridContent(
+        startInDoorMode = startInDoorMode,
         rooms = vm.rooms,
         door = vm.door,
         cols = vm.gridCols,
@@ -953,7 +956,15 @@ fun GuidedGridContent(
                 startTypeListOpen = startTypeListOpen,
             )
 
-            doorMode -> VastuButton("Done placing door", onClick = { doorMode = false }, large = false)
+            // SECONDARY, deliberately (audit C18): this exits the door step back to the full
+            // editor, while the filled primary below it ("Next — mark North") continues the flow.
+            // Two identical filled buttons stacked here read as the same action twice.
+            doorMode -> VastuButton(
+                "Done placing door",
+                onClick = { doorMode = false },
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
+            )
 
             armed != null -> PlacingBar(type = armed, onCancel = { armedType = null })
 
@@ -1021,8 +1032,19 @@ fun GuidedGridContent(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
+        // ⭐ A parking row is not a home, so it cannot go forward to be scored (audit B3): the
+        // engine would read the strip of equal squares as the layout — a doorless two-row "home"
+        // nobody lives in. The button says WHY it is off rather than sitting silently grey
+        // (§3.F: a control that cannot act must say what unlocks it).
+        if (parked) {
+            VText(
+                "Drag each room to its real place first — then we can read your home.",
+                style = VastuTheme.type.caption, color = colors.textTertiary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+        }
         VastuButton(
-            "Next — mark North", onClick = onNext, enabled = rooms.isNotEmpty(),
+            "Next — mark North", onClick = onNext, enabled = rooms.isNotEmpty() && !parked,
             modifier = Modifier.testTag("editor.next"),
         )
     }
@@ -1225,7 +1247,7 @@ private fun BoxScope.RoomTile(
     ) {
         // ⭐ The name is MEASURED into the tile rather than ellipsised down to "To…" — full name
         // across, else the full name turned on its side the way a plan labels a narrow room, else the
-        // short word, else nothing. See RoomTileLabel.
+        // short word, else the plan letter-code ("K", "BR"), else nothing. See RoomTileLabel.
         val style = VastuTheme.type.bodySm
         val measurer = rememberTextMeasurer(cacheSize = 32)
         val density = LocalDensity.current
@@ -1239,6 +1261,7 @@ private fun BoxScope.RoomTile(
                 chooseTileLabel(
                     full = room.type.label(),
                     short = room.type.shortLabel(),
+                    micro = room.type.microLabel(),
                     widthPx = innerW.toPx(),
                     heightPx = innerH.toPx(),
                 ) { text ->
@@ -1315,7 +1338,18 @@ private fun BoxScope.DoorMarker(door: GridDoor, rooms: List<GridRoom>, cell: and
             Modifier.size(VastuTheme.sizes.iconSm).clip(CircleShape).background(colors.secondary),
             contentAlignment = Alignment.Center,
         ) {
-            VText("D", style = VastuTheme.type.caption, color = colors.onPrimary)
+            // ⭐ The glyph is pinned to the CIRCLE, not to the font (audit C7). The "D" is sp-typed
+            // and doubled at 200 % font while its gold circle stayed 20 dp, so the letter sheared
+            // out of the badge and read as a broken shape. The circle cannot grow instead — it sits
+            // inside one grid cell and a font-scaled badge would blanket the neighbouring rooms.
+            // The exception is honest: this is a map symbol, and its meaning is already spoken in
+            // full by the marker's contentDescription above, not carried by the letter.
+            val badgeGlyph = with(LocalDensity.current) { (VastuTheme.sizes.iconSm / 2).toSp() }
+            VText(
+                "D",
+                style = VastuTheme.type.caption.copy(fontSize = badgeGlyph, lineHeight = badgeGlyph),
+                color = colors.onPrimary,
+            )
         }
     }
 }

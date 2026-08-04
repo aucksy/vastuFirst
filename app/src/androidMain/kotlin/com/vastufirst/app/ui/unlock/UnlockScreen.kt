@@ -2,6 +2,8 @@ package com.vastufirst.app.ui.unlock
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,6 +84,7 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
 }
 
 /** Unlock as a pure function of its state, so every billing mode can be rendered and looked at. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UnlockContent(
     state: BillingState,
@@ -91,14 +94,17 @@ fun UnlockContent(
 ) {
     val colors = VastuTheme.colors
     Column(
-        // verticalScroll so the notice at the bottom is reachable at font scale 2.0 — without it
-        // the "What you get" list pushes it off the bottom and it clips (UI-POLISH §3.B, measured by
-        // the render harness).
+        // verticalScroll so everything below the fold is reachable at font scale 2.0
+        // (UI-POLISH §3.B, measured by the render harness).
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
         VText("Unlock the full report", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+        // ⭐ FlowRow, not Row (audit C2). In a Row the huge price figure took nearly the whole
+        // width and the caption wrapped ONE CHARACTER PER LINE beside it — "hom / e, / fore / ver"
+        // next to ₹699.00 at the exact moment of purchase. In a FlowRow the caption sits beside
+        // the price where it fits, and drops below it as a whole readable phrase where it doesn't.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             // ⭐ The STORE'S OWN price string when there is one. It carries the customer's currency
             // and any local tax, and it is the number Google will actually charge — a hard-coded
             // figure would be a promise the app is not the one keeping.
@@ -106,28 +112,16 @@ fun UnlockContent(
             VText(
                 "one-time · this home, forever",
                 style = VastuTheme.type.body, color = colors.textTertiary,
-                modifier = Modifier.padding(bottom = VastuTheme.spacing.s3),
+                modifier = Modifier.align(Alignment.Bottom).padding(bottom = VastuTheme.spacing.s3),
             )
         }
         Spacer(Modifier.height(VastuTheme.spacing.s6))
 
-        SectionLabel("What you get")
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            // ⚠ FOUR LINES, AND THE COUNT IS THE POINT. Seven measured taller than the screen at
-            // 320 dp, pushing the unlock button itself below the fold — on the one screen where a
-            // button that has to be hunted for is worst. Each line is still a real section of the
-            // report ("Layout change and remedy for each" used to be true and still hid the problem:
-            // the remedies were the same two lines on almost every problem).
-            listOf(
-                "Every problem ranked, with the whole reason behind it",
-                "Remedies for that problem in that direction — and where none exists, we say so",
-                "The rooms rated not ideal, which the free score only counts",
-                "Your front door by name, and the source behind every rule",
-            ).forEach { Feature(it) }
-        }
-
-        Spacer(Modifier.height(VastuTheme.spacing.s8))
+        // ⭐ The button and its honesty notice come BEFORE the feature list (audit C3). At 200 %
+        // font the list alone outgrew the screen, so the one control the screen exists for — and
+        // the "no subscription / nothing has been charged" line under it — had to be hunted for
+        // below the fold. Price, button, and what it costs (or doesn't) now always share the
+        // first screenful; the sell follows for whoever wants it.
         VastuButton(
             billingActionLabel(state),
             onClick = onAction,
@@ -153,6 +147,23 @@ fun UnlockContent(
                 large = false,
                 enabled = !state.busy,
             )
+        }
+
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        SectionLabel("What you get")
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            // ⚠ FOUR LINES, AND THE COUNT IS THE POINT. Seven measured taller than the screen at
+            // 320 dp (and four still are at 200 % font, which is why the button now sits above the
+            // list rather than under it). Each line is still a real section of the report ("Layout
+            // change and remedy for each" used to be true and still hid the problem: the remedies
+            // were the same two lines on almost every problem).
+            listOf(
+                "Every problem ranked, with the whole reason behind it",
+                "Remedies for that problem in that direction — and where none exists, we say so",
+                "The rooms rated not ideal, which the free score only counts",
+                "Your front door by name, and the source behind every rule",
+            ).forEach { Feature(it) }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }

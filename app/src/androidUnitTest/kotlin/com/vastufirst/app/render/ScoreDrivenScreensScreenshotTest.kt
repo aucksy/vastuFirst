@@ -134,6 +134,16 @@ class ScoreDrivenScreensScreenshotTest {
         ScoreContent(rooms = rooms, north = north, intent = intent, analysis = null, onUnlock = {}, onFix = {})
     }
 
+    /**
+     * ⭐ B1's recovery card: rooms survived a process kill but the intent answer did not — the state
+     * that used to be an eternal "Reading your home…" spinner. Renders the guidance card with the
+     * "answer the first question" way out, so the trap's replacement is a screen someone has seen.
+     */
+    @Test
+    fun score_lost_intent() = render("score-lost-intent") {
+        ScoreContent(rooms = rooms, north = north, intent = null, analysis = null, onUnlock = {}, onFix = {})
+    }
+
     @Test
     fun report_building() = render("report") {
         ReportContent(analysis = analysis, intent = Intent.BUILDING)

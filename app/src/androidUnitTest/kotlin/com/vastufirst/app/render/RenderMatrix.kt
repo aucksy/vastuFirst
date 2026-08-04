@@ -42,7 +42,12 @@ object RenderMatrix {
         // 6 — a 360 dp phone set to "Display size = Largest" behaves like this.
         RenderConfig("w320", "+w320dp-h711dp-xhdpi"),
         // 7 — landscape; unreachable CTAs.
-        RenderConfig("landscape", "+w854dp-h480dp-xhdpi"),
+        //     ⚠ The `-land` token is NOT optional (audit D1). Without it Robolectric normalises the
+        //     requested 854×480 back to a 480 dp-wide PORTRAIT window, so every "landscape" golden
+        //     ever recorded before 4 Aug 2026 was actually a narrow portrait phone — the short-
+        //     viewport CTA question had never been tested. Canonical position: after height,
+        //     before ui-mode/night.
+        RenderConfig("landscape", "+w854dp-h480dp-land-xhdpi"),
         // 8 — pseudolocale, ~2× text expansion (affects resource strings once they exist).
         //     locale comes first in the qualifier order.
         RenderConfig("pseudo_en", "+en-rXA-w412dp-h915dp-xhdpi"),

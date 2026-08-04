@@ -144,7 +144,11 @@ fun SettingsContent(
         SectionLabel("Preferences")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Group {
-            RowItem("Language", trailing = "English")
+            // ⭐ No "Language — English" row (owner decision, 4 Aug 2026). It could not be tapped,
+            // the app is English-only this phase, and on a 200 % font phone it pushed "Delete all
+            // my data" below the fold. The welcome screen already tells the language story; a dead
+            // row here bought nothing and cost the screen's scarcest resource. Reinstate it only
+            // when languages actually switch (Phase 4).
             // "School profile / Traditional 8-zone" was our own jargon on a screen a customer opens.
             // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
             // label on a narrow phone at a large font.

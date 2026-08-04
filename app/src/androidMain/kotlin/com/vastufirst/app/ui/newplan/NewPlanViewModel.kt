@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.newplan
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vastufirst.data.PlanRepository
@@ -78,6 +79,15 @@ class NewPlanViewModel(
      * removes its unfinished row" is to poll and hope, which is how a flaky test enters a codebase.
      */
     private val compute: CoroutineDispatcher = Dispatchers.Default,
+    /**
+     * ⭐ Survives process death when the ViewModel does not. Holds only the two ids — which
+     * unfinished-home row this session owns, and which saved home is open — because everything
+     * else is already on disk under those ids. Without this, the OS killing the app mid-flow
+     * brought the user back to their restored screen with a BLANK draft behind it: the score
+     * span "Reading your home…" forever, and continuing to draw silently wrote a draft missing
+     * its intent (4 Aug 2026 audit, B1).
+     */
+    private val handle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
     var language by mutableStateOf("en")
@@ -209,19 +219,40 @@ class NewPlanViewModel(
                 }
             }
         }
+
+        // ⭐ Process-death recovery. A fresh entry has an empty handle, so this changes nothing
+        // about v0.6.6's "nothing is restored on entry" rule — the handle only carries ids across
+        // an OS kill of THIS session. A saved home wins over a draft: owning both means the draft
+        // became that home.
+        val killedWithPlan = handle.get<String>(KEY_PLAN_ID)
+        val killedWithDraft = handle.get<String>(KEY_DRAFT_ID)
+        when {
+            killedWithPlan != null -> loadById(killedWithPlan)
+            killedWithDraft != null -> resumeDraft(killedWithDraft)
+        }
     }
 
     // --- mutations (each nudges a debounced recompute) ---
 
     fun updateRooms(list: List<GridRoom>) {
-        // ⭐ Any change to the rooms means the user has started arranging them, so they are no longer
-        // parked in the row a scan left them in — and every question the editor asks about the shape
-        // of what is on screen becomes a fair one.
+        // ⭐ Any change to the rooms' GEOMETRY means the user has started arranging them, so they
+        // are no longer parked in the row a scan left them in — and every question the editor asks
+        // about the shape of what is on screen becomes a fair one.
+        //
+        // ⚠ GEOMETRY, not any change (audit B4). Correcting a room's KIND — "that's a study, not a
+        // bedroom" — moves nothing, but it used to clear this flag too: the screen flipped to
+        // "Place your rooms" and started asking shape questions about the parking row, the exact
+        // state the flag was built to prevent. A retype keeps every id, position and size, so
+        // comparing those is precisely "did the user arrange anything?".
         //
         // ⚠ This is only safe because the scan flow calls [markRoomsUnplaced] AFTER seeding the
         // rooms, not before. Living in the ViewModel is what makes it survive a rotation, which the
         // first version — remembered inside the editor — did not.
-        roomsUnplaced = false
+        val geometryUnchanged = list.size == rooms.size &&
+            list.zip(rooms).all { (a, b) ->
+                a.id == b.id && a.col == b.col && a.row == b.row && a.w == b.w && a.h == b.h
+            }
+        if (!geometryUnchanged) roomsUnplaced = false
         rooms = list
         // Keep the door on the new footprint (or clear it if the last room went) so it can never be
         // displayed in one place but scored/reloaded in another after a room edit (UAT F4). No-op when
@@ -326,9 +357,13 @@ class NewPlanViewModel(
         if (snap.isEmpty) {
             draftId?.let { repo.clearDraft(it) }
             draftId = null
+            handle.remove<String>(KEY_DRAFT_ID)
             return
         }
-        val id = draftId ?: "draft-${now()}".also { draftId = it }
+        val id = draftId ?: "draft-${now()}".also {
+            draftId = it
+            handle[KEY_DRAFT_ID] = it
+        }
         repo.saveDraft(id, snap, now())
     }
 
@@ -338,10 +373,16 @@ class NewPlanViewModel(
     // --- persistence ---
 
     fun save() {
-        // Assign the id BEFORE building, so the serialized Plan.id matches its row id.
+        // ⚠ Build FIRST, claim the id only once the plan exists. Claiming it before a failed build
+        // flipped this session into "already saved" mode with no row saved: the autosave loop
+        // (`if (planId == null) persistDraft()`) stopped writing drafts forever after that one tap
+        // (4 Aug 2026 audit, B1). The id still reaches the serialized Plan directly, so Plan.id
+        // matches its row id exactly as before.
         val id = planId ?: "plan-${now()}"
+        val plan = buildEnginePlan(rooms, door, intent, propertyType, north, id, cutOutCells, siteAnswers)
+            ?: return
         planId = id
-        val plan = buildPlan() ?: return
+        handle[KEY_PLAN_ID] = id
         viewModelScope.launch {
             // NonCancellable: "Read my home" saves then immediately navigates to Score; if the user
             // taps on to "See all my plans" (goHome pops this graph-scoped VM), the save must still
@@ -374,6 +415,7 @@ class NewPlanViewModel(
                 // finished home and once as an unfinished one.
                 draftId?.let { repo.clearDraft(it) }
                 draftId = null
+                handle.remove<String>(KEY_DRAFT_ID)
                 restoredFromDraft = false
             }
         }
@@ -458,6 +500,7 @@ class NewPlanViewModel(
             if (draft.isEmpty) return@launch
             applyDraft(draft)
             draftId = id
+            handle[KEY_DRAFT_ID] = id
             restoredFromDraft = true
             markDirty()
         }
@@ -484,12 +527,15 @@ class NewPlanViewModel(
         // unfinished home rather than resurrecting the one just thrown away.
         val discarded = draftId
         draftId = null
+        handle.remove<String>(KEY_DRAFT_ID)
+        handle.remove<String>(KEY_PLAN_ID)
         viewModelScope.launch { withContext(NonCancellable) { discarded?.let { repo.clearDraft(it) } } }
     }
 
     /** Load an existing saved home into the flow (reopen from the saved-plans list). */
     fun load(saved: SavedPlan) {
         planId = saved.id
+        handle[KEY_PLAN_ID] = saved.id
         name = saved.name
         intent = saved.intent
         propertyType = saved.propertyType
@@ -528,6 +574,10 @@ class NewPlanViewModel(
         // Defensive only — every persistence path assigns a real "Home N" name before writing, so
         // this should never actually reach the DB. Kept so a SavedPlan can never be built with null.
         const val FALLBACK_NAME = "My home"
+
+        // SavedStateHandle keys — the two ids that let a process-killed session find its own work.
+        const val KEY_DRAFT_ID = "newplan.draftId"
+        const val KEY_PLAN_ID = "newplan.planId"
     }
 
     /**

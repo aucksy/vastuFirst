@@ -21,9 +21,16 @@
 //     2. the full name, turned          "Toilet" running down a narrow room
 //     3. the short name, across         "WC"
 //     4. the short name, turned
-//     5. nothing — the tile still carries its colour, and selecting it names it in full below
+//     5. the plan letter-code           "K", "BR", "WC" — how architects letter a cramped plan
+//     6. nothing — only for a sliver too small for even one letter
 //
-// Rung 5 is unchanged behaviour for a single 1×1 cell, which genuinely has room for nothing.
+// ⭐ Rung 5 was added by the 4 Aug 2026 audit (C1). The ladder used to end at "nothing", and at
+// 200 % font that left up to 9 of 19 tray tiles as blank coloured squares on the very screen that
+// says "drag each room to where it really is" — a blocker, not a nicety. A letter code is not a
+// word anyone says out loud, but it IS the convention of the drawing this app imitates, and an
+// ambiguous letter beats an unlabelled square every time: selecting the tile still names it in
+// full. Rung 6 survives only for the genuinely impossible sliver, because drawing a glyph wider
+// than its tile is the §6.7b ink-overflow defect — the one class worse than blank.
 package com.vastufirst.app.ui.grid
 
 import com.vastufirst.app.ui.common.label
@@ -50,6 +57,36 @@ fun RoomType.shortLabel(): String = when (this) {
 }
 
 /**
+ * The last-resort plan letter-code — one or two capitals, the way architects letter a plan too
+ * cramped for words. Used only when neither the full nor the short name fits either way up.
+ * Every code is unique across the room kinds (pinned in RoomTileLabelTest), so even at the
+ * smallest sizes no two DIFFERENT kinds share a label.
+ */
+fun RoomType.microLabel(): String = when (this) {
+    RoomType.ENTRANCE -> "EN"
+    RoomType.KITCHEN -> "K"
+    RoomType.MASTER_BEDROOM -> "MB"
+    RoomType.BEDROOM -> "BR"
+    RoomType.GUEST_BEDROOM -> "GB"
+    RoomType.POOJA -> "PJ"
+    // "T", not "WC": the owner's own flat has a one-step-wide toilet, and at 200 % font a one-step
+    // tile is narrower than a two-letter code — the exact tile this rung exists to save.
+    RoomType.TOILET -> "T"
+    RoomType.BATHROOM -> "B"
+    RoomType.LIVING -> "L"
+    RoomType.DINING -> "D"
+    RoomType.STAIRCASE -> "ST"
+    RoomType.STUDY -> "SD"
+    RoomType.STORE -> "SR"
+    RoomType.GARAGE -> "G"
+    RoomType.BALCONY -> "BL"
+    RoomType.BASEMENT -> "BM"
+    RoomType.COURTYARD -> "CY"
+    RoomType.UTILITY -> "U"
+    RoomType.CORRIDOR -> "C"
+}
+
+/**
  * Choose the label for a tile [widthPx] × [heightPx], given a way to [measure] a string's drawn size
  * as (width, height) in pixels at the tile's text style.
  *
@@ -62,13 +99,14 @@ fun RoomType.shortLabel(): String = when (this) {
 fun chooseTileLabel(
     full: String,
     short: String,
+    micro: String,
     widthPx: Float,
     heightPx: Float,
     measure: (String) -> Pair<Float, Float>,
 ): TileLabel? {
     if (widthPx <= 0f || heightPx <= 0f) return null
     val tall = heightPx > widthPx
-    for (text in if (short == full) listOf(full) else listOf(full, short)) {
+    for (text in listOf(full, short, micro).distinct()) {
         val (w, h) = measure(text)
         // Across: the word must fit the width AND one line must fit the height.
         if (w <= widthPx && h <= heightPx) return TileLabel(text, rotated = false)

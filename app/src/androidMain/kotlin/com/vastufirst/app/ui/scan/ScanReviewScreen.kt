@@ -206,7 +206,10 @@ fun ScanReviewContent(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        VastuButton("These are my rooms — set North", onClick = onContinue)
+        // ⭐ "set the front door", not "set North" (audit B2): the next step is now the door ask on
+        // the grid — the one input this flow used to skip silently — and the button must not
+        // promise a different screen than the one it opens.
+        VastuButton("These are my rooms — set the front door", onClick = onContinue)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VastuButtonInline(
             "Something is wrong — fix on the grid",

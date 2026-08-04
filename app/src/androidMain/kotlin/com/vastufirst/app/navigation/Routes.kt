@@ -50,8 +50,19 @@ object Routes {
      * so they contain nothing a route would have to escape.
      */
     const val ARG_DRAFT_ID = "draftId"
-    const val GUIDED_GRID_ROUTE = "$GUIDED_GRID?$ARG_DRAFT_ID={$ARG_DRAFT_ID}"
+
+    /**
+     * ⭐ The editor opened straight on its DOOR step (audit B2). The on-photo review uses it: the
+     * front door is the heaviest single input the engine weighs, and the on-photo flow used to go
+     * from the review straight to North without ever asking for it — the classic grid flow asked,
+     * the photo flow silently scored doorless. The rooms are already on the grid (populated
+     * identically in both flows), so this lands on them with "tap the wall where your door is".
+     */
+    const val ARG_DOOR_MODE = "doorMode"
+    const val GUIDED_GRID_ROUTE =
+        "$GUIDED_GRID?$ARG_DRAFT_ID={$ARG_DRAFT_ID}&$ARG_DOOR_MODE={$ARG_DOOR_MODE}"
     fun guidedGridForDraft(draftId: String) = "$GUIDED_GRID?$ARG_DRAFT_ID=$draftId"
+    fun guidedGridForDoor() = "$GUIDED_GRID?$ARG_DOOR_MODE=true"
 
     /**
      * ⭐ North, opened from an already-saved home rather than from the end of the drawing flow

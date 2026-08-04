@@ -159,8 +159,17 @@ fun ZoneMap(
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f * s, 2f * s)),
         )
         val nMark = Offset(centre.x + ringR * sin(rad(north)), centre.y - ringR * cos(rad(north)))
-        drawCircle(color = paper, radius = 7f * s, center = nMark)
-        drawCircle(color = dial, radius = 7f * s, center = nMark, style = Stroke(width = 1f * s))
+        // ⭐ The circle is sized to the GLYPH, not a constant (audit C7). The "N" is sp-typed and
+        // doubles at 200 % font while `7f * s` does not move, so the letter poked through its own
+        // ring and read as a no-entry sign. Measuring the letter and keeping the ring just outside
+        // it means the pair scale together at every font size.
+        val nGlyph = measurer.measure("N", zoneStyle)
+        val nRadius = maxOf(
+            7f * s,
+            maxOf(nGlyph.size.width, nGlyph.size.height) / 2f + 2f * s,
+        )
+        drawCircle(color = paper, radius = nRadius, center = nMark)
+        drawCircle(color = dial, radius = nRadius, center = nMark, style = Stroke(width = 1f * s))
         drawCentered(measurer, "N", nMark, zoneStyle.copy(color = dial))
     }
 }

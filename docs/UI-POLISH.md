@@ -326,6 +326,20 @@ Pseudolocales are free translation-stress testing: enable with
 `buildTypes.debug.pseudoLocalesEnabled = true`. `en-XA` roughly doubles every string, which is the
 cheapest possible way to find every row that will shatter.
 
+Two configs whose quiet behaviour is DELIBERATE (documented per the 4 Aug 2026 audit, D3/D4 — do
+not re-flag them):
+
+- **dark is a proof of non-inversion, not a dark mode.** The app ships one light palette; the dark
+  config exists to prove system dark mode does not invert it. Byte-identical files to the light
+  goldens are the PASS state.
+- **pseudo_en / hi / ta are armed but inert for text** until strings move to resources (Phase 4):
+  every user-facing string is a Kotlin literal today, and a locale can only translate resource
+  strings. `rtl` still earns its place now — it mirrors layout regardless of strings (and the grid
+  and compass correctly do NOT mirror).
+- **landscape renders real landscape only since 4 Aug 2026.** The config's qualifier string lacked
+  the `-land` token, so Robolectric normalised it to a 480 dp-wide portrait — every earlier
+  "landscape" golden was actually a narrow portrait phone (audit D1).
+
 ### 6.5 Assertions on the rendered tree — what a picture cannot show
 
 Two facts that make naive assertions useless, and the correct form of each:

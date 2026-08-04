@@ -78,7 +78,9 @@ val appModule = module {
 
     // ViewModels.
     viewModel { HomeViewModel(repo = get(), engine = get()) }
-    viewModel { NewPlanViewModel(engine = get(), repo = get()) }
+    // The SavedStateHandle comes from the nav-graph entry that owns this ViewModel, so the two ids
+    // it carries (draft / saved home) survive the OS killing the process mid-flow (audit B1).
+    viewModel { NewPlanViewModel(engine = get(), repo = get(), handle = get()) }
     viewModel {
         val recipe = get<com.vastufirst.shared.scan.PlanReadRecipe>()
         ScanViewModel(

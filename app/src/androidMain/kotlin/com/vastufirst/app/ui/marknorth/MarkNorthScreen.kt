@@ -292,7 +292,12 @@ private fun CompassHelper(
         VastuButton(
             "Set North from this",
             onClick = { heading?.let(onUse) },
-            enabled = heading != null && compass.quality != CompassQuality.UNRELIABLE,
+            // ⭐ GOOD only (audit C13). While the warning above says the compass needs settling,
+            // this button used to stay enabled — offering to rotate the entire score around a
+            // reading the app had just said it distrusts. The words directly above the button say
+            // what unlocks it (settle the compass, or use the dial by hand), so the disabled state
+            // is never a silent grey mystery.
+            enabled = heading != null && compass.quality == CompassQuality.GOOD,
             large = false,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))

@@ -1,5 +1,6 @@
 package com.vastufirst.app.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +66,13 @@ fun VastuNavHost() {
             val repo = koinInject<PlanRepository>()
             var target by remember { mutableStateOf<String?>(null) }
             LaunchedEffect(Unit) {
-                val hasPlans = repo.observePlans().first().plans.isNotEmpty()
+                // ⭐ An UNREADABLE home counts too (audit B6). A user whose every saved home hit a
+                // read error used to be routed into first-run onboarding as though they were new —
+                // the one screen that says the opposite of "your data is still here" — while the
+                // reassuring "still saved" notice sat unreachable on the list they were steered
+                // away from. Their rows are on disk; the list is where that truth is told.
+                val saved = repo.observePlans().first()
+                val hasPlans = saved.plans.isNotEmpty() || saved.unreadable > 0
                 // ⭐ An unfinished home counts (v0.6.6). Nothing restores a draft by itself any more,
                 // so a user whose only home is half-drawn must land on the list that OFFERS it —
                 // otherwise the flow would open on a blank grid and their work, though safely on
@@ -207,10 +215,13 @@ fun VastuNavHost() {
                 val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 com.vastufirst.app.ui.scan.ScanReviewScreen(
                     handover = handover,
-                    // North comes right after — which also retires the old ordering complaint
-                    // (compass words spoken a screen before North was asked): this flow never
-                    // draws a grid before North is set.
-                    onContinue = { nav.go(Routes.MARK_NORTH) },
+                    // ⭐ The front door comes next, THEN North (audit B2). This flow used to jump
+                    // straight to North: the classic grid flow asked for the door — the heaviest
+                    // single input the engine weighs — and this flow silently scored without one.
+                    // The door step lands on the grid the scan already populated; a user who
+                    // doesn't want to mark it taps "Next — mark North" there, an explicit choice
+                    // rather than a question never put.
+                    onContinue = { nav.go(Routes.guidedGridForDoor()) },
                     onEditGrid = { nav.go(Routes.GUIDED_GRID) },
                     onBack = { nav.popBackStack() },
                 )
@@ -220,6 +231,7 @@ fun VastuNavHost() {
                 route = Routes.GUIDED_GRID_ROUTE,
                 arguments = listOf(
                     navArgument(Routes.ARG_DRAFT_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument(Routes.ARG_DOOR_MODE) { type = NavType.BoolType; defaultValue = false },
                 ),
             ) { entry ->
                 val vm = sharedVm(nav, entry)
@@ -227,7 +239,12 @@ fun VastuNavHost() {
                 // Every other way into this editor arrives with no id and therefore a clean grid.
                 val draftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
                 LaunchedEffect(draftId) { if (draftId != null) vm.resumeDraft(draftId) }
-                GuidedGridScreen(vm = vm, onNext = { nav.go(Routes.MARK_NORTH) })
+                GuidedGridScreen(
+                    vm = vm,
+                    onNext = { nav.go(Routes.MARK_NORTH) },
+                    // The on-photo review sends the user here to mark their front door (audit B2).
+                    startInDoorMode = entry.arguments?.getBoolean(Routes.ARG_DOOR_MODE) ?: false,
+                )
             }
             composable(
                 route = Routes.MARK_NORTH_ROUTE,
@@ -242,10 +259,21 @@ fun VastuNavHost() {
                 // put the score behind the score, so Back would land on the same screen again. The
                 // score reads North straight off the shared draft, so returning shows the new number.
                 val fromScore = entry.arguments?.getBoolean(Routes.ARG_FROM_SCORE) ?: false
+                // ⭐ Opened from a saved home's score, the dial is an EXPERIMENT until confirmed
+                // (audit B5). Every dial move autosaves ~50 ms later — that is what keeps the score
+                // live — so before this, "just seeing" a different North had silently rewritten the
+                // saved home by the time Back was pressed. Back (chevron AND system gesture) now
+                // puts the entry value back; only the confirm button keeps the new North.
+                val entryNorth = rememberSaveable { vm.north }
+                val cancelExperiment: () -> Unit = {
+                    if (fromScore && vm.north != entryNorth) vm.updateNorth(entryNorth)
+                    nav.popBackStack()
+                }
+                if (fromScore) BackHandler(onBack = cancelExperiment)
                 MarkNorthScreen(
                     vm = vm,
                     onRead = { vm.save(); if (fromScore) nav.popBackStack() else nav.go(Routes.SCORE) },
-                    onBack = { nav.popBackStack() },
+                    onBack = cancelExperiment,
                 )
             }
             composable(
@@ -265,6 +293,9 @@ fun VastuNavHost() {
                     onChangeNorth = { nav.go(Routes.markNorthFromScore()) },
                     onDone = { nav.goHome() },
                     onAddDetails = { nav.go(Routes.MORE_DETAILS) },
+                    // Recovery when rooms survived a process kill but the intent answer didn't:
+                    // back to the first question, on the same shared draft, so nothing redraws.
+                    onRestart = { nav.go(Routes.WELCOME) },
                 )
             }
             // The optional extras. Both ways out land back on the score, which re-reads the live

@@ -1,5 +1,6 @@
 package com.vastufirst.app.ui.newplan
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.data.VastuDatabaseFactory
@@ -82,6 +83,12 @@ class UnfinishedHomeTest {
      * inside the test rather than on a background thread the assertions would race.
      */
     private fun newSession() = NewPlanViewModel(engine, repo, now = { clock++ }, compute = main)
+
+    /** A session created WITH a saved-state handle — the app's real wiring. Passing the same
+     *  handle to a second session simulates the OS killing and restoring the process: the
+     *  ViewModel dies, the handle's contents come back. */
+    private fun sessionWith(handle: SavedStateHandle) =
+        NewPlanViewModel(engine, repo, now = { clock++ }, compute = main, handle = handle)
 
     private val someRooms = listOf(
         GridRoom("r1", RoomType.LIVING, 0, 0, 3, 2),
@@ -200,6 +207,22 @@ class UnfinishedHomeTest {
         )
     }
 
+    /**
+     * ⭐ B4 (4 Aug 2026 audit): correcting a room's KIND — "that's a study, not a bedroom" — moves
+     * nothing, so it must NOT un-park the parking row. It used to: the retype travelled the same
+     * updateRooms road as a drag, the flag cleared, and the screen flipped to "Place your rooms"
+     * with shape questions about the parking strip — the exact state the flag was built to prevent.
+     */
+    @Test
+    fun `correcting a room's kind keeps the parking row parked`() = runTest(main) {
+        val vm = newSession()
+        vm.updateRooms(someRooms)
+        vm.markRoomsUnplaced(true)
+        vm.updateRooms(retypeRoom(someRooms, "r1", RoomType.STUDY))
+        advanceUntilIdle()
+        assertTrue("a retype is not an arrangement — the rooms must stay parked", vm.roomsUnplaced)
+    }
+
     /** And the moment one room is moved it is a plan, and must never be re-parked afterwards. */
     @Test
     fun `once a room has been moved the home is never parked again`() = runTest(main) {
@@ -233,6 +256,71 @@ class UnfinishedHomeTest {
 
         assertNull("the thrown-away home must not come back", repo.loadDraft(id))
         assertTrue(repo.observeDrafts().first().isEmpty())
+    }
+
+    /**
+     * ⭐ B1 (4 Aug 2026 audit): a "Read my home" tap on a plan that cannot be built yet — the
+     * intent answer is missing after a process kill on an old build — must be a NO-OP, not a
+     * poison pill. It used to claim the saved-home id before checking the plan could build, which
+     * switched the autosave loop off (planId != null reads as "already saved") while saving
+     * nothing: every edit after that tap was silently lost.
+     */
+    @Test
+    fun `a tap that cannot save yet does not switch off the autosave`() = runTest(main) {
+        val vm = newSession()                       // intent deliberately never set
+        vm.updateRooms(someRooms)
+        advanceUntilIdle()
+        assertEquals(1, repo.observeDrafts().first().size)
+
+        vm.save()                                   // cannot build a plan without the intent
+        advanceUntilIdle()
+        assertTrue("nothing must be saved as a finished home", repo.observePlans().first().plans.isEmpty())
+
+        vm.updateRooms(someRooms + GridRoom("r3", RoomType.BEDROOM, 0, 3, 2, 2))
+        advanceUntilIdle()
+        assertEquals(
+            "edits after the failed tap must still reach the unfinished-home row",
+            3, repo.observeDrafts().first().single().roomCount,
+        )
+    }
+
+    /**
+     * ⭐ B1: the phone kills the app mid-draw. The ViewModel is gone; the saved-state handle and
+     * the unfinished-home row survive. The next session must pick its own work back up by itself —
+     * no eternal "Reading your home…", no blank grid over a full draft.
+     */
+    @Test
+    fun `a process-killed drawing session finds its own work again`() = runTest(main) {
+        val handle = SavedStateHandle()
+        val before = sessionWith(handle)
+        before.intent = Intent.BUYING
+        before.updateRooms(someRooms)
+        advanceUntilIdle()
+
+        val after = sessionWith(handle)             // process death: same handle, new ViewModel
+        advanceUntilIdle()
+        assertEquals(someRooms.map { it.id }, after.rooms.map { it.id })
+        assertEquals("the intent must come back too — without it the score can never compute",
+            Intent.BUYING, after.intent)
+        assertTrue(after.restoredFromDraft)
+    }
+
+    /** ⭐ B1: same kill, but AFTER the home was saved — the session reopens its saved home. */
+    @Test
+    fun `a process-killed session on a saved home reopens it`() = runTest(main) {
+        val handle = SavedStateHandle()
+        val before = sessionWith(handle)
+        before.intent = Intent.LIVING
+        before.updateRooms(someRooms)
+        before.updateDoor(GridDoor(DoorSide.N, 2))
+        advanceUntilIdle()
+        before.save()
+        advanceUntilIdle()
+
+        val after = sessionWith(handle)
+        advanceUntilIdle()
+        assertEquals(someRooms.map { it.id }, after.rooms.map { it.id })
+        assertNotNull("the score must compute again by itself", after.analysis.value)
     }
 
     /** Passing through the flow without drawing anything must leave nothing behind to be offered. */

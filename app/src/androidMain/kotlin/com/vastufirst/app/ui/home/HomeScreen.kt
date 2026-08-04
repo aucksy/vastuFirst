@@ -136,13 +136,25 @@ fun HomeContent(
         // throw inside this list's flow and empty the whole screen; now the rest load — but a home
         // quietly missing from the list looks exactly like a home the app deleted on its own, which
         // is the worst thing an app holding your data can appear to do. The row is still on disk.
+        //
+        // A real CARD, like its sibling notice (the score-change card), not a bare line of accent
+        // text — it was the weakest-contrast thing on the screen carrying its heaviest news (audit
+        // C11). And the promise is now honest (audit B7): "an update SHOULD bring it back" was
+        // unconditional, and for a truly corrupt row, false. "May" is what we actually know.
         if (unreadable > 0) {
-            VText(
-                if (unreadable == 1) "1 home couldn't be opened by this version. It's still saved — an update should bring it back."
-                else "$unreadable homes couldn't be opened by this version. They're still saved — an update should bring them back.",
-                style = VastuTheme.type.bodySm,
-                color = colors.verdictSuboptimal,
-            )
+            VastuCard(accent = colors.warning) {
+                VText(
+                    if (unreadable == 1) "1 home can't be opened" else "$unreadable homes can't be opened",
+                    style = VastuTheme.type.h3, color = colors.textPrimary,
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VText(
+                    (if (unreadable == 1) "This version of the app can't read it, but it is still saved on your phone — nothing has been deleted. "
+                    else "This version of the app can't read them, but they are still saved on your phone — nothing has been deleted. ") +
+                        "An app update may be able to open ${if (unreadable == 1) "it" else "them"} again.",
+                    style = VastuTheme.type.body, color = colors.textSecondary,
+                )
+            }
             Spacer(Modifier.height(VastuTheme.spacing.s3))
         }
 

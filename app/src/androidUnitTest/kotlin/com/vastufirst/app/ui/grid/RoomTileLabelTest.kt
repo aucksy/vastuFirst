@@ -31,7 +31,7 @@ class RoomTileLabelTest {
 
     @Test
     fun `a room with room for its name simply prints it`() {
-        val got = chooseTileLabel("Toilet", "WC", widthPx = 120f, heightPx = 90f, measure = normal)
+        val got = chooseTileLabel("Toilet", "WC", "T", widthPx = 120f, heightPx = 90f, measure = normal)
         assertEquals(TileLabel("Toilet", rotated = false), got)
     }
 
@@ -39,23 +39,24 @@ class RoomTileLabelTest {
     fun `⭐ a one-cell-wide toilet turns its name on its side rather than truncating it`() {
         // One cell across (34 dp ≈ 90 px at mdpi-ish), three deep. "Toilet" is 54 px long and needs
         // 18 px of line — across it does not fit in 30, down it fits easily in 270.
-        val got = chooseTileLabel("Toilet", "WC", widthPx = 30f, heightPx = 270f, measure = normal)
+        val got = chooseTileLabel("Toilet", "WC", "T", widthPx = 30f, heightPx = 270f, measure = normal)
         assertEquals("the full word must survive, turned rather than cut", TileLabel("Toilet", true), got)
     }
 
     @Test
-    fun `a turned label is refused when the line itself is wider than the room`() {
-        // The trap this exists for: at 200 % font a line box is 36 px tall, and a one-cell room is
-        // 30 px across — so turning "Toilet" would draw it hanging out of its own tile. It must fall
-        // to the short word, which fits across at 2 characters × 18 = 36… also too wide, so nothing.
-        val got = chooseTileLabel("Toilet", "WC", widthPx = 30f, heightPx = 270f, measure = huge)
-        assertNull("a label that cannot fit either way must be left out, never overflowed", got)
+    fun `⭐ at 200 percent font the one-cell toilet falls to its letter code, never to blank`() {
+        // At 200 % font a line box is 36 px tall and a one-cell room is 30 px across — turning
+        // "Toilet" would hang out of the tile, and "WC" is 36 px, too wide either way. The ladder
+        // used to end here at NOTHING (audit C1: blank coloured squares). Now the letter code "T"
+        // (18 px) fits across, so the tile always says something.
+        val got = chooseTileLabel("Toilet", "WC", "T", widthPx = 30f, heightPx = 270f, measure = huge)
+        assertEquals("the letter code must save the tile from going blank", TileLabel("T", false), got)
     }
 
     @Test
     fun `the short word rescues a room the full name cannot fit`() {
         // 44 px across: "Toilet" is 54 and will not go, "WC" is 18 and will.
-        val got = chooseTileLabel("Toilet", "WC", widthPx = 44f, heightPx = 40f, measure = normal)
+        val got = chooseTileLabel("Toilet", "WC", "T", widthPx = 44f, heightPx = 40f, measure = normal)
         assertEquals(TileLabel("WC", rotated = false), got)
     }
 
@@ -64,24 +65,35 @@ class RoomTileLabelTest {
         // Rotation is a narrow-room convention. In a room wider than it is tall it reads as a bug.
         // 60 px across takes "Court" (45) but not "Courtyard" (81); 20 px deep leaves no length
         // to turn into, and the room is wider than it is tall, so turning is not offered anyway.
-        val got = chooseTileLabel("Courtyard", "Court", widthPx = 60f, heightPx = 20f, measure = normal)
+        val got = chooseTileLabel("Courtyard", "Court", "CY", widthPx = 60f, heightPx = 20f, measure = normal)
         assertEquals("a wide room may shorten, but must not rotate", TileLabel("Court", false), got)
     }
 
     @Test
-    fun `a single cell with room for nothing prints nothing, as before`() {
-        assertNull(chooseTileLabel("Bedroom", "Bed", widthPx = 20f, heightPx = 20f, measure = normal))
+    fun `a single cell takes the letter code where no word fits`() {
+        // 20 px square at normal font: "Bedroom" (63) and "Bed" (27) both overflow, "BR" (18) fits.
+        // This tile printed NOTHING before the audit-C1 rung was added.
+        val got = chooseTileLabel("Bedroom", "Bed", "BR", widthPx = 20f, heightPx = 20f, measure = normal)
+        assertEquals(TileLabel("BR", false), got)
+    }
+
+    @Test
+    fun `only a sliver too small for one letter prints nothing`() {
+        // 10 px: even a single 9 px letter plus nothing to spare — the code "BR" is 18 px. Drawing
+        // ink wider than the tile is the §6.7b overflow defect, which is the one thing worse than
+        // blank, so this last empty rung survives.
+        assertNull(chooseTileLabel("Bedroom", "Bed", "BR", widthPx = 10f, heightPx = 10f, measure = normal))
     }
 
     @Test
     fun `a zero-sized tile is not a crash`() {
-        assertNull(chooseTileLabel("Bedroom", "Bed", widthPx = 0f, heightPx = 40f, measure = normal))
-        assertNull(chooseTileLabel("Bedroom", "Bed", widthPx = 40f, heightPx = 0f, measure = normal))
+        assertNull(chooseTileLabel("Bedroom", "Bed", "BR", widthPx = 0f, heightPx = 40f, measure = normal))
+        assertNull(chooseTileLabel("Bedroom", "Bed", "BR", widthPx = 40f, heightPx = 0f, measure = normal))
     }
 
     @Test
     fun `the full name is always preferred to the short one where both fit`() {
-        val got = chooseTileLabel("Bedroom", "Bed", widthPx = 200f, heightPx = 60f, measure = normal)
+        val got = chooseTileLabel("Bedroom", "Bed", "BR", widthPx = 200f, heightPx = 60f, measure = normal)
         assertEquals(TileLabel("Bedroom", false), got)
     }
 
@@ -96,6 +108,20 @@ class RoomTileLabelTest {
             )
             assertTrue("${t.name}: short form is blank", short.isNotBlank())
         }
+    }
+
+    @Test
+    fun `⭐ the letter codes are unique, tiny and never blank`() {
+        // The last-resort rung (audit C1): every room kind must have a code, at most two capitals,
+        // and no two kinds may share one — at parking-tray sizes the code can be the ONLY thing
+        // telling two tiles apart.
+        val codes = RoomType.entries.map { it.microLabel() }
+        for ((t, code) in RoomType.entries.zip(codes)) {
+            assertTrue("${t.name}: code is blank", code.isNotBlank())
+            assertTrue("${t.name}: code \"$code\" is longer than two letters", code.length <= 2)
+            assertEquals("${t.name}: code \"$code\" is not all-caps", code.uppercase(), code)
+        }
+        assertEquals("two room kinds share a letter code", codes.size, codes.toSet().size)
     }
 
     @Test
