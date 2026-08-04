@@ -39,7 +39,12 @@ def main():
     model = opts.get("model", "gemini-3.6-flash")
     tag = opts.get("tag", "r1")
 
-    prompt_path = os.path.join(ROOT, "shared", "src", "main", "resources", "scan", "plan-read-prompt.txt")
+    # --prompt=<path> swaps the prompt file for a candidate variant (e.g. the v4 building-box
+    # experiment). Default stays the app's live prompt so head-to-heads measure the model alone.
+    prompt_path = opts.get(
+        "prompt",
+        os.path.join(ROOT, "shared", "src", "main", "resources", "scan", "plan-read-prompt.txt"),
+    )
     prompt = open(prompt_path, encoding="utf-8").read()
     openrouter = "/" in model
     key_name = "OPENROUTER_API_KEY" if openrouter else "GEMINI_API_KEY"
