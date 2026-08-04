@@ -82,11 +82,12 @@ kotlin {
 // the Play Store — the reader sits behind an interface precisely so moving to a server proxy is a
 // one-file change later.
 // Since 4 Aug 2026 the reader speaks to OpenRouter (see reader-config.json for why, and
-// tools/scan-eval/READER-CANDIDATES.md for the measurements). The old GROQ_API_KEY is still read
-// as a last resort so a stale environment fails loud at the key check, not silently here.
+// tools/scan-eval/READER-CANDIDATES.md for the measurements). ⚠ No GROQ_API_KEY fallback: the key
+// check reads only OPENROUTER_API_KEY and green-skips when it is absent, so the old fallback baked
+// a dead Groq key into the APK from a stale environment and nothing ever failed loud — every scan
+// then died with "we couldn't read your plan". A keyless build refuses honestly instead.
 val planReaderKey: String = (project.findProperty("planReaderKey") as String?)
     ?: System.getenv("OPENROUTER_API_KEY")
-    ?: System.getenv("GROQ_API_KEY")
     ?: ""
 
 // ⭐⭐ PAYMENTS: BUILT IN FULL, SHIPPED SWITCHED OFF.

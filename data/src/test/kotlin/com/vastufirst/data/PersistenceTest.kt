@@ -244,6 +244,21 @@ class PersistenceTest {
         assertEquals(listOf("real"), repo.observeDrafts().first().map { it.id })
     }
 
+    /**
+     * ⭐ "Delete all my data" promises every home on the device. An unfinished home holds the same
+     * room layout a finished one does, so the wipe must cover drafts too. Found leaking in the
+     * 4 Aug 2026 audit: the button cleared the saved homes and left every draft behind.
+     */
+    @Test
+    fun `delete all really deletes the unfinished homes too`() = runTest {
+        repo.save(saved("p1", "Home 1"), now = 1L)
+        repo.saveDraft("d1", draft, now = 2L)
+        repo.deleteAll()
+        assertTrue(repo.observePlans().first().plans.isEmpty(), "every finished home gone")
+        assertTrue(repo.observeDrafts().first().isEmpty(), "every unfinished home gone too")
+        assertNull(repo.loadDraft("d1"), "and not loadable by id either")
+    }
+
     @Test
     fun `an unreadable draft is treated as no draft, never as a crash`() = runTest {
         driver.execute(null, "INSERT INTO draftEntity(id, draftJson, updatedAt) VALUES ('current','{{{',1)", 0)

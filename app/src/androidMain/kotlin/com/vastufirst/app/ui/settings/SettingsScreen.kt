@@ -158,6 +158,15 @@ fun SettingsContent(
                 onClick = { onSetPhotoReview(!photoReview) },
             )
         }
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        // ⚠ Without this line the toggle is a silent no-op for every scan that can't place rooms —
+        // flip it, scan, land on the grid anyway, and it reads as broken (4 Aug 2026 audit; the
+        // project rule is that nothing may do nothing silently). One line, one sentence, on purpose:
+        // a longer note pushed the last row below the fold at 320 dp (see the note below this Group).
+        VText(
+            "If a scan can't be checked on the photo, it opens on the grid.",
+            style = VastuTheme.type.bodySm, color = colors.textTertiary,
+        )
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         SectionLabel("Data & privacy")

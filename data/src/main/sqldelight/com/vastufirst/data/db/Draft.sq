@@ -36,3 +36,8 @@ INSERT OR REPLACE INTO draftEntity(id, draftJson, updatedAt) VALUES (?, ?, ?);
 
 deleteDraft:
 DELETE FROM draftEntity WHERE id = ?;
+
+-- "Delete all my data" must mean the unfinished homes too — a draft holds the same room layout a
+-- finished home does, and the promise on that button covers every home on the device.
+deleteAllDrafts:
+DELETE FROM draftEntity;

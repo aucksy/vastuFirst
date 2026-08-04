@@ -154,7 +154,11 @@ class PlanRepository(
 
     suspend fun delete(id: String): Unit = withContext(io) { queries.deleteById(id) }
 
-    suspend fun deleteAll(): Unit = withContext(io) { queries.deleteAll() }
+    /** Every home on the device — finished AND unfinished. "Delete all my data" promises both. */
+    suspend fun deleteAll(): Unit = withContext(io) {
+        queries.deleteAll()
+        draftQueries.deleteAllDrafts()
+    }
 
     // --- the unfinished homes (one row each, keyed by the draft's own id) ---
 

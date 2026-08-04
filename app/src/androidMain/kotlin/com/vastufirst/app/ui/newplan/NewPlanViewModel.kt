@@ -514,14 +514,13 @@ class NewPlanViewModel(
         viewModelScope.launch {
             val result = withContext(compute) { engine.analyze(saved.plan) }
             _analysis.value = result
-            // If the ruleset changed since this home was saved, refresh the stored score + version
-            // instead of leaving the list showing a number computed under an older ruleset (§5).
-            if (saved.ruleSetVersion != engine.ruleSetVersion()) {
-                repo.save(
-                    saved.copy(score = result.score, ruleSetVersion = engine.ruleSetVersion(), updatedAt = now()),
-                    now(),
-                )
-            }
+            // ⚠ Deliberately NO write-back here when the ruleset has moved since this home was
+            // saved. The score-change card on the home screen owns that write, and only after the
+            // user has read the old number, the new number and the reason and tapped through it
+            // (HomeViewModel's contract). Writing from here on open bypassed the card: the home
+            // vanished from the notice unacknowledged and jumped the list as "Updated today" for an
+            // edit the user never made. The screen the user is looking at shows the live number
+            // either way. (4 Aug 2026 audit.)
         }
     }
 

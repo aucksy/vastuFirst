@@ -184,11 +184,15 @@ private fun DoneBody(
     when (outcome) {
         is ScanOutcome.Placed -> RoomsBody(
             title = "We read ${outcome.rooms.size} rooms",
-            body = "We've put them on the grid roughly where they appear on your plan. " +
-                "Check each one and move anything that isn't right — nothing is scored until you do.",
+            // ⚠ Destination-neutral on purpose: the next screen is the grid OR the on-photo review,
+            // decided by the Settings choice at the moment of the tap (VastuNav). "Check them on the
+            // grid" was written before the toggle existed and named the wrong place for half the
+            // users. Both honesty claims stay: "roughly", and nothing scored until confirmed.
+            body = "We've put them roughly where they appear on your plan. " +
+                "Check each one — nothing is scored until you say it's right.",
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },
-            cta = "Check them on the grid",
+            cta = "Check what we read",
             onUseRooms = { onUseRooms(outcome) },
             onCorrectRoom = onCorrectRoom,
             onRetry = onRetry,

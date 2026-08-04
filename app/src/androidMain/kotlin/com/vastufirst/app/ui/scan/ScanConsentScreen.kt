@@ -27,10 +27,14 @@ import com.vastufirst.designsystem.theme.VastuTheme
  *
  * The copy is deliberately concrete — what leaves the phone, who receives it, what for, and what we
  * do not do — because a page of legal prose is how consent gets clicked through unread. Every line is
- * something we can stand behind: we send the one picture the user chose, we ask it one question, we
- * store nothing, and the alternative next to it gives the identical score without sending anything.
+ * something we can stand behind: we send the one picture the user chose, we ask it to read what is
+ * printed (sometimes a second model gives a second opinion — said on the card), we store nothing,
+ * and the alternative next to it gives the identical score without sending anything.
  *
  * ⚠ It describes OUR behaviour. It makes no promises on the reading service's behalf.
+ * ⚠ The "Who reads it" fact must match `reader-config.json`. When the reader moved from Groq to
+ * OpenRouter (4 Aug 2026) this card was the piece that lagged — and the consent key was bumped to
+ * v2 so every earlier yes is asked again, per the key's own contract in [PlanReadingConsent].
  */
 @Composable
 fun ScanConsentScreen(
@@ -59,8 +63,16 @@ fun ScanConsentScreen(
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         VastuCard {
             Fact("What we send", "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.")
-            Fact("Who reads it", "A plan-reading service called Groq, on computers in the United States.")
-            Fact("What we ask it", "Only to read the room names printed on your plan. It is never asked anything about Vastu.")
+            Fact(
+                "Who reads it",
+                "A relay called OpenRouter passes it to an AI model from OpenAI — and sometimes a " +
+                    "second one from Google for a second opinion. Their computers are abroad.",
+            )
+            Fact(
+                "What we ask it",
+                "Only to read what is printed on your plan — the room names and sizes, and where " +
+                    "each room sits. It is never asked anything about Vastu.",
+            )
             Fact("What we keep", "Nothing. Your plan is not stored by us, and it stays in your phone's own storage.")
             Fact("Who works out your score", "Your phone does, on its own, exactly as it does for a home you draw by hand.")
         }
