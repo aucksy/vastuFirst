@@ -1138,3 +1138,50 @@ Owner's "go ahead with the plan" plus one new build ask, executed in one green r
    non-fatal (goldens are committed into the repo; the install channel is the tagged release).
    Settings' fold budget rose 1 → 3 deliberately for the toggle row (scrollable screen, nothing
    unreachable; the two fixed info rows are the owner's space decision if he wants it back).
+
+## 3r. ⭐⭐ SHIPPED 4 Aug 2026 (day) — truth first, the reader test bench, and the tint that fits
+
+The day session after §3q, driven by the full audit (docs/FULL-AUDIT-2026-08-04.md) and three
+owner asks. Everything below is on main, green, goldens looked at:
+
+1. **Consent tells the truth, and re-asks.** The consent card still named Groq five hours after
+   the OpenRouter switch; §2c-grade fix same day. "Who reads it" now names OpenRouter → an OpenAI
+   model, sometimes a Google second opinion; "What we ask it" now admits sizes and positions, not
+   names alone; the consent key moved v1 → v2 so every old yes is asked again (the key's own
+   contract). Also: "Delete all my data" now deletes drafts too (it left every unfinished home on
+   disk), and opening a home no longer silently rewrites its stored score past the score-change
+   card.
+
+2. **The reader test bench (owner: the new reader is "Not Good still").** Settings-free, on the
+   scan screens themselves: an Auto/Luna/Gemini picker before a scan (Auto = shipping behaviour,
+   a named pick is that model only, deterministic), and on every result — placed, assisted,
+   refused — which model read it plus one "Rescan with …" button per configured model, same
+   decoded bytes. Model ids flow from `reader-config.json` through one shared recipe; labels are
+   spoken ("GPT 5.6 Luna"). Keyless builds cannot rescan; a stale id falls back to Auto; pinned in
+   ScanGatesTest.
+
+3. **The tint that fits (owner: highlight boxes "mostly bigger").** Cause proved FREE from stored
+   replies before any spend: room boxes are BUILDING-framed (prompt contract) and the review drew
+   them across the whole photo — on margin-heavy sheets the tints claimed up to 97 % of the page,
+   centres up to 0.28 of the sheet off, while full-bleed plan-006 sat at 0.008. Fix measured per
+   the config's own re-measure rule with the owner's approved count (35 scans ≈ ₹11 of a ₹150
+   ceiling): **prompt v4** adds the building's page box; `ScanMapper.pageSource` composes tint
+   sources through it (sanity-gated; placement maths never reads it, so scores are untouched by
+   construction). Truth-sheet centres: 0.17–0.28 → 0.007–0.033. The two apparent regressions were
+   the truth files' own frame mismatches (branded page graded against clean-sheet coordinates;
+   compound-frame dots on the villa) — every eyeballed overlay snaps to the real rooms. Same room
+   lists and printed-size capture as v3 on every sheet with a recording; v4 even read the
+   furnished-render class v3 refused. Kit in `tools/scan-eval/` (prompt-v4-building-box.txt,
+   exp-tint-v4.py — §2c-gated runner, exp-tint-v4-grade.py) so any future reader change re-runs
+   this measurement free.
+
+4. **The copy cut, both halves** (owner: "we ask users too much to read before the report… keep
+   the Vastu Knowledge touch"): every pre-report screen roughly halved its words; the report's
+   rule-file prose (defects/rooms/remedies/disputes) rewritten to ~11-word sentences with every
+   Sanskrit name kept and glossed on first use; honesty claims verified per entry. meta.version
+   untouched — no score moved, so no one is shown a "rules changed" notice for wording.
+
+⚠ **Release-tag lesson (cost one dead tag, v0.7.1):** the goldens commit never builds (its message
+carries the skip-ci marker) and the commit BEFORE it fails the release's own golden verify (new
+code, old pictures). After CI's goldens commit, add one plain commit on top — this doc note is
+exactly that — and tag THAT. v0.7.0 did the same, deliberately.
