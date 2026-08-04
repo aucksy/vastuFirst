@@ -85,6 +85,10 @@ jobs:
         run: node scripts/check-a11y-manifest.mjs .
 
       - name: Upload rendered screenshots
+        # ⚠ Non-fatal (4 Aug 2026): a full artifact storage quota killed the v0.7.0 release AFTER
+        # every gate had passed and BEFORE the release was published — the one step order made
+        # worse by a red herring. The goldens live in the repo; this artifact is a convenience.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: vastufirst-screenshots
