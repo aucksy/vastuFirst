@@ -1185,3 +1185,60 @@ owner asks. Everything below is on main, green, goldens looked at:
 carries the skip-ci marker) and the commit BEFORE it fails the release's own golden verify (new
 code, old pictures). After CI's goldens commit, add one plain commit on top — this doc note is
 exactly that — and tag THAT. v0.7.0 did the same, deliberately.
+
+## 3s. ⭐⭐ SHIPPED 4 Aug 2026 (evening) — Phase B of the audit: the seven worst fixes
+
+The evening session after §3r, working straight down docs/FULL-AUDIT-2026-08-04.md Phase B with
+the owner's "go". Everything below is on main, green, goldens looked at (tag v0.7.3):
+
+1. **The process-death trap is closed (B1).** The phone killing the app mid-flow used to leave a
+   forever "Reading your home…" spinner AND silently stop the draft autosave after one failed
+   save-tap. The flow ViewModel now carries its draft/saved-home ids across an OS kill (a
+   SavedStateHandle holding two ids — everything else was already on disk under them) and reopens
+   its own work; save() claims its id only after the plan actually builds; the dead score state
+   became a guidance card that routes back to the missing first question. Three new tests against
+   the real database; the recovery card has its own golden (score-lost-intent).
+
+2. **Room tiles never go blank (C1).** The label ladder gained a plan-letter-code rung ("K",
+   "BR", "T" — unique across all 19 kinds, pinned) before "nothing"; blank now needs a sliver too
+   small for one letter. Seen in the re-recorded tray goldens: every tile at 200 % font carries a
+   word or a code.
+
+3. **The money row (C2/C3).** Price caption wraps as words, never letters (FlowRow); buy button +
+   the "no subscription / nothing has been charged" line moved above the feature list — first
+   screenful at every font size, verified by eye at w320 and font2_0.
+
+4. **The flows tell the truth (B2/B3/B4).** On-photo review now asks for the front door (review →
+   door step on the already-populated grid → North; skipping is an explicit tap on the grid's own
+   Next, not a question never put). A parked scan can't be scored as a parking row (Next disabled
+   with the reason on screen). Retype no longer un-parks (geometry comparison, pinned).
+
+5. **Nothing silently rewrites or dead-ends (B5/B6/B7/C13).** Back cancels a "Change North"
+   experiment (chevron and gesture both). All-unreadable homes land on the saved-homes list, not
+   first-run onboarding. The unreadable notice is a real card and its promise is honest ("an
+   update MAY be able to open it"; nothing about it is deleted). "Set North from this" is
+   disabled until the compass settles.
+
+6. **The harness stopped lying about landscape (D1) and the badge glyphs (C7).** Every previous
+   __landscape.png was a 480 dp portrait (missing -land token) — re-recorded for real. The
+   zone-map "N" ring sizes itself to its letter; the door badge's "D" is pinned to its circle
+   (documented exception: a map symbol whose meaning is spoken by the marker's own description).
+
+Also: the dead "Language — English" settings row is gone (owner decision), and UI-POLISH §6.4
+documents the deliberate no-op configs (dark, pseudolocales) plus the landscape history.
+
+⚠ **Harness lesson, hard-won this session:** Robolectric qualifier strings starting with `+`
+MERGE onto the current configuration. Setting `-land` in one config silently left every config
+after it landscape too — the first CI round reported phantom clipping on dozens of untouched
+screens. Every config in RenderMatrix now names its orientation explicitly (`-port`/`-land`);
+never add a qualifier token to one config without adding its opposite to the rest.
+
+**Ratchet outcome:** all baselines auto-tightened to measured counts in the green run; one
+hand-adoption — editor-scanned-unplaced 33 → 43, all ten new findings being real landscape (the
+square grid is taller than a sideways phone's whole window; a landscape editor layout is its own
+future piece of work, and the ratchet now holds the number).
+
+**Parked, needing the owner:** whether an unreadable home's row gets its own "remove this home"
+(audit G4/G5 — the honest copy shipped, the delete surface didn't). **Not started:** D2 (tall
+captures of report/score/unlock bottom halves), Phase C copy inventory beyond §3r, Phase D
+delight list, dormant billing fixes.
