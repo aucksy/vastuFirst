@@ -231,3 +231,11 @@ counted in your score") verbatim; prayer-room rationale — descriptive half cut
 centre-shrine disclosure ("we will not call it a defect") verbatim. Deeper cuts were declined
 rather than deferred: what remains is fact density, not flab, and the only way to move the number
 further is deleting facts the voice rule protects.
+
+**v0.7.8 shipped, eye pass done.** Three CI rounds: the render ratchet flagged report-clean 3→9 and
+report-notideal 4→10 (fold-line straddles from prose moving up — verified benign on the pictures),
+and the a11y pass counted a fifth report chip-contrast warning (the parked Phase-4 family — one
+more chip scrolled into the checked window). Both adopted with reasons in their commits. Looked at:
+the report top (shorter intro + door card reading naturally), the not-ideal band (intro + the
+kitchen-West card whole), the bottom half (disputes, not-checked list, disclaimer, button — all in
+place).
