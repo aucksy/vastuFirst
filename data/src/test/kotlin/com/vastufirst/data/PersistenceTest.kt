@@ -124,7 +124,7 @@ class PersistenceTest {
 
         val result = repo.observePlans().first()
         assertEquals(2, result.plans.size, "the readable homes must still be there")
-        assertEquals(1, result.unreadable, "and the app must know one is missing, so it can say so")
+        assertEquals(1, result.unreadable.size, "and the app must know one is missing, so it can say so")
         assertEquals(setOf("good-1", "good-2"), result.plans.map { it.id }.toSet())
     }
 
@@ -134,14 +134,39 @@ class PersistenceTest {
         writeRawRow("bad", intent = "BUILDING", propertyType = "FLAT", planJson = "not json at all {{{")
         val result = repo.observePlans().first()
         assertEquals(1, result.plans.size)
-        assertEquals(1, result.unreadable)
+        assertEquals(1, result.unreadable.size)
+    }
+
+    @Test
+    fun `a quarantined row keeps its NAME, so the screen can say which home it is`() = runTest {
+        // ⭐ What broke the row is its plan JSON — the name is a different column and still reads.
+        // "Broken home can't be opened" gives the user a handle; "1 home can't be opened" gave them
+        // a count and nothing to act on (audit B7: the only delete anywhere was delete-ALL-data).
+        writeRawRow("bad", intent = "BUILDING", propertyType = "FLAT", planJson = "{")
+        val quarantined = repo.observePlans().first().unreadable.single()
+        assertEquals("bad", quarantined.id, "the id is the handle remove-this-home needs")
+        assertEquals("Broken home", quarantined.name)
+    }
+
+    @Test
+    fun `removing an unreadable home deletes THAT row and touches nothing else`() = runTest {
+        // The escape audit B7 asked for: per-home, not delete-everything — and it must not be able
+        // to take a healthy neighbour with it.
+        repo.save(saved("good", "Fine"), now = 10L)
+        writeRawRow("bad", intent = "BUILDING", propertyType = "FLAT", planJson = "{")
+
+        repo.delete("bad")
+
+        val after = repo.observePlans().first()
+        assertEquals(0, after.unreadable.size, "the broken row is gone")
+        assertEquals("good", after.plans.single().id, "and the healthy home is untouched")
     }
 
     @Test
     fun `a row with an unknown property type is quarantined`() = runTest {
         repo.save(saved("good", "Fine"), now = 10L)
         writeRawRow("bad", intent = "BUILDING", propertyType = "HOUSEBOAT", planJson = "{}")
-        assertEquals(1, repo.observePlans().first().unreadable)
+        assertEquals(1, repo.observePlans().first().unreadable.size)
     }
 
     @Test
@@ -156,7 +181,7 @@ class PersistenceTest {
         """.trimIndent().replace("\n", " ")
         writeRawRow("future", intent = "BUYING", propertyType = "FLAT", planJson = json)
         val result = repo.observePlans().first()
-        assertEquals(0, result.unreadable, "an unknown field must not make a home unreadable")
+        assertEquals(0, result.unreadable.size, "an unknown field must not make a home unreadable")
         assertEquals("future", result.plans.single().id)
     }
 
@@ -365,7 +390,7 @@ class PersistenceTest {
             val after = PlanRepository(VastuDatabaseFactory.create(old), Dispatchers.Unconfined)
             val plans = after.observePlans().first()
             assertEquals(2, plans.plans.size, "the upgrade must not lose a saved home")
-            assertEquals(0, plans.unreadable)
+            assertEquals(0, plans.unreadable.size)
             assertEquals(
                 setOf("Gurgaon flat", "Site in Jaipur"), plans.plans.map { it.name }.toSet(),
                 "and it must not quietly rewrite them either",

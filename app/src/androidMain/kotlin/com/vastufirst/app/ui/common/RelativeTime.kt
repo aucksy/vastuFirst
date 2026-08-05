@@ -11,10 +11,16 @@ import java.util.Locale
  * say a fixed "updated recently" for every home). Buckets by whole calendar days in the given zone so
  * "today"/"yesterday" match what the user perceives, not a rolling 24-hour window:
  *
- *   same day    → "Updated today"
- *   1 day ago   → "Updated yesterday"
- *   2..6 days   → "Updated N days ago"
- *   older       → "Updated on 3 Jul" (or "3 Jul 2025" if a different year)
+ *   same day    → "today"
+ *   1 day ago   → "yesterday"
+ *   2..6 days   → "N days ago"
+ *   older       → "3 Jul" (or "3 Jul 2025" if a different year)
+ *
+ * ⚠ No "Updated" prefix, and that is a measured cut, not a style choice. Every caller puts this
+ * after a "·" that already carries the when-was-this meaning ("Living · …", "5 rooms so far · …"),
+ * and at 200 % font the prefix was exactly the ~8 characters that pushed the row's second line into
+ * the ellipsis — the owner's phone showed "Updated 3 d…", a date that says nothing. The stated
+ * blemish of v0.7.4.
  *
  * Pure: `now` and `zone` are passed in, so it is deterministic and unit-tested (and the screenshot
  * harness can pin a fixed `now` for stable goldens).
@@ -29,12 +35,12 @@ fun relativeUpdated(
     val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     val days = ChronoUnit.DAYS.between(then, today)
     return when {
-        days <= 0L -> "Updated today"          // same day (or a clock-skewed future stamp)
-        days == 1L -> "Updated yesterday"
-        days < 7L -> "Updated $days days ago"
+        days <= 0L -> "today"          // same day (or a clock-skewed future stamp)
+        days == 1L -> "yesterday"
+        days < 7L -> "$days days ago"
         else -> {
             val pattern = if (then.year == today.year) "d MMM" else "d MMM yyyy"
-            "Updated on " + then.format(DateTimeFormatter.ofPattern(pattern, locale))
+            then.format(DateTimeFormatter.ofPattern(pattern, locale))
         }
     }
 }

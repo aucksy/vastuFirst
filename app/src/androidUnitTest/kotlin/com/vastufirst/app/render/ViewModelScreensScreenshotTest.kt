@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.runtime.Composable
 import com.vastufirst.app.ui.home.DiscardDraftDialogContent
 import com.vastufirst.app.ui.home.HomeContent
+import com.vastufirst.app.ui.home.RemoveUnreadableDialogContent
 import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.settings.SettingsContent
 import com.vastufirst.app.ui.welcome.WelcomeContent
@@ -69,18 +70,33 @@ class ViewModelScreensScreenshotTest {
      * ⭐ A saved home this build cannot read. Until now one such row threw inside the list's flow and
      * emptied the whole screen; the other homes now load and the missing one is SAID rather than
      * silently skipped — because a home that vanishes without a word looks exactly like a home the
-     * app deleted by itself. No screenshot could ever reach this state by tapping, so it gets one.
+     * app deleted by itself. Now named, with its own remove (audit B7) — the name column reads even
+     * when the contents don't. No screenshot could ever reach this state by tapping, so it gets one.
      */
     @Test
     fun home_unreadable() {
         val content: @Composable () -> Unit = {
             HomeContent(
                 plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
-                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW, unreadable = 1,
+                onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                unreadable = listOf(RenderFixtures.unreadableHome),
             )
         }
         captureAcrossMatrix("home-unreadable", content)
         writeManifestAcrossMatrix("home-unreadable", content)
+    }
+
+    /**
+     * The are-you-sure behind that row's Remove. Its body carries the one fact the discard dialog's
+     * doesn't: what is being given up is the CHANCE of a future rescue, not visible rooms.
+     */
+    @Test
+    fun home_remove_unreadable() {
+        val content: @Composable () -> Unit = {
+            RemoveUnreadableDialogContent(name = "Home 3", onCancel = {}, onRemove = {})
+        }
+        captureAcrossMatrix("home-remove", content)
+        writeManifestAcrossMatrix("home-remove", content)
     }
 
     /**

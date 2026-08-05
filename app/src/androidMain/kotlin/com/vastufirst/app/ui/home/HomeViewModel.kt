@@ -75,6 +75,13 @@ class HomeViewModel(
     /** Throw away one unfinished home. Confirmed on screen first — it cannot be undone. */
     fun deleteDraft(id: String) { viewModelScope.launch { repo.clearDraft(id) } }
 
+    /**
+     * Remove ONE home this build cannot read (audit B7 — the only alternative was Settings →
+     * delete ALL data). Confirmed on screen first, and the confirmation says the true price: the
+     * row was being kept so a later build could rescue it, and removing it ends that chance.
+     */
+    fun removeUnreadable(id: String) { viewModelScope.launch { repo.delete(id) } }
+
     /** Rename a saved home (blank is ignored by the repository). The list updates via its flow. */
     fun rename(id: String, name: String) { viewModelScope.launch { repo.rename(id, name) } }
 }

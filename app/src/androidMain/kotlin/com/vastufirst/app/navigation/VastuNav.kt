@@ -72,7 +72,7 @@ fun VastuNavHost() {
                 // reassuring "still saved" notice sat unreachable on the list they were steered
                 // away from. Their rows are on disk; the list is where that truth is told.
                 val saved = repo.observePlans().first()
-                val hasPlans = saved.plans.isNotEmpty() || saved.unreadable > 0
+                val hasPlans = saved.plans.isNotEmpty() || saved.unreadable.isNotEmpty()
                 // ⭐ An unfinished home counts (v0.6.6). Nothing restores a draft by itself any more,
                 // so a user whose only home is half-drawn must land on the list that OFFERS it —
                 // otherwise the flow would open on a blank grid and their work, though safely on

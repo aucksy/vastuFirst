@@ -45,16 +45,32 @@ fun nextHomeNumber(existingNames: List<String>): Int {
 }
 
 /**
- * The saved homes, plus a count of any rows that could not be read.
+ * A saved row this build could not decode — surfaced BY NAME, not folded into a count.
  *
- * ⚠ The count is not a diagnostic — it is a promise to the user. A home that silently disappears
- * from the list looks exactly like a home the app deleted on its own, which is the worst thing a
- * paid app that holds your data can appear to do. Showing "1 home couldn't be opened" is honest, and
- * the row is left in the database rather than cleaned up, so a later build can still rescue it.
+ * The name is trustworthy even when nothing else is: what breaks a row is its plan JSON or an enum
+ * value from another build, and those live in different columns. [name] and [updatedAt] are plain
+ * text and a number, so "Home 3 · 12 Jul" can be said about a home whose contents are gone —
+ * which is what lets the screen offer removing *that one home* instead of a count with no handle
+ * on it (audit B7: the only delete in the app was Settings → delete ALL data).
+ */
+data class UnreadableHome(
+    val id: String,
+    val name: String,
+    val updatedAt: Long,
+)
+
+/**
+ * The saved homes, plus any rows that could not be read.
+ *
+ * ⚠ The unreadable list is not a diagnostic — it is a promise to the user. A home that silently
+ * disappears from the list looks exactly like a home the app deleted on its own, which is the worst
+ * thing a paid app that holds your data can appear to do. Saying "Home 3 can't be opened" is honest,
+ * and the row is left in the database rather than cleaned up, so a later build can still rescue it —
+ * unless the user chooses to remove it, which is theirs to choose, not ours.
  */
 data class SavedPlans(
     val plans: List<SavedPlan> = emptyList(),
-    val unreadable: Int = 0,
+    val unreadable: List<UnreadableHome> = emptyList(),
 )
 
 /**
@@ -97,8 +113,14 @@ class PlanRepository(
 
     fun observePlans(): Flow<SavedPlans> =
         queries.selectAll().asFlow().mapToList(io).map { rows ->
-            val decoded = rows.map(::toDomainOrNull)
-            SavedPlans(plans = decoded.filterNotNull(), unreadable = decoded.count { it == null })
+            val decoded = rows.map { it to toDomainOrNull(it) }
+            SavedPlans(
+                plans = decoded.mapNotNull { it.second },
+                // The identity columns still read on a row whose plan JSON does not — see
+                // [UnreadableHome] for why that is the difference between a count and a handle.
+                unreadable = decoded.filter { it.second == null }
+                    .map { (e, _) -> UnreadableHome(e.id, e.name, e.updatedAt) },
+            )
         }
 
     fun observePlan(id: String): Flow<SavedPlan?> =

@@ -29,6 +29,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlan
+import com.vastufirst.data.UnreadableHome
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.EmptyState
 import com.vastufirst.designsystem.components.IconTapButton
@@ -79,6 +80,7 @@ fun HomeScreen(
         drafts = drafts,
         onOpenDraft = onOpenDraft,
         onDiscardDraft = viewModel::deleteDraft,
+        onRemoveUnreadable = viewModel::removeUnreadable,
     )
 }
 
@@ -92,8 +94,10 @@ fun HomeContent(
     onSettings: () -> Unit,
     onRename: (String, String) -> Unit = { _, _ -> },
     now: Long = System.currentTimeMillis(),
-    /** Saved rows this build could not read. Shown rather than hidden — see the note below. */
-    unreadable: Int = 0,
+    /** Saved rows this build could not read. Shown BY NAME rather than hidden — see the note below. */
+    unreadable: List<UnreadableHome> = emptyList(),
+    /** Remove one unreadable row for good. Reached only through the are-you-sure dialog. */
+    onRemoveUnreadable: (String) -> Unit = {},
     /** Homes scored under an older set of Vastu rules, re-run under today's. Null = nothing changed. */
     scoreChanges: ScoreChangeNotice? = null,
     onAcknowledgeScoreChanges: (ScoreChangeNotice) -> Unit = {},
@@ -114,6 +118,8 @@ fun HomeContent(
     // The unfinished home the user has asked to throw away, waiting on the confirmation. Throwing one
     // away cannot be undone, so it is never a single tap.
     var discarding by remember { mutableStateOf<SavedDraft?>(null) }
+    // The unreadable home the user has asked to remove — same rule: destructive, so never one tap.
+    var removing by remember { mutableStateOf<UnreadableHome?>(null) }
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
@@ -139,21 +145,41 @@ fun HomeContent(
         //
         // A real CARD, like its sibling notice (the score-change card), not a bare line of accent
         // text — it was the weakest-contrast thing on the screen carrying its heaviest news (audit
-        // C11). And the promise is now honest (audit B7): "an update SHOULD bring it back" was
-        // unconditional, and for a truly corrupt row, false. "May" is what we actually know.
-        if (unreadable > 0) {
+        // C11). Each home is named — the name column still reads when the contents don't — and each
+        // gets its own remove (audit B7: this card was a permanent dead end; the only delete in the
+        // app took ALL data with it). Removing is behind an are-you-sure that states the real
+        // price, because the row was being kept precisely so a later build could rescue it.
+        if (unreadable.isNotEmpty()) {
+            val one = unreadable.size == 1
             VastuCard(accent = colors.warning) {
                 VText(
-                    if (unreadable == 1) "1 home can't be opened" else "$unreadable homes can't be opened",
+                    if (one) "1 home can't be opened" else "${unreadable.size} homes can't be opened",
                     style = VastuTheme.type.h3, color = colors.textPrimary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    (if (unreadable == 1) "This version of the app can't read it, but it is still saved on your phone — nothing has been deleted. "
-                    else "This version of the app can't read them, but they are still saved on your phone — nothing has been deleted. ") +
-                        "An app update may be able to open ${if (unreadable == 1) "it" else "them"} again.",
+                    (if (one) "It's still on your phone — nothing has been deleted. " else "They're still on your phone — nothing has been deleted. ") +
+                        "An app update may open ${if (one) "it" else "them"} again.",
                     style = VastuTheme.type.body, color = colors.textSecondary,
                 )
+                unreadable.forEach { home ->
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        VText(
+                            "${home.name} · ${relativeUpdated(home.updatedAt, now)}",
+                            style = VastuTheme.type.label, color = colors.textPrimary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconTapButton(
+                            glyph = "✕",
+                            contentDescription = "Remove ${home.name}",
+                            onClick = { removing = home },
+                        )
+                        // textSecondary, not the accent, for the same measured contrast reason as
+                        // the draft row's "Carry on" (3.64 : 1 on this surface, 4.5 required).
+                        VText("Remove", style = VastuTheme.type.label, color = colors.textSecondary)
+                    }
+                }
             }
             Spacer(Modifier.height(VastuTheme.spacing.s3))
         }
@@ -215,6 +241,64 @@ fun HomeContent(
                 roomCount = draft.roomCount,
                 onCancel = { discarding = null },
                 onDiscard = { onDiscardDraft(draft.id); discarding = null },
+            )
+        }
+    }
+
+    removing?.let { home ->
+        Dialog(onDismissRequest = { removing = null }) {
+            RemoveUnreadableDialogContent(
+                name = home.name,
+                onCancel = { removing = null },
+                onRemove = { onRemoveUnreadable(home.id); removing = null },
+            )
+        }
+    }
+}
+
+/**
+ * "Remove this home for good?" — its own composable so the screenshot harness can render it without
+ * a live Dialog window, exactly as the rename and discard boxes are.
+ *
+ * ⚠ It names the true price, which is different from the discard dialog's. An unfinished home loses
+ * rooms the user can see; this row's contents are invisible, and the thing being given up is the
+ * CHANCE of a future rescue. Someone should decline this dialog knowing exactly that.
+ */
+@Composable
+fun RemoveUnreadableDialogContent(
+    name: String,
+    onCancel: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VastuTheme.shapes.lg)
+            .background(colors.paper)
+            .padding(VastuTheme.spacing.s6),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+    ) {
+        VText("Remove $name for good?", style = VastuTheme.type.h3, color = colors.textPrimary)
+        VText(
+            "This home can't be opened, so we can't show you what's in it. Removing it deletes " +
+                "it from your phone — a future app update won't be able to bring it back. " +
+                "Your other homes aren't affected.",
+            style = VastuTheme.type.body, color = colors.textSecondary,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            VastuButton(
+                "Keep it",
+                onClick = onCancel,
+                large = false,
+                modifier = Modifier.weight(1f),
+            )
+            VastuButton(
+                "Remove it",
+                onClick = onRemove,
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
+                modifier = Modifier.weight(1f),
             )
         }
     }

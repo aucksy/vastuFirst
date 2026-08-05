@@ -11,6 +11,7 @@ import com.vastufirst.shared.scan.ScanMapper
 import com.vastufirst.app.ui.grid.GuidedGridContent
 import com.vastufirst.app.ui.home.DiscardDraftDialogContent
 import com.vastufirst.app.ui.home.HomeContent
+import com.vastufirst.app.ui.home.RemoveUnreadableDialogContent
 import com.vastufirst.app.ui.home.RenameDialogContent
 import com.vastufirst.app.ui.legal.LegalScreen
 import com.vastufirst.app.ui.legal.PrivacyScreen
@@ -60,6 +61,17 @@ class AccessibilityTest {
             },
             "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },
             "home-discard" to { DiscardDraftDialogContent(roomCount = 5, onCancel = {}, onDiscard = {}) },
+            // ⭐ The unreadable-home card's per-home remove (audit B7): a ✕ tap target beside a
+            // passive "Remove" hint — the same two-targets shape as the rows above, on a card
+            // whose warning accent has to survive the contrast pass too.
+            "home-unreadable" to {
+                HomeContent(
+                    plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
+                    onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
+                    unreadable = listOf(RenderFixtures.unreadableHome),
+                )
+            },
+            "home-remove" to { RemoveUnreadableDialogContent(name = "Home 3", onCancel = {}, onRemove = {}) },
             "settings" to { SettingsContent(onLegal = {}, onBack = {}, onDeleteAll = {}) },
             "legal" to { LegalScreen(onBack = {}) },
             // UnlockContent, not UnlockScreen: the screen now resolves the billing seam from Koin,

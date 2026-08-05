@@ -5,6 +5,7 @@ import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.newplan.buildEnginePlan
 import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlan
+import com.vastufirst.data.UnreadableHome
 import com.vastufirst.engine.VastuEngine
 import com.vastufirst.shared.editor.DraftRoom
 import com.vastufirst.shared.editor.DraftSnapshot
@@ -57,6 +58,12 @@ object RenderFixtures {
         java.time.LocalDate.of(2026, 7, 15).atTime(12, 0).toInstant(java.time.ZoneOffset.UTC).toEpochMilli()
 
     private const val ONE_DAY_MS: Long = 24L * 60 * 60 * 1000
+
+    /** A saved row this build cannot decode — the name and timestamp columns still read, which is
+     *  what lets the card name it and offer removing exactly this one (audit B7). The date is an
+     *  exact whole-day offset for the same timezone-stability reason as [savedPlans]. */
+    val unreadableHome: UnreadableHome =
+        UnreadableHome(id = "u1", name = "Home 3", updatedAt = FIXED_NOW - 12 * ONE_DAY_MS)
 
     /** Two saved homes — enough to prove the row layout, the score pill, the rename pencil and the
      *  side-by-side spacing; distinct names + times so the compare reads as two different homes. */

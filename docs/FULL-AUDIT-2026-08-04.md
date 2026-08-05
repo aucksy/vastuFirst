@@ -35,7 +35,7 @@ image actually leaves any phone from current builds. A1+A2 must land **before** 
 | B4 | **Retype un-parks parked rooms.** Correcting one room's *kind* routes through `updateRooms()`, which unconditionally sets `roomsUnplaced = false` — the screen flips to "Place your rooms" + shape questions over the parking row, the exact state the flag was built to prevent. | `GuidedGridScreen.kt:953`, `NewPlanViewModel.kt:224` | HURTS |
 | B5 | **"Change North" from a saved home has no cancel.** Every dial move autosaves ~50 ms later; Back reverts nothing. Experimenting = permanent. | `VastuNav.kt:245-249`, `NewPlanViewModel.kt:196-209` | HURTS |
 | B6 | **All-unreadable homes → first-run onboarding.** Launch gate ignores `SavedPlans.unreadable`; the reassuring "still saved" banner is unreachable — user believes data deleted. | `VastuNav.kt:66-73` | HURTS |
-| B7 | **Unreadable banner is a permanent dead end.** No per-home delete exists anywhere; the only escape is Settings → delete ALL data. "An update should bring it back" is unconditional and, for a truly corrupt row, false. | `HomeScreen.kt:139-147` | HURTS |
+| B7 | ✅ CLOSED 5 Aug (v0.7.7): each unreadable home is named on the card with its own Remove behind an are-you-sure that states the rescue-chance price. ~~**Unreadable banner is a permanent dead end.**~~ No per-home delete exists anywhere; the only escape is Settings → delete ALL data. "An update should bring it back" is unconditional and, for a truly corrupt row, false. | `HomeScreen.kt:139-147` | HURTS |
 | B8 | **Placed-scan screen names the wrong destination.** With "On the photo" set, the result screen still says "Check them on the grid" and the button opens the photo review. | `ScanScreen.kt:187-191` | HURTS (stale words) |
 | B9 | **Settings toggle is a silent no-op for non-Placed scans** (by design, but unlabelled — violates the project's own no-silent-no-op rule). One caption line fixes it. | `SettingsScreen.kt:151-159` | HURTS |
 | B10 | Latent 0.0-score overwrite: rescore guard can never return null (`analyze` is total → `insufficient` = score 0, quality INSUFFICIENT not filtered). A future sanitizer change would show "7.1 → 0.0" and write it. | `HomeViewModel.kt:56`, `ScoreChange.kt:63-66` | HURTS (latent) |
@@ -180,7 +180,7 @@ and summarised here:
    pricing; the single non-consumable makes the second home free. Which is intended?
 3. Dark mode: stay proudly light-only (document it) or build a dark palette later? (Config proves
    non-inversion today; night users get a bright screen.)
-4. Per-home delete (B7): add "remove this home" to rows — recommended, but it's a data-model
+4. ✅ DONE 5 Aug (v0.7.7) — owner said "continue the planned improvements"; shipped remove-on-unreadable-rows only (finished, healthy homes still have no delete — a smaller decision, still his). Was: Per-home delete (B7): add "remove this home" to rows — recommended, but it's a data-model
    surface he may want to see first.
 5. The unreadable-home promise "an update should bring it back": soften to "we'll keep trying" +
    allow removing it?
