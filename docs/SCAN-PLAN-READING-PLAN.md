@@ -1411,3 +1411,50 @@ Both refusal screens were looked at, not just counted:
 ⚠ **Still not measured** — see above. The scan-count ask is the owner's, and until it runs the
 prompt change rests on reasoning plus the corpus eye-pass, while the escape hatch rests on nothing
 but arithmetic and is the part that actually guarantees he is not blocked again.
+
+### The 9 approved scans — measured 5 August 2026 (₹5, owner-approved)
+
+Six on the primary reader, three on the escalation model, all under the app's exact conditions
+(same prompt file, same 1400 px / q88 downscale). Recordings: `out/live/<plan>.<model>.v5.json`.
+
+| sheet | what it tests | v4 (shipped) | **v5** |
+|---|---|---|---|
+| plan-007 · luna | the furnished-render class | 2D · 17 rooms | **2D · 17 rooms** |
+| plan-007 · gemini | ditto, second reader | 2D · 14 rooms | **2D · 18 rooms** |
+| plan-030 · luna / gemini | street-level aerial, genuinely tilted | — | **3D, refused** ×2 |
+| plan-031 · luna / gemini | doll's house, genuinely tilted | — | **3D, refused** ×2 |
+| towerEF-1854 · luna | the client's sheet | 2D · 16 · 15 sized | **identical** |
+| greencourt-336-branded · luna | the branded page | 2D · 7 · 7 sized | **identical** |
+| plan-010 · luna | the owner's own flat | 2D · 15 · 15 sized | **identical** |
+
+**What this does and does not prove.**
+
+1. ✅ **v5 costs nothing.** Every sheet that read well still reads identically — same rooms, same
+   printed sizes, room for room. A prompt rewrite that changes no working answer is the rare kind.
+2. ✅ **The gate still bites.** Both genuinely tilted sheets are refused by both readers, four for
+   four. Loosening the words did not loosen the gate — because the words that were loosened were
+   about decoration and the gate is about the camera.
+3. ✅ **Refused replies now arrive with their evidence.** plan-030 came back with 14 rooms and
+   plan-031 with 10 (nine of them sized), where v4 returned empty lists. That is what makes "show
+   me what you read" possible at all.
+4. ⚠ **It does NOT prove the owner's own sheet is fixed.** `plan-007` was *already* passing under
+   v4 — only the older v3 recordings refuse it. So the corpus had no failing example of the class,
+   and his sheet is evidently harder than plan-007: heavier textures, extruded counters, a
+   rendered staircase. The proof for his picture needs his picture.
+
+### ⚠⚠ What the numbers then caught — the escape hatch was about to ship the original harm
+
+Running the two tilted sheets through the mapper mirror with the gate ignored — i.e. exactly what
+"show me what you read" would do — both come back **Placed**: a confident drawn layout, from
+rectangles that describe where the camera stood rather than where the walls are. The aerial lands
+**4 of the 14 rooms it read**. That is the "plausible-looking rectangles that are simply wrong"
+failure the 2D gate was built to prevent, re-entering through the door built to bypass the gate.
+
+So `ifRead` never offers a layout. A `Placed` retry is downgraded to **`Assisted(ANGLED_VIEW)`** —
+room names kept, rectangles binned — and the screen says so: *"The picture looked angled, so we
+kept the room names and threw the shapes away."* Reading names is the ~95 % skill; placing them was
+always the user's job, and §3h already called assisted the primary mode rather than the fallback.
+
+⭐ The cost of being wrong is now asymmetric in the right direction. If the reader wrongly calls a
+flat plan angled, the user loses automatic placement and drags the rooms — annoying, honest, and
+what most real plans do anyway. If it rightly calls a render angled, nothing false is ever drawn.

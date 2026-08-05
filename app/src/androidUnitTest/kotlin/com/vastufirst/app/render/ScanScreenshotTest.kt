@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanScreen
 import com.vastufirst.app.ui.scan.ScanUiState
+import com.vastufirst.shared.scan.PlanImageType
 import com.vastufirst.shared.scan.RecordedScans
 import com.vastufirst.shared.scan.RefusalReason
 import com.vastufirst.shared.scan.ScanMapper
@@ -193,6 +194,24 @@ class ScanScreenshotTest {
         )
         captureAcrossMatrix("scan-refused-3d-readable", screen(s))
         writeManifestAcrossMatrix("scan-refused-3d-readable", screen(s))
+    }
+
+    /**
+     * ⭐ …and the screen the button above LANDS on, which is where the honesty has to hold. Built
+     * the real way — a reply that would otherwise be Placed, carrying a 3D verdict — so the golden
+     * proves the drawn layout really is withheld and the new "we kept the names, we threw the
+     * shapes away" line really is what a reader sees.
+     */
+    @Test
+    fun scanAngledView() {
+        val reply = RecordedScans.load(RecordedScans.CLEAN)!!.reply
+        val refused = ScanMapper.map(reply.copy(planType = PlanImageType.THREE_D_RENDER))
+        val s = ScanUiState.Done(
+            (refused as ScanOutcome.Refused).ifRead!!,
+            readBy = models.firstOrNull(),
+        )
+        captureAcrossMatrix("scan-angled-view", screen(s))
+        writeManifestAcrossMatrix("scan-angled-view", screen(s))
     }
 
     @Test

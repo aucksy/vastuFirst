@@ -50,12 +50,35 @@ class ScanMapperTest {
         val out = assertIs<ScanOutcome.Refused>(
             ScanMapper.map(goodDraft().copy(planType = PlanImageType.THREE_D_RENDER)),
         )
-        val alternative = assertIs<ScanOutcome.Placed>(out.ifRead)
+        val alternative = assertIs<ScanOutcome.Assisted>(out.ifRead)
+        val asIfTwoD = assertIs<ScanOutcome.Placed>(ScanMapper.map(goodDraft()))
         assertEquals(
-            ScanMapper.map(goodDraft()),
-            alternative,
-            "the alternative must be exactly what a 2D reply would have produced",
+            asIfTwoD.rooms.map { it.label },
+            alternative.rooms.map { it.label },
+            "every room the 2D read found must survive into the alternative",
         )
+    }
+
+    @Test
+    fun `read-anyway hands over NAMES, never a drawn layout`() {
+        // ⭐⭐ The safety of the whole escape hatch, and it was found by measurement, not by taste:
+        // run through the mapper, both genuinely tilted sheets in the corpus come back Placed — a
+        // confident drawn layout from rectangles that describe where the camera stood rather than
+        // the floor, which is the precise harm the 2D gate was built to prevent. (The street-level
+        // aerial lands 4 of the 14 rooms it read.) If the reader says "angled", we keep the names
+        // — its ~95 % skill — and give the placing back to the person who knows the answer.
+        val out = assertIs<ScanOutcome.Refused>(
+            ScanMapper.map(goodDraft().copy(planType = PlanImageType.THREE_D_RENDER)),
+        )
+        val alternative = assertIs<ScanOutcome.Assisted>(out.ifRead)
+        assertEquals(AssistReason.ANGLED_VIEW, alternative.reason)
+        assertTrue(
+            alternative.rooms.all { it.rect == null },
+            "not one room may arrive already placed on the grid",
+        )
+        // …and the same reply WITHOUT the 3D verdict still gets its layout, so this costs nothing
+        // to the plans that were never in doubt.
+        assertIs<ScanOutcome.Placed>(ScanMapper.map(goodDraft()))
     }
 
     @Test

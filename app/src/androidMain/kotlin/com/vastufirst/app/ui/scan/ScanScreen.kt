@@ -306,6 +306,12 @@ private fun DoneBody(
                 AssistReason.UNIFORM_BOXES ->
                     "We read the room names, but the shapes came back identical — not really " +
                         "measured. Drag each one to its real place."
+                // ⚠ Says out loud that we kept the names and binned the shapes, because this list
+                // arrives from a picture we told the user looked angled. Claiming placement here
+                // would be the confident-and-wrong layout the whole gate exists to prevent.
+                AssistReason.ANGLED_VIEW ->
+                    "The picture looked angled, so we kept the room names and threw the shapes " +
+                        "away. Drag each one to its real place."
             },
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },

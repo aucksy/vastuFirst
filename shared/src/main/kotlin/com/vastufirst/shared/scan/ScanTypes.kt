@@ -233,6 +233,20 @@ enum class AssistReason {
 
     /** Too few rooms survived snapping to be worth placing for the user. */
     TOO_FEW_PLACED,
+
+    /**
+     * ⭐ The reader said the picture was taken at an ANGLE, and the user asked to see the reading
+     * anyway ([ScanOutcome.Refused.ifRead]). The names are kept, the shapes are not.
+     *
+     * ⚠ This is the whole safety of the escape hatch, and it is not a nicety. Run through the
+     * mapper mirror, the two genuinely tilted sheets in the corpus (a doll's house with its roof
+     * off, a street-level aerial) come back **Placed** — a confident drawn layout built from
+     * rectangles that are a function of where the camera stood, which is exactly the "plausible and
+     * simply wrong" outcome the 2D gate was built to prevent. One of them lands only 4 of its 14
+     * rooms as well. So when the reader says "angled", a drawn layout is never offered: the room
+     * list is, because reading names is the ~95 % skill and placing them is the user's own.
+     */
+    ANGLED_VIEW,
 }
 
 /** Why nothing could be read at all. Each maps to a message that tells the user what to fix. */

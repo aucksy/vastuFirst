@@ -809,8 +809,20 @@ object ScanMapper {
      */
     private fun ifRead(reason: RefusalReason, draft: ScanDraft, imageAspect: Double?): ScanOutcome? {
         if (reason != RefusalReason.NOT_2D) return null
-        val retry = map(draft.copy(planType = PlanImageType.TWO_D_PLAN), imageAspect)
-        return retry.takeIf { it !is ScanOutcome.Refused }
+        return when (val retry = map(draft.copy(planType = PlanImageType.TWO_D_PLAN), imageAspect)) {
+            is ScanOutcome.Refused -> null
+            is ScanOutcome.Assisted -> retry
+            // ⭐⭐ A DRAWN LAYOUT IS NEVER OFFERED HERE — see [AssistReason.ANGLED_VIEW]. If the
+            // picture really was taken at an angle, its rectangles describe the camera and not the
+            // floor, and a confident wrong layout is the precise harm the 2D gate exists to stop.
+            // Measured on the two genuinely tilted sheets in the corpus: both map to Placed, and
+            // the aerial lands only 4 of the 14 rooms it read. We keep what the reader is good at
+            // (the names) and hand the placing back to the person who knows the answer.
+            // `rect = null` IS unplaced — the same shape every other Assisted outcome hands over.
+            is ScanOutcome.Placed -> ScanOutcome.Assisted(
+                retry.rooms.map { it.copy(rect = null) }, AssistReason.ANGLED_VIEW, retry.notes,
+            )
+        }
     }
 
     /** The three refusals, in the order a user would want to hear them. */
