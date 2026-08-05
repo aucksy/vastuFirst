@@ -200,3 +200,17 @@ and summarised here:
 
 *Written by the 4 Aug 2026 audit session. Sources: sixteen agent reports (session transcript),*
 *verified spot-checks, and the committed goldens under `app/src/androidUnitTest/roborazzi/`.*
+
+---
+
+**5 Aug 2026, v0.7.7 — B7/G4/G5 shipped, plus the v0.7.4 date-tail blemish.** Each unreadable home
+is now named on its card ("Home 3 · 3 Jul" — the identity columns read even when the plan JSON
+doesn't) with its own Remove behind an are-you-sure that states the real price: removing ends the
+chance a future update rescues it. Healthy homes still have no delete — smaller, separate decision,
+still the owner's. The relative dates lost their "Updated" prefix (every caller already writes
+context before a "·"), which is exactly the ~8 characters that were pushing "Updated 3 d…" into the
+ellipsis at 200 % font. Eye pass: home list at 200 % shows both dates whole; the card's name row and
+✕ Remove hold on one line; the remove dialog wraps clean at 200 %. Ratchet: home-unreadable
+auto-tightened back to 2 (the card grew without pushing anything off the fold), home-remove entered
+at 0; a11y adopted home-unreadable at 1 = the base home screen's pre-existing 1, so the card itself
+added zero findings.
