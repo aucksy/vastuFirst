@@ -1458,3 +1458,11 @@ always the user's job, and §3h already called assisted the primary mode rather 
 ⭐ The cost of being wrong is now asymmetric in the right direction. If the reader wrongly calls a
 flat plan angled, the user loses automatic placement and drags the rooms — annoying, honest, and
 what most real plans do anyway. If it rightly calls a render angled, nothing false is ever drawn.
+
+**Shipped v0.7.6, eye pass done.** Green first time. The ratchet auto-tightened `scan-refused-3d`
+back to 2 — the shortened body did remove the fold-line finding, so the hand-adoption to 3 was a
+one-run loan and paid itself back — and settled the new `scan-angled-view` at 10. Looked at, not
+counted: the screen the button lands on shows **"We found 8 rooms"**, the new line *"The picture
+looked angled, so we kept the room names and threw the shapes away. Drag each one to its real
+place."*, eight named rows each with Change beside it, and **"Place them on the grid"** as the
+action. No drawn layout anywhere on it, which was the entire point.
