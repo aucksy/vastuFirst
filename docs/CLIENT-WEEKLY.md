@@ -5,6 +5,16 @@ no code, no build/release jargon (those go in docs/PROGRESS.md). Update it as pa
 whenever a build is released, a phase item closes, a decision lands, or we hit a blocker.
 Newest week at the top. Keep the "What we need from you" section current — it's the most useful
 part for the client.
+
+STANDING RULES FOR THE WEEKLY EMAIL (set 3 August 2026, apply every week from now on):
+- Recipients: Simran.manocha123@gmail.com AND vastufirst13@gmail.com — both on the To line as
+  normal recipients, every time. Not CC.
+- Send from the alias connect@aakashpahuja.in — NOT the default Gmail account. The Gmail
+  connector cannot set the sender, so this is a manual step: switch the "From" dropdown in the
+  Gmail compose window before sending. Always say so when handing over a draft.
+- Do NOT state a day or time for the client call. The meeting schedule is not settled.
+  Sign off with "Hopefully talk to you soon, when the stars align." — never "Talk at 11 on Sunday".
+- Do not lead on or count down to a delivery date unless asked.
 -->
 
 # VastuFirst — Weekly progress for Simran
@@ -56,6 +66,78 @@ one, and it is not something we were willing to ship.
 ---
 
 ## Week of 28 July – 3 August 2026
+
+### Monday 3 August — a half-drawn home waits for you, and a saved home can be corrected
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.6.6/vastufirst-v0.6.6.apk
+
+**If you stop halfway through drawing a home, it now waits until you ask for it back.** Before, an
+unfinished home was pushed at you: whatever you had half-drawn came back the next time you opened
+either the drawing screen or the upload screen, and the only way to a blank grid was to notice a card
+and press "start this home again". Worse, starting a second home wrote over the first one's only copy.
+Now every unfinished home gets its own row in a "Still to finish" group above your saved homes,
+showing how many rooms are on it and when you last touched it — and no score, because it has not been
+through the scoring yet. Tapping that row is the only way back into it, and the ✕ asks you to confirm
+before it throws anything away.
+
+**"Take a photo" now opens the camera.** It was opening the photo gallery — the same picker as the
+button above it, just under a different name — so anyone holding a printed plan had no way to
+photograph it from inside the app. It opens the camera now. **The app still asks for no camera
+permission**, because it hands the job to your phone's own camera app rather than taking the picture
+itself. That was deliberate: the app's promise of a single permission is worth protecting.
+
+**A home you have already saved can have its rooms and its North corrected.** Renaming was the only
+thing a saved home offered, so a wrongly marked North — which the entire score is built on — meant
+deleting the home and drawing it again from scratch. Two buttons now sit directly under the coloured
+plan picture, where you would notice something is wrong: change the rooms or the front door, and
+change which way North is.
+
+**Buying a home is now offered before building one, and the report respects the difference.** Most
+people opening this app are looking at a home somebody else has already built. Until now, a buyer got
+exactly the same report as a builder: every problem headed "✦ Change the layout — free now", and an
+opening line promising nothing had been built yet. You cannot move a wall in a flat you are only
+considering buying. For buyers, and for anyone already living in the home, the report now drops the
+layout advice altogether and gives remedies instead.
+
+### Scanning a floor plan — working, but still being fixed
+
+**This is the part of the app still under active work, and it is fair to call it in progress.** Since
+Sunday it has been through four rounds of fixes, each one driven by a real plan sheet rather than a
+guess, and each result checked by looking at the drawn plan next to the paper it came from.
+
+**What is better now:**
+
+- **The app reads the sizes printed on the plan.** Most builder sheets print something like
+  `3.72m X 4.50m` under every room name, and we were reading the name and ignoring the size — so
+  rooms came out as identical stock boxes. Across nine real plans, 116 of 129 rooms now come back at
+  the size their sheet prints. On a sheet that prints no sizes, it invents none.
+- **Rooms stopped disappearing.** A rule meant to ignore dressing areas was quietly deleting real
+  rooms — nine toilets, a prayer room, balconies, a study and a servant's room across the plans we
+  test against, including the toilet off your own master bedroom. Every named room now survives to
+  the grid.
+- **Eleven ways real sheets write room names** — `BED RM.-01`, a bare `KIDS`, `SERV. RM`, `TOIL`, a
+  hand-lettered `Pojo` — used to come back as "we didn't recognise this name". They are understood
+  now. One hand-drawn sheet went from 8 of its 12 rooms placed to 11 of 12.
+- **The home fills the grid instead of floating inside it.** A rounding margin was pulling whole
+  rooms off the outer wall they sit against. Your own flat now reaches its own west wall, and its
+  living/dining is finally drawn wider than deep, the way your sheet prints it.
+- **A balcony no longer towers over the bedrooms.** When a strip like a balcony prints only one
+  dimension (`BALCONY 6'-0" WIDE`), that number is how deep the strip is — we were reading it as no
+  size at all, so the balcony kept its oversized sketch while every properly sized room shrank around
+  it. On your 336 sq ft plan it was taking up a quarter of the page.
+
+**What is still wrong, in the order you put it:**
+
+1. **A small home still gets a large, mostly empty grid.** A 336 sq ft one-bedroom is drawn on a grid
+   sized for a villa, so the cells are huge and you have to scroll past empty space. Giving small
+   homes a smaller grid is a real change to the drawing screen and will come with its own build.
+2. **A sheet with a builder's logo and branding on it still confuses the reader** and pushes rooms to
+   the left of where your sheet puts them. A clean copy of the same sheet reads close to the paper.
+   The open question is whether a badly confused reading should hand you the "place the rooms
+   yourself" screen instead of drawing something confidently wrong.
+
+⚠ **Next time you scan a plan, please put the drawn result next to the paper and tell me what is
+off.** The scans I can run here are only ever as good as the sheets I have.
 
 ### Sunday 2 August, later — reading a plan properly
 
