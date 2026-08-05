@@ -1390,3 +1390,24 @@ colourful, furnished plan is fine.
 rule, and re-measuring sends images to a paid reader, which needs the owner's approved count first
 (CLAUDE.md §2c). Until that runs, v5 is reasoned-and-eyeballed, not proven — but Fix 2 does not
 depend on it, and Fix 2 alone is enough to unblock a wrongly-refused plan.
+
+### Shipped — v0.7.5, and what the pictures show
+
+Green on the second run. The first was red on the render ratchet, not on code: the rewritten
+refusal body was *longer* than the words it replaced, which pushed one more element past the first
+screenful of a screen that scrolls (`scan-refused-3d` 2 → 3, the same rescan buttons and Back that
+were already findings at font 2.0 / landscape / 320 dp). Cut the body rather than only adopting the
+number — a refusal is the last place to spend a reader's patience — and adopted both numbers in the
+same push, per the standing rule that a ratchet failure must never cost a second cloud round-trip.
+
+Both refusal screens were looked at, not just counted:
+
+- **`scan-refused-3d`** (nothing readable behind it) — three lines of body, two buttons, clean at
+  baseline. Still the honest wall for a genuine doll's-house render.
+- **`scan-refused-3d-readable`** (new) — "Show me what you read" leads in the primary style, the
+  other two fall back to secondary. Checked at 200 % font and at 320 dp: the headline wraps to two
+  lines, the lead button wraps to two lines inside its pill, nothing clips and nothing overlaps.
+
+⚠ **Still not measured** — see above. The scan-count ask is the owner's, and until it runs the
+prompt change rests on reasoning plus the corpus eye-pass, while the escape hatch rests on nothing
+but arithmetic and is the part that actually guarantees he is not blocked again.
