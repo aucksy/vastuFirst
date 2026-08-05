@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.scan.PlanReader
+import com.vastufirst.shared.scan.ScanOutcome
 import com.vastufirst.shared.scan.ScanResult
 import com.vastufirst.shared.scan.withRoomType
 import kotlinx.coroutines.launch
@@ -112,6 +113,21 @@ class ScanViewModel(
         val corrected = done.outcome.withRoomType(index, type)
         // copy() keeps readBy: a correction changes what the user says, not which model read it.
         if (corrected !== done.outcome) state = done.copy(outcome = corrected)
+    }
+
+    /**
+     * ⭐ "Show me what you read" — take the refusal's own alternative reading and carry on with it.
+     *
+     * Costs NO second scan: the alternative was computed by the mapper from the very same reply and
+     * has been sitting on the refusal ever since. It lands on the ordinary result screen, so the
+     * room-by-room confirmation still stands between it and any score — the user is being shown a
+     * reading to judge, not being given a result.
+     */
+    fun readAnyway() {
+        val done = state as? ScanUiState.Done ?: return
+        val refused = done.outcome as? ScanOutcome.Refused ?: return
+        val alternative = refused.ifRead ?: return
+        state = done.copy(outcome = alternative)
     }
 
     /** Back to the ask, so the user can choose a different file. */

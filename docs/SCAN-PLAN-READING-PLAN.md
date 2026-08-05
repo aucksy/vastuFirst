@@ -1303,3 +1303,90 @@ removed clipped text.
 B7/G4/G5) — asked twice now, still unanswered. **Not started:** Phase C copy cut (incl. the
 rules-JSON prose), Phase D delight list, dormant billing fixes, dark-mode decision, a real
 landscape editor layout (ratcheted at 43).
+
+## 3u. ⭐⭐⭐ The 2D gate was refusing real plans — the words asked the wrong question (5 August 2026)
+
+**The owner could not scan at all.** He uploaded a flat, top-down builder plan — every room named,
+every room's size printed inside it, walls square to the page — and got *"That looks like a 3D
+picture. It's a picture of the finished home rather than a plan."* On both models. There was no way
+past the card, so testing stopped.
+
+### What was actually wrong
+
+Nothing in the mapper, and nothing in the models. **The prompt described a 3D render by how it
+LOOKS:**
+
+> `"3D_RENDER"` — an isometric/perspective marketing render, **often with furniture, shadows**, and
+> room labels outside the building on leader lines.
+
+His plan has furniture. It has shadows. It is plainly a builder's marketing image. So both readers
+answered the question they were asked — correctly — and a perfectly measurable sheet was thrown away.
+
+The free recordings say it out loud. On `plan-007`, the same class, the primary model returns:
+
+```json
+{"planType": "3D_RENDER", "hasRoomLabels": true, "rooms": [], "planConfidence": 0.99}
+```
+
+**It claims 0.99 confidence that this is not a plan while stating in the same breath that it can read
+the room names off it.** Gemini, on the identical bytes, answers `2D_PLAN` and returns eighteen rooms.
+
+⚠ This was written down and not fixed. §3o, 3 August: *"the refusal class needs splitting: top-down +
+sized → attempt; perspective → refuse. A competitor (grihafy.com) reads this class fine."* The
+escalation model was added as the workaround — and it does rescue `plan-007` — but a workaround that
+depends on the second model also disagreeing is not a fix, and on the owner's sheet it did not fire.
+
+### Fix 1 — ask about the CAMERA, because that is the only thing that matters
+
+A tilted view is unreadable for a real reason: every room's apparent shape is a function of the
+camera, not the floor. A photo-real, furnished, coloured plan seen from straight above has no such
+problem — it is a flat drawing wearing make-up. So prompt v5 asks the physical question and rules the
+decoration out by name:
+
+| | v4 (refused the class) | v5 |
+|---|---|---|
+| the question | "is this a marketing render?" | "is the CAMERA tilted?" |
+| furniture / shadows / textures | listed as evidence of 3D | *"are NOT evidence of a 3D view"* |
+| the class itself | unnamed | *"A straight-overhead FURNISHED RENDER is a 2D_PLAN and must be read"* |
+| tie-break | none | room names printed inside their rooms → overhead |
+| on a 3D verdict | *"return an empty rooms list"* | report the rooms anyway |
+
+Looking at the corpus by eye confirms the split is clean, and that it is about the camera and nothing
+else:
+
+| sheet | camera | labels | v4 said | should say |
+|---|---|---|---|---|
+| plan-007 | straight down, fully furnished, every size printed | inside the rooms | 3D → refused | **2D, read it** |
+| plan-032 / 036 | straight down, furnished | none printed | 3D → refused | 2D → refused for *no labels*, the honest reason |
+| plan-030 | tilted aerial, whole street, cars and neighbours visible | on tags | 3D → refused | **3D, refused** ✓ |
+| plan-031 | tilted doll's house, wall sides visible | outside, on leader lines | 3D → refused | **3D, refused** ✓ |
+
+⚠ **And it kills the shortcut I nearly took.** "Top-down + sized → attempt" reads well until you look
+at `plan-031`: it is a tilted doll's house *and it prints every room's dimensions*. Printed sizes do
+not separate the classes. Only the camera does.
+
+### Fix 2 — the refusal now carries the reading it refused
+
+Words alone are still the model's opinion, and an opinion is not a gate. So `ScanOutcome.Refused`
+gained `ifRead`: on the 2D gate **only**, the mapper re-runs the very same reply with the gate
+ignored and attaches the result when it produces something. The screen then offers **"Show me what
+you read"**, which lands on the ordinary room-by-room confirmation — nothing is scored without it.
+
+- **No second scan.** It is the reply already paid for, mapped again. It cannot disagree with what a
+  rescan would have said, and it costs ₹0.
+- **Never a dead end that leads nowhere.** `ifRead` is null when the re-run also refuses, and the
+  button is absent then. A genuine doll's house comes back with an empty room list and still refuses.
+- **Only this gate.** Every other refusal is our own arithmetic — no room names came back, two homes
+  on the sheet, nothing mapped to a room. Arguing with those would be arguing with ourselves.
+
+The refusal's words changed too, because the old ones were *false* on his sheet: telling a man that
+his own labelled, dimensioned floor plan is "a picture of the finished home rather than a plan" is
+worse than saying nothing. It now claims only what was seen — a tilted view — and adds that a
+colourful, furnished plan is fine.
+
+### Still owed
+
+⚠ **The prompt change is not measured yet.** Changing the words invalidates the numbers by house
+rule, and re-measuring sends images to a paid reader, which needs the owner's approved count first
+(CLAUDE.md §2c). Until that runs, v5 is reasoned-and-eyeballed, not proven — but Fix 2 does not
+depend on it, and Fix 2 alone is enough to unblock a wrongly-refused plan.

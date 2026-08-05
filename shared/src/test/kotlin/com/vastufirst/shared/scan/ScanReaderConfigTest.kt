@@ -67,6 +67,37 @@ class ScanReaderConfigTest {
     }
 
     @Test
+    fun `the 2D question is asked about the camera, never about the styling`() {
+        // ⭐ Prompt v5, 5 Aug 2026, and this test is the whole point of it. v4 described a 3D render
+        // by how it LOOKS — "often with furniture, shadows" — and both models duly refused
+        // straight-overhead FURNISHED renders: flat, axis-aligned sheets with the room names and
+        // their sizes printed inside the rooms. That refusal blocked the owner's own plan, on both
+        // models, with no way past it. A tilted view is unmeasurable because every shape is a
+        // function of the camera; a pretty one seen from above is not. So the words must keep
+        // saying "angle", and must keep saying that decoration proves nothing.
+        // Compared on one line, because the prompt is wrapped prose and a sentence that matters
+        // must not stop being pinned the day someone re-wraps the paragraph it lives in.
+        val prompt = recipe.prompt.replace(Regex("\\s+"), " ")
+        assertTrue(prompt.contains("CAMERA ANGLE"), "the classification question is the viewpoint")
+        assertTrue(prompt.contains("STRAIGHT OVERHEAD"), "…and what the good answer looks like")
+        assertTrue(prompt.contains("TILTED"), "…and the one property that does disqualify a sheet")
+        assertTrue(
+            prompt.contains("are NOT evidence of a 3D view"),
+            "decoration must be ruled out explicitly — this is the sentence that unblocked the class",
+        )
+        assertTrue(
+            prompt.contains("furnished plan is fine") || prompt.contains("FURNISHED RENDER"),
+            "the refused class must be named as acceptable, not left to inference",
+        )
+        // And the reply must carry its rooms regardless, so a wrong verdict can still be overruled
+        // from the reply we already paid for rather than from a second scan — ScanOutcome.ifRead.
+        assertTrue(
+            prompt.contains("Report the rooms even when your answer above is \"3D_RENDER\""),
+            "a refused reply must still bring its evidence",
+        )
+    }
+
+    @Test
     fun `no Vastu vocabulary reaches the model`() {
         // ⭐ SAFETY RULE S1, now mechanical instead of a note in a document.
         //

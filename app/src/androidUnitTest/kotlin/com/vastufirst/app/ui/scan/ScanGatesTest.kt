@@ -148,4 +148,20 @@ class ScanGatesTest {
         noPicture.rescanWith(twoModels[0])
         assertEquals(ScanUiState.Idle, noPicture.state, "no picture yet: rescan is a no-op")
     }
+
+    /**
+     * ⭐ "Show me what you read" is offered only on a refusal that HAS an alternative reading, but the
+     * button is one wrong wiring away from being tapped in any state. Called anywhere else it must
+     * do nothing at all — never crash, and never invent a result out of an empty screen.
+     */
+    @Test
+    fun `read-anyway does nothing when there is no refusal behind it`() {
+        val model = ScanViewModel(reader = neverCalled, decode = neverDecodes, canRead = true)
+        model.readAnyway()
+        assertEquals(ScanUiState.Idle, model.state, "nothing read yet: read-anyway is a no-op")
+
+        val keyless = vm(canRead = false)
+        keyless.readAnyway()
+        assertEquals(ScanUiState.NotConfigured, keyless.state)
+    }
 }

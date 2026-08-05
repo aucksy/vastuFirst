@@ -32,6 +32,15 @@ import kotlinx.serialization.Serializable
  * of 30 real plans the owner curated, 24 were 2D plans, 5 were 3D marketing renders and 1 was not a
  * plan at all (§3h). A 3D render does not fail loudly; it yields plausible-looking rectangles that
  * are simply wrong, which is the worst failure mode for a paid score. So it is refused, not read.
+ *
+ * ⭐ **The line between the first two is the CAMERA, and nothing else** (prompt v5, 5 Aug 2026).
+ * Written the old way — "an isometric/perspective marketing render, often with furniture and
+ * shadows" — both models read the STYLING and refused straight-overhead furnished renders, a whole
+ * real class that is perfectly measurable: flat, axis-aligned, room names printed inside the rooms
+ * with their sizes. It blocked the owner's own plan on both models and cost him a testing day.
+ * A tilted view cannot be measured because every shape is a function of the camera; a coloured,
+ * furnished, photo-real one seen from straight above can. See [ScanOutcome.Refused.ifRead] for the
+ * belt to this braces — the words alone are the model's opinion, and opinions are not a gate.
  */
 @Serializable
 enum class PlanImageType {
@@ -300,6 +309,20 @@ sealed interface ScanOutcome {
     data class Refused(
         val reason: RefusalReason,
         override val notes: ScanNotes,
+        /**
+         * ⭐ ONLY on [RefusalReason.NOT_2D]: what this very same reply reads as once the 2D gate is
+         * ignored — or null when ignoring it yields nothing worth showing.
+         *
+         * It exists because the 2D gate is the one refusal decided by the model's OPINION rather
+         * than by anything we measured, and that opinion is wrong on a whole real class: a
+         * straight-overhead furnished render (plan doc §3u). The owner hit it on his own plan with
+         * both models and could not scan at all — a hard stop, on a cloud-only build loop, for a
+         * picture that was perfectly readable.
+         *
+         * Pre-computed rather than re-fetched: it is the same reply mapped again, so offering it
+         * costs no second scan and cannot disagree with what a rescan would have said.
+         */
+        val ifRead: ScanOutcome? = null,
     ) : ScanOutcome
 }
 

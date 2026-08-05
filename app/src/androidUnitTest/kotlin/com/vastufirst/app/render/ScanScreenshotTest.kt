@@ -179,6 +179,22 @@ class ScanScreenshotTest {
         writeManifestAcrossMatrix("scan-refused-3d", screen(s))
     }
 
+    /**
+     * ⭐ The SAME refusal when the reply that earned it came back full of rooms — the case that hard-
+     * stopped the owner on his own labelled, dimensioned, top-down plan (both models called it 3D).
+     * It is a different screen: a different headline, different words, and a third button that
+     * leads on. Rendered because the tallest of the three refusals is the one nobody had drawn.
+     */
+    @Test
+    fun scanRefused3dWithRead() {
+        val s = ScanUiState.Done(
+            ScanOutcome.Refused(RefusalReason.NOT_2D, ScanNotes(0.0, 0.0, 0.0), ifRead = assisted()),
+            readBy = models.firstOrNull(),
+        )
+        captureAcrossMatrix("scan-refused-3d-readable", screen(s))
+        writeManifestAcrossMatrix("scan-refused-3d-readable", screen(s))
+    }
+
     @Test
     fun scanRefusedNoLabels() {
         val s = ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NO_LABELS, ScanNotes(0.0, 0.0, 0.0)), readBy = models.firstOrNull())

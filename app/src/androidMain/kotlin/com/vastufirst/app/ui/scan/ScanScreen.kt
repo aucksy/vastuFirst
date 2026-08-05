@@ -89,6 +89,8 @@ fun ScanScreen(
     chosenModel: String? = null,
     onChooseModel: (String?) -> Unit = {},
     onRescanWith: (String) -> Unit = {},
+    /** ⭐ Carry on with a refused reply's own alternative reading — see `ScanOutcome.ifRead`. */
+    onReadAnyway: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -111,6 +113,7 @@ fun ScanScreen(
                 DoneBody(
                     state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow,
                     readBy = state.readBy, modelChoices = modelChoices, onRescanWith = onRescanWith,
+                    onReadAnyway = onReadAnyway,
                 )
             is ScanUiState.Busy -> BusyBody(state.retryAfterSeconds, onRetry, onDrawInstead)
             ScanUiState.Unavailable -> UnavailableBody(onRetry, onDrawInstead)
@@ -254,6 +257,7 @@ private fun DoneBody(
     readBy: String? = null,
     modelChoices: List<String> = emptyList(),
     onRescanWith: (String) -> Unit = {},
+    onReadAnyway: () -> Unit = {},
 ) {
     when (outcome) {
         is ScanOutcome.Placed -> RoomsBody(
@@ -317,7 +321,11 @@ private fun DoneBody(
         )
 
         is ScanOutcome.Refused ->
-            RefusedBody(outcome.reason, onRetry, onDrawInstead, readBy, modelChoices, onRescanWith)
+            RefusedBody(
+                outcome.reason, onRetry, onDrawInstead, readBy, modelChoices, onRescanWith,
+                // The offer exists only when there is a real read behind it — see ScanOutcome.ifRead.
+                onReadAnyway = onReadAnyway.takeIf { outcome.ifRead != null },
+            )
     }
 }
 
@@ -593,13 +601,28 @@ private fun RefusedBody(
     readBy: String? = null,
     modelChoices: List<String> = emptyList(),
     onRescanWith: (String) -> Unit = {},
+    /**
+     * ⭐ Non-null only on the 2D gate, and only when the same reply DID come back with rooms on it.
+     * Then this refusal stops being a wall: the user can look at what we read and judge it.
+     */
+    onReadAnyway: (() -> Unit)? = null,
 ) {
     // Each refusal names the ONE thing the user can change. A generic "couldn't read it" would leave
     // them with nothing to do, and these are the three failures real uploads actually hit.
     val (title, body) = when (reason) {
-        RefusalReason.NOT_2D -> "That looks like a 3D picture" to
-            "It's a picture of the finished home rather than a plan. Please upload the flat, " +
-                "top-down floor plan — the one with the rooms drawn as boxes."
+        // ⚠ Reworded 5 Aug 2026. The old words — "a picture of the finished home rather than a
+        // plan" — were flatly WRONG on the sheet the owner was blocked by: a labelled, dimensioned,
+        // top-down plan that simply happened to be a coloured render. Copy that tells someone their
+        // own plan is not a plan is worse than no copy. This version claims only what we saw (a
+        // tilted view) and, when the read is there, offers it instead of arguing.
+        RefusalReason.NOT_2D -> "This looks like a tilted 3D view" to
+            if (onReadAnyway != null) {
+                "We read it as an angled picture of the home rather than a flat plan — but we did " +
+                    "get room names off it. Have a look, or send the flat top-down plan instead."
+            } else {
+                "Rooms seen at an angle can't be measured. Please upload the flat, top-down floor " +
+                    "plan — the one you look straight down on. A colourful, furnished plan is fine."
+            }
         RefusalReason.NOT_A_PLAN -> "That doesn't look like a floor plan" to
             "We couldn't find a floor plan in that picture. It might be an elevation, a brochure " +
                 "page or a site map. Please upload the flat, top-down plan."
@@ -615,7 +638,19 @@ private fun RefusedBody(
     }
     GuidanceState(title = title, body = body) {
         Column {
-            VastuButton("Try a different picture", onClick = onRetry)
+            // ⭐ When there IS a read behind the refusal it leads, because it is the only one of the
+            // three that finishes the job the user came to do. Nothing is scored from it: it lands
+            // on the same room-by-room confirmation every other read lands on.
+            if (onReadAnyway != null) {
+                VastuButton("Show me what you read", onClick = onReadAnyway)
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                VastuButton(
+                    "Try a different picture", onClick = onRetry,
+                    style = VastuButtonStyle.SECONDARY,
+                )
+            } else {
+                VastuButton("Try a different picture", onClick = onRetry)
+            }
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             VastuButton("Draw it on a grid instead", onClick = onDrawInstead, style = VastuButtonStyle.SECONDARY)
         }

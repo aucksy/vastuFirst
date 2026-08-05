@@ -29,7 +29,14 @@
     "prompt v4 (4 Aug 2026): adds the 'building' page box so the on-photo tint can compose",
     "room boxes onto the page. Re-measured, not tweaked: 35 approved scans over the corpus -",
     "same room lists, same printed-size capture on every sheet with a v3 recording, and the",
-    "tint centre error on the truth sheets fell from 0.17-0.28 to 0.007-0.033 of the page."
+    "tint centre error on the truth sheets fell from 0.17-0.28 to 0.007-0.033 of the page.",
+    "",
+    "prompt v5 (5 Aug 2026): the 2D/3D question becomes the CAMERA ANGLE and nothing else, and",
+    "the reader now reports its rooms even when it answers 3D_RENDER. v4 described a 3D render",
+    "by its STYLING ('often with furniture, shadows'), so both models refused straight-overhead",
+    "furnished renders - a flat, fully-dimensioned, perfectly readable class. It blocked the",
+    "owner's own plan on BOTH models and the escalation could not save him. Re-measured over the",
+    "corpus - plan doc 3u carries the numbers."
   ],
   "endpoint": "https://openrouter.ai/api/v1/chat/completions",
   "model": "openai/gpt-5.6-luna",

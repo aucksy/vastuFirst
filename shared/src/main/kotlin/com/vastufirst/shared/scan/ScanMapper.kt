@@ -297,7 +297,7 @@ object ScanMapper {
         fun notes() = ScanNotes(coverage, variation, draft.planConfidence, dropped.toList())
 
         // ---- 3. triage (L0) — the refusals a user can actually act on --------------------------
-        triage(draft, boxes)?.let { return ScanOutcome.Refused(it, notes()) }
+        triage(draft, boxes)?.let { return ScanOutcome.Refused(it, notes(), ifRead(it, draft, imageAspect)) }
 
         // ---- 4. captions → room types (L1: the model's 95 %-accurate skill) --------------------
         val typed = ArrayList<Candidate>(clean.size)
@@ -788,6 +788,29 @@ object ScanMapper {
         }
         val conf = if (b.confidence.isFinite()) b.confidence.coerceIn(0.0, 1.0) else 0.0
         return clamped.copy(confidence = conf)
+    }
+
+    /**
+     * ⭐ What the SAME reply reads as with the 2D gate ignored — the escape hatch behind the "read
+     * it anyway" offer. Null unless there is a real layout or room list behind it, so the offer is
+     * never made when it leads nowhere.
+     *
+     * Only [RefusalReason.NOT_2D] gets one, and that is the point. Every other refusal is a fact
+     * about the reply we can check ourselves — no room names came back, two homes on the sheet,
+     * nothing mapped to a room — and arguing with those would be arguing with our own arithmetic.
+     * "This is a 3D picture" is the one refusal that is purely the model's opinion, and it is a
+     * measurably unreliable one: on `plan-007` the primary model answers 3D with 0.99 confidence
+     * while admitting in the same breath that it CAN read the room names, and the sheet is a
+     * perfectly flat overhead render with every size printed on it (plan doc §3u).
+     *
+     * ⚠ The recursion is finite by construction: the retry runs with `planType` already rewritten
+     * to [PlanImageType.TWO_D_PLAN], so its own triage can never return [RefusalReason.NOT_2D]
+     * again and can never ask for a third pass.
+     */
+    private fun ifRead(reason: RefusalReason, draft: ScanDraft, imageAspect: Double?): ScanOutcome? {
+        if (reason != RefusalReason.NOT_2D) return null
+        val retry = map(draft.copy(planType = PlanImageType.TWO_D_PLAN), imageAspect)
+        return retry.takeIf { it !is ScanOutcome.Refused }
     }
 
     /** The three refusals, in the order a user would want to hear them. */

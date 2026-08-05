@@ -121,6 +121,8 @@ fun ScanRoute(
         chosenModel = vm.chosenModel,
         onChooseModel = vm::chooseModel,
         onRescanWith = vm::rescanWith,
+        // The 2D gate's escape hatch — no scan, no network, just the reading we already had.
+        onReadAnyway = vm::readAnyway,
     )
 }
 

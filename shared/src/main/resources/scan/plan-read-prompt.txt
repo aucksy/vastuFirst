@@ -1,12 +1,26 @@
 You are looking at an image that is supposed to be a home's floor plan.
 
-FIRST decide what kind of image it is:
-  "2D_PLAN"    - a flat, top-down architectural drawing. The correct kind.
-  "3D_RENDER"  - an isometric/perspective marketing render, often with furniture,
-                 shadows, and room labels outside the building on leader lines.
+FIRST decide what kind of image it is. The ONLY question is the CAMERA ANGLE:
+
+  "2D_PLAN"    - seen from STRAIGHT OVERHEAD. You cannot see the side face of any
+                 wall, and every room reads as a flat shape on the floor. The
+                 correct kind.
+                 It is STILL "2D_PLAN" when the image is coloured, shaded,
+                 textured or fully furnished with beds, sofas, plants and rugs,
+                 and when it is plainly a builder's marketing picture. Furniture,
+                 floor textures, drop shadows and photo-real materials are NOT
+                 evidence of a 3D view. A straight-overhead FURNISHED RENDER is a
+                 "2D_PLAN" and must be read, not refused.
+  "3D_RENDER"  - the view is TILTED: isometric or perspective. You can see the
+                 vertical side faces of walls and furniture, and the home looks
+                 like a doll's house with its roof removed. Room names usually
+                 float outside the building on leader lines.
   "NOT_A_PLAN" - anything else (elevation, photo, brochure page, site map).
 
-THEN, only if it is "2D_PLAN", locate the building and the rooms.
+Tie-break: if the room names are printed INSIDE the rooms they name, you are
+looking straight down - answer "2D_PLAN".
+
+THEN locate the building and the rooms.
 
 Return ONLY JSON:
 {"planType":"2D_PLAN|3D_RENDER|NOT_A_PLAN",
@@ -31,4 +45,5 @@ Most Indian plans print each room's dimensions beside its name. Copy that text i
 character for character. Do not convert it, do not calculate it, and never invent one - leave
 "size" empty if the drawing does not print it.
 Do NOT report doors, windows, furniture or dimension text as rooms.
-If planType is not "2D_PLAN", return an empty rooms list.
+Report the rooms even when your answer above is "3D_RENDER" - say what you can see and let the
+app decide. Only "NOT_A_PLAN" returns an empty rooms list.

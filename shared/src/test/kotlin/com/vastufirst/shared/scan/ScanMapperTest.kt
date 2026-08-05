@@ -41,6 +41,43 @@ class ScanMapperTest {
     }
 
     @Test
+    fun `a 3D refusal carries the reading it refused, so the user can look at it`() {
+        // ⭐ The 2D gate is the ONE refusal decided purely by the model's opinion, and that opinion
+        // is measurably wrong on a real class: a straight-overhead furnished render (plan-007) is
+        // called 3D at 0.99 confidence by the primary model while it reads the room names fine.
+        // The owner was hard-stopped by exactly this on his own plan, with both models. So the
+        // refusal now carries what the same reply reads as with the gate ignored — no second scan.
+        val out = assertIs<ScanOutcome.Refused>(
+            ScanMapper.map(goodDraft().copy(planType = PlanImageType.THREE_D_RENDER)),
+        )
+        val alternative = assertIs<ScanOutcome.Placed>(out.ifRead)
+        assertEquals(
+            ScanMapper.map(goodDraft()),
+            alternative,
+            "the alternative must be exactly what a 2D reply would have produced",
+        )
+    }
+
+    @Test
+    fun `a 3D reply with nothing on it offers nothing — the refusal stands alone`() {
+        // A genuinely tilted doll's-house render whose labels float outside the walls comes back
+        // empty. There is nothing to show, so nothing is offered: the button never leads nowhere.
+        val out = assertIs<ScanOutcome.Refused>(
+            ScanMapper.map(ScanDraft(planType = PlanImageType.THREE_D_RENDER, hasRoomLabels = true)),
+        )
+        assertEquals(RefusalReason.NOT_2D, out.reason)
+        assertEquals(null, out.ifRead)
+    }
+
+    @Test
+    fun `only the 3D gate can be argued with — every other refusal is our own arithmetic`() {
+        val notAPlan = ScanMapper.map(goodDraft().copy(planType = PlanImageType.NOT_A_PLAN))
+        val noLabels = ScanMapper.map(goodDraft().copy(hasRoomLabels = false))
+        assertEquals(null, assertIs<ScanOutcome.Refused>(notAPlan).ifRead)
+        assertEquals(null, assertIs<ScanOutcome.Refused>(noLabels).ifRead)
+    }
+
+    @Test
     fun `something that is not a plan at all is refused`() {
         val out = ScanMapper.map(goodDraft().copy(planType = PlanImageType.NOT_A_PLAN))
         assertEquals(RefusalReason.NOT_A_PLAN, assertIs<ScanOutcome.Refused>(out).reason)
