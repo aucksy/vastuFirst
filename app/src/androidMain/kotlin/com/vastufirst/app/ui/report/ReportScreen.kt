@@ -157,7 +157,9 @@ fun ReportContent(
             disabledIndices = setOf(1),
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText("The 16-zone school is a separate reading — coming in a later update.", style = VastuTheme.type.caption, color = colors.textTertiary)
+        // "school" was the one house term left on a customer screen (audit E5); the section
+        // header "Where the schools disagree" keeps the word where it earns its place.
+        VText("The 16-zone reading is coming in a later update.", style = VastuTheme.type.caption, color = colors.textTertiary)
 
         // ⭐ THE FRONT DOOR. It is the highest-weighted single element in the whole reading and it had
         // no section at all — while the 32 named door positions, each with a meaning, sat unused in

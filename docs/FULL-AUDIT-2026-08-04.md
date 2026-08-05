@@ -122,7 +122,7 @@ Every claim below was seen by eye in a named golden; the geometry gate cannot se
 | D4 | **pseudo_en / hi / ta are inert for text** — all strings are Kotlin literals, not resources; pseudolocale/locale can only affect resource strings. rtl still tests mirroring (real value). Keep, but mark them "armed when strings move to resources (Phase 4)" in UI-POLISH §6.4. |
 | D5 | The A5/B1-class lesson stands: the gate measures boxes, not glyphs — C1/C2/C7 all lived behind green gates. The eye pass stays mandatory. |
 
-## E. Copy (proposed Phase C — the headline job)
+## E. Copy (Phase C — SHIPPED across 4–5 Aug; see the 5 Aug note at the end)
 
 Full inventory with per-string flags: `docs/COPY-INVENTORY-2026-08-04.md` (312 measured + ~20
 grouped ≈ 330 Kotlin strings, ≈3,260 words a user can be shown). The full top-25 rewrite table
@@ -214,3 +214,20 @@ ellipsis at 200 % font. Eye pass: home list at 200 % shows both dates whole; the
 auto-tightened back to 2 (the card grew without pushing anything off the fold), home-remove entered
 at 0; a11y adopted home-unreadable at 1 = the base home screen's pre-existing 1, so the card itself
 added zero findings.
+
+**5 Aug 2026, v0.7.8 — Phase C closed (owner's "go").** The measured truth: most of the copy cut
+had already shipped inside Phase B (the top-25 Kotlin rewrites, the report intros, the door card,
+NOT_IDEAL_INTRO — all carry 4 Aug "copy cut" comments) and an earlier pass had taken the rules
+prose from the audit's 5,290 words to 4,485. What remained was per-card flab in the defect
+explanations — each zone's identity stated twice ("the corner the tradition guards most closely" +
+"the home's most sensitive square"), the "a core text" / "the cosmic being" glosses repeated on
+every card. Today's pass: 26 of 30 defect explanations trimmed (1,730 → 1,639 words), the
+prayer-room rationale 95 → 76, "16-zone school" → "16-zone reading", the editor's third verb for
+one gesture unified. Report prose now 4,375 words, ~17 % under the audit baseline. **Not cut, on
+principle:** every deity, element, Sanskrit name and where-it-belongs fact (the voice rule); the
+compass instruction; billing, consent, privacy, both disclaimers. **Honesty strings touched, each
+flagged:** X-11 road-dispute card — descriptive half merged, the claim sentence ("shown but never
+counted in your score") verbatim; prayer-room rationale — descriptive half cut, the
+centre-shrine disclosure ("we will not call it a defect") verbatim. Deeper cuts were declined
+rather than deferred: what remains is fact density, not flab, and the only way to move the number
+further is deleting facts the voice rule protects.

@@ -493,7 +493,9 @@ fun GuidedGridContent(
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
                 // Copy cut (4 Aug 2026): 26 words -> 14; the read-but-not-placed refusal claim kept.
                 parked -> "We read these rooms but not where they go. Drag each one to its real place."
-                else -> "Touch a room and slide to move it, or add another below."
+                // "Press", matching the placing line above — the audit measured three different
+                // verbs (touch/press/drag) for the same physical gesture on one screen.
+                else -> "Press a room and slide to move it, or add another below."
             },
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
