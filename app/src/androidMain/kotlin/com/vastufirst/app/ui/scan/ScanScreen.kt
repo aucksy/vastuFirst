@@ -617,11 +617,14 @@ private fun RefusedBody(
         // tilted view) and, when the read is there, offers it instead of arguing.
         RefusalReason.NOT_2D -> "This looks like a tilted 3D view" to
             if (onReadAnyway != null) {
-                "We read it as an angled picture of the home rather than a flat plan — but we did " +
-                    "get room names off it. Have a look, or send the flat top-down plan instead."
+                "We read it as an angled picture rather than a flat plan — but we did get room " +
+                    "names off it. Have a look."
             } else {
-                "Rooms seen at an angle can't be measured. Please upload the flat, top-down floor " +
-                    "plan — the one you look straight down on. A colourful, furnished plan is fine."
+                // ⚠ SHORTER than the words it replaces, on purpose. The render gate measured the
+                // longer draft pushing one more element off the first screenful of a screen that
+                // scrolls. A refusal is the last place to spend a reader's patience.
+                "Rooms seen at an angle can't be measured. Please send the flat, top-down plan — " +
+                    "a colourful, furnished one is fine."
             }
         RefusalReason.NOT_A_PLAN -> "That doesn't look like a floor plan" to
             "We couldn't find a floor plan in that picture. It might be an elevation, a brochure " +
