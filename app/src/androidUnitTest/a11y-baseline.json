@@ -16,6 +16,7 @@
   "report": 5,
   "scan-assisted": 0,
   "scan-consent": 0,
+  "scan-door": 0,
   "scan-idle": 0,
   "scan-review": 1,
   "score": 0,
