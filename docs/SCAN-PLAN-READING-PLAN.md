@@ -1559,3 +1559,29 @@ into the grid editor to ask the two questions that matter most. Now:
 straight. A room read as the wrong *kind* is still re-typed on the results screen before the review.
 That is the owner's explicit call — "we will perfect this only" — and it is coherent with a flow
 whose premise is that the photograph, not our redrawing, is the truth.
+
+### What the gates said, and what was adopted rather than fixed
+
+The geometry gate did its job twice. It rejected the first layout attempt (the plan shared the screen
+height with the room list, so it stayed height-limited and collapsed at a 200 % font), and on the
+second it named a duplicate "Back" button at the foot of the door screen that a 200 % font sliced to
+a sliver — removed, and the ratchet then **tightened itself** to 1.
+
+Two findings were adopted rather than fixed, both stated here so neither passes as "clean":
+
+- **The door screen in landscape.** The plan takes its own aspect ratio, so on an 806 dp-wide
+  landscape viewport it wants 800 dp of height and the user scrolls. The signature North dial does
+  exactly the same thing (`fillMaxWidth` + `aspectRatio`) and carries 17 findings for it. Real
+  landscape layout is a parked item.
+- **`scan-review` a11y 1 → 3.** All three are `TextContrastCheck` on the row's trailing caption —
+  "Shown" and "Check" — i.e. the SAME parked chip-contrast family the audit's Phase D lists, and the
+  same colours as before. The count rose only because the room list stopped being a lazy list when
+  the page became scrollable, so every row now exists in the hierarchy instead of the two or three
+  that happened to be laid out. Nothing got less readable; more of it is now being counted. Fixing it
+  is a design-system change (the warning and primary inks against the card), which is Phase D.
+
+⚠ Also seen, and not a code problem: the screenshots artifact upload failed with **"Artifact storage
+quota has been hit"**. That step is already `continue-on-error` for exactly this reason (4 Aug), so
+it cannot redden a build — but it does mean CI's downloadable screenshot bundle is unavailable until
+GitHub recalculates usage. The goldens are committed into the repo, so the pictures can still be
+looked at; the convenience copy is what is missing.
