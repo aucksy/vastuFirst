@@ -3,6 +3,7 @@ package com.vastufirst.app.render
 import android.app.Application
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
@@ -18,6 +19,8 @@ import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.unlock.UnlockContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
+import com.vastufirst.shared.scan.RecordedScans
+import com.vastufirst.shared.scan.ScanMapper
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -99,6 +102,37 @@ class LongScreenBottomScreenshotTest {
             onUnlock = {},
             onFix = {},
         )
+    }
+
+    /**
+     * ⭐⭐ THE BOTTOM OF THE OWNER'S OWN ROOM LIST — the one picture this whole 6 Aug 2026 change
+     * turns on, and the one no top-of-screen golden can ever contain.
+     *
+     * His plan reads eleven rooms. The fix he asked for — one continuous balcony captioned three
+     * times becoming ONE room that still prints all three of its sizes — lands near the END of that
+     * list, because rooms are ordered down the sheet and his long balcony runs along the bottom of
+     * it. Photographing only the top of this screen would have shown the change nowhere at all,
+     * which is exactly the trap this file exists for.
+     */
+    @Test
+    fun scanReviewDoor_bottom() {
+        val outcome = ScanMapper.map(
+            RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
+            imageAspect = 1399.0 / 1389.0,
+        ) as com.vastufirst.shared.scan.ScanOutcome.Placed
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        )
+        captureBottomPair("scan-review-door", anchor = "Put the front door somewhere else") {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = android.graphics.Bitmap
+                    .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+                    .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+                    .asImageBitmap(),
+                rooms = outcome.rooms,
+                door = door,
+            )
+        }
     }
 
     /** The ₹699 screen's ending: the feature list under the buy button — the paid promise itself. */
