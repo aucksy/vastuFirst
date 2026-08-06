@@ -43,7 +43,7 @@
   "scan-busy": 0,
   "scan-consent": 10,
   "scan-door": 2,
-  "scan-door-unmarked": 2,
+  "scan-door-unmarked": 1,
   "scan-idle": 3,
   "scan-idle-no-camera": 4,
   "scan-not-configured": 0,
