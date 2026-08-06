@@ -54,8 +54,6 @@ import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
-import com.vastufirst.designsystem.components.VastuButtonInline
-import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
@@ -236,7 +234,9 @@ fun ScanDoorContent(
             if (door != null) "Next — which way is North?" else "Skip — I'll leave the door out",
             onClick = onNext,
         )
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VastuButtonInline("Back", onClick = onBack, style = VastuButtonStyle.SECONDARY)
+        // ⚠ No second "Back" button under this one. The header already carries the ‹ chevron, and a
+        // duplicate at the foot of a scrolling page bought nothing except one more thing to be half
+        // cut off by the bottom of the screen at a 200 % font — which is precisely what the geometry
+        // gate reported when it was there.
     }
 }
