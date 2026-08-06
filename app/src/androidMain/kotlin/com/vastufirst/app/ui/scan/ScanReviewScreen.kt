@@ -27,11 +27,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,14 +66,28 @@ import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
 /**
- * ⭐ How much of the flexible height the PICTURE gets, against 1 for the room list (owner,
- * 6 Aug 2026: "enlarge the floor plan — it is too small"). It was 1.1, which on a square builder's
- * sheet left the plan height-limited at roughly 60 % of the screen's width — a postage stamp beside
- * a list of rooms whose names he already knows. At 2 the picture becomes WIDTH-limited instead,
- * i.e. as large as the screen can draw it, and the list keeps a third of the space and scrolls.
- * The list is the cheaper thing to scroll: it is text, and every row is one line.
+ * ⭐⭐ THE PICTURE IS SIZED BY ITS OWN SHAPE, AND THE PAGE SCROLLS (owner, 6 Aug 2026: "enlarge the
+ * floor plan — it is too small").
+ *
+ * ⚠ The obvious fix was tried first and rendered wrong, which is why the harness exists. Splitting
+ * the height between the plan and the room list — even heavily in the plan's favour — leaves the
+ * plan sized by whatever is LEFT OVER, and on a square builder's sheet that means height-limited:
+ * about 60 % of the width it had. Worse, it fails hardest exactly where it matters most. At a 200 %
+ * font the headings and buttons take so much of the fixed height that the plan came out SMALLER
+ * than before the change, and the room list was clipped through the middle of a word.
+ *
+ * Giving the plan its own aspect ratio makes it full width at every font scale — as large as the
+ * screen can draw it, which is what "enlarge" actually means — and the page scrolls for the rest.
+ * The bounds stop a freakishly tall or wide sheet from taking the whole screen or becoming a slot.
  */
-private const val PLAN_WEIGHT = 2f
+private const val PLAN_MIN_ASPECT = 0.7f
+private const val PLAN_MAX_ASPECT = 1.8f
+
+/** Width ÷ height for the plan box: the picture's own shape, within [PLAN_MIN_ASPECT]..max. */
+private fun planAspect(image: ImageBitmap?): Float =
+    image?.takeIf { it.width > 0 && it.height > 0 }
+        ?.let { (it.width.toFloat() / it.height).coerceIn(PLAN_MIN_ASPECT, PLAN_MAX_ASPECT) }
+        ?: 1.2f
 
 /** What the scan hands this screen: the picture it read, and the rooms it read off it. */
 class ScanReviewData(
@@ -151,8 +166,14 @@ fun ScanReviewContent(
 ) {
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(startSelected) }
+    val aspect = planAspect(image)
 
-    Column(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6)) {
+    Column(
+        Modifier
+            .screenRoot(colors.paper)
+            .verticalScroll(rememberScrollState())
+            .padding(VastuTheme.spacing.s6),
+    ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -181,7 +202,7 @@ fun ScanReviewContent(
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(PLAN_WEIGHT)
+                    .aspectRatio(aspect)
                     .semantics {
                         contentDescription =
                             tint?.let { "Your plan, showing roughly where ${it.type.label()} was read" }
@@ -214,7 +235,7 @@ fun ScanReviewContent(
                 }
             }
         } else {
-            Box(Modifier.fillMaxWidth().weight(PLAN_WEIGHT), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().aspectRatio(aspect), contentAlignment = Alignment.Center) {
                 GuidanceState(
                     title = "The photo could not be shown",
                     body = "Every room we read is still listed below, and your score still works.",
@@ -225,8 +246,11 @@ fun ScanReviewContent(
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         SectionLabel("${rooms.size} rooms read from your plan")
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        LazyColumn(Modifier.weight(1f)) {
-            itemsIndexed(rooms) { index, room ->
+        // ⚠ A plain Column, not a LazyColumn — a lazy list cannot live inside a scrolling page, and
+        // it has nothing to earn here: the mapper refuses a plan over twenty rooms outright, so the
+        // longest list this can ever draw is twenty single-line rows.
+        Column {
+            rooms.forEachIndexed { index, room ->
                 val checkFlagged = room.flags.isNotEmpty()
                 val shown = selected == index
                 VastuListRow(

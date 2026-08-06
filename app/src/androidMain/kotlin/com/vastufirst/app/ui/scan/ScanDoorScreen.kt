@@ -23,10 +23,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,8 +59,16 @@ import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
-/** How much of the flexible height the picture takes, against 1 for everything under it. */
-private const val DOOR_PLAN_WEIGHT = 3f
+/**
+ * ⭐ The picture is sized by its OWN shape and the page scrolls, exactly as on the review screen —
+ * see the note there. Sharing the height instead leaves the plan sized by what is left over, which
+ * on a square builder's sheet is a slot with dead margin above and below it, and which collapses at
+ * a 200 % font precisely where somebody needs to aim at a wall.
+ */
+private fun doorPlanAspect(image: ImageBitmap?): Float =
+    image?.takeIf { it.width > 0 && it.height > 0 }
+        ?.let { (it.width.toFloat() / it.height).coerceIn(0.7f, 1.8f) }
+        ?: 1.2f
 
 /** The photo drawn to fit its box, centred — the frame every overlay is then measured in. */
 private class PhotoFit(val originX: Float, val originY: Float, val width: Float, val height: Float)
@@ -106,8 +117,14 @@ fun ScanDoorContent(
     val colors = VastuTheme.colors
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
     val strokeDp = VastuTheme.spacing.s1
+    val aspect = doorPlanAspect(image)
 
-    Column(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6)) {
+    Column(
+        Modifier
+            .screenRoot(colors.paper)
+            .verticalScroll(rememberScrollState())
+            .padding(VastuTheme.spacing.s6),
+    ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -129,7 +146,7 @@ fun ScanDoorContent(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .weight(DOOR_PLAN_WEIGHT)
+                    .aspectRatio(aspect)
                     .onSizeChanged { boxSize = it }
                     .pointerInput(rooms, image, boxSize) {
                         detectTapGestures { at ->
@@ -193,7 +210,7 @@ fun ScanDoorContent(
                 }
             }
         } else {
-            Box(Modifier.fillMaxWidth().weight(DOOR_PLAN_WEIGHT), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().aspectRatio(aspect), contentAlignment = Alignment.Center) {
                 GuidanceState(
                     title = "The photo could not be shown",
                     body = "You can carry on without marking the door — we will say so on your score.",
