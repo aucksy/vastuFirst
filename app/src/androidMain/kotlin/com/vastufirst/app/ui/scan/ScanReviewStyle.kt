@@ -21,7 +21,14 @@ class AndroidScanReviewStyle(context: Context) : ScanReviewStyle {
 
     private val prefs = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    override fun onPhoto(): Boolean = prefs.getBoolean(KEY, false)
+    /**
+     * ⭐ DEFAULT ON since 6 Aug 2026 (owner: *"make this approach the default for now… so I dont
+     * have to switch to this approach in setting everytime during testing"*). The photo flow is now
+     * the one being perfected: it confirms the rooms, marks the front door and sets North all on the
+     * user's own sheet, and never opens the grid editor. The toggle survives so the older
+     * confirm-on-the-grid path can still be reached, but nobody has to find it first.
+     */
+    override fun onPhoto(): Boolean = prefs.getBoolean(KEY, true)
 
     override fun set(onPhoto: Boolean) {
         prefs.edit().putBoolean(KEY, onPhoto).apply()
@@ -30,8 +37,14 @@ class AndroidScanReviewStyle(context: Context) : ScanReviewStyle {
     private companion object {
         const val FILE = "vastufirst_ui"
 
-        /** Versioned like the consent key: if what the toggle means changes, the key changes. */
-        const val KEY = "scan_review_on_photo_v1"
+        /**
+         * Versioned like the consent key: if what the toggle means changes, the key changes — and on
+         * 6 Aug 2026 it did. Under `_v1` it chose which screen CONFIRMED the rooms; under `_v2` it
+         * chooses the whole flow, because the photo path now also marks the front door and North and
+         * never opens the editor. Bumping it is also what makes the new default reach a phone that
+         * had already stored an answer to the old question.
+         */
+        const val KEY = "scan_review_on_photo_v2"
     }
 }
 

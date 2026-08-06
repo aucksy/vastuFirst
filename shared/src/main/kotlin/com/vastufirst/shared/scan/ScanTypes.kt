@@ -208,6 +208,21 @@ data class ScannedRoom(
      * positionally (see the note on [ScanBox]).
      */
     val source: ScanBox? = null,
+    /**
+     * ⭐ When one space was captioned in SECTIONS, the printed size of each section — in the order
+     * they read down and across the sheet. Empty for every ordinary room, which is nearly all of
+     * them.
+     *
+     * It exists because the owner's plan dimensions one continuous balcony three times, so fusing
+     * the sections into the single room they really are (ScanMapper's `MERGEABLE_RUN_TYPES`) would
+     * otherwise have thrown away three real printed measurements — and the check-what-we-read screen
+     * exists precisely so those can be checked against the paper. Non-empty here means
+     * [printedSize] is deliberately blank: no one number describes the whole strip.
+     *
+     * Appended LAST with a default, like every field before it — fixture code builds ScannedRoom
+     * positionally (see the note on [ScanBox]).
+     */
+    val readInParts: List<String> = emptyList(),
 )
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */

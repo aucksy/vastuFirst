@@ -1466,3 +1466,96 @@ counted: the screen the button lands on shows **"We found 8 rooms"**, the new li
 looked angled, so we kept the room names and threw the shapes away. Drag each one to its real
 place."*, eight named rows each with Change beside it, and **"Place them on the grid"** as the
 action. No drawn layout anywhere on it, which was the entire point.
+
+---
+
+## 3v. ⭐⭐⭐ The scan flow leaves the grid editor behind (6 August 2026)
+
+The owner scanned his own plan on v0.7.8 — the release the 2D-gate fix was built for — and it read.
+That closed §3u. What he wrote next was about everything that happened *after* it read, and all four
+notes are about the same thing: the scan flow was still handing his home to the drawing editor.
+
+> 1. we need to optimize this UI enlarge the floor plan — it is too small
+> 2. One long balcony is detected 3 times — there should be only 2 extracted balcony
+> 3. We are asking user to mark Entry Door but cant we do it ourselves when Entry is clearly
+>    marked? we ask only if its not
+> 4. Marking the Door and north should happen only on this actual floor plan and not on the floor
+>    plan builder and modifier screen… I intend to remove the floor plan builder / modifier from
+>    the Scan flow completely — we will perfect this only — make this approach the default
+
+### The plan is `plan-020`, and it was already recorded
+
+His sheet is the fixture the corpus calls **plan-020** — a Gurgaon builder plan, every size in feet
+and inches, fourteen captions. So every change below was measured against a **free recording of his
+own plan**. No paid scan was run, and none was needed (CLAUDE.md §2c).
+
+### 1 — the picture was height-limited, so it drew at ~60 % of the width it had
+
+The plan and the room list shared the flexible height at 1.1 : 1. On a square builder's sheet that
+made the picture *height*-limited: it drew about 500 px wide inside a box 810 px wide, a postage
+stamp beside a list of rooms whose names he already knew. Weighting it 2 : 1 makes it
+**width**-limited — as large as the screen can draw it — and the list keeps a third of the space and
+scrolls, which is the cheaper thing to scroll because every row is one line of text. The subtitle
+lost a line to pay for it, keeping both honesty words ("as you scanned it", "roughly").
+
+### 2 — four captions, two balconies
+
+His sheet prints BALCONY four times. One is the strip across the top. The other three run edge to
+edge along the bottom — **one continuous balcony that three rooms open onto**, dimensioned in the
+three pieces belonging to each (`17'-4"x8'-3"`, `13'-9"x10'-0"`, `20'-2"x6'-0"`). The reader copied
+the sheet faithfully; we were the ones treating the caption count as the room count.
+
+That was not only cosmetic. A balcony carries weight 0.8 and earns a positive verdict in the zone it
+most overlaps, so **one physical strip was collecting three verdicts**. `ScanMapper.mergeRuns` now
+fuses a contiguous run into one room. Two guards make it safe:
+
+- **Balconies only, and the caption must match too.** Fusing by type alone would weld two
+  side-by-side bedrooms into one bedroom the size of both, in a direction neither is in.
+- **The defect side cannot move.** "Balcony in the South-West" fires on ANY_ENCROACHMENT at
+  `roomAreaFraction` 0.02, so the fused strip still trips it on the third of itself that lies in the
+  South-West. Merging removes double-counted credit; it cannot hide a defect.
+
+The three printed sizes are not thrown away — they move to `ScannedRoom.readInParts` and the
+check-what-we-read row prints all of them, because checking our reading against the paper is that
+screen's whole job. Mirrored in `sim.mjs` (`--inject=no-merge-runs` restores the old count) so the
+two implementations cannot drift.
+
+### 3 — the plan already said where the front door is
+
+His sheet prints ENTRY and FOYER in as many letters, and we were still making him tap a wall.
+`frontDoorFromEntrance` reads it: a room called the entrance is where you come in, so the door is on
+whichever outer wall that room sits on.
+
+⚠ **This is not door detection.** Finding a door — a swing arc, a gap in a wall — benchmarks at
+39 %, which is why rule S3 keeps doors out of the wire format entirely, and still does. This reads a
+room **name**, the ~95 % skill, then applies our own arithmetic. No model is asked anything.
+
+It refuses far more often than it answers, because a wrong front door is the most expensive single
+mistake the app can make. It needs exactly one named entrance, within one cell of an outer wall
+(one, not zero: rooms here have been snapped and re-shaped, so a flush foyer can come to rest a
+cell in), and a clear winner on contact length if it sits in a corner. When it answers, the review
+screen **states** the answer beside the way to change it — not asking is not the same as deciding
+silently about the heaviest input the engine weighs.
+
+### 4 — the door and North now happen on the photograph
+
+The on-photo flow existed to keep the user's own sheet as the picture of record, and then jumped
+into the grid editor to ask the two questions that matter most. Now:
+
+- **`ScanDoorScreen`** — tap the wall on your own plan. The tap converts to page fractions, through
+  the home's frame, into the editor's own cell space, and `doorForTap` decides the side, so the
+  three defects that function already fixed (thin houses, taps in the margin, oversized plots) are
+  not re-derived. Skipped entirely when §3 above already answered.
+- **North on the photo** — `ZoneMapModel.planImage` draws the scanned sheet in the dial's plan
+  square instead of our rectangles. It needs no counter-rotation and gets none: North has always
+  turned the ring, the wedges and the marker while the plan underneath stayed still, so a photograph
+  behaves exactly as the rectangles did. Our room rectangles stand down rather than being drawn on
+  top of somebody's actual home.
+- The Settings toggle is now **on by default** (key bumped to `_v2`, since what it means has
+  changed) and the review screen's "fix on the grid" button is gone. The editor keeps the whole
+  draw-it-yourself path; it is simply no longer part of scanning.
+
+⚠ **What this gives up, stated plainly:** a scan whose *geometry* is wrong can no longer be dragged
+straight. A room read as the wrong *kind* is still re-typed on the results screen before the review.
+That is the owner's explicit call — "we will perfect this only" — and it is coherent with a flow
+whose premise is that the photograph, not our redrawing, is the truth.

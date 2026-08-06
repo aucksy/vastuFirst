@@ -35,6 +35,15 @@ object Routes {
      * surface that can FIX a wrong read.
      */
     const val SCAN_REVIEW = "scan_review"
+
+    /**
+     * ⭐ THE FRONT DOOR, MARKED ON THE PHOTO (owner, 6 Aug 2026: *"marking the Door and north should
+     * happen only on this actual floor plan and not on the floor plan builder and modifier
+     * screen"*). It replaces the old hop into the editor's door mode. Reached only when the plan did
+     * not name its own entrance — when it did, [com.vastufirst.app.ui.newplan.frontDoorFromEntrance]
+     * has already answered and the review screen states the answer instead of asking the question.
+     */
+    const val SCAN_DOOR = "scan_door"
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
     const val SCORE = "score"
@@ -71,8 +80,22 @@ object Routes {
      * be changed at all — the only thing on offer was renaming it.
      */
     const val ARG_FROM_SCORE = "fromScore"
-    const val MARK_NORTH_ROUTE = "$MARK_NORTH?$ARG_FROM_SCORE={$ARG_FROM_SCORE}"
+
+    /**
+     * ⭐ North, marked on the SCANNED PHOTO rather than on our redrawing of it (owner, 6 Aug 2026).
+     * The compass ring turns around the picture exactly as it turns around the drawn rooms — the
+     * plan itself never rotates — so the only difference is which image sits under the ring.
+     *
+     * A flag on the route rather than "show a photo whenever one is lying around": this screen is
+     * also reached by drawing a home by hand and by reopening a saved one, and a picture left over
+     * from an earlier scan appearing under someone else's home would be a lie about whose plan is
+     * being read.
+     */
+    const val ARG_FROM_SCAN = "fromScan"
+    const val MARK_NORTH_ROUTE =
+        "$MARK_NORTH?$ARG_FROM_SCORE={$ARG_FROM_SCORE}&$ARG_FROM_SCAN={$ARG_FROM_SCAN}"
     fun markNorthFromScore() = "$MARK_NORTH?$ARG_FROM_SCORE=true"
+    fun markNorthFromScan() = "$MARK_NORTH?$ARG_FROM_SCAN=true"
 
     /**
      * The optional "a few more things" step — water tank, tree, the road outside. Reached from

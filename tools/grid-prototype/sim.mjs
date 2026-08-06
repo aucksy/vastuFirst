@@ -1348,6 +1348,72 @@ function bestFreeSubRect(cand, blockers, printedRatio) {
   return best ? best.rect : null;
 }
 
+// ---- runs of sections (ScanMapper.mergeRuns) -------------------------------------------------
+// One continuous balcony captioned in three pieces is one room, not three. Balconies only, and the
+// caption must match too: fusing by TYPE alone would weld two side-by-side bedrooms into one.
+const MERGEABLE_RUN_TYPES = new Set(['BALCONY']);
+const RUN_BAND_SHARE = 0.6;
+const RUN_MAX_GAP = 0.02;
+
+const runKey = (label) => String(label).toUpperCase().replace(/\s+/g, ' ').trim();
+
+/** `aBand/bBand` is the axis the two must SHARE; `aRun/bRun` is the axis they must be continuous along. */
+function runContinuous(aBand, aBandSize, bBand, bBandSize, aRun, aRunSize, bRun, bRunSize) {
+  const thinner = Math.min(aBandSize, bBandSize);
+  if (!(thinner > 0)) return false;
+  const shared = Math.min(aBand + aBandSize, bBand + bBandSize) - Math.max(aBand, bBand);
+  if (shared < thinner * RUN_BAND_SHARE) return false;
+  const gap = Math.max(aRun, bRun) - Math.min(aRun + aRunSize, bRun + bRunSize);
+  return gap <= RUN_MAX_GAP;
+}
+
+const adjoins = (a, b) =>
+  runContinuous(a.y, a.h, b.y, b.h, a.x, a.w, b.x, b.w)
+  || runContinuous(a.x, a.w, b.x, b.w, a.y, a.h, b.y, b.h);
+
+function mergeRuns(typed) {
+  if (typed.length < 2) return typed;
+  const out = [];
+  const taken = new Array(typed.length).fill(false);
+  for (let i = 0; i < typed.length; i++) {
+    if (taken[i]) continue;
+    taken[i] = true;
+    const seed = typed[i];
+    if (!MERGEABLE_RUN_TYPES.has(seed.type)) { out.push(seed); continue; }
+    const run = [seed];
+    const queue = [seed];
+    const name = runKey(seed.box.label);
+    while (queue.length) {
+      const head = queue.shift();
+      for (let j = 0; j < typed.length; j++) {
+        if (taken[j]) continue;
+        const c = typed[j];
+        if (c.type !== seed.type || runKey(c.box.label) !== name) continue;
+        if (!adjoins(head.box, c.box)) continue;
+        taken[j] = true; run.push(c); queue.push(c);
+      }
+    }
+    if (run.length === 1) { out.push(seed); continue; }
+    const ordered = run.slice().sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+    const x = Math.min(...ordered.map((c) => c.box.x));
+    const y = Math.min(...ordered.map((c) => c.box.y));
+    const right = Math.max(...ordered.map((c) => c.box.x + c.box.w));
+    const bottom = Math.max(...ordered.map((c) => c.box.y + c.box.h));
+    const flags = new Set();
+    for (const c of ordered) for (const f of c.flags) flags.add(f);
+    out.push({
+      // `size` deliberately dropped: no one section's printed size describes the whole strip, and
+      // it is the number the re-shape would otherwise shrink the fused balcony back down to.
+      box: { label: ordered[0].box.label, x, y, w: right - x, h: bottom - y,
+        confidence: Math.min(...ordered.map((c) => c.box.confidence)), size: '' },
+      type: ordered[0].type,
+      flags,
+      parts: ordered.map((c) => c.box.size).filter((s) => s),
+    });
+  }
+  return out;
+}
+
 /** The whole mapper. Returns {kind:'placed'|'assisted'|'refused', ...}. */
 // ---- printed room sizes (RoomDimensions.kt) --------------------------------------------------
 // The reader reads TEXT at ~95 % and guesses rectangles at 40-70 %, so where a caption prints the
@@ -1704,12 +1770,17 @@ function scanMap(draft, imageAspect, opts = {}) {
   // runs. The reader lays out template rectangles, so "wholly inside another room" describes its
   // sloppiness, not the home. The contained room stays; the overlap resolver trims the pair apart.
   // FAULT INJECTION 'drop-contained' restores the drop — the owner's own master toilet vanishes.
-  const rooms = [];
+  const survivors = [];
   for (const c of typed) {
     if (inject === 'drop-contained' && typed.some((o) => o !== c && containedIn(c.box, o.box))) {
       dropped.push({ label: c.box.label, reason: 'SUB_AREA' });
-    } else rooms.push(c);
+    } else survivors.push(c);
   }
+  // ⭐ A run of sections under one caption is ONE room. Mirrors ScanMapper.mergeRuns — see the
+  // MERGEABLE_RUN_TYPES note there for the measurement: the owner's sheet captions one continuous
+  // balcony three times, so we were making three rooms, and the engine three scored verdicts, out
+  // of one strip. FAULT INJECTION 'no-merge-runs' restores the count-the-captions behaviour.
+  const rooms = inject === 'no-merge-runs' ? survivors : mergeRuns(survivors);
   if (!rooms.length) return { kind: 'refused', reason: unknown > 0 ? 'NO_LABELS' : 'NO_ROOMS', notes: notes() };
 
   const identified = rooms.slice().sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)
@@ -2287,8 +2358,17 @@ function scanPinnedCases(inject) {
     if (o.kind !== 'placed') {
       problems.push(`plan-020: expected placed, got ${o.kind}/${o.reason || ''}`);
     } else {
-      if ((o.rooms || []).filter((r) => r.label === 'BALCONY').length !== 4) {
-        problems.push(`plan-020: all four BALCONY captions must survive as their own rooms`);
+      // ⭐ FOUR captions, TWO balconies (owner, 6 Aug 2026, of this his own flat: "one long balcony
+      // is detected 3 times — there should be only 2 extracted balcony"). The three along the
+      // bottom abut edge to edge in one band and are one continuous strip that three rooms open
+      // onto; the fourth is the separate run across the top and must NOT be swept in with them.
+      // With --inject=no-merge-runs this returns to four, which is what the sheet says and not
+      // what the home is.
+      const balconies = (o.rooms || []).filter((r) => r.label === 'BALCONY');
+      const wantBalconies = inject === 'no-merge-runs' ? 4 : 2;
+      if (balconies.length !== wantBalconies) {
+        problems.push(`plan-020: expected ${wantBalconies} balconies, got ${balconies.length} `
+          + '— the bottom run fuses into one strip, the top one stays its own room');
       }
       const kitchen = (o.rooms || []).find((r) => /KITCHEN/.test(r.label));
       if (!kitchen) problems.push('plan-020: the kitchen did not survive');

@@ -197,17 +197,95 @@ class RecordedScanTest {
         )
         val out = ScanMapper.map(rec.reply, imageAspect = 1399.0 / 1389.0)
         val placed = assertIs<ScanOutcome.Placed>(out, "a fully dimensioned single home must place")
-        assertEquals(13, placed.rooms.size, "everything but the dressing area places")
         assertEquals(
             listOf("DRESS"),
             placed.notes.dropped.map { it.label },
             "the dressing area drops by NAME — the only drop on this sheet",
         )
         assertEquals(
-            4,
-            placed.rooms.count { it.type == RoomType.BALCONY },
-            "four rooms captioned just BALCONY, at four different printed sizes, stay four rooms",
+            11,
+            placed.rooms.size,
+            "thirteen typed spaces, less the bottom balcony run fusing three captions into one",
         )
+
+        // ⭐ FOUR captions reading BALCONY, TWO balconies. The owner said it of this, his own flat,
+        // on 6 August 2026: "one long balcony is detected 3 times — there should be only 2 extracted
+        // balcony". The three along the bottom abut edge to edge in one band — one continuous strip
+        // that three rooms open onto, which the architect dimensioned in the three pieces belonging
+        // to each. Counting captions made three rooms of it, and the engine gave one strip three
+        // scored verdicts.
+        val balconies = placed.rooms.filter { it.type == RoomType.BALCONY }
+        assertEquals(2, balconies.size, "the bottom run is one balcony; the top strip is the other")
+
+        val fused = assertNotNull(
+            balconies.firstOrNull { it.readInParts.isNotEmpty() },
+            "the bottom run must arrive as one room that remembers the sections it came from",
+        )
+        assertEquals(
+            listOf("17'-4\"x8'-3\"", "13'-9\"x10'-0\"", "20'-2\"x6'-0\""),
+            fused.readInParts,
+            "all three printed sizes survive, left to right, for the user to check against the sheet",
+        )
+        assertEquals(
+            "",
+            fused.printedSize,
+            "no single printed size describes the strip, so none is claimed — see combineRun",
+        )
+
+        val standalone = assertNotNull(
+            balconies.firstOrNull { it.readInParts.isEmpty() },
+            "the top balcony touches none of the others and must stay a plain room",
+        )
+        assertEquals(
+            "33'-5\"x5'-0\"",
+            standalone.printedSize,
+            "an unfused balcony keeps the size its own caption prints",
+        )
+    }
+
+    /**
+     * ⭐ The fusing rule is about ADJACENCY, not about the word "balcony" — the guard that stops it
+     * quietly welding a home's balconies together wherever they happen to be.
+     *
+     * Two balconies on opposite walls share no band at all and must stay two rooms; two bedrooms
+     * side by side share a band AND touch, and must stay two rooms because only balconies fuse.
+     * The second half is the one that would be a disaster in the field: a fused pair of bedrooms is
+     * one bedroom the size of both, in a Vastu direction neither of them is in.
+     */
+    @Test
+    fun `⭐ only balconies fuse, and only where they actually touch`() {
+        val apart = ScanMapper.map(
+            ScanDraft(
+                planType = PlanImageType.TWO_D_PLAN,
+                rooms = listOf(
+                    ScanBox("LIVING ROOM", 0.1, 0.3, 0.5, 0.4, 0.9, "16'-0\" x 13'-0\""),
+                    ScanBox("KITCHEN", 0.6, 0.3, 0.3, 0.2, 0.9, "9'-0\" x 6'-0\""),
+                    // North wall and south wall: same width, no shared band.
+                    ScanBox("BALCONY", 0.1, 0.1, 0.8, 0.2, 0.9, "26'-0\" x 6'-0\""),
+                    ScanBox("BALCONY", 0.1, 0.7, 0.8, 0.2, 0.9, "26'-0\" x 6'-0\""),
+                ),
+            ),
+        )
+        assertEquals(
+            2,
+            assertIs<ScanOutcome.Placed>(apart).rooms.count { it.type == RoomType.BALCONY },
+            "balconies on opposite walls share no band and must never fuse",
+        )
+
+        val neighbours = ScanMapper.map(
+            ScanDraft(
+                planType = PlanImageType.TWO_D_PLAN,
+                rooms = listOf(
+                    ScanBox("LIVING ROOM", 0.1, 0.1, 0.8, 0.3, 0.9, "26'-0\" x 10'-0\""),
+                    // Touching, same band, same resolved type — and still two bedrooms.
+                    ScanBox("BED ROOM-1", 0.1, 0.5, 0.4, 0.4, 0.9, "13'-0\" x 13'-0\""),
+                    ScanBox("BED ROOM-2", 0.5, 0.5, 0.4, 0.4, 0.9, "13'-0\" x 13'-0\""),
+                ),
+            ),
+        )
+        val beds = assertIs<ScanOutcome.Placed>(neighbours).rooms.filter { it.type == RoomType.BEDROOM }
+        assertEquals(2, beds.size, "two touching bedrooms are two bedrooms — only balconies fuse")
+        assertTrue(beds.all { it.readInParts.isEmpty() }, "and neither is marked as fused")
     }
 
     /**

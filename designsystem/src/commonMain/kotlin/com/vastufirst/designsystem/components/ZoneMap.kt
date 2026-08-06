@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -17,6 +18,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import com.vastufirst.designsystem.foundation.semanticsLabel
 import com.vastufirst.designsystem.theme.VastuTheme
 import kotlin.math.cos
@@ -46,6 +49,21 @@ data class ZoneMapModel(
     val wedges: List<ZoneWedge>,     // 8, in N..NW order
     val northDegrees: Float,
     val centreColor: Color,
+    /**
+     * ⭐ The user's OWN scanned plan, drawn in the plan square in place of [rooms] (owner,
+     * 6 Aug 2026: *"marking the Door and north should happen only on this actual floor plan"*).
+     * Null everywhere else, which is every hand-drawn home and every reopened one — those keep the
+     * redrawn rectangles they have always shown.
+     *
+     * It needs no counter-rotation and gets none: North turns the ring, the wedges and the N marker,
+     * while the plan underneath has always stayed still. A photograph behaves exactly as the
+     * rectangles do.
+     *
+     * ⚠ Hold it in a `remember`. This is a data class and ImageBitmap compares by identity, so a
+     * bitmap decoded afresh each recomposition makes the whole model unequal every frame and defeats
+     * the measure cache the dial's drag smoothness depends on.
+     */
+    val planImage: ImageBitmap? = null,
 )
 
 /**
@@ -94,6 +112,26 @@ fun ZoneMap(
         // Outer ring.
         drawCircle(color = line, radius = ringR, center = centre, style = Stroke(width = 0.6f * s))
 
+        // ⭐ The scanned plan, where there is one — drawn into the same 92-unit square the rooms use,
+        // aspect-fit and centred. It goes in HERE, before the wedges, and that position is the whole
+        // trick: every layer that follows (the wedge tints, the Brahmasthan disc, the plan outline,
+        // the North line and marker) then paints over the photograph in the order it always has, so
+        // the dial reads identically whether the plan underneath is drawn or photographed.
+        model.planImage?.let { img ->
+            if (img.width > 0 && img.height > 0) {
+                val tl = off(4f, 4f)
+                val box = 92f * s
+                val k = min(box / img.width, box / img.height)
+                val dw = img.width * k
+                val dh = img.height * k
+                drawImage(
+                    image = img,
+                    dstOffset = IntOffset((tl.x + (box - dw) / 2f).toInt(), (tl.y + (box - dh) / 2f).toInt()),
+                    dstSize = IntSize(dw.toInt(), dh.toInt()),
+                )
+            }
+        }
+
         // 8 directional wedges, rotated by North (drawArc: 0° = +x, clockwise; bearing→canvas = −90).
         model.wedges.forEachIndexed { i, w ->
             val startBearing = i * 45f - 22.5f + north
@@ -123,8 +161,11 @@ fun ZoneMap(
             style = Stroke(width = 0.6f * s),
         )
 
-        // Rooms, coloured by verdict.
-        model.rooms.forEach { r ->
+        // Rooms, coloured by verdict — stood down when the user's own plan is showing, because
+        // drawing our rectangles on top of their photograph would claim their rooms are where we put
+        // them. The wedge ring above still says which direction each part of the picture is in.
+        val drawnRooms = if (model.planImage != null) emptyList() else model.rooms
+        drawnRooms.forEach { r ->
             val tl = off(4f + r.x / 100f * 92f, 4f + r.y / 100f * 92f)
             val sz = Size(r.w / 100f * 92f * s, r.h / 100f * 92f * s)
             drawRect(color = r.fill, topLeft = tl, size = sz)

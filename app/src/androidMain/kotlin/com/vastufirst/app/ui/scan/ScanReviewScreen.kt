@@ -13,9 +13,11 @@
 //     page, and ScanMapper.pageSource composes the two — measured on 35 approved scans, this took
 //     Green Court's tint centres from 0.18–0.28 of the sheet off to 0.007–0.033. Older replies
 //     carry no building box and draw as before. Either way the subtitle keeps saying "roughly".
-//   · This screen VERIFIES; it does not fix. A wrong or missing room is corrected on the guided
-//     grid, one tap away — that is what the "Fix on the grid instead" button is for, and why the
-//     classic flow stays the toggle's default.
+//   · This screen VERIFIES; it does not redraw. A room read as the wrong KIND is re-typed on the
+//     results screen before this one. What it deliberately no longer offers is the guided grid:
+//     since 6 Aug 2026 the scan flow never opens the editor at all (owner: "I intend to remove the
+//     floor plan builder / modifier from the Scan flow completely"), so the door and North are now
+//     marked on this same photograph and the redrawing is confined to the draw-it-yourself path.
 package com.vastufirst.app.ui.scan
 
 import android.graphics.BitmapFactory
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.IntSize
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.screenRoot
+import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
@@ -61,11 +64,30 @@ import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
+/**
+ * ⭐ How much of the flexible height the PICTURE gets, against 1 for the room list (owner,
+ * 6 Aug 2026: "enlarge the floor plan — it is too small"). It was 1.1, which on a square builder's
+ * sheet left the plan height-limited at roughly 60 % of the screen's width — a postage stamp beside
+ * a list of rooms whose names he already knows. At 2 the picture becomes WIDTH-limited instead,
+ * i.e. as large as the screen can draw it, and the list keeps a third of the space and scrolls.
+ * The list is the cheaper thing to scroll: it is text, and every row is one line.
+ */
+private const val PLAN_WEIGHT = 2f
+
 /** What the scan hands this screen: the picture it read, and the rooms it read off it. */
 class ScanReviewData(
     val imageBytes: ByteArray?,
     val rooms: List<ScannedRoom>,
-)
+) {
+    /**
+     * The photo, decoded once per handover. Shared with the door screen so both draw the identical
+     * bitmap — a second decode would be a second object, and the door marker is positioned against
+     * the picture's own pixels.
+     */
+    fun decodeImage(): ImageBitmap? = imageBytes?.let { bytes ->
+        runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
+    }
+}
 
 /**
  * The handover slot between the scan screen and this one — a one-field singleton rather than a
@@ -79,23 +101,35 @@ class ScanReviewHandover {
 @Composable
 fun ScanReviewScreen(
     handover: ScanReviewHandover,
+    door: GridDoor?,
     onContinue: () -> Unit,
-    onEditGrid: () -> Unit,
+    onChangeDoor: () -> Unit,
     onBack: () -> Unit,
 ) {
     val data = handover.data
-    val image = remember(data) {
-        data?.imageBytes?.let { bytes ->
-            runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
-        }
-    }
+    val image = remember(data) { data?.decodeImage() }
     ScanReviewContent(
         image = image,
         rooms = data?.rooms.orEmpty(),
+        door = door,
         onContinue = onContinue,
-        onEditGrid = onEditGrid,
+        onChangeDoor = onChangeDoor,
         onBack = onBack,
     )
+}
+
+/**
+ * What the plan printed for this room, for the line under its name.
+ *
+ * ⭐ A room fused from a run of sections has no single printed size — it has all of them (the owner's
+ * balcony runs the width of his flat and his sheet dimensions it in three pieces). All of them are
+ * printed here, because checking our reading against the paper is this screen's entire job, and a
+ * fused row that showed "no size printed" would have quietly deleted three real measurements.
+ */
+private fun sizeNote(room: ScannedRoom): String = when {
+    room.readInParts.size > 1 -> " · one space: " + room.readInParts.joinToString(" + ")
+    room.printedSize.isNotBlank() -> " · " + room.printedSize
+    else -> " · no size printed"
 }
 
 /** The screen as a pure function of its inputs — the seam the render harness draws. */
@@ -103,8 +137,14 @@ fun ScanReviewScreen(
 fun ScanReviewContent(
     image: ImageBitmap?,
     rooms: List<ScannedRoom>,
+    /**
+     * ⭐ The front door, when the plan told us where it is — read from its own printed ENTRY/FOYER by
+     * `frontDoorFromEntrance`, never guessed. Non-null means this screen STATES it rather than
+     * sending the user off to mark it; null means the next step is the asking.
+     */
+    door: GridDoor? = null,
     onContinue: () -> Unit = {},
-    onEditGrid: () -> Unit = {},
+    onChangeDoor: () -> Unit = {},
     onBack: () -> Unit = {},
     /** For the harness: pre-select a room so the golden shows the tint. -1 = nothing selected. */
     startSelected: Int = -1,
@@ -122,12 +162,16 @@ fun ScanReviewContent(
             VText("Check what we read", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
+        // ⭐ Two lines, not three (owner, 6 Aug 2026: "enlarge the floor plan — it is too small").
+        // Every line of prose above the picture is a line taken off the picture, and this screen's
+        // whole job is looking at the plan. The honesty words stay: "as you scanned it" is the
+        // promise that we never redrew it, "roughly" is the tint's stated limit.
         VText(
-            "Your plan stays as you scanned it. Tap a room below — the tint shows roughly where it was read.",
+            "Your plan, as you scanned it. Tap a room to see roughly where we read it.",
             style = VastuTheme.type.bodySm,
             color = colors.textSecondary,
         )
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         if (image != null) {
             val tint = rooms.getOrNull(selected)
@@ -137,7 +181,7 @@ fun ScanReviewContent(
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1.1f)
+                    .weight(PLAN_WEIGHT)
                     .semantics {
                         contentDescription =
                             tint?.let { "Your plan, showing roughly where ${it.type.label()} was read" }
@@ -170,10 +214,10 @@ fun ScanReviewContent(
                 }
             }
         } else {
-            Box(Modifier.fillMaxWidth().weight(1.1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(PLAN_WEIGHT), contentAlignment = Alignment.Center) {
                 GuidanceState(
                     title = "The photo could not be shown",
-                    body = "Every room we read is still listed below, and the grid can show the layout.",
+                    body = "Every room we read is still listed below, and your score still works.",
                 )
             }
         }
@@ -187,8 +231,7 @@ fun ScanReviewContent(
                 val shown = selected == index
                 VastuListRow(
                     title = room.label.ifBlank { room.type.label() },
-                    subtitle = room.type.label() +
-                        (room.printedSize.takeIf { it.isNotBlank() }?.let { " · $it" } ?: " · no size printed"),
+                    subtitle = room.type.label() + sizeNote(room),
                     modifier = Modifier.clickableTap(onClickLabel = "show this room on the plan") {
                         selected = if (shown) -1 else index
                     },
@@ -206,15 +249,32 @@ fun ScanReviewContent(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
-        // ⭐ "set the front door", not "set North" (audit B2): the next step is now the door ask on
-        // the grid — the one input this flow used to skip silently — and the button must not
-        // promise a different screen than the one it opens.
-        VastuButton("These are my rooms — set the front door", onClick = onContinue)
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VastuButtonInline(
-            "Something is wrong — fix on the grid",
-            onClick = onEditGrid,
-            style = VastuButtonStyle.SECONDARY,
+        // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant we do it
+        // ourselves when Entry is clearly marked? we ask only if its not"). But not asking is not the
+        // same as not saying: the front door is the heaviest input the engine weighs, so what we read
+        // is stated here in one line, on the screen whose whole job is checking our reading, with the
+        // way to change it beside it. Silence would have been the app deciding and saying nothing.
+        if (door != null) {
+            VText(
+                "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}.",
+                style = VastuTheme.type.bodySm,
+                color = colors.textSecondary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+        }
+        // The button never promises a screen other than the one it opens (audit B2).
+        VastuButton(
+            if (door != null) "These are my rooms — which way is North?"
+            else "These are my rooms — set the front door",
+            onClick = onContinue,
         )
+        if (door != null) {
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VastuButtonInline(
+                "Put the front door somewhere else",
+                onClick = onChangeDoor,
+                style = VastuButtonStyle.SECONDARY,
+            )
+        }
     }
 }

@@ -98,6 +98,82 @@ class ScanScreenshotTest {
     }
 
     /**
+     * ⭐⭐ The owner's OWN plan, on the two screens his 6 Aug 2026 notes are about — driven by the
+     * recorded reply for it (`plan-020`), so these goldens are literally the pictures he was
+     * looking at when he wrote them.
+     *
+     * What they must show:
+     *   · ONE balcony row for the strip his sheet captions three times, printing all three sizes.
+     *   · The front door STATED rather than asked for, because his plan prints FOYER — and the
+     *     line that says so has to survive 200 % font on a 360 dp phone like everything else.
+     */
+    private fun ownersPlan(): ScanOutcome.Placed =
+        ScanMapper.map(
+            RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
+            imageAspect = 1399.0 / 1389.0,
+        ) as ScanOutcome.Placed
+
+    private fun planPhoto() =
+        android.graphics.Bitmap.createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+            .asImageBitmap()
+
+    @Test
+    fun scanReviewWithDoorReadFromThePlan() {
+        val outcome = ownersPlan()
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        )
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = planPhoto(),
+                rooms = outcome.rooms,
+                door = door,
+                startSelected = -1,
+            )
+        }
+        captureAcrossMatrix("scan-review-door", content)
+        writeManifestAcrossMatrix("scan-review-door", content)
+    }
+
+    /**
+     * ⭐ Marking the front door ON THE PHOTO — the screen that replaced the hop into the grid editor.
+     * Rendered with the door already placed, because the marker over the plan and the outline it
+     * sits on are the two things a screenshot can check and a tap test cannot.
+     */
+    @Test
+    fun scanDoor() {
+        val outcome = ownersPlan()
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        )
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanDoorContent(
+                image = planPhoto(),
+                rooms = outcome.rooms,
+                door = door,
+            )
+        }
+        captureAcrossMatrix("scan-door", content)
+        writeManifestAcrossMatrix("scan-door", content)
+    }
+
+    /** The same screen before anything is marked — the state a plan with no printed entrance opens in. */
+    @Test
+    fun scanDoorUnmarked() {
+        val outcome = ownersPlan()
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanDoorContent(
+                image = planPhoto(),
+                rooms = outcome.rooms,
+                door = null,
+            )
+        }
+        captureAcrossMatrix("scan-door-unmarked", content)
+        writeManifestAcrossMatrix("scan-door-unmarked", content)
+    }
+
+    /**
      * ⭐ A phone with no camera app at all, after the camera button has been pressed (v0.6.6).
      *
      * ⚠ The button used to open the GALLERY — the same picker as the button above it — so someone

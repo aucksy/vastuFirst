@@ -11,6 +11,7 @@ import com.vastufirst.app.ui.details.fixturesFor
 import com.vastufirst.app.ui.details.siteAnswersFromPlan
 import com.vastufirst.app.ui.details.siteFor
 import com.vastufirst.shared.Room
+import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.CellRect
 import com.vastufirst.shared.editor.Footprint
@@ -275,6 +276,76 @@ fun doorForTap(xCells: Float, yCells: Float, rooms: List<GridRoom>): GridDoor? {
         distW -> GridDoor(DoorSide.W, cRow)
         else -> GridDoor(DoorSide.E, cRow)
     }
+}
+
+/**
+ * How far off an outer wall a named entrance may still sit and count as being ON it, in cells.
+ *
+ * ⚠ One, not zero. The rooms reaching this point have been snapped to a drawing grid and re-shaped
+ * to the sizes their sheet prints, so a foyer drawn hard against the outer wall can legitimately
+ * come to rest one cell in — a wall's thickness, or a corridor that took the edge strip. Demanding
+ * a perfect flush would have made the answer depend on rounding, which is the worst possible reason
+ * to ask somebody a question we had already answered. Two cells would start reaching inner lobbies.
+ */
+const val ENTRANCE_WALL_REACH = 1
+
+/**
+ * ⭐⭐ THE FRONT DOOR, READ OFF THE PLAN — when, and only when, the plan says where it is.
+ *
+ * The owner asked for this of his own sheet (6 Aug 2026): *"we are asking user to mark Entry Door
+ * but cant we do it ourselves when Entry is clearly marked? we ask only if its not"*. His plan
+ * prints ENTRY and FOYER in as many letters, and we were still making him tap.
+ *
+ * ⚠ THIS IS NOT DOOR DETECTION, and the difference is the whole safety of it. Asking a reader to
+ * FIND a door — a swing arc, a gap in a wall — benchmarks at 39 %, which is why `ScanTypes` rule S3
+ * says there is no door anywhere in the wire format and there still isn't. This reads a room NAME,
+ * the thing the reader does at ~95 %, and then applies our own arithmetic: a room called the
+ * entrance is where you come in, so the front door is on whichever outer wall that room is part of.
+ * No model is asked anything, and nothing here reaches the reader.
+ *
+ * It refuses far more often than it answers, on purpose, because a wrong front door is the single
+ * most expensive mistake the app can make — it is the heaviest input the engine weighs. It answers
+ * only when all three hold:
+ *   · the plan named exactly ONE entrance. Two foyers is a plan we do not understand.
+ *   · that room is ON an outer wall, within [ENTRANCE_WALL_REACH]. An entrance floating in the
+ *     middle of the footprint is an inner lobby, and which wall the visitor came through is then a
+ *     guess.
+ *   · one wall is the clear nearest, or — in a corner — one contact is clearly the longer. A square
+ *     entrance in a corner has two equal claims and gets neither.
+ *
+ * Everything it returns is still shown to the user and still changeable; "we asked only if we had
+ * to" is not the same as "we decided for you and said nothing".
+ */
+fun frontDoorFromEntrance(rooms: List<GridRoom>): GridDoor? {
+    if (rooms.isEmpty()) return null
+    val entrance = rooms.filter { it.type == RoomType.ENTRANCE }.singleOrNull() ?: return null
+    val minC = rooms.minOf { it.col }
+    val maxC = rooms.maxOf { it.col + it.w }
+    val minR = rooms.minOf { it.row }
+    val maxR = rooms.maxOf { it.row + it.h }
+
+    // How far the entrance sits from each outer wall, and how much wall it would occupy if that is
+    // the one. Contact length breaks a corner tie: a foyer 6 cells along the west wall and 1 cell
+    // along the north wall is a west entrance.
+    val walls = listOf(
+        Triple(DoorSide.N, entrance.row - minR, entrance.w),
+        Triple(DoorSide.S, maxR - (entrance.row + entrance.h), entrance.w),
+        Triple(DoorSide.W, entrance.col - minC, entrance.h),
+        Triple(DoorSide.E, maxC - (entrance.col + entrance.w), entrance.h),
+    )
+    val nearest = walls.minOf { it.second }
+    if (nearest > ENTRANCE_WALL_REACH) return null         // an inner lobby, not a way in
+    val onWall = walls.filter { it.second == nearest }
+    val best = onWall.maxByOrNull { it.third } ?: return null
+    if (onWall.count { it.third == best.third } > 1) return null   // a corner with no longer side
+
+    // Along the wall, the middle of the entrance itself — clamped onto the footprint, exactly as a
+    // tapped door is, so displayed == scored == reloaded.
+    val cell = when (best.first) {
+        DoorSide.N, DoorSide.S -> (entrance.col + entrance.w / 2).coerceIn(minC, maxC - 1)
+        DoorSide.W, DoorSide.E -> (entrance.row + entrance.h / 2).coerceIn(minR, maxR - 1)
+    }
+    return GridDoor(best.first, cell)
 }
 
 /** The door centre + wall span on the footprint perimeter for the chosen side/cell. */

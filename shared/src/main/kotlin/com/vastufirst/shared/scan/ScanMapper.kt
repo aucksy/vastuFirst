@@ -261,7 +261,55 @@ object ScanMapper {
 
     // -----------------------------------------------------------------------------------------
 
-    private class Candidate(val box: ScanBox, val type: RoomType, val flags: MutableSet<RoomFlag>)
+    private class Candidate(
+        val box: ScanBox,
+        val type: RoomType,
+        val flags: MutableSet<RoomFlag>,
+        /** The printed sizes of the captions this candidate was fused from. Empty unless merged. */
+        val parts: List<String> = emptyList(),
+    )
+
+    // ---- one space, captioned in sections ----------------------------------------------------
+    /**
+     * ⭐⭐ WHY A RUN IS ONE ROOM (owner, 6 Aug 2026, of his own flat: *"one long balcony is detected
+     * 3 times — there should be only 2 extracted balcony"*).
+     *
+     * His sheet prints FOUR captions reading BALCONY. One is the long strip across the top. The other
+     * three run edge to edge along the bottom at three different printed depths — `17'-4"x8'-3"`,
+     * `13'-9"x10'-0"`, `20'-2"x6'-0"` — because three rooms open onto **one continuous balcony** and
+     * the architect dimensioned it in the three pieces that belong to each. The reader is not wrong;
+     * it copied the sheet faithfully. We were the ones treating the caption count as the room count.
+     *
+     * Two things were wrong with that, and only the first is cosmetic:
+     *   · The check-what-we-read list showed the same balcony three times, which reads as a bug.
+     *   · The engine scored it three times. A balcony carries weight 0.8 and earns a positive verdict
+     *       in the zone it most overlaps, so one physical strip was collecting three verdicts.
+     *
+     * ⚠ SAFE FOR THE DEFECT SIDE, which is the half that must not move. "Balcony in the South-West"
+     * fires on ANY_ENCROACHMENT at `roomAreaFraction` = 0.02 — two per cent of the room's own area —
+     * so the fused strip still trips it on the third of itself that lies in the South-West. Merging
+     * removes double-counted credit; it cannot hide a defect.
+     *
+     * ⚠ RESTRICTED TO BALCONIES, and that restriction is load-bearing. Fusing by TYPE alone would
+     * weld two side-by-side bedrooms into one bedroom the size of both. A balcony is the one room
+     * type whose sections genuinely form a single space along one wall — and the label must match
+     * as well, so a `BALCONY` never fuses with a `SIT OUT` that merely maps to the same type.
+     */
+    private val MERGEABLE_RUN_TYPES = setOf(RoomType.BALCONY)
+
+    /**
+     * How much of the thinner section's DEPTH the two must share to count as the same run. At 0.6 a
+     * balcony that steps in or out along its length still fuses, while a balcony on the north wall
+     * never fuses with one on the south — they share no band at all.
+     */
+    const val RUN_BAND_SHARE = 0.6
+
+    /**
+     * The largest gap along the run, as a fraction of the sheet, that still counts as continuous.
+     * The owner's three sections abut exactly (gap 0.0); this allows a wall's thickness between them
+     * without letting two balconies at opposite ends of the same wall reach each other.
+     */
+    const val RUN_MAX_GAP = 0.02
 
     /**
      * Turn one model reply into an outcome.
@@ -321,10 +369,15 @@ object ScanMapper {
             }
         }
 
+        // ---- 4b. ⭐ a run of sections under one caption is ONE room ------------------------------
+        // See [MERGEABLE_RUN_TYPES]: the owner's plan captions one continuous balcony three times,
+        // and we were making three rooms — and three scored verdicts — out of it.
+        val fused = mergeRuns(typed)
+
         // ---- 5. every typed room survives — sub-areas were dropped BY NAME in step 4 -----------
         // (The geometric containment drop that used to live here was measured against the whole
         // recorded corpus and deleted; see the note above where its threshold used to be.)
-        val rooms = typed
+        val rooms = fused
 
         if (rooms.isEmpty()) {
             // Everything the plan said was unreadable as a room name — a numbered legend whose key
@@ -341,6 +394,7 @@ object ScanMapper {
                 ScannedRoom(
                     it.type, it.box.label, rect = null, flags = it.flags.toSet(),
                     printedSize = it.box.printedSize, source = pageSource(draft.building, it.box),
+                    readInParts = it.parts,
                 )
             }
 
@@ -466,6 +520,7 @@ object ScanMapper {
                 ScannedRoom(
                     c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize,
                     source = pageSource(draft.building, c.box),
+                    readInParts = c.parts,
                 )
             }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
@@ -533,6 +588,103 @@ object ScanMapper {
      * Rooms whose caption prints no size are left exactly as they were, so a mixed plan works and a
      * plan with no dimensions at all is untouched.
      */
+    /**
+     * Fuse each contiguous run of same-labelled sections into one room. Everything else passes
+     * through untouched and in its original order. See [MERGEABLE_RUN_TYPES] for why this is
+     * balconies only.
+     */
+    private fun mergeRuns(typed: List<Candidate>): List<Candidate> {
+        if (typed.size < 2) return typed
+        val out = ArrayList<Candidate>(typed.size)
+        val taken = BooleanArray(typed.size)
+        for (i in typed.indices) {
+            if (taken[i]) continue
+            taken[i] = true
+            val seed = typed[i]
+            if (seed.type !in MERGEABLE_RUN_TYPES) { out += seed; continue }
+            // Grow the run transitively: three sections in a line are two adjacencies, and the
+            // middle one is what connects the ends. A queue rather than a single pass, so the order
+            // the reader happened to list them in cannot change the answer.
+            val run = ArrayList<Candidate>().apply { add(seed) }
+            val queue = ArrayDeque<Candidate>().apply { add(seed) }
+            val name = runKey(seed.box.label)
+            while (queue.isNotEmpty()) {
+                val head = queue.removeFirst()
+                for (j in typed.indices) {
+                    if (taken[j]) continue
+                    val c = typed[j]
+                    if (c.type != seed.type || runKey(c.box.label) != name) continue
+                    if (!adjoins(head.box, c.box)) continue
+                    taken[j] = true
+                    run += c
+                    queue += c
+                }
+            }
+            out += if (run.size == 1) seed else combineRun(run)
+        }
+        return out
+    }
+
+    /** Captions compared for fusing: case and spacing are the sheet's, not the room's. */
+    private fun runKey(label: String): String = label.uppercase().replace(WHITESPACE, " ").trim()
+
+    private val WHITESPACE = Regex("\\s+")
+
+    /**
+     * Do these two sections form part of one strip? True when they share most of their depth on one
+     * axis AND touch along the other. Tested both ways round, so a run may lie along either axis.
+     */
+    private fun adjoins(a: ScanBox, b: ScanBox): Boolean =
+        // side by side: share the y band, touch along x.
+        continuous(a.y, a.h, b.y, b.h, a.x, a.w, b.x, b.w) ||
+            // stacked: share the x band, touch along y.
+            continuous(a.x, a.w, b.x, b.w, a.y, a.h, b.y, b.h)
+
+    /** `band*` is the axis the two must SHARE; `run*` is the axis they must be continuous along. */
+    private fun continuous(
+        aBand: Double, aBandSize: Double, bBand: Double, bBandSize: Double,
+        aRun: Double, aRunSize: Double, bRun: Double, bRunSize: Double,
+    ): Boolean {
+        val thinner = min(aBandSize, bBandSize)
+        if (thinner <= 0.0) return false
+        val shared = min(aBand + aBandSize, bBand + bBandSize) - max(aBand, bBand)
+        if (shared < thinner * RUN_BAND_SHARE) return false
+        val gap = max(aRun, bRun) - min(aRun + aRunSize, bRun + bRunSize)
+        return gap <= RUN_MAX_GAP
+    }
+
+    /**
+     * One room from a run of sections: the box that encloses them all.
+     *
+     * ⚠ [ScanBox.printedSize] is deliberately left EMPTY. It is the number [reshapeToPrinted] shapes
+     * a room from, and no single section's printed size describes the whole strip — carrying one
+     * would shrink the fused balcony back to a third of itself. The sizes are not lost: they move to
+     * [Candidate.parts] and the check-what-we-read screen prints all of them, so the user still
+     * checks our reading against their own paper, which is the point of that screen.
+     */
+    private fun combineRun(run: List<Candidate>): Candidate {
+        val ordered = run.sortedWith(compareBy({ it.box.y }, { it.box.x }))
+        val x = ordered.minOf { it.box.x }
+        val y = ordered.minOf { it.box.y }
+        val right = ordered.maxOf { it.box.x + it.box.w }
+        val bottom = ordered.maxOf { it.box.y + it.box.h }
+        return Candidate(
+            box = ScanBox(
+                label = ordered.first().box.label,
+                x = x,
+                y = y,
+                w = right - x,
+                h = bottom - y,
+                // The least sure section speaks for the strip: fusing must not invent confidence.
+                confidence = ordered.minOf { it.box.confidence },
+                printedSize = "",
+            ),
+            type = ordered.first().type,
+            flags = ordered.flatMapTo(mutableSetOf()) { it.flags },
+            parts = ordered.map { it.box.printedSize }.filter { it.isNotBlank() },
+        )
+    }
+
     private fun reshapeToPrinted(
         snapped: List<Pair<Candidate, CellRect>>,
         cols: Int,

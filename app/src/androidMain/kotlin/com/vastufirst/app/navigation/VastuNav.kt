@@ -189,6 +189,20 @@ fun VastuNavHost() {
                         // then asks whether the leftovers of that strip are part of the home — which
                         // is the screen the owner was handed for his own flat.
                         planVm.markRoomsUnplaced(outcome !is com.vastufirst.shared.scan.ScanOutcome.Placed)
+                        // ⭐⭐ THE FRONT DOOR, READ OFF THE PLAN (owner, 6 Aug 2026: "cant we do it
+                        // ourselves when Entry is clearly marked? we ask only if its not"). Only for
+                        // a PLACED scan: an assisted one parks its rooms in a provisional strip, so
+                        // "which wall is the foyer on" would be asking about a holding pattern
+                        // rather than a home. Null when the plan named no entrance, or named one we
+                        // could not pin to a single wall — and null is what makes the next screen
+                        // ask instead of tell. See frontDoorFromEntrance for why it refuses often.
+                        planVm.updateDoor(
+                            if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
+                                com.vastufirst.app.ui.newplan.frontDoorFromEntrance(planVm.rooms)
+                            } else {
+                                null
+                            },
+                        )
                         // ⭐ The on-photo review (Settings toggle) replaces the GRID step only —
                         // and only for a scan whose geometry was trusted. The grid rooms above are
                         // populated IDENTICALLY first, so the score is the same in both flows and
@@ -211,18 +225,32 @@ fun VastuNavHost() {
                 )
             }
 
-            composable(Routes.SCAN_REVIEW) {
+            composable(Routes.SCAN_REVIEW) { entry ->
+                val planVm = sharedVm(nav, entry)
                 val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 com.vastufirst.app.ui.scan.ScanReviewScreen(
                     handover = handover,
-                    // ⭐ The front door comes next, THEN North (audit B2). This flow used to jump
-                    // straight to North: the classic grid flow asked for the door — the heaviest
-                    // single input the engine weighs — and this flow silently scored without one.
-                    // The door step lands on the grid the scan already populated; a user who
-                    // doesn't want to mark it taps "Next — mark North" there, an explicit choice
-                    // rather than a question never put.
-                    onContinue = { nav.go(Routes.guidedGridForDoor()) },
-                    onEditGrid = { nav.go(Routes.GUIDED_GRID) },
+                    // Already read off the plan's own entrance, or null if the plan named none.
+                    door = planVm.door,
+                    // ⭐ The front door comes before North (audit B2) — but only as a QUESTION when
+                    // the plan did not already answer it. Both steps now happen on the photograph;
+                    // this flow no longer opens the grid editor at all (owner, 6 Aug 2026).
+                    onContinue = {
+                        nav.go(if (planVm.door != null) Routes.markNorthFromScan() else Routes.SCAN_DOOR)
+                    },
+                    onChangeDoor = { nav.go(Routes.SCAN_DOOR) },
+                    onBack = { nav.popBackStack() },
+                )
+            }
+
+            composable(Routes.SCAN_DOOR) { entry ->
+                val planVm = sharedVm(nav, entry)
+                val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                com.vastufirst.app.ui.scan.ScanDoorScreen(
+                    handover = handover,
+                    door = planVm.door,
+                    onDoor = planVm::updateDoor,
+                    onNext = { nav.go(Routes.markNorthFromScan()) },
                     onBack = { nav.popBackStack() },
                 )
             }
@@ -250,9 +278,21 @@ fun VastuNavHost() {
                 route = Routes.MARK_NORTH_ROUTE,
                 arguments = listOf(
                     navArgument(Routes.ARG_FROM_SCORE) { type = NavType.BoolType; defaultValue = false },
+                    navArgument(Routes.ARG_FROM_SCAN) { type = NavType.BoolType; defaultValue = false },
                 ),
             ) { entry ->
                 val vm = sharedVm(nav, entry)
+                // ⭐ North on the user's OWN plan, when they got here by scanning one. Decoded once
+                // and remembered: the dial's model is a data class and an ImageBitmap compares by
+                // identity, so a fresh decode per recomposition would invalidate the measure cache
+                // the drag's smoothness depends on. Gated on the route flag rather than "is there a
+                // photo lying around", so a picture from an earlier scan can never appear under a
+                // home that was drawn by hand or reopened from the saved list.
+                val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val fromScan = entry.arguments?.getBoolean(Routes.ARG_FROM_SCAN) ?: false
+                val planImage = remember(fromScan, scanHandover.data) {
+                    if (fromScan) scanHandover.data?.decodeImage() else null
+                }
                 // ⚠ Which way out. At the END of the drawing flow this screen pushes the score, as it
                 // always has. Opened from an ALREADY-SAVED home's score ("change which way North
                 // is"), it goes BACK to the score it came from instead — pushing a second copy would
@@ -274,6 +314,7 @@ fun VastuNavHost() {
                     vm = vm,
                     onRead = { vm.save(); if (fromScore) nav.popBackStack() else nav.go(Routes.SCORE) },
                     onBack = cancelExperiment,
+                    planImage = planImage,
                 )
             }
             composable(

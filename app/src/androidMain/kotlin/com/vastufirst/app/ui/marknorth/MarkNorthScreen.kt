@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.newplan.GRID
@@ -57,6 +58,12 @@ fun MarkNorthScreen(
     vm: NewPlanViewModel,
     onRead: () -> Unit,
     onBack: () -> Unit,
+    /**
+     * ⭐ The user's own scanned plan, when they arrived here from a scan (owner, 6 Aug 2026). It sits
+     * in the dial in place of our redrawn rooms; North still turns the ring around it, exactly as it
+     * always has, because the plan under the ring has never rotated.
+     */
+    planImage: ImageBitmap? = null,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly from
     // fixture state (rooms + north + a live Analysis) in the screenshot harness (UI-POLISH §6).
@@ -81,6 +88,7 @@ fun MarkNorthScreen(
             vm.updateNorth(northOffsetForHeading(heading))
             compassOpen = false
         },
+        planImage = planImage,
     )
 }
 
@@ -100,9 +108,10 @@ fun MarkNorthContent(
     onCompassOpen: () -> Unit = {},
     onCompassClose: () -> Unit = {},
     onUseCompass: (Float) -> Unit = {},
+    planImage: ImageBitmap? = null,
 ) {
     val colors = VastuTheme.colors
-    val model = buildZoneMapModel(rooms, analysis, north, cols, rows)
+    val model = buildZoneMapModel(rooms, analysis, north, cols, rows, planImage)
     val score = analysis?.score
     val mark = LocalDecimalMark.current
 

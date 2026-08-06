@@ -111,6 +111,17 @@ class AccessibilityTest {
                     startSelected = 1,
                 )
             },
+            // ⭐ Marking the front door on the photo — a described image that is also the screen's
+            // only control, plus a line of state under it. The description has to say where the
+            // door IS, because a screen reader cannot see a marker on a photograph.
+            "scan-door" to {
+                com.vastufirst.app.ui.scan.ScanDoorContent(
+                    image = null,
+                    rooms = (ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
+                        as com.vastufirst.shared.scan.ScanOutcome.Placed).rooms,
+                    door = null,
+                )
+            },
             "editor" to { GuidedGridContent(sample.rooms, sample.door, {}, {}, {}) },
             "editor-empty" to { GuidedGridContent(emptyList(), null, {}, {}, {}) },
             // ⭐ The selected-room panel had never reached this pass, because it appears only once a

@@ -3,6 +3,7 @@ package com.vastufirst.app.ui.common
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
@@ -134,6 +135,11 @@ fun buildZoneMapModel(
     north: Int,
     cols: Int = GRID,
     rows: Int = GRID,
+    /**
+     * ⭐ The user's own scanned plan, shown in the dial instead of our redrawing of it. Supplied only
+     * by the scan flow's North step; every other caller leaves it null and gets the rooms.
+     */
+    planImage: ImageBitmap? = null,
 ): ZoneMapModel {
     val c = VastuTheme.colors
 
@@ -202,5 +208,6 @@ fun buildZoneMapModel(
         wedges = roomsAndWedges.second,
         northDegrees = north.toFloat(),
         centreColor = c.zoneCentre,
+        planImage = planImage,
     )
 }

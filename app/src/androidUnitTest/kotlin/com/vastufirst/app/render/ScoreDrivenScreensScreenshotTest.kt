@@ -24,6 +24,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import androidx.compose.ui.graphics.asImageBitmap
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -86,6 +87,26 @@ class ScoreDrivenScreensScreenshotTest {
                 supported = true, live = true, headingDeg = 187f,
                 quality = CompassQuality.NEEDS_CALIBRATION,
             ),
+        )
+    }
+
+    /**
+     * ⭐ North set on the user's OWN scanned plan rather than on our redrawing of it (owner,
+     * 6 Aug 2026). The dial is unchanged — same ring, same wedges, same drag — and only what sits
+     * inside the plan square differs, which is exactly what a picture can check and nothing else
+     * can: that the photo lands inside the square, that the wedge tints and the North marker still
+     * read over it, and that our room rectangles have stood down rather than being drawn on top of
+     * somebody's actual home.
+     */
+    @Test
+    fun markNorth_onPhoto() = render("marknorth-photo") {
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            compass = CompassState(supported = true),
+            planImage = android.graphics.Bitmap
+                .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+                .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+                .asImageBitmap(),
         )
     }
 
