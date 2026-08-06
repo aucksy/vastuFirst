@@ -1585,3 +1585,25 @@ quota has been hit"**. That step is already `continue-on-error` for exactly this
 it cannot redden a build — but it does mean CI's downloadable screenshot bundle is unavailable until
 GitHub recalculates usage. The goldens are committed into the repo, so the pictures can still be
 looked at; the convenience copy is what is missing.
+
+### The eye pass — what was actually looked at before v0.7.9 shipped
+
+Not counted, looked at, on the owner's own recorded plan (CLAUDE.md §2b):
+
+- **`scan-review-door` (top).** The plan fills the screen's full width and is square, as his sheet is.
+  Eleven rooms, not fourteen. `FOYER` reads as **Entrance**, which is the room the front door was
+  taken from, and the line under the list says *"Front door: we read it from your plan's own
+  entrance, on the left wall of your plan."*
+- **`scan-review-door__bottom`** — added this release, and the reason it had to be. The fix lands
+  near the END of the list, so the top-of-screen goldens showed it nowhere. Scrolled, it reads:
+  **`BALCONY · one space: 17'-4"x8'-3" + 13'-9"x10'-0" + 20'-2"x6'-0"`** — one row, all three of
+  the sheet's printed sizes kept for checking against the paper.
+- **`scan-door`.** The home's outline drawn faintly over the sheet, and the door marker sitting on
+  the left wall at the height of the foyer — the same wall the review screen names in words.
+- **`marknorth-photo`.** The scanned plan inside the dial, the eight direction wedges tinting over
+  it, the dashed North line and N marker legible on top, and no redrawn rectangles anywhere.
+
+⚠ **Seen and NOT fixed, because it is outside the four things asked for:** nine of the eleven rows
+carry an amber **Check** badge. A badge on almost every row cannot tell anybody which row to look
+at — it reads as decoration. Worth a session of its own to find which flag is firing so widely and
+whether it deserves that much of the user's attention.
