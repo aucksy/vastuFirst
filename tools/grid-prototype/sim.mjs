@@ -2385,8 +2385,17 @@ function scanPinnedCases(inject) {
       // Re-measured 2 Aug 2026 (v0.6.5) under the widened mirror table, with the strip, edge-anchor
       // and edge-collapse rules on: 34. A cap against quiet decay, not a magnet proof — see the
       // header note for where that proof lives now.
-      if (empty > 34) {
-        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured 34 when pinned`);
+      //
+      // ⭐ Re-measured again 6 Aug 2026 with the bottom balcony run fused: 38. The four extra cells
+      // are the DEPTHS the three sections used to be re-shaped to individually (8'-3", 10'-0",
+      // 6'-0"). One rectangle cannot have three depths, so the fused strip keeps the band the
+      // reader drew instead of claiming any one of them. That under-claims the balcony rather than
+      // over-claiming it, which is the safe direction: a balcony's positive verdict is weighted 0.8,
+      // so inventing depth would hand out credit for floor area nobody measured — while the
+      // South-West defect still fires either way at two per cent encroachment.
+      const emptyCap = inject === 'no-merge-runs' ? 34 : 38;
+      if (empty > emptyCap) {
+        problems.push(`plan-020: ${empty} empty cells inside the home's box — measured ${emptyCap} when pinned`);
       }
     }
   }
