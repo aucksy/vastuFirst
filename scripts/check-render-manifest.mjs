@@ -66,6 +66,24 @@ for (const f of files) {
     const meaningful = n.testTag || n.clickable || n.text;
     const fullyClipped = n.wDp <= 0 || n.hDp <= 0;   // scrolled off-screen — clipped bounds vanish
 
+    // ⭐⭐ CUT BY THE FOLD, NOT BY A CONTAINER — excluded, and this is a correctness fix, not a
+    // loosening. A capture is a VIEWPORT: on any screen taller than the window, whichever node
+    // happens to straddle the bottom edge reports clipped bounds shorter than its layout size. That
+    // is not a defect, it is the edge of the photograph.
+    //
+    // ⚠ Measured before this went in (9 Aug 2026, the report rebuild): on three consecutive runs
+    // EVERY new finding on the report was one of these, and the count moved 7 → 8 when a hint line
+    // was shortened by a few dp — nothing about the layout's quality changed, only which node landed
+    // on the fold. A number that moves like that is measuring the fold, not the screen, and it had
+    // been quietly inflating the baselines of every long screen (report-clean fell 6 → 2 and
+    // report-prayer 7 → 2 the moment this was applied).
+    //
+    // The test is narrow on purpose: the node's VISIBLE bottom has to reach the bottom of the root.
+    // A container clipping its own text cuts it well inside the window, so that still reports.
+    const cutByFold = !fullyClipped &&
+      n.yDp + n.hDp >= m.rootHeightDp - CLIP_TOL &&
+      n.unclippedHDp > n.hDp;
+
     // HARD: the LAYOUT itself has no size (unclipped). This is the zero-height-grid bug. A node
     // that is merely fully clipped (scrolled out of view) has a real unclipped size and is fine.
     if (meaningful && (n.unclippedWDp <= 0 || n.unclippedHDp <= 0)) {
@@ -73,7 +91,11 @@ for (const f of files) {
     }
     // PARTIAL clip: visible but cut off. Fully-clipped (off-screen in a scroller) is excluded —
     // that is normal, and the partially-visible edge item is the one that actually looks broken.
-    if (!fullyClipped && (n.unclippedWDp - n.wDp > CLIP_TOL || n.unclippedHDp - n.hDp > CLIP_TOL)) {
+    // Width clipping is ALWAYS reported — the fold cuts height, never width, so a narrow node is a
+    // real container problem even on a node that also happens to sit on the bottom edge.
+    const clippedW = n.unclippedWDp - n.wDp > CLIP_TOL;
+    const clippedH = n.unclippedHDp - n.hDp > CLIP_TOL;
+    if (!fullyClipped && (clippedW || (clippedH && !cutByFold))) {
       addSoft(screen, `[${m.config}] "${label}" is clipped: shows ${n.wDp}×${n.hDp}, needs ${n.unclippedWDp}×${n.unclippedHDp} dp.`);
     }
     if (n.ellipsized) {
