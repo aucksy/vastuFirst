@@ -143,14 +143,14 @@ body-lg  DM Sans 18/1.5              body 16/1.55  body-sm 14/1.5
 label    DM Sans 14/1.2 (600)        caption DM Mono 12/1.4    mono 16/1.2 (500)
 ```
 
-**The hard part is six languages, five non-Latin.** Marcellus / DM Sans / DM Mono cover Latin only. `vastuTypography()` must select **bundled Noto faces per locale** (Noto Sans Devanagari for Hindi/Marathi, Noto Sans Tamil, Noto Sans Telugu, Noto Sans Bengali) so a Hindi screen keeps the same weight and rhythm as English. **Indic scripts get line-height 1.5–1.6, not the Latin 1.2** — bake this into the ramp per script, and never pin a text container's height (Product PRD §6, handoff Localisation note). Bundle all faces; disable the system font-scaling override but still honour up to 200% through the ramp (handoff iOS "Type" rule).
+~~**The hard part is six languages, five non-Latin.**~~ **STRUCK — English only, permanently (9 Aug 2026).** Marcellus / DM Sans / DM Mono cover Latin, and Latin is all this app ever renders. No Noto face is bundled, no per-script ramp is selected, and there is no locale to select one for. **One rule from this paragraph survives on its own merit and is still binding: never pin a text container's height** — that is what breaks at 200 % font scale, which is a real configuration on a real English phone. Honour font scale up to 200 % through the ramp (handoff iOS "Type" rule).
 
 ### 3.5 Definition of done — Phase 0
 
 - [ ] Six modules exist with the dependency graph in §3.1; app runs an empty `VastuTheme { }` screen.
 - [ ] CI fails if `engine`/`rules`/`shared`/`designsystem` resolve any `com.android.*` artifact.
 - [ ] `VastuTheme.kt` compiles in `commonMain` with imports added and values copied exactly from the handoff.
-- [ ] `vastuTypography()` renders the ramp correctly in English, Hindi and Tamil with no clipping.
+- [ ] `vastuTypography()` renders the ramp correctly in English with no clipping, at font scale 1.0 and 2.0. *(The "and Hindi and Tamil" clause is struck — English only, 9 Aug 2026.)*
 - [ ] A greppable check exists for raw hex and raw `.dp`, wired into the review gate (§6).
 ---
 
@@ -196,7 +196,7 @@ Covered in §3. Done = §3.5 checklist.
 
 | Screen | Source of truth | Notes |
 |---|---|---|
-| Welcome | design system | Language picker (6), intent picker (3), "No sign-up · No phone number" |
+| Welcome | design system | Intent picker (3), "No sign-up · No phone number". **No language control** — the design system's 6-language picker is cancelled (9 Aug 2026); do not build it. |
 | Add home — method choice | design system | This phase wires **guided grid + sample plans only**. Upload/AI is Phase 4. |
 | Guided grid editor | design system | The hard one. One-handed room placement + type labelling. |
 | Mark North | `VastuCompass.dc.html` | The signature dial. Live score. Clean centre. **No "best angle" affordance.** |
@@ -208,7 +208,7 @@ Covered in §3. Done = §3.5 checklist.
 - Score recompute on North drag stays 60fps by debouncing to ≤50ms and computing off the main thread (Product PRD §4.5.3) — **not** by requiring a 16ms engine.
 - English only this phase. Disclaimer visible on the report screen.
 
-**Explicitly NOT in Phase 2:** AI plan reading, AI assistant, payments, remedy store, other languages, iOS.
+**Explicitly NOT in Phase 2:** AI plan reading, AI assistant, payments, remedy store, iOS. *(Other languages are not "not in Phase 2" — they are cancelled outright; see Phase 4.)*
 
 **Verification gate:**
 - [ ] APK installs on a physical mid-range device; a plan added via guided grid scores with **no network**.
@@ -226,17 +226,24 @@ Covered in §3. Done = §3.5 checklist.
 
 ---
 
-### Phase 4 — Reports, remedies, AI, languages
+### Phase 4 — Reports, remedies, AI
 **Goal:** the full product surface, still Android.
+
+> ⛔ **CANCELLED — the six languages are not being built (owner decision, 9 Aug 2026).** VastuFirst
+> ships in **English only, permanently**. This is not "English for now" and there is no later phase
+> that adds a language. The deliverable that used to sit in this list, and the Hindi/Tamil clause
+> that used to sit in this phase's verification gate, are both struck out below. Product PRD §7.5 is
+> cancelled with them. **Do not reinstate any of it, and do not add a language control, a "soon"
+> affordance or a note about language to any screen.**
 
 - **AI-assisted plan reading** (Product PRD §6.2b): vision model drafts rooms; **user confirms every room before any score**. Low confidence → fall back to guided grid, no error state. There is no fully-automatic path to a score.
 - **AI assistant** (§7.1): retrieval over the rule dataset only, cites rule id + provenance, says so when the KB is silent, never mixes traditions, never predicts outcomes.
 - **Remedies** (§7.2): ship gadget remedies but tag every one `MOD`, rank layout-change and Vastu Shanti above them.
-- **Six languages** (§7.5): rule explanations translated by a Vastu-literate human, wired as translatable data, not hardcoded strings. Machine-translated rule text is a defect.
+- ~~**Six languages** (§7.5)~~ — **CANCELLED, see the banner above. Not a deliverable of this or any phase.**
 - **Flats** (§7.4): the second analysis path; report copy honest about what a flat owner cannot move.
 - **16-zone / 45-devata profiles:** build the abstraction; shipping is **gated on the M-11 expert ruling** (§13). Do not enable them by default before the ruling lands.
 
-**Verification gate:** AI never writes a score without user confirmation; every AI answer carries a citation; `MOD` remedies never rank above layout change; a Hindi and a Tamil report render without clipping.
+**Verification gate:** AI never writes a score without user confirmation; every AI answer carries a citation; `MOD` remedies never rank above layout change. *(The "a Hindi and a Tamil report render without clipping" clause is struck — the app is English only. Long-text stress is covered by font scale 2.0, 360 dp and 320 dp, which is what the Hindi/Tamil configs were standing in for and never actually tested.)*
 
 ---
 
@@ -299,9 +306,9 @@ ACCESSIBILITY (hard constraints — handoff §Accessibility)
 [ ] Every interactive element has a content description.
 [ ] Usable at 200% font scale.
 
-LOCALISATION
-[ ] Renders without clipping in Hindi and Tamil, not only English.
-[ ] No fixed-height container holds translatable text.
+LONG TEXT  (was LOCALISATION — English only, 9 Aug 2026)
+[ ] No fixed-height container holds text. Font scale 2.0 is the test, not another language.
+[ ] No text is clipped at 360 dp or 320 dp width.
 
 PRODUCT RULES
 [ ] Compass centre unobscured by any branding or decoration.

@@ -526,7 +526,7 @@ Flow: **Welcome → Add home → Mark North → Score (free) → Full report (pa
 ### 6.1 Welcome
 - Brand mark, one-line promise: *"Fix your home's Vastu on paper — before you build."*
 - Explicit reassurance: **No sign-up · No phone number**
-- Language picker: English, हिन्दी, தமிழ், తెలుగు, मराठी, বাংলা
+- ~~Language picker: English, हिन्दी, தமிழ், తెలుగు, मराठी, বাংলা~~ — **CANCELLED 9 Aug 2026. There is no language control on this screen and no note about language. See §7.5.**
 - Intent picker (§2) — three options, required before Continue
 - Continue is disabled until intent is chosen
 
@@ -612,10 +612,18 @@ Two levels of analysis: the building read as one plot, and the individual flat r
 
 > **Open question A-03, unresolved:** whether Vastu offers a flat buyer anything meaningful beyond "choose a different flat." Build the flat path; treat its report copy as provisional until that ruling lands.
 
-### 7.5 Localisation
-Six languages: English, Hindi, Tamil, Telugu, Marathi, Bengali — in native scripts.
+### 7.5 Localisation — ⛔ CANCELLED (owner decision, 9 Aug 2026)
 
-**These are not UI strings alone.** Rule explanations, defect descriptions and remedy text are the bulk of the content and must be translated by someone Vastu-literate. Machine translation of rule explanations is a defect. Architect the string layer so rule content is translatable data, not hardcoded UI text.
+**VastuFirst ships in English only, permanently.** Not "English for now", not "more languages later" — there is no phase that adds one, and nothing in the product may imply otherwise: no language picker, no "soon" pill, no note on any screen, no roadmap line.
+
+~~Six languages: English, Hindi, Tamil, Telugu, Marathi, Bengali — in native scripts. These are not UI strings alone; rule explanations, defect descriptions and remedy text are the bulk of the content and must be translated by someone Vastu-literate.~~
+
+**Why it was cancelled, kept because it is the honest reason:** the bulk of this product's words are rule explanations, and translating those needs a Vastu-literate human translator per language, not a machine — a real cost and a real hiring problem for a product still finding its first customers. Machine-translated rule text would have been worse than English.
+
+**What this does NOT cancel — do not "tidy" these away:**
+- **Number formatting follows the phone, not the app.** The decimal mark is read from the device's own locale data, so a phone set to a comma language writes 6,8. That is the device's setting and has nothing to do with translating VastuFirst.
+- **Never pin a text container's height.** That rule was written for Indic line-heights but it earns its place on font scale 2.0 alone.
+- **Sanskrit and Vastu vocabulary stay.** Deity names, element names, zone names and provenance are the product, not localisation.
 
 ---
 ## 8. Rule data
@@ -790,17 +798,17 @@ This is the product. Build it standalone and prove it before any screen exists.
 
 The first client delivery. Everything needed for a real person to score a real home.
 
-- Welcome: language picker, intent picker (§6.1)
+- Welcome: intent picker (§6.1) — the language picker is cancelled, see §7.5
 - Add home: **guided grid path and bundled samples only** — AI reading comes in Phase 4
 - Property type capture (house / flat)
 - Mark North: dial, slider, numeric entry, quick chips, live score (§6.3)
 - Score screen, free tier (§6.4)
 - Full report screen with provenance tags and disputes (§6.5, §6.6)
 - Local persistence (Room) — save and reopen plans
-- English only at this stage
+- English only — and, since 9 Aug 2026, English only permanently (§7.5)
 - Visible legal disclaimer
 
-**Explicitly NOT in this phase:** AI plan reading, AI assistant, payments, remedy store, other languages, iOS.
+**Explicitly NOT in this phase:** AI plan reading, AI assistant, payments, remedy store, iOS. *(Other languages are not deferred — they are cancelled, §7.5.)*
 
 **Done when:** an APK is installed on the client's own phone, and she can add her own home via the guided grid, mark North, and get a score and a full report with no network connection.
 
@@ -817,13 +825,13 @@ The first client delivery. Everything needed for a real person to score a real h
 
 ---
 
-### Phase 4 — Reports, remedies, AI, languages
+### Phase 4 — Reports, remedies, AI
 **19–28 August 2026**
 
 - AI-assisted plan reading with mandatory user confirmation (§6.2b)
 - AI Vastu assistant, retrieval-grounded with citations (§7.1)
 - Remedy content with `MOD` labelling and correct ranking (§7.2)
-- Six languages (§7.5)
+- ~~Six languages (§7.5)~~ — **CANCELLED 9 Aug 2026. English only, permanently.**
 - Flat and apartment analysis (§7.4)
 - `SIXTEEN_ZONE` and `FORTY_FIVE_DEVATA` profiles — **gated on the M-11 expert ruling**
 - PDF export and share
@@ -1030,5 +1038,5 @@ Not defects in this document — decisions the product owner owns.
 2. **The eight expert rulings** (§13). **Needed before Phase 2 ships, not Phase 4** — Phase 2 delivers the full report screen with disputes and provenance on 4 August. A ruling arriving after that date means reworking shipped output.
 3. **E7 and S7 pada names** are absent from the source knowledge base and left `null`. A reviewer must supply them or confirm the gap.
 4. **`BUYING` intent promises a comparison view** (§2) that no screen in §6 and no phase in §9 builds. Either specify the comparison screen or soften the promise to "score each option separately."
-5. **Vastu-literate translators** for five languages (§7.5). Not a coding task and not on the critical path of anything the developer controls.
+5. ~~**Vastu-literate translators** for five languages (§7.5).~~ **CLOSED 9 Aug 2026 — no translators are needed. English only, permanently.**
 6. **Disclaimer wording** (§11): use *"informational and traditional guidance"* — **not** "entertainment." An entertainment disclaimer directly undercuts the App Store guideline 4.3 submission argument that this is a genuine utility.

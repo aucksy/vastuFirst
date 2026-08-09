@@ -90,7 +90,8 @@ class NewPlanViewModel(
     private val handle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
-    var language by mutableStateOf("en")
+    // No `language` field. It existed to back the welcome screen's picker, was never read by
+    // anything, and the app is English only, permanently (CLAUDE.md §2e). Do not reintroduce it.
     var intent by mutableStateOf<Intent?>(null)
     var propertyType by mutableStateOf(PropertyType.INDEPENDENT_HOUSE)
     var rooms by mutableStateOf<List<GridRoom>>(emptyList())

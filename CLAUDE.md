@@ -46,8 +46,9 @@ all while CI was green. **CI compiled the UI without ever rendering it.**
 The three non-negotiables:
 
 - **The build must be able to see.** Every screen is rendered headlessly in CI at the standard
-  configuration matrix (412 dp, **360 dp**, **200 % font scale**, with insets, Hindi/Tamil) and the
-  images are published as an artifact. A screen that has never been rendered is not done.
+  configuration matrix (412 dp, **360 dp**, **320 dp**, **200 % font scale**, dark, landscape, RTL,
+  with insets) and the images are published as an artifact. A screen that has never been rendered is
+  not done.
 - **Design conformance is mechanical, not an opinion.** `scripts/check-design-fidelity.mjs` compares
   the theme against the design contract (`handoff/tokens.json` + the `ramp`/`auditRows` data in the
   Sage & Gold design file) and fails the build on drift. Deliberate deviations go in the script's
@@ -101,6 +102,31 @@ noise dressed up as honesty. Never fix the second by skipping the first.
 What the client's file DOES carry is anything that affects the PRODUCT he is being handed — a
 feature that regressed, a limit that is real, a decision still open. That is not a process failure;
 that is the work.
+
+## 2e. ⭐ HARD RULE — VastuFirst is ENGLISH ONLY, permanently (owner decision, 9 Aug 2026)
+
+**Not "English for now". Not "more languages later". There is no phase that adds one.** The
+six-language plan (English, Hindi, Tamil, Telugu, Marathi, Bengali) is **cancelled outright** —
+Implementation PRD Phase 4 and Product PRD §7.5 both carry the cancellation.
+
+**Nothing in the product may imply another language is coming.** No language picker, no "soon" pill,
+no note on any screen, no roadmap line, no `values-<lang>/` folder, no per-script font ramp, no
+Hindi/Tamil render config. If you find one, it is a leftover — delete it, do not honour it.
+
+This rule lives here, in the auto-loaded file, on purpose. A cancellation written only into a
+document gets re-obeyed by the next session that reads the document and not the cancellation.
+
+**Two things this does NOT cancel — do not "tidy" them away:**
+
+- **Number formatting follows the phone.** The decimal mark is read from the device's own locale
+  data, so a phone set to a comma language writes 6,8. That is the device's setting, not app
+  translation, and it is what stops the app writing a wrong number on a phone we never anticipated.
+- **The Sanskrit and Vastu vocabulary stays.** Deity names, element names, zone names, provenance
+  tags. That is the product, not localisation, and cutting it would cut the thing worth ₹699.
+
+**And the long-text testing survives without it.** "A Hindi report must render without clipping" is
+replaced by font scale 2.0, 360 dp and 320 dp — real configurations on a real English phone, and
+unlike the language configs they actually change the rendered picture.
 
 ## 3. How to work
 

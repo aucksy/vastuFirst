@@ -59,13 +59,23 @@ object RenderMatrix {
         //     viewport CTA question had never been tested. Canonical position: after height,
         //     before ui-mode/night.
         RenderConfig("landscape", "+w854dp-h480dp-land-xhdpi"),
-        // 8 — pseudolocale, ~2× text expansion (affects resource strings once they exist).
-        //     locale comes first in the qualifier order.
-        RenderConfig("pseudo_en", "+en-rXA-w412dp-h915dp-port-xhdpi"),
-        // 9 — pseudolocale, RTL mirroring (mirrors layout regardless of strings).
+        // 8 — RTL mirroring. The ONE locale config that survives, because it is the only one that
+        //     changes a pixel: layout direction mirrors regardless of what language the strings are
+        //     in, so it still catches a hardcoded left/right padding. (Verified: its goldens differ
+        //     from the baseline's. The three deleted below did not.)
         RenderConfig("rtl", "+ar-rXB-w412dp-h915dp-port-xhdpi"),
-        // 10 — Devanagari / Tamil clipping.
-        RenderConfig("hi", "+hi-rIN-w412dp-h915dp-port-xhdpi"),
-        RenderConfig("ta", "+ta-rIN-w412dp-h915dp-port-xhdpi"),
+        // ⛔ DELETED 9 Aug 2026 — `hi`, `ta` and `pseudo_en`. Do not add them back.
+        //
+        // The app is ENGLISH ONLY, permanently (owner decision; Impl PRD Phase 4, Product PRD §7.5
+        // both cancelled). These three existed to catch Devanagari/Tamil clipping and ~2× pseudo-
+        // locale text expansion — and they never caught anything, because a locale qualifier can
+        // only translate RESOURCE strings and every user-facing word in this app is a Kotlin
+        // literal. Measured before deleting: across all 67 screens, all 201 of their goldens were
+        // BYTE-IDENTICAL to the same screen's `baseline` golden. They were duplicate pictures of
+        // English, and with translation cancelled they could never have become anything else.
+        //
+        // Long-text stress is NOT lost — it never lived here. It lives in `font1_3`, `font2_0`,
+        // `w360` and `w320`, whose goldens genuinely differ and which are real configurations on a
+        // real English phone. That is the honest replacement for "a Hindi report must not clip".
     )
 }

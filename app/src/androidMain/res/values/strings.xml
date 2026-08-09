@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The launcher label. A string resource (not a manifest literal) because the app ships in
-         six languages — values-hi/, values-ta/, values-te/, values-mr/, values-bn/ land in Phase 4. -->
+    <!-- The launcher label. A string resource rather than a manifest literal because that is the
+         correct place for it — NOT because a translation is coming. The app is English only,
+         permanently (CLAUDE.md §2e): there is no values-hi/, values-ta/, values-te/, values-mr/ or
+         values-bn/, and none is planned. Do not add one. -->
     <string name="app_name">VastuFirst</string>
 </resources>

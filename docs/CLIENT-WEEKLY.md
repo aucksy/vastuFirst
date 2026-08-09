@@ -83,9 +83,6 @@ feedback continuously; the three-phone pass still has to happen.
 - **Reading a plan without ever falling back to a grid.** When the app can read your room names but
   not work out where they sit, it still hands you a grid of squares. You will place a room by tapping
   where it is on your own plan instead. About one plan in six needs this today.
-- **Six languages.** The app is English-only. The welcome screen's language buttons do nothing yet,
-  deliberately. This one needs a Vastu-literate human translator — machine-translated rule text would
-  be worse than none, so it is not a shortcut we will take.
 - **The Vastu assistant** — ask a question, get an answer drawn only from the rule set, with the
   source named, and an honest "the texts do not say" when they do not.
 - **Flats treated properly** as their own case, with a report honest about what a flat owner cannot

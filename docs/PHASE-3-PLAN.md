@@ -44,7 +44,9 @@ Sources this folds in: the accuracy risk map (`SCORE-ACCURACY-CAVEATS.md`), the 
     the expert's answers in any format → applied to `rules/.../ruleset/*.json`.
 
 ## Explicitly Phase 4+ (NOT Phase 3)
-16-zone toggle made real, the 5 non-English languages, AI plan reading, payments (Razorpay), iOS.
+16-zone toggle made real, AI plan reading, payments (Razorpay), iOS.
+*(The 5 non-English languages used to be on this list. They are **cancelled**, not deferred — English
+only, permanently, `CLAUDE.md` §2e.)*
 
 ## Immediately pending
 Owner is sharing a **few fixes for v0.2.1** first — apply those, then proceed down this list from A1.

@@ -28,13 +28,14 @@ import com.vastufirst.designsystem.theme.VastuTheme
  */
 
 /**
- * The mark this reader's own language writes between the whole part and the tenth — "." in English,
- * Hindi, Tamil, Telugu, Marathi and Bengali; "," across much of Europe; "٫" in Arabic.
+ * The mark this PHONE writes between the whole part and the tenth — "." in English and across
+ * India; "," across much of Europe; "٫" in Arabic. This is the device's setting, not a translation
+ * of the app, which is why it stays even though VastuFirst is English only (CLAUDE.md §2e).
  *
  * NEVER hard-code it at a call site. The app reads it ONCE from the phone's own locale data
  * (`deviceDecimalMark()`, which asks Android rather than consulting a table we would have to keep)
- * and provides it here. The default is the mark every language VastuFirst ships in uses, so a
- * screen drawn outside the app — the screenshot harness — still reads correctly.
+ * and provides it here. The default is the dot the app's own English uses, so a screen drawn
+ * outside the app — the screenshot harness — still reads correctly.
  */
 val LocalDecimalMark = staticCompositionLocalOf { '.' }
 

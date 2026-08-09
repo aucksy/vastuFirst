@@ -70,12 +70,13 @@ class ScoreFormatTest {
     }
 
     /**
-     * ⭐ Why the mark is looked up rather than typed in. All six languages VastuFirst ships in write
-     * a dot — so hard-coding "." would LOOK correct forever and be wrong the first time the app is
-     * opened on a phone set to a comma language. This asserts the platform's own data, which is what
-     * `deviceDecimalMark()` reads, rather than a table of our own.
+     * ⭐ Why the mark is looked up rather than typed in — and why this test survives the app being
+     * English only (CLAUDE.md §2e). Every phone locale in India writes a dot, so hard-coding "."
+     * would LOOK correct forever and be wrong the first time the app is opened on a phone set to a
+     * comma language. The app's own words never change; the PHONE's number format is not ours to
+     * assume. This asserts the platform's own data, which is what `deviceDecimalMark()` reads.
      */
-    @Test fun the_platform_knows_the_mark_for_every_language_we_ship() {
+    @Test fun the_platform_knows_the_mark_for_the_phones_we_land_on() {
         listOf("en-IN", "hi-IN", "ta-IN", "te-IN", "mr-IN", "bn-IN").forEach { tag ->
             assertEquals("$tag writes a dot", '.', markFor(tag))
         }

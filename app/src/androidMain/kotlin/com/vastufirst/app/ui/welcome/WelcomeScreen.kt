@@ -5,8 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,23 +22,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
-import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
- * Welcome (Product PRD §6.1 · design system screen 1). Language + the one question that changes
- * the whole product — intent (§2). No sign-up, no phone number. Continue is disabled until an
- * intent is chosen. Phase 2 ships English; the other five scripts arrive in Phase 4.
+ * Welcome (Product PRD §6.1 · design system screen 1). The one question that changes the whole
+ * product — intent (§2). No sign-up, no phone number. Continue is disabled until an intent is
+ * chosen.
+ *
+ * ⭐ NO LANGUAGE CONTROL, and this is permanent (owner decision, 9 Aug 2026). VastuFirst is
+ * English only — not "English for now". The six-language plan is cancelled, so this screen carries
+ * no picker, no "soon" pills and no note about language: a picker with one option is a dead control
+ * (UI-POLISH §3F), and a line saying "this app is in English" on a visibly English screen is an
+ * apology for something nobody asked about. Do not reinstate any of it.
  */
 @Composable
 fun WelcomeScreen(
@@ -57,7 +58,6 @@ fun WelcomeScreen(
 }
 
 /** Welcome as a pure function of its state — no ViewModel — so the render harness can draw it. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WelcomeContent(
     intent: Intent?,
@@ -113,23 +113,6 @@ fun WelcomeContent(
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
-
-        // ⭐ The language story moved to the FOOTER (audit C9). Six chips for an English-only app sat
-        // in the prime slot above the intent question, and at 200 % font they pushed all three intent
-        // cards — the screen's whole purpose — below the fold, with the first screenful ending
-        // mid-sentence in the language note. Down here they still make the promise ("more languages
-        // soon") without costing the main action its place. Chips stay tappable-inert exactly as
-        // before; this is a move, not a redesign.
-        Divider()
-        SectionLabel("Language")
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
-            VastuChip(text = "English", selected = true, onClick = {})
-            listOf("हिन्दी", "தமிழ்", "తెలుగు", "मराठी", "বাংলা").forEach { SoonPill(it) }
-        }
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText("English for now — more languages soon.", style = VastuTheme.type.bodySm, color = colors.textTertiary)
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }
 
@@ -142,21 +125,6 @@ private fun Divider() {
             .height(VastuTheme.borders.regular)
             .background(VastuTheme.colors.borderDefault),
     )
-}
-
-@Composable
-private fun SoonPill(text: String) {
-    val colors = VastuTheme.colors
-    Box(
-        modifier = Modifier
-            .clip(VastuTheme.shapes.full)
-            .border(VastuTheme.borders.regular, colors.borderDefault, VastuTheme.shapes.full)
-            .padding(horizontal = VastuTheme.spacing.s4, vertical = VastuTheme.spacing.s3)
-            // A screen reader would otherwise read only the language name; say it's not selectable yet.
-            .semantics(mergeDescendants = true) { contentDescription = "$text — coming soon" },
-    ) {
-        VText(text = text, style = VastuTheme.type.bodySm, color = colors.textTertiary)
-    }
 }
 
 @Composable

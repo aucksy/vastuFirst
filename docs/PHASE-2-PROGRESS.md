@@ -14,7 +14,7 @@ tags and disputes → save it and reopen it later.
 ### Screens (all from the Sage & Gold design system, token-only)
 | # | Screen | Notes |
 |---|--------|-------|
-| 1 | Welcome | Language (English live; 5 scripts "soon" — l10n is Phase 4), intent picker, Continue gated on intent |
+| 1 | Welcome | Intent picker, Continue gated on intent. **No language control** — the picker was deleted 9 Aug 2026; English only, permanently (`CLAUDE.md` §2e) |
 | 2 | Add home | Guided grid + samples wired; Upload = "soon" (AI reading is Phase 4) |
 | 3 | Guided grid editor | Tap-to-place rooms, resize (steppers), remove; a second mode places the **front door** on an outer wall |
 | 5 | Mark North | The `NorthDial` (drag/tap) + slider + N/E/S/W chips + degree stepper; **live score debounced ≤50 ms, off the main thread**; clean centre; **no best-angle affordance** (§0.7) |
@@ -22,7 +22,7 @@ tags and disputes → save it and reopen it later.
 | 8 | Unlock | Paywall UX at ₹699; **unlocks locally** (payments are Phase 5) and says so honestly |
 | 7 | Full report | **Branches on intent**: BUILDING/BUYING lead with layout changes, LIVING leads with remedies; provenance tag on every rule; "already right", "where schools disagree", "not assessed", disclaimer |
 | 11 | Saved plans (Home) | Reopen re-runs the engine from the stored plan; two plans side-by-side = the BUYING comparison |
-| 12 | Settings | Preferences shown (language/school fixed this phase); honest data controls incl. delete-all |
+| 12 | Settings | Preferences shown (school fixed for now; **no language row, ever**); honest data controls incl. delete-all |
 | 13 | Legal / Honesty & sources | Visible disclaimer + the provenance vocabulary |
 
 ## Architecture (how it's wired)
@@ -37,7 +37,8 @@ tags and disputes → save it and reopen it later.
   change is detectable, never a silent re-score).
 - **Components:** an owned, token-only Compose kit in `:designsystem` (no Material theming, so the
   iOS re-skin stays mechanical). DS-local `VastuVerdict`/`VastuProvenance` keep it free of `:shared`.
-- **Fonts:** Marcellus / DM Sans / DM Mono bundled as OFL Compose resources (Indic Noto = Phase 4).
+- **Fonts:** Marcellus / DM Sans / DM Mono bundled as OFL Compose resources. Latin only, and that is
+  the end of it — no Indic Noto is coming (English only, permanently, `CLAUDE.md` §2e).
 - CI guards (module boundaries + token discipline) pass on every push.
 
 ## Deliberate deviations from the mock (resolved, not accidental)
@@ -54,12 +55,14 @@ tags and disputes → save it and reopen it later.
 2. **The 8 expert rulings** (§13) — engine runs on the current safe defaults until rulings land.
 
 ## Known minors to revisit in review
-- Language picker is display-only for the 5 non-English scripts (l10n is Phase 4).
+- ~~Language picker is display-only for the 5 non-English scripts (l10n is Phase 4).~~ **CLOSED
+  9 Aug 2026 — the picker is deleted and the app is English only, permanently (`CLAUDE.md` §2e).**
 - 16-zone school toggle on the report is display-only (Phase 4).
 - Review-gate self-audit done; a physical-device pass at 360 dp + TalkBack is still owner testing.
 
 ## Next
-Client testing (Phase 3) + the owner decisions above. iOS/payments/AI/languages are Phases 4–5.
+Client testing (Phase 3) + the owner decisions above. iOS/payments/AI are Phases 4–5. *(Languages
+were on that list; they are cancelled, not deferred — English only, permanently, `CLAUDE.md` §2e.)*
 
 **Phase 3 audit round 1 done (v0.2.1)** — see `docs/PHASE-3-AUDIT.md`. Fixed the no-scary-error
 gap (INSUFFICIENT no longer shows red 0/100), the save-timing score bug, blank reopen zone map,

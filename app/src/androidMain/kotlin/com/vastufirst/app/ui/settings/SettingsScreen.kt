@@ -43,9 +43,10 @@ import com.vastufirst.app.CrashLog
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
- * Settings (§ design system screen 12). Phase 2: preferences are shown (language + school are
- * fixed this phase), plus the honest data controls — nothing leaves the device, and the user can
- * delete everything. Full localisation + school switching land in Phase 4.
+ * Settings (§ design system screen 12). Preferences are shown (the school is fixed for now), plus
+ * the honest data controls — nothing leaves the device, and the user can delete everything. School
+ * switching lands in Phase 4. **There is no language preference and there never will be: the app is
+ * English only, permanently (owner decision, 9 Aug 2026).**
  */
 @Composable
 fun SettingsScreen(
@@ -137,11 +138,10 @@ fun SettingsContent(
         SectionLabel("Preferences")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Group {
-            // ⭐ No "Language — English" row (owner decision, 4 Aug 2026). It could not be tapped,
-            // the app is English-only this phase, and on a 200 % font phone it pushed "Delete all
-            // my data" below the fold. The welcome screen already tells the language story; a dead
-            // row here bought nothing and cost the screen's scarcest resource. Reinstate it only
-            // when languages actually switch (Phase 4).
+            // ⭐ No "Language — English" row, and this is now permanent. Dropped 4 Aug 2026 because
+            // it could not be tapped and on a 200 % font phone it pushed "Delete all my data" below
+            // the fold; made permanent 9 Aug 2026 when the six-language plan was cancelled. A
+            // preference with one possible value is not a preference. Never reinstate it.
             // "School profile / Traditional 8-zone" was our own jargon on a screen a customer opens.
             // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
             // label on a narrow phone at a large font.

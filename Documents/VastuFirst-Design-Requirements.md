@@ -4,6 +4,8 @@
 
 > **STATUS — RESOLVED (23 Jul 2026): the chosen theme is Sage & Gold** — sage-green primary `#7A9E7E` + gold `#C9A227`, on a warm paper ground. Stage 1 is complete. This document is the original brief, kept for the *why*. Where it discusses the four exploration directions or the earlier "paper-and-warm-accent" incumbent, that is **historical — none of those is the active theme.** The authoritative colour / spacing / type values live in the handoff (`VastuTheme.kt` / `tokens.json`), which supersedes this file where they overlap.
 
+> ⛔ **CANCELLED (9 Aug 2026) — everything in this brief about SIX LANGUAGES is dead.** §2.2, the language picker in the screen inventory (§ screens 1 and 12), the whole per-script typography brief in §6.2, the "Hindi and Tamil" localisation review lines and the "Score screen and one report card in Hindi and Tamil" deliverable are **all cancelled**. VastuFirst ships in **English only, permanently** — see `CLAUDE.md` §2e, which is the binding statement. Do not design a language picker, a "soon" pill, a per-script type ramp or a non-Latin test string. The one thing to carry forward from §6.2: **never pin a text container's height**, because font scale 2.0 breaks it on an English phone just as surely as a matra would have.
+
 ---
 
 ## 0. The ask, in one paragraph

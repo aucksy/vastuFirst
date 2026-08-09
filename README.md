@@ -30,11 +30,11 @@ port is a build-file change, not a rewrite. CI enforces this (`scripts/check-bou
 ## Build phases
 
 Foundations → the Vastu engine (headless, tested to score the `sample-01` fixture **31**) →
-Android guided-grid app (**client milestone: 4 Aug 2026**) → testing + website → reports/AI/
-languages → iOS + payments → launch. Full plan in
+Android guided-grid app (**client milestone: 4 Aug 2026**) → testing + website → reports/AI →
+iOS + payments → launch. **English only, permanently** (`CLAUDE.md` §2e). Full plan in
 `Documents/VastuFirst-Android-Implementation-PRD.md`.
 
 ## Status
 
-**Phase 0 — Foundations.** Six-module scaffold, the Sage & Gold theme, locale-aware
-typography ramp, and CI guardrails. Screens and the scoring engine come next.
+**Phase 0 — Foundations.** Six-module scaffold, the Sage & Gold theme, the typography
+ramp, and CI guardrails. Screens and the scoring engine come next.

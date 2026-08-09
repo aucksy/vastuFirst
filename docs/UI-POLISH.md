@@ -126,8 +126,11 @@ status bar and under the gesture-nav pill unless you handle it.
 - [ ] No fixed `height()`/`size()` on a container holding text — use `heightIn(min = …)`.
       A 20 dp box around a "✓" clips at font scale 1.3.
 - [ ] Body ≥ 16 sp, nothing below 12 sp.
-- [ ] Renders in Hindi and Tamil without clipping; Indic line-height stays 1.5–1.6.
-- [ ] No fixed-height container holds translatable text.
+- [ ] Renders without clipping at font scale 2.0 and at 320 dp width. *(This replaces the old "renders
+      in Hindi and Tamil" line — the app is English only, permanently, since 9 Aug 2026. Font scale
+      and narrow width are the real long-text stress, and unlike the language configs they actually
+      change the picture.)*
+- [ ] No fixed-height container holds text — a longer word or a bigger font must be able to grow.
 
 ### F. Interaction and state
 - [ ] **Every** interactive element has a visible pressed state. *(v0.2.1: `clickableTap` hardcodes
@@ -159,7 +162,9 @@ status bar and under the gesture-nav pill unless you handle it.
 ### I. The app shell — checked once, but fatal if missed
 - [ ] A real launcher icon exists (`android:icon` + adaptive icon). *(v0.2.1 shipped with the default
       Android robot: there is no `res/` directory in the app module at all.)*
-- [ ] `strings.xml` exists; `android:label` is not a hardcoded literal in a six-language app.
+- [ ] `strings.xml` exists; `android:label` is not a hardcoded literal in the manifest. *(The original
+      reason — "in a six-language app" — is gone; the app is English only. Keeping the label as a
+      resource is still correct hygiene, but no `values-<lang>/` folder is ever coming.)*
 - [ ] A themed splash background matching `paper`, so there is no white flash on launch.
 
 ---
@@ -318,24 +323,31 @@ run is worse than no gate.
 | 5 | **360 dp width** | the most common Indian phone; where rows shatter |
 | 6 | **320 dp width** | a 360 dp phone set to "Display size = Largest" behaves like this |
 | 7 | landscape (height 480 dp) | unreachable CTAs |
-| 8 | pseudolocale **`en-XA`** | ~2× text expansion — finds overflow without needing translations |
-| 9 | pseudolocale **`ar-XB`** | RTL mirroring |
-| 10 | `hi-rIN` + `ta-rIN` | Devanagari / Tamil clipping |
+| 8 | pseudolocale **`ar-XB`** | RTL mirroring |
 
-Pseudolocales are free translation-stress testing: enable with
-`buildTypes.debug.pseudoLocalesEnabled = true`. `en-XA` roughly doubles every string, which is the
-cheapest possible way to find every row that will shatter.
+**⛔ Three configs were DELETED on 9 Aug 2026 — `hi-rIN`, `ta-rIN` and the `en-XA` pseudolocale. Do
+not add them back.** They were put there to catch Devanagari/Tamil clipping and ~2× text expansion,
+and they never caught anything: a locale qualifier can only translate **resource** strings, and every
+user-facing word in this app is a Kotlin literal. Measured before deleting — across all 67 screens,
+**all 201 of their goldens were byte-identical to the same screen's `baseline` golden.** They were
+duplicate photographs of English. The six-language plan is cancelled (Impl PRD Phase 4, Product PRD
+§7.5), so they could never have become anything else.
 
-Two configs whose quiet behaviour is DELIBERATE (documented per the 4 Aug 2026 audit, D3/D4 — do
+**Long-text stress did not live there and is not lost.** It lives in `font1_3`, `font2_0`, `w360` and
+`w320` — configurations that genuinely change the picture, and that a real English-speaking customer
+on a real phone actually hits.
+
+Configs whose quiet behaviour is DELIBERATE (documented per the 4 Aug 2026 audit, D3/D4 — do
 not re-flag them):
 
 - **dark is a proof of non-inversion, not a dark mode.** The app ships one light palette; the dark
   config exists to prove system dark mode does not invert it. Byte-identical files to the light
-  goldens are the PASS state.
-- **pseudo_en / hi / ta are armed but inert for text** until strings move to resources (Phase 4):
-  every user-facing string is a Kotlin literal today, and a locale can only translate resource
-  strings. `rtl` still earns its place now — it mirrors layout regardless of strings (and the grid
-  and compass correctly do NOT mirror).
+  goldens are the PASS state. *(This is the ONE config allowed to be byte-identical on purpose. Any
+  other config that renders identically to the baseline is a config testing nothing — that is the
+  test that condemned `hi`, `ta` and `pseudo_en`, and it is the test to apply before adding a new one.)*
+- **`rtl` earns its place** — it mirrors layout regardless of what language the strings are in, so it
+  still catches a hardcoded left/right padding (and the grid and compass correctly do NOT mirror).
+  Its goldens genuinely differ from the baseline's, which is exactly why it survived the cull.
 - **landscape renders real landscape only since 4 Aug 2026.** The config's qualifier string lacked
   the `-land` token, so Robolectric normalised it to a 480 dp-wide portrait — every earlier
   "landscape" golden was actually a narrow portrait phone (audit D1).
@@ -480,9 +492,9 @@ ACCESSIBILITY
 [ ] Every interactive element has a content description.
 [ ] Usable at 200% font scale.
 
-LOCALISATION
-[ ] Renders without clipping in Hindi and Tamil, not only English.
-[ ] No fixed-height container holds translatable text.
+LONG TEXT   (was LOCALISATION — English only, permanently, 9 Aug 2026)
+[ ] Renders without clipping at font scale 2.0 and at 320 dp width.
+[ ] No fixed-height container holds text.
 
 PRODUCT RULES
 [ ] Compass centre unobscured by any branding or decoration.
@@ -511,3 +523,4 @@ PRODUCT RULES
 | Date | Change |
 |---|---|
 | 2026-07-24 | Created after the owner reported "many UI issues" in v0.2.1. Written against the verified audit in `docs/UI-AUDIT-2026-07-24.md`. |
+| 2026-08-09 | The app is **English only, permanently** (owner decision). The `hi`, `ta` and `en-XA` render configs are deleted along with their 201 byte-identical goldens; the LOCALISATION review section becomes LONG TEXT, gated on font scale 2.0 and 320 dp instead of on another language. New standing test for any future config: **if its goldens are byte-identical to the baseline's, it is testing nothing** — `dark` is the one deliberate exception. |
