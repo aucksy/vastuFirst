@@ -109,6 +109,8 @@ data class VastuSizes(
     val handleGrip: Dp = 12.dp,      // floor-plan editor: the DRAWN corner grip (solid dot)
     val handleTouch: Dp = 48.dp,     // …and the invisible target around it (a cell is only 34–45dp)
     val progressTrack: Dp = 8.dp,    // score bar
+    val balanceTrack: Dp = 14.dp,    // report balance meter — thicker than the score bar on purpose:
+                                     // it carries three colours side by side, not one fill
     val planThumb: Dp = 60.dp,       // saved-plan thumbnail
     val dot: Dp = 6.dp,              // provenance / status dot
     val logo: Dp = 54.dp,            // welcome brand mark

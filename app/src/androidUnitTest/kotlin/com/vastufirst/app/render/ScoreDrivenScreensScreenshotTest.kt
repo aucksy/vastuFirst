@@ -16,6 +16,8 @@ import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.DisputesSection
 import com.vastufirst.app.ui.report.ReportContent
+import com.vastufirst.app.ui.report.TAB_MORE
+import com.vastufirst.app.ui.report.TAB_RIGHT
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -173,6 +175,37 @@ class ScoreDrivenScreensScreenshotTest {
     @Test
     fun report_living() = render("report-living") {
         ReportContent(analysis = analysis, intent = Intent.LIVING)
+    }
+
+    /**
+     * ⭐⭐ THE FREE REPORT — the screen most readers will actually see, and the one that has to sell.
+     *
+     * Unpaid, the entrance / kitchen / toilets read in full and every other finding shows its room,
+     * its zone and its verdict with the reasoning locked ([FreeTier]). Two things to look for in this
+     * picture: no locked row may hide WHICH room it is (that would be the bait Product PRD §6.4
+     * forbids), and the sticky pay bar must not cover the last control.
+     */
+    @Test
+    fun report_free() = render("report-free") {
+        ReportContent(analysis = analysis, intent = Intent.BUYING, unlocked = false)
+    }
+
+    /**
+     * ⭐ CHAPTER 2 — "already right", led by the front door.
+     *
+     * Rendered explicitly because a chapter behind a chip is a chapter no golden contains. This is the
+     * half of the report that tells a reader what is WORKING, which is the whole reason the report was
+     * rebuilt; shipping it unphotographed would repeat the mistake it exists to fix.
+     */
+    @Test
+    fun report_chapter_right() = render("report-right") {
+        ReportContent(analysis = analysis, intent = Intent.BUILDING, initialTab = TAB_RIGHT)
+    }
+
+    /** ⭐ CHAPTER 3 — not-ideal rooms, where the schools disagree, and what could not be checked. */
+    @Test
+    fun report_chapter_more() = render("report-more") {
+        ReportContent(analysis = analysis, intent = Intent.BUILDING, initialTab = TAB_MORE)
     }
 
     /**

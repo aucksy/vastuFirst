@@ -47,10 +47,17 @@ class ReportIntentTest {
         )
     }
 
+    /**
+     * ⚠ `expandAll` on every case here, and the test is worthless without it. Since the report was
+     * rebuilt (9 Aug 2026) a finding's reasoning lives inside a collapsed card, and a collapsed card
+     * puts nothing in the semantics tree. Without expanding, `assertNoLayoutAdvice` would find no
+     * layout advice for BUYING because it finds nothing at all — a green test proving only that the
+     * cards were shut.
+     */
     @Test
     fun someone_building_is_still_told_what_to_change() = runComposeUiTest {
-        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.BUILDING) } }
-        onNodeWithText("What to change").assertExists()
+        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.BUILDING, expandAll = true) } }
+        onNodeWithText("Nothing is built yet", substring = true).assertExists()
         assertTrue(
             "the building branch must keep its layout advice",
             // ⚠ ignoreCase, because the heading is drawn through SectionLabel, which UPPERCASES it.
@@ -62,16 +69,42 @@ class ReportIntentTest {
 
     @Test
     fun someone_buying_is_shown_remedies_and_never_a_layout_change() = runComposeUiTest {
-        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.BUYING) } }
-        onNodeWithText("What to do now").assertExists()
+        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.BUYING, expandAll = true) } }
+        onNodeWithText("without moving a wall", substring = true).assertExists()
         assertNoLayoutAdvice("buying")
     }
 
     @Test
     fun someone_already_living_there_is_shown_remedies_and_never_a_renovation_note() = runComposeUiTest {
-        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.LIVING) } }
-        onNodeWithText("What to do now").assertExists()
+        setContent { VastuTheme { ReportContent(analysis = analysis, intent = Intent.LIVING, expandAll = true) } }
+        onNodeWithText("without moving a wall", substring = true).assertExists()
         assertNoLayoutAdvice("already living here")
+    }
+
+    /**
+     * ⭐ The guard on the new gate: the paid reasoning must genuinely be absent when unpaid.
+     *
+     * A locked row still shows its room and its verdict — that is deliberate and honest — but the
+     * explanation and the remedies behind it must not be sitting in the tree where a screen reader,
+     * a copy-all, or the next refactor could surface them.
+     */
+    @Test
+    fun an_unpaid_report_does_not_carry_the_locked_reasoning() = runComposeUiTest {
+        val paidOnly = analysis.defects.firstOrNull { !it.isFreeToRead(analysis.roomResults) }
+        assertTrue(
+            "the sample must have at least one paid-only defect or this proves nothing",
+            paidOnly != null,
+        )
+        setContent {
+            VastuTheme {
+                ReportContent(analysis = analysis, intent = Intent.BUYING, unlocked = false, expandAll = true)
+            }
+        }
+        val sentence = paidOnly!!.explanation.take(40)
+        assertTrue(
+            "a locked finding must not print its explanation: \"$sentence…\"",
+            onAllNodesWithText(sentence, substring = true).fetchSemanticsNodes().isEmpty(),
+        )
     }
 
     /** Neither the layout block, nor the "if you ever renovate" demotion it used to become. */

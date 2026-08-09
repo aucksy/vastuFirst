@@ -330,8 +330,12 @@ fun VastuNavHost() {
                 LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
                 ScoreScreen(
                     vm = vm,
-                    // Already paid? go straight to the report rather than the paywall again (B11).
-                    onUnlock = { nav.go(if (vm.unlocked) Routes.REPORT else Routes.UNLOCK) },
+                    // ⭐ Always the report now, paid or not (9 Aug 2026). The report itself is the
+                    // shop window: unpaid, it reads the entrance, kitchen and toilets in full and
+                    // shows every other room by name with its reasoning locked ([FreeTier]). A
+                    // paywall standing in front of it could only describe what was behind it, which
+                    // is a far weaker thing to sell than the report a reader is already holding.
+                    onUnlock = { nav.go(Routes.REPORT) },
                     // No draft id: the home on screen is already loaded into the shared draft, and
                     // an id here would try to pull an unfinished home over the top of it.
                     onFix = { nav.go(Routes.GUIDED_GRID) },
@@ -358,12 +362,23 @@ fun VastuNavHost() {
                 val vm = sharedVm(nav, entry)
                 UnlockScreen(onUnlocked = {
                     vm.unlock()
-                    nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true }; launchSingleTop = true }
+                    // Checkout is now reached FROM the report, so the report is already on the back
+                    // stack — pop back to the one the reader was in, which recomposes unlocked.
+                    // Pushing a second copy would leave the paywall's report stacked under it and
+                    // make Back walk through a screen the reader already finished with.
+                    if (!nav.popBackStack(Routes.REPORT, inclusive = false)) {
+                        nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true }; launchSingleTop = true }
+                    }
                 })
             }
             composable(Routes.REPORT) { entry ->
                 val vm = sharedVm(nav, entry)
-                ReportScreen(vm = vm, onDone = { nav.goHome() })
+                ReportScreen(
+                    vm = vm,
+                    onDone = { nav.goHome() },
+                    // The pay bar on the report is the only route to checkout now.
+                    onUnlock = { nav.go(Routes.UNLOCK) },
+                )
             }
         }
     }

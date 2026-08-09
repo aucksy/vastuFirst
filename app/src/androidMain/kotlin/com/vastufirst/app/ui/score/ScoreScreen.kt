@@ -24,7 +24,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.billing.Billing
 import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.billing.FALLBACK_PRICE
-import com.vastufirst.app.billing.billingNotice
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
@@ -36,7 +35,6 @@ import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.report.firstSentence
-import com.vastufirst.app.ui.report.remainingLine
 import com.vastufirst.app.ui.report.unlockPreviewLines
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
@@ -367,12 +365,17 @@ private fun verdictLine(score: Int, intent: Intent?): String {
 }
 
 /**
- * ⭐ The paywall, previewing what is really behind it.
+ * ⭐ The way into the report — NOT a paywall any more (9 Aug 2026).
  *
- * ⚠ This card used to offer one number — "N more issues" — where N quietly added the problems it had
- * not shown to the rooms rated "not ideal"… which the paid report did not contain at all. So the free
- * screen sold issues the report never showed. Every line here is now counted off this home's own
- * analysis and names a section the reader will actually find (`unlockPreviewLines`).
+ * ⚠ This used to be the ₹699 wall: a price, a list of what was behind it, and a button that led to
+ * checkout. It no longer leads to checkout, so it no longer talks like it does. The report itself is
+ * now the shop window — the entrance, kitchen and toilets read in full for free there, and the price
+ * is asked on the report's own pay bar, next to the findings it would unlock. Leading with a price
+ * for a report the reader can already open would be asking for money before showing the goods.
+ *
+ * ⚠ It still previews with THIS home's real counts (`unlockPreviewLines`). That exists because the
+ * card once offered one number — "N more issues" — which quietly added rooms rated "not ideal" that
+ * the paid report did not contain at all, i.e. it sold issues the report never showed.
  */
 @Composable
 private fun UnlockCard(a: Analysis, shownFree: Int, onUnlock: () -> Unit, billingState: BillingState) {
@@ -385,27 +388,23 @@ private fun UnlockCard(a: Analysis, shownFree: Int, onUnlock: () -> Unit, billin
             .padding(VastuTheme.spacing.s4),
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(Modifier.weight(1f)) {
-                VText("Unlock the full report & remedies", style = VastuTheme.type.bodyLg, color = colors.textPrimary)
-                VText(remainingLine(a, shownFree), style = VastuTheme.type.bodySm, color = colors.textTertiary)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                // The STORE'S price when the store has answered, the owner's decided price
-                // otherwise — never a number typed twice in two places.
-                VText(billingState.price ?: FALLBACK_PRICE, style = VastuTheme.type.h2, color = colors.textPrimary)
-                VText("ONE-TIME", style = VastuTheme.type.caption, color = colors.textTertiary)
-            }
+        Column(Modifier.fillMaxWidth()) {
+            VText("Read your report", style = VastuTheme.type.bodyLg, color = colors.textPrimary)
+            VText(
+                "Your entrance, kitchen and toilets in full — free.",
+                style = VastuTheme.type.bodySm, color = colors.textSecondary,
+            )
         }
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
             unlockPreviewLines(a, shownFree).forEach {
                 VText("· $it", style = VastuTheme.type.bodySm, color = colors.textSecondary)
             }
         }
-        VastuButton("See the full report", onClick = onUnlock)
-        // ⭐ ONE source for this sentence, shared with the unlock screen. Two hand-written notices
-        // are how an app ends up promising a charge on one screen and not making it on the next.
-        VText(billingNotice(billingState), style = VastuTheme.type.caption, color = colors.textTertiary)
+        VastuButton("Open my report", onClick = onUnlock)
+        VText(
+            "The rest of the rooms are ${billingState.price ?: FALLBACK_PRICE}, one-time, asked for inside the report.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
+        )
     }
 }
 
