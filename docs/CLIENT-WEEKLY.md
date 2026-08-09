@@ -105,13 +105,32 @@ developer account.
 
 ## Week of 3–9 August 2026
 
-Eleven new versions this week. The short version: **the app stopped redrawing your home and started
+Twelve new versions this week. The short version: **the app stopped redrawing your home and started
 working on your own plan instead**, a better plan reader went in, the whole app was read through end
 to end and fixed in three rounds, the question of languages is settled — the app is English — and
 **the report itself was rebuilt so it can actually be read**, with the entrance, kitchen and toilets
 now free.
 
-### Sunday 9 August, later — the report is rebuilt, and three rooms are now free to read
+### Sunday 9 August, last thing — the front door is filed where it belongs
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.8.1/vastufirst-v0.8.1.apk
+**This is the one to install** — the rebuilt report from earlier today, with three things put right.
+
+**Your front door was always listed under "already right", whatever it actually said.** On a home
+whose doorway the tradition counts unfavourable, tapping the section that promises good news showed
+that door, marked unfavourable, as its very first item. The reading was correct; the heading was
+wrong — and a heading that argues with what sits under it makes every other heading on the page
+harder to trust. The door now goes wherever it reads: with the things that are right when it is
+favourable, with the things to fix when it is not, and with the questions the schools argue about
+when the sources genuinely differ.
+
+**The three counts at the top now line up** as one neat row on a narrow phone instead of one box
+sitting a line short of its neighbours.
+
+**And the bottom of the free report is now checked before every release, not just the top.** That is
+the half where the rooms you have not paid to read are listed, so it is the half worth watching.
+
+### Sunday 9 August, earlier — the report is rebuilt, and three rooms are now free to read
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.8.0/vastufirst-v0.8.0.apk
 
