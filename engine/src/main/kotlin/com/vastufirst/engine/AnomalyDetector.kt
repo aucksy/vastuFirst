@@ -79,10 +79,28 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
     private fun empty(tilt: Double, aspect: Double, shapeIrregular: Boolean) =
         AnomalyResult(emptyList(), emptyList(), shapeIrregular, tilt, aspect)
 
+    /**
+     * Long side over short side.
+     *
+     * ⚠ QUANTISED, and it has to be. This is compared with a bare `>` against the 1:2 hard flag, so a
+     * home whose proportions are EXACTLY 1:2 — an extremely ordinary builder's rectangle — was
+     * decided by the last bits of a division. `PlanConversionRoundTripTest` caught the same two-room
+     * home being called "long and narrow" in one corner of the canvas and not in another, purely
+     * because its width and height are derived from the footprint's absolute coordinates.
+     *
+     * It had been latent for as long as the check has existed: with the old all-or-nothing
+     * encroachment those plans scored below zero and clamped to 0 either way, so the one-point
+     * difference could never surface. Partial credit lifted them off the floor and it did.
+     *
+     * Four places is finer than any proportion a reader could perceive and coarse enough that
+     * position cannot decide the answer (§0.4). At exactly 1:2 the ratio now lands on 2.0 and the
+     * `>` is false — which is what the spec means by "ideal WITHIN 1:1–1:2".
+     */
     private fun aspectOf(r: Rect): Double {
         val lo = minOf(r.width, r.height)
         val hi = maxOf(r.width, r.height)
-        return if (lo <= PadaGrid.AREA_EPS) 1.0 else hi / lo
+        if (lo <= PadaGrid.AREA_EPS) return 1.0
+        return Math.round((hi / lo) * 10_000.0) / 10_000.0
     }
 
     private fun toAnomalies(kind: AnomalyKind, byZone: Map<Zone, Double>, refArea: Double): List<ZoneAnomaly> {

@@ -125,6 +125,41 @@ class StressCorpusTest {
         assertTrue(a.defects.any { it.id == "X-15" }, "over-elongated footprint should raise X-15")
     }
 
+    /**
+     * ⚠ REGRESSION — a home whose proportions are EXACTLY 1:2, drawn in four different places.
+     *
+     * The elongation flag is a bare `>` against the 1:2 hard limit, so on an exactly-1:2 rectangle
+     * — an entirely ordinary builder's plot — the answer came down to the last bits of a division,
+     * and those move with the footprint's absolute coordinates. The same home was called "long and
+     * narrow" drawn at the origin and not drawn a metre to the right. It was invisible for as long
+     * as it existed because such plans scored below zero and clamped either way; partial credit
+     * lifted them off the floor and it surfaced immediately.
+     *
+     * Exactly 1:2 must ALSO be inside the ideal band, not outside it — §4.2.7 reads "ideal within
+     * 1:1–1:2" — so the correct answer at the boundary is no flag at all.
+     */
+    @Test
+    fun `an exactly 1 to 2 home reads the same wherever it is drawn`() {
+        // No door: the shared helper's default sits at a fixed point that would fall outside a
+        // shifted outline, which would move the score for a reason that has nothing to do with shape.
+        val seen = listOf(0.0, 1.0, 7.5, 40.0).map { d ->
+            val a = engine.analyze(
+                plan(
+                    outline = Fixtures.rect(d, d, 60.0, 30.0),
+                    rooms = listOf(Room("m", RoomType.MASTER_BEDROOM, Fixtures.rect(d + 4, d + 4, 20.0, 20.0))),
+                    doors = emptyList(),
+                ),
+            )
+            assertEquals(2.0, a.aspectRatio, 1e-9)
+            a.defects.any { it.id == "X-15" } to a.score
+        }
+        assertEquals(false, seen[0].first, "exactly 1:2 is inside the ideal band, so no elongation flag")
+        assertTrue(
+            seen.all { it == seen[0] },
+            "the same 1:2 home gave different answers at different positions: $seen",
+        )
+    }
+
     @Test
     fun `a corner plot with a road thrust is assessed`() {
         val site = Site(Fixtures.rect(0.0, 0.0, 100.0, 100.0), roads = listOf(Road("r", 225, pointsAtPlot = true)))
