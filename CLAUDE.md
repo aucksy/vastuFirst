@@ -71,6 +71,37 @@ the yes.
 - A budget line in a task prompt is a ceiling, not an approval.
 - This binds every session and every tool, including one-off scans.
 
+## 2d. ⭐ HARD RULE — the client log is part of "done" (owner rule, 6 Aug 2026)
+
+**`docs/CLIENT-WEEKLY.md` is not a chore for later. No build is tagged and no release is published
+until that build has its own plain-English entry in it, written in the SAME COMMIT as the release.**
+
+- A tagged build with no entry is an unfinished build. Not "finished, write-up pending" — unfinished.
+- Same commit, not the next one. A log entry deferred to "after CI goes green" is a log entry that
+  the next red build, the next context switch, or the end of a session quietly deletes. This rule
+  exists because nine releases went out between 4 and 6 August 2026 while the log's newest entry
+  still read Monday 3 August and still linked v0.6.6 — ten days of the client's only window onto the
+  work, silently blank, and nobody noticed until the owner did.
+- `scripts/check-client-log.sh` enforces it, and it runs on the release path. A release whose tag is
+  not named in the log does not publish. Do not route around it.
+- The entry is written in the file's own voice — outcomes only, no file names, no code, no build or
+  CI talk. The maintainer note at the top of the file is binding; read the existing weeks first.
+
+### ⭐ And our own process failures NEVER appear in the client's file
+
+A stale log, a missed step, a bookkeeping gap, a gate that had to be re-run, a tag that had to be
+moved — **these are reported to the owner, in his own report, and are never written into anything the
+client reads.** They are not the client's problem, they do not help him, and confessing them to him
+buys candour we already owe the owner instead.
+
+⚠ This cuts both ways and the second half is the one that gets forgotten: **the owner is told
+plainly, every time.** "It slipped" said to him is honesty; the same sentence in the client's file is
+noise dressed up as honesty. Never fix the second by skipping the first.
+
+What the client's file DOES carry is anything that affects the PRODUCT he is being handed — a
+feature that regressed, a limit that is real, a decision still open. That is not a process failure;
+that is the work.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."
