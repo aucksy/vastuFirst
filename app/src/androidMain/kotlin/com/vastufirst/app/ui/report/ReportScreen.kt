@@ -267,6 +267,9 @@ fun ReportContent(
  * The old report opened straight into the front-door card, so the one question a reader actually
  * arrived with ("is my home all right?") was never answered on the screen they paid for.
  */
+// ⚠ Its own opt-in. FlowRow is experimental and the annotation does NOT travel from the caller —
+// ReportContent having it is exactly why this compiled in my head and not on the runner.
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VerdictHeader(score: Int, defectCount: Int, remediesOnly: Boolean, unlocked: Boolean) {
     val colors = VastuTheme.colors
