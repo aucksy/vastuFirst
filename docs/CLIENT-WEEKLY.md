@@ -65,6 +65,109 @@ one, and it is not something we were willing to ship.
 
 ---
 
+## Week of 3–9 August 2026
+
+Nine new versions this week. The short version: **the app stopped redrawing your home and started
+working on your own plan instead**, a better plan reader went in, and the whole app was read through
+end to end and fixed in three rounds.
+
+### Thursday 6 August — the scan flow stops redrawing your home
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.7.9/vastufirst-v0.7.9.apk
+
+**Your own plan is now the picture the app works on, from the first screen to the last.** Until this
+build, scanning a plan ended by handing you our redrawn version of it — a grid of squares — to mark
+your front door and North on. Every complaint ever made about scanning has been about that redrawing
+and never about the photo, so the redrawing is out of scanning altogether. You check the rooms on your
+plan, tap the wall your front door is on **on your plan**, and turn the compass around **your plan**.
+The drawing grid is still there for anyone who wants to draw a home from scratch; it is simply no
+longer part of reading one.
+
+**The plan picture is now as large as the screen allows.** It was sitting at about half the width it
+could have used, which made checking it against the paper harder than it needed to be.
+
+**A long balcony is read as one balcony.** A plan that dimensions one continuous balcony in three
+pieces — because three rooms open onto it — was being read as three separate balconies. It counted as
+three in the score, too. It is now one, and the app still prints all three of the sizes your sheet
+gives so you can check them against the paper.
+
+**And where a plan prints its own entrance, the app no longer asks you where the front door is.** If
+the sheet says ENTRY or FOYER, it reads it and tells you which wall it decided on, with a way to move
+it. It only asks when the plan does not say. The front door matters more to the score than anything
+else in the reading, so it says what it worked out rather than deciding quietly.
+
+**Small thing, useful thing:** the version number inside the app now matches the version you
+installed. It had said 0.7.0 for the last eight releases, so there was no way to tell one build from
+another on your phone.
+
+### Wednesday 5 August — plans that were being refused now read, and the report got shorter
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.7.8/vastufirst-v0.7.8.apk
+
+**The app was turning away real floor plans, and that is now fixed.** It refuses 3D marketing pictures
+on purpose, because they produce confident, wrong answers. But the test it used was looking at
+*styling* — furniture, colour, shadows — so a perfectly flat, perfectly measurable plan that happened
+to be furnished and coloured got rejected as a 3D render. It now asks the only question that actually
+matters: **was this picture taken from straight above, or at an angle?** A tilted photograph cannot be
+measured, whatever it shows. A furnished one seen from overhead can.
+
+**And when it does refuse, there is now a way forward.** "Show me what you read" gives you the room
+names it found, without costing a second scan. What it deliberately will **not** do is draw you a
+layout: when a picture is genuinely taken at an angle, every shape in it depends on where the camera
+stood, so a drawn plan would look confident and be wrong. Names are the part it reads reliably;
+placing them stays with you.
+
+**A home the app could not read is now named, and you can remove it.** These used to sit in your list
+as unidentifiable rows with no way to clear them. Each one now shows which home it is and when it was
+made, with its own Remove — and the confirmation tells you the real cost of removing it: a future
+update might have been able to rescue it, and removing it ends that chance. Healthy homes still have
+no delete; that is a separate decision.
+
+**Dates on your saved homes stopped getting cut off** at the largest text sizes.
+
+**The report reads shorter without losing anything.** Every zone's identity was being explained twice
+on the same card. Those repeats are gone — the report is about a sixth shorter — and nothing that
+makes it worth ₹699 was touched: every deity, element and Sanskrit name stays, and so does every
+sentence where the report admits a limit, such as the road rule it shows you but does not count in
+your score.
+
+### Tuesday 4 August — a better plan reader, and the whole app read end to end
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.7.4/vastufirst-v0.7.4.apk
+
+**The app reads plans with a different, better engine now.** Several were tested head to head on the
+same real sheets. The one now in use reads plans better than the old one on every sheet tested, and
+costs about **9 paise a scan instead of 21**. A second, stronger reader is called only when the first
+one says it cannot use the picture — never routinely — so the cost stays where it is.
+
+**Two things on your own plans were being read correctly and then thrown away.** The maid's room on
+your sheet was transcribed perfectly every time and discarded, because the app only knew the singular
+spelling of the word. And where a sheet prints a half-inch as a fraction, the readers type it out in
+three characters and the app could not parse it — which made it give up on a fully dimensioned
+eighteen-room plan as "too many rooms". Both fixed: **your tower plan now draws all sixteen of its
+rooms.**
+
+**You can now check a scan against your own photo rather than our grid** — the first version of what
+Thursday's build finished. The scanned picture stays on screen with the rooms listed beside it, and
+tapping a room shades roughly where on the picture it was read.
+
+**Then the whole app was read end to end, as a stranger would, and fixed in three rounds.** The worst
+of what that found:
+
+- **The app could lose your place if your phone killed it mid-flow** and leave you on "Reading your
+  home…" forever. It now picks its own work back up.
+- **The privacy card was naming the wrong company.** The plan reader changed, and the card that asks
+  your permission still named the old one. It now says exactly who sees the photo and what they are
+  asked — and because the wording changed, everyone who agreed to the old wording is asked again.
+- **"Delete all my data" was leaving every half-finished home on the phone.** It now means all.
+- **Opening a saved home after a rules change quietly rewrote its score** without the card that is
+  supposed to explain the change first. That silent rewrite is gone.
+- **Room labels could go blank** on small tiles, and the ₹699 row broke into one character per line at
+  large text sizes, with the buy button pushed below the fold.
+- **Every screen before the report now reads in about half the words** it used to.
+
+---
+
 ## Week of 28 July – 3 August 2026
 
 ### Monday 3 August — a half-drawn home waits for you, and a saved home can be corrected
