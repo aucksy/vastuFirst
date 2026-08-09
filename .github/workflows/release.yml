@@ -33,6 +33,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # ⭐ Tags and history, because the client-log guard below reads the DATE of the tag being
+          # released. A shallow checkout hands it a tag with no commit behind it, and the guard is
+          # built to exit 2 rather than pass in that case — so this is what keeps it able to run.
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -55,6 +60,13 @@ jobs:
 
       # Guardrails + tests must pass before we publish anything. A release clears the SAME UI
       # gates as CI — otherwise tagging becomes a way to ship unverified UI (docs/UI-POLISH.md).
+      # ⭐⭐ FIRST, and before anything is built (CLAUDE.md §2d). A release whose build is written up
+      # nowhere the client can read is not finished, and finding that out after a ten-minute build
+      # is finding it out too late to fix in the same commit — which is the whole of the rule.
+      # The tag is passed in rather than discovered: it is the subject of the check.
+      - name: Client-log check (this release must be written up for the client)
+        run: bash scripts/check-client-log.sh "${{ github.ref_name }}"
+
       - name: Module-boundary check
         run: bash scripts/check-boundaries.sh
       - name: Token check
