@@ -107,9 +107,23 @@ class ReportIntentTest {
         )
     }
 
-    /** Neither the layout block, nor the "if you ever renovate" demotion it used to become. */
+    /**
+     * Neither the layout block, nor the "if you ever renovate" demotion it used to become — nor the
+     * MOVE_IT remedy.
+     *
+     * ⚠ That last one is the lesson. This list used to hold four phrases, and a real piece of layout
+     * advice walked straight past all four because it is worded differently: the rule data's rank-0
+     * remedy says *"Move or resize the element on the drawing … while the plan is still on paper"*.
+     * Being rank 0 it sorted FIRST, so it reached every buyer and every resident from the first paid
+     * report until 9 Aug 2026 — and no gate saw it; a person looking at the rendered screen did. A
+     * ban-list only ever catches the sentences someone thought of, so the filter it guards
+     * ([advisableRemedies]) is the real protection and this is the tripwire.
+     */
     private fun androidx.compose.ui.test.ComposeUiTest.assertNoLayoutAdvice(who: String) {
-        listOf("Change the layout", "renovate", "still free to make", "Nothing is built yet").forEach { banned ->
+        listOf(
+            "Change the layout", "renovate", "still free to make", "Nothing is built yet",
+            "Move or resize", "still on paper", "on the drawing",
+        ).forEach { banned ->
             assertTrue(
                 "\"$banned\" must not appear anywhere in the report for $who — walls are already up",
                 onAllNodesWithText(banned, substring = true, ignoreCase = true)

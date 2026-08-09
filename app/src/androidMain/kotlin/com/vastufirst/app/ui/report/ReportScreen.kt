@@ -18,14 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.defectTitle
@@ -166,6 +170,15 @@ fun ReportContent(
     val scroll = rememberScrollState()
     var tab by rememberSaveable { mutableIntStateOf(initialTab) }
 
+    // ⚠ The pay bar's own MEASURED height, not a guess at it. It is two lines of text plus a 52 dp
+    // button, so at 200 % font it stands about 230 dp tall — three and a half times the fixed 64 dp
+    // of clearance an earlier draft reserved, which left it sitting squarely on top of "Done — see
+    // all my plans". A bottom bar that covers the last control is the unreachable-CTA defect
+    // UI-POLISH §3.B exists to prevent, and a constant can never track a bar that grows with the
+    // reader's font size. Seen in the 200 % golden before it shipped.
+    val density = LocalDensity.current
+    var payBarHeight by remember { mutableStateOf(0.dp) }
+
     Box(Modifier.screenRoot(colors.paper)) {
         Column(
             modifier = Modifier
@@ -248,13 +261,19 @@ fun ReportContent(
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             VastuButton("Done — see all my plans", onClick = onDone)
 
-            // Clearance so the sticky pay bar never covers the last control. Without it the bar sits
-            // on top of "Done" at the end of the scroll, which is the bottom-CTA-unreachable defect.
-            Spacer(Modifier.height(if (unlocked) VastuTheme.spacing.s4 else VastuTheme.spacing.s16))
+            // Clearance equal to the bar that overlaps this column, so the last control always
+            // clears it at every font size.
+            Spacer(Modifier.height(VastuTheme.spacing.s4 + if (unlocked) 0.dp else payBarHeight))
         }
 
         if (!unlocked) {
-            PayBar(Modifier.align(Alignment.BottomCenter), a, onUnlock)
+            PayBar(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .onSizeChanged { payBarHeight = with(density) { it.height.toDp() } },
+                a,
+                onUnlock,
+            )
         }
     }
 }
@@ -330,6 +349,30 @@ private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean,
     return head + tail + free
 }
 
+/* ─────────────────────────── advice, filtered by who is reading ─────────────────────────── */
+
+/**
+ * ⭐⭐ THE REMEDIES THIS READER CAN ACTUALLY ACT ON.
+ *
+ * ⚠ FOUND BY LOOKING AT THE RENDERED FREE REPORT, 9 Aug 2026 — not by any gate, and not by the test
+ * written to prevent exactly this.
+ *
+ * The rule data attaches a `MOVE_IT` remedy to defects — *"Move or resize the element on the drawing
+ * so it leaves the wrong zone — free while the plan is still on paper"* — and it carries **rank 0**,
+ * so it sorts FIRST. That is layout advice. Someone BUYING a built flat, or already living in one,
+ * cannot act on it, and the owner's v0.6.6 ruling is that they are shown remedies and nothing else.
+ *
+ * It had been reaching them since the report was written: the remedy block simply printed whatever
+ * `remediesFor` returned. `ReportIntentTest` did not catch it because it bans four phrases —
+ * "Change the layout", "renovate", "still free to make", "Nothing is built yet" — and this sentence
+ * happens to use none of them. The rebuild then promoted it to the "Do this first" headline of the
+ * free screen, which is where it finally became visible.
+ *
+ * So the filter lives here, once, and the test now bans the sentence itself.
+ */
+private fun advisableRemedies(d: Defect, remediesOnly: Boolean): List<com.vastufirst.shared.Remedy> =
+    if (remediesOnly) d.remedies.filter { it.kind != com.vastufirst.shared.FixKind.MOVE_IT } else d.remedies
+
 /* ─────────────────────────── start here ─────────────────────────── */
 
 @Composable
@@ -344,7 +387,11 @@ private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean)
             "Of everything below, this is the one that moves your score most.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
-        val first = if (remediesOnly) d.remedies.firstOrNull()?.let { remedyLine(it) } else d.layoutFix
+        val first = if (remediesOnly) {
+            advisableRemedies(d, true).firstOrNull()?.let { remedyLine(it) }
+        } else {
+            d.layoutFix
+        }
         if (!first.isNullOrBlank()) {
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             Column(
@@ -588,7 +635,7 @@ private fun DefectBody(d: Defect, zones: List<ZoneInfo>, remediesOnly: Boolean) 
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     // ⭐ Each remedy carries its OWN provenance, not the defect's — a rite from the Mayamatam and a
     // 20th-century rock-salt bowl can sit two lines apart.
-    val remedies = d.remedies.map { remedyLine(it) }
+    val remedies = advisableRemedies(d, remediesOnly).map { remedyLine(it) }
     if (remediesOnly) {
         RemedyBlock(remedies, d.remedyNote)
     } else {
