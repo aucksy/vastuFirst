@@ -165,6 +165,37 @@ class PlanConversionRoundTripTest {
         }
     }
 
+    /**
+     * ⚠ DIAGNOSTIC, and a permanent one. When the test below fails it says only that the score
+     * moved, which is exactly the information that does not help — a score is six things added
+     * together. This prints the parts (base, penalty, and every room's zone, verdict, points and
+     * encroached share) at each offset, so the next failure names its own cause instead of costing
+     * a round trip to find. It asserts nothing; the test below is the gate.
+     */
+    @Test
+    fun `door fixture decomposition at each offset, for the log`() {
+        val rooms = listOf(
+            GridRoom("a", RoomType.LIVING, 0, 0, 3, 3),
+            GridRoom("b", RoomType.KITCHEN, 4, 0, 2, 2),
+        )
+        val door = GridDoor(DoorSide.S, 1)
+        for ((dCol, dRow) in listOf(0 to 0, 1 to 1, 0 to 4, 2 to 5)) {
+            val sr = rooms.map { it.copy(col = it.col + dCol, row = it.row + dRow) }
+            val a = engine.analyze(plan(sr, GridDoor(door.side, door.cell + dCol)))
+            println(
+                "SCORE| shift($dCol,$dRow) score=${a.score} base=${"%.6f".format(a.base)} " +
+                    "penalty=${a.defectPenalty} door=${a.doorResult?.pada?.id}/${a.doorResult?.verdict} " +
+                    "defects=${a.defects.map { "${it.id}:${it.severity}" }}",
+            )
+            a.roomResults.forEach {
+                println(
+                    "SCORE|    ${it.roomId} ${it.type} zone=${it.zone} ${it.verdict} " +
+                        "pts=${it.points} share=${"%.6f".format(it.encroachedShare)} w=${it.weight}",
+                )
+            }
+        }
+    }
+
     @Test
     fun `translation invariance holds with the door too`() {
         val rooms = listOf(
