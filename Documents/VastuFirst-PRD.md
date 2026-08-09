@@ -344,6 +344,24 @@ defectPenalty = Σ over raised structural defects:
 ```
 Without this, a plan with a missing North-East corner scores identically to an intact one. Penalty values are config.
 
+**4.5.2b Partial credit for a room that only clips a forbidden zone** *(owner decision, 9 Aug 2026 — config `encroachment.proportionalCredit`).*
+
+Until this ruling a room forfeited everything the instant it crossed a forbidden line by the §4.2.6 encroachment threshold — about **2 % of its own area**, roughly a five-square-foot corner on a thousand-square-foot flat. It fell from as much as 100 points to 10 with no gradient in between, and the same corner was then charged **again**, in full, as a defect penalty.
+
+That was measured before it was changed, over five real recorded plans: it took the bundled 3BHK to **0.5** and a real Greencourt flat to **1.0**, and **more than half of every problem raised was a room merely touching the central Brahmasthan** — which, in a real flat, something almost always does. Seven of the thirty-eight scored rooms sat almost wholly in a perfectly good zone and were condemned by a corner.
+
+```
+share    = (room area lying in the flagged prohibited zones) / (room's own area)
+points   = DEFECT + (points the room's MAIN zone earns − DEFECT) × (1 − share)
+penalty  = severity penalty × min(1, share / fullPenaltyShare)      fullPenaltyShare = 0.5
+```
+
+A room wholly inside a zone it may not occupy has `share = 1.0` and is therefore unchanged: it still scores 10 and still pays its penalty in full. Defects that are not attached to a room — cuts, extensions, the site, fixtures — are never discounted.
+
+> ⚠ **The verdict is deliberately NOT part of this.** A clipping room stays `DEFECT` and its finding is still raised, explained and remedied exactly as before. Wiring the credit into the verdict instead would delete the finding from the report altogether (§4.6 walks defective rooms only) — that is the one way this change could cost real accuracy, and it is the reason the split exists. `PartialCreditTest` pins it.
+
+**The §15 acceptance fixture is unaffected**, and that was verified before implementation rather than discovered afterwards: both of its condemned rooms — the North-East toilet and the central staircase — sit *wholly* on forbidden ground, so there is no share to return. `sample-01` still scores exactly **31**.
+
 **4.5.3 Requirements.**
 - Score computes in **under 100 ms** on a mid-range device (cold path).
 - While the North dial is being dragged, the UI must stay at 60 fps. This is achieved by **debouncing recomputation to at most every 50 ms and computing off the main thread**, not by requiring a 16 ms engine. The previous draft demanded both 100 ms and 60 fps, which are inconsistent; this is the reconciliation.

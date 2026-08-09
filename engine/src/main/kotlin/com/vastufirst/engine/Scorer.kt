@@ -41,12 +41,34 @@ internal class Scorer(private val config: RulesetConfig) {
         // Disputed (DISP) defects are surfaced in the report with both readings but must NOT commit
         // the score to one side of a genuine dispute — mirroring how disputed room rules are
         // NOT_SCORED (§4.4.1). They are shown, not counted against the user, until a ruling lands.
+        //
+        // ⭐ The penalty ramps with how much of the room is really over the line (§4.5.2b). Without
+        // this the corner is charged TWICE — once by dropping the room's own points and again in
+        // full here — so a room three per cent into a forbidden zone still cost a whole MAJOR
+        // penalty. The defect itself is untouched: it is still raised, listed and remedied.
+        val shareOf = roomResults.associate { it.roomId to it.encroachedShare }
         val rawPenalty = defects
             .filter { it.provenance != Provenance.DISP }
-            .sumOf { config.penalties[it.severity.name] ?: 0 }
-        val penalty = minOf(rawPenalty, config.penaltyCap)
+            .sumOf { d -> (config.penalties[d.severity.name] ?: 0) * penaltyFactor(d.roomId?.let(shareOf::get)) }
+        val penalty = minOf(rawPenalty, config.penaltyCap.toDouble())
 
         val score = Math.round(base - penalty).toInt().coerceIn(0, 100)
-        return ScoreResult(score, base, penalty)
+        return ScoreResult(score, base, Math.round(penalty).toInt())
+    }
+
+    /**
+     * How much of a defect's penalty actually applies, 0.0–1.0.
+     *
+     * Full for anything that is not a room — a cut corner, the site, a fixture — because "how much
+     * of the room is over the line" is meaningless for those, and for every defect when the credit
+     * is off. For a room it ramps linearly to full at [EncroachmentConfig.fullPenaltyShare]: at the
+     * default half, a room a tenth over the line pays a fifth of the penalty, and one half over
+     * pays all of it.
+     */
+    private fun penaltyFactor(share: Double?): Double {
+        if (!config.encroachment.proportionalCredit || share == null) return 1.0
+        val full = config.encroachment.fullPenaltyShare
+        if (full <= 0.0) return 1.0
+        return (share / full).coerceIn(0.0, 1.0)
     }
 }

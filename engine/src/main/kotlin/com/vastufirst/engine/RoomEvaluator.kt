@@ -59,9 +59,44 @@ internal class RoomEvaluator(
 
         val verdict = if (flagged.isNotEmpty()) Verdict.DEFECT else baseVerdict
         val zone = if (flagged.isNotEmpty()) flagged.first() else positiveZone
-        val points = ruleSet.config.scorePoints[verdict.name] ?: 0
 
-        return RoomResult(room.id, room.type, zone, verdict, points, rule.weight, rule, overlaps.perPada) to flagged.toList()
+        // ⭐ PARTIAL CREDIT (§4.5.2b, owner decision 9 Aug 2026) — see [EncroachmentConfig].
+        //
+        // The verdict above is already decided and is NOT touched here: a room that crosses the
+        // line is still a DEFECT, still raises its finding, still gets its reason and its remedies.
+        // What changes is only how many points it forfeits. A room 3 % over the line used to score
+        // exactly the same as one sitting wholly in the wrong zone, which is the single biggest
+        // reason ordinary homes came out under 4 out of 10.
+        val share = if (flagged.isEmpty()) 1.0 else encroachedShare(flagged, overlaps, roomArea)
+        val points = scoreFor(verdict, baseVerdict, flagged.isNotEmpty(), share)
+
+        return RoomResult(
+            room.id, room.type, zone, verdict, points, rule.weight, rule, overlaps.perPada, share,
+        ) to flagged.toList()
+    }
+
+    /** The fraction of the room's own area lying in the prohibited zones it was flagged for. */
+    private fun encroachedShare(flagged: Set<Zone>, overlaps: PadaOverlaps, roomArea: Double): Double {
+        if (roomArea <= 0.0) return 1.0
+        val bad = flagged.sumOf { overlaps.perZone[it] ?: 0.0 }
+        return (bad / roomArea).coerceIn(0.0, 1.0)
+    }
+
+    /**
+     * Points for a room, interpolating between what it WOULD have scored on its main zone and the
+     * defect floor, by how much of it is on forbidden ground.
+     *
+     * With the credit off — or for a room wholly over the line — this returns exactly the old
+     * value, so nothing about the existing worked examples moves.
+     */
+    private fun scoreFor(verdict: Verdict, baseVerdict: Verdict, flagged: Boolean, share: Double): Int {
+        val floor = ruleSet.config.scorePoints[Verdict.DEFECT.name] ?: 0
+        val plain = ruleSet.config.scorePoints[verdict.name] ?: 0
+        if (!flagged || !ruleSet.config.encroachment.proportionalCredit) return plain
+        // The room's main zone may itself be prohibited — then `clean` IS the floor and no credit
+        // is given, which is right: that room is not clipping anything, it is sitting in it.
+        val clean = (ruleSet.config.scorePoints[baseVerdict.name] ?: 0).coerceAtLeast(floor)
+        return Math.round(floor + (clean - floor) * (1.0 - share)).toInt()
     }
 
     private fun defectZones(

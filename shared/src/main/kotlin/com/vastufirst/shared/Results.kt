@@ -40,6 +40,16 @@ data class RoomResult(
     val weight: Double,
     val rule: RoomRule?,
     val padaOverlap: Map<Pair<Int, Int>, Double> = emptyMap(),
+    /**
+     * How much of this room actually sits on forbidden ground, 0.0–1.0.
+     *
+     * 1.0 for a room wholly inside a zone it may not occupy, and for every room that raises no
+     * defect at all (nothing to discount). A room that merely clips a corner reports the small
+     * share it really overlaps, and that is what scales both its points and its penalty when
+     * [EncroachmentConfig.proportionalCredit] is on. Defaulting to 1.0 means every caller that
+     * never heard of partial credit keeps the old, harshest arithmetic.
+     */
+    val encroachedShare: Double = 1.0,
 )
 
 data class DoorResult(

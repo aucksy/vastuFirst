@@ -8,7 +8,9 @@
   "swCornerArcEndDeg": 236.25,
   "encroachment": {
     "roomAreaFraction": 0.02,
-    "analysisRectAreaFraction": 0.005
+    "analysisRectAreaFraction": 0.005,
+    "proportionalCredit": true,
+    "fullPenaltyShare": 0.5
   },
   "tieBreak": {
     "withinFraction": 0.01,

@@ -51,6 +51,32 @@ data class EncroachmentConfig(
     val roomAreaFraction: Double = 0.02,
     /** … AND ≥ this fraction of the analysis-rectangle area. Both mandatory. */
     val analysisRectAreaFraction: Double = 0.005,
+    /**
+     * ⭐ PARTIAL CREDIT FOR A ROOM THAT ONLY CLIPS A FORBIDDEN ZONE (owner decision, 9 Aug 2026).
+     *
+     * Off, a room loses everything the moment it crosses the line by the threshold above — about
+     * 2 % of itself, roughly a five-square-foot corner on a thousand-square-foot flat. It drops
+     * from as much as 100 points to 10 with no gradient in between, and the same corner is then
+     * charged a second time as a penalty. Measured across five real recorded plans, that one
+     * behaviour is why ordinary homes score under 4: it took the bundled 3BHK to 0.5 and a real
+     * Greencourt flat to 1.0.
+     *
+     * On, the room keeps the points its MAIN zone earns, reduced in proportion to how much of the
+     * room actually sits on forbidden ground, and the penalty ramps the same way.
+     *
+     * ⚠ THIS NEVER SILENCES A FINDING, and that distinction is the whole design. The verdict stays
+     * DEFECT and the defect is still raised, explained and remedied exactly as before — a toilet
+     * clipping the North-East is still reported as a toilet clipping the North-East. Only the
+     * arithmetic softens. Wiring the credit into the verdict instead would delete the finding from
+     * the report, which is the one way this change could cost real accuracy.
+     */
+    val proportionalCredit: Boolean = false,
+    /**
+     * The share of a room that must sit on forbidden ground before its defect counts at FULL
+     * penalty. Below it the penalty ramps linearly; at or above it, nothing is discounted.
+     * Only consulted when [proportionalCredit] is on.
+     */
+    val fullPenaltyShare: Double = 0.5,
 )
 
 @Serializable
