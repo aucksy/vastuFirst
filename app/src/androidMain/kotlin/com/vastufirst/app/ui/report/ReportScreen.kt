@@ -19,16 +19,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.defectTitle
@@ -182,6 +186,19 @@ fun ReportContent(
     val density = LocalDensity.current
     var payBarPx by remember { mutableIntStateOf(0) }
 
+    // ⭐ CHOOSING A CHAPTER SCROLLS TO IT — without this the chips are navigation that looks broken.
+    // The verdict, the balance meter and "start here" fill about a screenful and a half above them,
+    // so on a phone the new chapter opens entirely below the fold: you tap "Good to know", the
+    // screen does not visibly change, and the only clue is a chip that went dark. Seen by putting
+    // the three chapter goldens side by side. Scrolling the chips to the top makes the swap
+    // obvious and keeps them in reach for the next one.
+    var chipsY by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    fun goToChapter(next: Int) {
+        tab = next
+        scope.launch { scroll.animateScrollTo(chipsY) }
+    }
+
     Box(Modifier.screenRoot(colors.paper)) {
         Column(
             modifier = Modifier
@@ -232,15 +249,19 @@ fun ReportContent(
             // Chips wrap onto their own line instead, where each has the full width to itself.
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             FlowRow(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    // Where the chips sit in the scroll, so choosing a chapter can bring that
+                    // chapter to the top. See [goToChapter].
+                    .onGloballyPositioned { chipsY = it.positionInParent().y.toInt() },
                 horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
                 verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
             ) {
                 // ⚠ `onClick` is NOT the last parameter of VastuChip (modifier is), so a trailing
                 // lambda does not compile here. Named, deliberately.
-                VastuChip("Fix first (${defects.size})", selected = tab == TAB_FIX, onClick = { tab = TAB_FIX })
-                VastuChip("Already right (${good.size})", selected = tab == TAB_RIGHT, onClick = { tab = TAB_RIGHT })
-                VastuChip("Good to know ($moreCount)", selected = tab == TAB_MORE, onClick = { tab = TAB_MORE })
+                VastuChip("Fix first (${defects.size})", selected = tab == TAB_FIX, onClick = { goToChapter(TAB_FIX) })
+                VastuChip("Already right (${good.size})", selected = tab == TAB_RIGHT, onClick = { goToChapter(TAB_RIGHT) })
+                VastuChip("Good to know ($moreCount)", selected = tab == TAB_MORE, onClick = { goToChapter(TAB_MORE) })
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
