@@ -13,9 +13,9 @@ DS = D:\Apps\VastuFirst\designsystem\src\commonMain\kotlin\com\vastufirst\design
 - "No sign-up · No phone number" | WelcomeScreen.kt:78 | caption | HONESTY (privacy claim)
 - "See your home's Vastu — and exactly what to do about it." | WelcomeScreen.kt:86 | title
 - "Upload your plan or draw it. Mark which way North is. Get your score and what to do — whether you're buying, building, or already living there." | WelcomeScreen.kt:92 | body
-- "Language" | WelcomeScreen.kt:99 | section label
-- "English" | WelcomeScreen.kt:102 | chip
-- "More languages are coming soon — the app is in English for now." | WelcomeScreen.kt:106 | caption
+- ~~"Language" | section label~~ · ~~"English" | chip~~ · ~~"More languages are coming soon — the app
+  is in English for now." | caption~~ — **all three DELETED 9 Aug 2026. This screen has no language
+  copy at all and must not gain any: English only, permanently (`CLAUDE.md` §2e).**
 - "What brings you here?" | WelcomeScreen.kt:110 | section label
 - "I am buying a home" | WelcomeScreen.kt:118 | card title
 - "Deciding between options" | WelcomeScreen.kt:118 | card caption
@@ -389,7 +389,8 @@ Offline alternative (every state):
 
 - "Settings" | SettingsScreen.kt:140 | title
 - "Preferences" | SettingsScreen.kt:144 | section label
-- "Language" / "English" | SettingsScreen.kt:147 | row
+- ~~"Language" / "English" | SettingsScreen.kt:147 | row~~ — **DELETED (4 Aug 2026), and permanent
+  since 9 Aug 2026: English only (`CLAUDE.md` §2e). Never reinstate this row.**
 - "Vastu reading" / "8 zones" | SettingsScreen.kt:151 | row
 - "Check a scan" / "On the photo" / "On the grid" | SettingsScreen.kt:156-157 | row
 - "Data & privacy" | SettingsScreen.kt:163 | section label

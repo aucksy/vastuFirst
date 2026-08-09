@@ -442,8 +442,9 @@ Four small fixes, no visual change (goldens byte-identical, both ratchets "no re
   a config change (or a brief process reclaim) doesn't drop the selection / door step / armed room.
 - **Clickable rows carry a Role.** Saved-home rows and the Welcome intent cards announce as buttons to
   a screen reader (`clickableTap(role = Role.Button)`).
-- **"Coming soon" languages say so.** Each soon-pill carries a "<language> — coming soon"
-  contentDescription, instead of a screen reader reading only the language name.
+- ~~**"Coming soon" languages say so.** Each soon-pill carries a "<language> — coming soon"
+  contentDescription, instead of a screen reader reading only the language name.~~ **OBSOLETE
+  9 Aug 2026 — the pills are deleted; the app is English only, permanently (`CLAUDE.md` §2e).**
 
 **Adversarial review:** no blockers. Door clamp range is always valid (`fMaxC-1 ≥ fMinC`) and identical
 to the engine clamp; `RoomType` is Serializable so the enum saver is safe; the rest is semantics-only.
@@ -1866,7 +1867,11 @@ never print it.
 
 ### ⭐ The decimal mark, and the trap inside it
 
-All six languages VastuFirst ships in (English, Hindi, Tamil, Telugu, Marathi, Bengali) write a
+⚠ **Updated 9 Aug 2026 — the app is English only, permanently (`CLAUDE.md` §2e), and this feature
+survives that unchanged.** It was never localisation: it asks the PHONE what mark it writes, which is
+the device's setting, not a translation of VastuFirst.
+
+Every phone locale in India — English, Hindi, Tamil, Telugu, Marathi, Bengali — writes a
 **dot**. So a hard-coded `"."` would look correct forever, in every test, in every golden — and be
 wrong the first time the app opened on a phone set to a comma language. `deviceDecimalMark()` asks
 Android's own locale data for the resolved configuration locale (not `Locale.getDefault()`, which a
@@ -1877,8 +1882,8 @@ per-app language setting can make disagree), in **one place**, and hands it down
 would also **shape the digits**: verified against ICU before writing any Kotlin, `bn-IN` renders it
 **৪.৭** and `mr-IN` **४.७**, because those are their languages' default numbering systems. That is
 correct in a fully translated app and wrong in this one — the ₹699 price, the degrees on Mark North
-and every room size are Western digits, and the entire interface is still English until the Phase 4
-translations land. A lone Bengali numeral in an English screen reads as a bug. The numbering system
+and every room size are Western digits, and the entire interface is English and always will be. A
+lone Bengali numeral in an English screen reads as a bug. The numbering system
 therefore becomes a deliberate choice made **alongside** the translations, and the note saying so
 lives in the one file that would have to change.
 
