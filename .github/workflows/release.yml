@@ -64,8 +64,13 @@ jobs:
       # nowhere the client can read is not finished, and finding that out after a ten-minute build
       # is finding it out too late to fix in the same commit — which is the whole of the rule.
       # The tag is passed in rather than discovered: it is the subject of the check.
+      #
+      # ⚠ …but ONLY when this really is a tag. This recipe also has a manual trigger, and run that
+      # way `ref_name` is the BRANCH — so passing it blindly asked the guard whether the client log
+      # mentions a build called "main", which it never will. An empty argument makes the guard find
+      # the newest tag itself, which is the right question for a manual run.
       - name: Client-log check (this release must be written up for the client)
-        run: bash scripts/check-client-log.sh "${{ github.ref_name }}"
+        run: bash scripts/check-client-log.sh "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
 
       - name: Module-boundary check
         run: bash scripts/check-boundaries.sh
