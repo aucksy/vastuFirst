@@ -192,6 +192,27 @@ jobs:
       - name: A11y check (ATF contrast / labels / traversal)
         run: node scripts/check-a11y-manifest.mjs .
 
+      # What REAL recorded plans score, printed into the log (RealPlanScoreTest).
+      #
+      # Gradle swallows test stdout, so the numbers would otherwise sit in a results file nobody
+      # opens. They exist because on 9 Aug 2026 the owner asked why every house he scanned scored
+      # under 4 and nothing in the repo could answer: every score assertion pinned a hand-built
+      # fixture, all of which stay green while real flats come out at 1 out of 10.
+      - name: What real plans score
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          found = False
+          for f in sorted(glob.glob('*/build/test-results/**/*.xml', recursive=True)):
+              for out in ET.parse(f).getroot().iter('system-out'):
+                  for line in (out.text or '').splitlines():
+                      if line.startswith('SCORE|'):
+                          print('  ' + line[6:].strip()); found = True
+          if not found:
+              print('  (no score report in this run)')
+          PY
+
       # Runs on any push (implicit success() — a gate regression fails the job first and skips this).
       # The porcelain check no-ops when nothing changed, so this also persists a baseline the gate
       # adopted on a verify-pass run where no record happened.
