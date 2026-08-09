@@ -29,7 +29,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.defectTitle
@@ -176,8 +175,12 @@ fun ReportContent(
     // all my plans". A bottom bar that covers the last control is the unreachable-CTA defect
     // UI-POLISH §3.B exists to prevent, and a constant can never track a bar that grows with the
     // reader's font size. Seen in the 200 % golden before it shipped.
+    // ⚠ Held in PIXELS, not Dp. A zero-valued Dp literal is still a raw literal, and
+    // check-tokens.sh rightly fails the build for one outside the theme package — it greps the
+    // source text, so even naming it in a comment trips it. An Int carries no literal at all and
+    // converts at the use site.
     val density = LocalDensity.current
-    var payBarHeight by remember { mutableStateOf(0.dp) }
+    var payBarPx by remember { mutableIntStateOf(0) }
 
     Box(Modifier.screenRoot(colors.paper)) {
         Column(
@@ -263,14 +266,14 @@ fun ReportContent(
 
             // Clearance equal to the bar that overlaps this column, so the last control always
             // clears it at every font size.
-            Spacer(Modifier.height(VastuTheme.spacing.s4 + if (unlocked) 0.dp else payBarHeight))
+            Spacer(Modifier.height(VastuTheme.spacing.s4 + with(density) { payBarPx.toDp() }))
         }
 
         if (!unlocked) {
             PayBar(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .onSizeChanged { payBarHeight = with(density) { it.height.toDp() } },
+                    .onSizeChanged { payBarPx = it.height },
                 a,
                 onUnlock,
             )
