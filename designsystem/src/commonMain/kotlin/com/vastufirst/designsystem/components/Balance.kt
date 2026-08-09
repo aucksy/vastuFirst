@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,6 +98,13 @@ private fun androidx.compose.foundation.layout.RowScope.Seg(count: Int, color: C
 /**
  * One count and its words. The number is Marcellus so it reads as a figure rather than a label, and
  * the words sit under it — never beside it, which shatters at 200 % font on a 320 dp phone.
+ *
+ * ⚠ THE NUMBER IS INK, NOT THE VERDICT COLOUR, and that is an accessibility fix rather than a taste
+ * one. Drawn in its verdict colour it failed contrast: the amber (#D68C18) and the gold-family
+ * accents sit around 2.5:1, well under the 3:1 floor for large text, so the count — the single most
+ * important figure in this component — was the least legible thing in it. The colour moves to the
+ * dot, which is decoration and carries no meaning on its own; the bar segment and the label under
+ * the number carry the meaning (UI-POLISH §2 rule 3: never colour alone).
  */
 @Composable
 private fun Legend(modifier: Modifier, count: Int, label: String, color: Color) {
@@ -109,7 +117,13 @@ private fun Legend(modifier: Modifier, count: Int, label: String, color: Color) 
             .padding(VastuTheme.spacing.s3),
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
     ) {
-        VText(count.toString(), style = VastuTheme.type.h2, color = color)
+        Box(
+            Modifier
+                .size(VastuTheme.sizes.dot)
+                .clip(VastuTheme.shapes.full)
+                .background(color),
+        )
+        VText(count.toString(), style = VastuTheme.type.h2, color = colors.textPrimary)
         VText(label, style = VastuTheme.type.bodySm, color = colors.textTertiary)
     }
 }

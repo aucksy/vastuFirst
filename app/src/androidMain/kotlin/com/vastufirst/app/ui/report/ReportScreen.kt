@@ -550,11 +550,16 @@ private fun FindingRow(
                 VText(meta, style = VastuTheme.type.bodySm, color = colors.textTertiary)
             }
             Spacer(Modifier.height(VastuTheme.spacing.s2))
+            // ⚠ NOT "Tap to read…". Google's ATF RedundantDescriptionCheck fires on it, and rightly:
+            // TalkBack already announces the role and the gesture, so a visible "tap to" makes a
+            // screen-reader user hear the instruction twice. UI-POLISH says the same thing for
+            // sighted readers — name the OUTCOME, never the gesture. The chevron carries the
+            // affordance; `onClickLabel` above carries it for the screen reader.
             VText(
                 when {
                     locked -> "Reasoning and remedies — in the full report"
-                    open -> "Tap to close"
-                    else -> "Tap to read the whole reason"
+                    open -> "Close  ⌃"
+                    else -> "The whole reason  ⌄"
                 },
                 style = VastuTheme.type.caption,
                 color = if (locked) colors.textTertiary else colors.primaryDark,
