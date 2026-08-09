@@ -3,8 +3,10 @@ MAINTAINER NOTE — not for the client. This file is the single source for Simra
 progress email, so it must stay in plain English: outcomes, not mechanics. No file/class names,
 no code, no build/release jargon (those go in docs/PROGRESS.md). Update it as part of "done":
 whenever a build is released, a phase item closes, a decision lands, or we hit a blocker.
-Newest week at the top. Keep the "What we need from you" section current — it's the most useful
-part for the client.
+Newest week at the top. Keep the "What we need from you" AND "What's coming" sections current —
+between them they are the most useful part for the client. "What's coming" is high-level pointers
+only, in rough order, and carries NO dates: this file has never promised a date and must not start.
+Move an item out of it and into a week the moment it ships.
 
 STANDING RULES FOR THE WEEKLY EMAIL (set 3 August 2026, apply every week from now on):
 - Recipients: Simran.manocha123@gmail.com AND vastufirst13@gmail.com — both on the To line as
@@ -64,6 +66,30 @@ that moves on its own with no explanation is the difference between an honest pr
 one, and it is not something we were willing to ship.
 
 ---
+
+---
+
+## 🔭 What's coming
+
+High-level, in roughly the order we expect to do it. No dates — these move when your decisions above
+land.
+
+- **Scanning will stop falling back to a grid entirely.** Today, when the app can read your room
+  names but cannot work out where they sit on the sheet, it hands you a grid of squares to arrange
+  them on. That is the last place the old drawing screen appears in scanning, and it is going: you
+  will place a room by tapping where it is **on your own plan** instead. On the plans we test
+  against, about one in six needs this.
+- **A polish round.** The score reveal, the empty screens, the small movements and the finish of the
+  thing — the difference between an app that works and one that feels finished.
+- **Getting it on the Play Store.** Blocked on the developer account (see above) — everything on our
+  side is ready to go the day it exists.
+- **Switching on the ₹699 payment.** Built and waiting; it needs your decision on how the money is
+  collected before it goes live.
+- **A finer reading of directions.** The app scores against 8 directions today. The tradition also
+  has a 16-direction reading, which is more precise; the app already says "16 zones (soon)" where it
+  will appear.
+- **A dark theme**, if you want one. The app is deliberately light-only today, which is a choice we
+  can revisit — it is worth a conversation rather than an assumption.
 
 ## Week of 3–9 August 2026
 

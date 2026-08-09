@@ -164,7 +164,6 @@ fun VastuNavHost() {
             composable(Routes.SCAN) { entry ->
                 val planVm = sharedVm(nav, entry)
                 val scanVm: ScanViewModel = koinViewModel()
-                val reviewStyle = koinInject<com.vastufirst.app.ui.scan.ScanReviewStyle>()
                 val reviewHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 ScanRoute(
                     vm = scanVm,
@@ -203,14 +202,19 @@ fun VastuNavHost() {
                                 null
                             },
                         )
-                        // ⭐ The on-photo review (Settings toggle) replaces the GRID step only —
-                        // and only for a scan whose geometry was trusted. The grid rooms above are
-                        // populated IDENTICALLY first, so the score is the same in both flows and
-                        // "fix on the grid" from the review lands on a ready grid.
-                        if (
-                            reviewStyle.onPhoto() &&
-                            outcome is com.vastufirst.shared.scan.ScanOutcome.Placed
-                        ) {
+                        // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026). The grid
+                        // rooms above are still populated, because they are what the engine scores
+                        // and what the score screen draws — but the user never sees or touches them
+                        // on this path. They check, mark the door and set North on their own photo.
+                        //
+                        // ⚠ The `else` below is the one route left from a scan into the editor, and
+                        // it is not a preference: it is a scan whose rooms could NOT be placed, so
+                        // there is no geometry to score and somebody has to supply it. Measured on
+                        // the 44 recorded real plans: 24 place, 9 arrive unplaced, 11 are refused.
+                        // Removing this branch today would strand about one readable plan in six
+                        // with no route to a score at all. It goes when placing rooms by tapping
+                        // the PHOTO exists to replace it — not before.
+                        if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
                             reviewHandover.data = com.vastufirst.app.ui.scan.ScanReviewData(
                                 imageBytes = scanVm.lastImage?.bytes,
                                 rooms = outcome.rooms,
