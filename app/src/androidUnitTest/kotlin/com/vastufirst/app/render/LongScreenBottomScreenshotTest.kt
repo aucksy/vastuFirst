@@ -6,7 +6,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
@@ -15,6 +18,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.ui.report.ReportContent
+import com.vastufirst.app.ui.report.TAG_PAY_CLEARANCE
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.unlock.UnlockContent
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -55,7 +59,7 @@ class LongScreenBottomScreenshotTest {
     private fun captureBottom(
         screen: String,
         config: String,
-        anchor: String,
+        anchor: SemanticsMatcher,
         fontScale: Float,
         content: @Composable () -> Unit,
     ) {
@@ -69,31 +73,59 @@ class LongScreenBottomScreenshotTest {
                     VastuTheme { content() }
                 }
             }
-            onNodeWithText(anchor).performScrollTo()
+            onNode(anchor).performScrollTo()
             onRoot().captureRoboImage(goldenPath(screen, config))
         }
     }
 
-    private fun captureBottomPair(screen: String, anchor: String, content: @Composable () -> Unit) {
+    private fun captureBottomPair(
+        screen: String,
+        anchor: SemanticsMatcher,
+        content: @Composable () -> Unit,
+    ) {
         captureBottom(screen, "bottom", anchor, 1.0f, content)
         captureBottom(screen, "bottom_font2_0", anchor, 2.0f, content)
     }
 
     /** The paid document's ending: disputes, the disclaimer, and the only way out of the flow. */
     @Test
-    fun report_bottom() = captureBottomPair("report", anchor = "Done — see all my plans") {
+    fun report_bottom() = captureBottomPair("report", anchor = hasText("Done — see all my plans")) {
         ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.BUILDING)
     }
 
     /** The remedies-only branch ends on the same elements but gets there through different cards. */
     @Test
-    fun report_living_bottom() = captureBottomPair("report-living", anchor = "Done — see all my plans") {
+    fun report_living_bottom() = captureBottomPair("report-living", anchor = hasText("Done — see all my plans")) {
         ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.LIVING)
+    }
+
+    /**
+     * ⭐⭐ THE FREE REPORT'S ENDING — the half of the screen most readers will actually see, and
+     * until now the half NO photograph contained at any size.
+     *
+     * Every free-report golden starts at the top and stops just below the chapter chips. Everything
+     * under them — the locked rows that name each room and hide only the reasoning, which IS the
+     * free tier — plus the way out and the pay bar's edge, had never been rendered into an image.
+     * Two things go unwatched without this picture. First, a locked row must still say WHICH room it
+     * is; hiding that would be the bait Product PRD §6.4 forbids, and no gate can see it. Second,
+     * the pay bar floats over this column, so whether the last control clears it is a question only
+     * a picture can answer — it was answered wrongly once already.
+     *
+     * ⚠ Anchored on the clearance, NOT on the button. See [TAG_PAY_CLEARANCE] for why the obvious
+     * anchor photographs a defect that is not there.
+     */
+    @Test
+    fun report_free_bottom() = captureBottomPair("report-free", anchor = hasTestTag(TAG_PAY_CLEARANCE)) {
+        ReportContent(
+            analysis = RenderFixtures.sampleAnalysis,
+            intent = Intent.BUYING,
+            unlocked = false,
+        )
     }
 
     /** The free score's ending: the ranked problems, the unlock card and the way back to the list. */
     @Test
-    fun score_bottom() = captureBottomPair("score", anchor = "See all my plans") {
+    fun score_bottom() = captureBottomPair("score", anchor = hasText("See all my plans")) {
         ScoreContent(
             rooms = RenderFixtures.sampleRooms,
             north = RenderFixtures.sampleNorth,
@@ -123,7 +155,7 @@ class LongScreenBottomScreenshotTest {
         val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
             com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
         )
-        captureBottomPair("scan-review-door", anchor = "Put the front door somewhere else") {
+        captureBottomPair("scan-review-door", anchor = hasText("Put the front door somewhere else")) {
             com.vastufirst.app.ui.scan.ScanReviewContent(
                 image = android.graphics.Bitmap
                     .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
@@ -139,7 +171,7 @@ class LongScreenBottomScreenshotTest {
     @Test
     fun unlock_paid_bottom() = captureBottomPair(
         "unlock-paid",
-        anchor = "Your front door by name, and the source behind every rule",
+        anchor = hasText("Your front door by name, and the source behind every rule"),
     ) {
         UnlockContent(state = BillingState(mode = BillingMode.READY, price = "₹699.00"))
     }

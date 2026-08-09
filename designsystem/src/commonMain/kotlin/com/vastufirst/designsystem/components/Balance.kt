@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,13 +79,22 @@ fun BalanceMeter(
             Seg(needsFixing, colors.verdictDefect)
         }
 
+        // ⚠ ONE HEIGHT FOR ALL THREE, and it has to be asked for. Left to themselves the tiles are
+        // each as tall as their own words: at 320 dp "already right" and "need fixing" wrap onto two
+        // lines while "not ideal" stays on one, so the middle box ends a whole line short of its
+        // neighbours and the row reads as a mistake. Seen in the 320 dp golden.
+        //
+        // IntrinsicSize.Min asks the row how tall it needs to be at the width it has been given —
+        // the weights are honoured during that question, so each tile is measured at its real third
+        // of the row and the tallest answer sets all three. fillMaxHeight is what makes the shorter
+        // tiles take it up; without it they keep their own height and the border still ends early.
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
-            Legend(Modifier.weight(1f), right, "already right", colors.verdictIdeal)
-            Legend(Modifier.weight(1f), notIdeal, "not ideal", colors.verdictSuboptimal)
-            Legend(Modifier.weight(1f), needsFixing, "need fixing", colors.verdictDefect)
+            Legend(Modifier.weight(1f).fillMaxHeight(), right, "already right", colors.verdictIdeal)
+            Legend(Modifier.weight(1f).fillMaxHeight(), notIdeal, "not ideal", colors.verdictSuboptimal)
+            Legend(Modifier.weight(1f).fillMaxHeight(), needsFixing, "need fixing", colors.verdictDefect)
         }
     }
 }

@@ -121,6 +121,17 @@ const val TAB_FIX = 0
 const val TAB_RIGHT = 1
 const val TAB_MORE = 2
 
+/**
+ * ⭐ THE END OF THE DOCUMENT, SO THE HARNESS CAN SCROLL TO IT.
+ *
+ * ⚠ Scrolling to the last *control* is NOT the same thing and would photograph a lie. The pay bar
+ * floats over this column, so bringing "Done — see all my plans" minimally into view lands it at the
+ * bottom edge of the window with the bar squarely on top of it — a picture of the very defect this
+ * clearance exists to prevent, taken of a screen where it does not happen. The clearance itself is
+ * the true last element, so scrolling to THAT is what a reader reaching the end of the page sees.
+ */
+const val TAG_PAY_CLEARANCE = "report.payClearance"
+
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -265,10 +276,12 @@ fun ReportContent(
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
+            val door = a.doorResult
+            val doorTab = door?.let { doorChapter(it.verdict) }
             when (tab) {
-                TAB_RIGHT -> ChapterRight(a.doorResult, good, zones, unlocked, remediesOnly, expandAll)
-                TAB_MORE -> ChapterMore(a, notIdeal, zones, unlocked, expandAll)
-                else -> ChapterFix(defects, a.roomResults, zones, unlocked, remediesOnly, expandAll)
+                TAB_RIGHT -> ChapterRight(door?.takeIf { doorTab == TAB_RIGHT }, good, zones, unlocked, remediesOnly, expandAll)
+                TAB_MORE -> ChapterMore(a, notIdeal, zones, unlocked, remediesOnly, expandAll, door?.takeIf { doorTab == TAB_MORE })
+                else -> ChapterFix(defects, a.roomResults, zones, unlocked, remediesOnly, expandAll, door?.takeIf { doorTab == TAB_FIX })
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -286,8 +299,17 @@ fun ReportContent(
             VastuButton("Done — see all my plans", onClick = onDone)
 
             // Clearance equal to the bar that overlaps this column, so the last control always
-            // clears it at every font size.
-            Spacer(Modifier.height(VastuTheme.spacing.s4 + with(density) { payBarPx.toDp() }))
+            // clears it at every font size. Tagged because it is the document's true last element —
+            // see [TAG_PAY_CLEARANCE].
+            // ⚠ fillMaxWidth is load-bearing, not decoration. A tag turns this Spacer into a real
+            // semantics node, and a bare Spacer given only a height measures ZERO WIDE — which the
+            // geometry gate fails on sight, on every report screen at once.
+            Spacer(
+                Modifier
+                    .testTag(TAG_PAY_CLEARANCE)
+                    .fillMaxWidth()
+                    .height(VastuTheme.spacing.s4 + with(density) { payBarPx.toDp() }),
+            )
         }
 
         if (!unlocked) {
@@ -408,7 +430,13 @@ private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean)
         VText(defectTitle(d, rooms), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            "Of everything below, this is the one that moves your score most.",
+            // ⚠ "Of the problems ranked below", NOT "of everything below" — the wider claim is one
+            // this report cannot make. The front door is scored too, at the ENTRANCE weight, which
+            // is the heaviest single weight there is; a defect instead adds a severity penalty. The
+            // engine never puts those two on one scale, so nothing here knows whether an
+            // unfavourable door outranks the worst defect. Ranking only what is actually ranked is
+            // the honest sentence, and it stayed honest when the door moved into this chapter.
+            "Of the problems ranked below, this is the one that moves your score most.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
         val first = if (remediesOnly) {
@@ -432,6 +460,35 @@ private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean)
 
 /* ─────────────────────────── chapters ─────────────────────────── */
 
+/**
+ * ⭐ WHICH CHAPTER THE FRONT DOOR BELONGS IN — decided by how the door READS, not by a fixed slot.
+ *
+ * ⚠ FOUND BY LOOKING AT THE RENDERED CHAPTER, 9 Aug 2026. The door used to lead "Already right"
+ * always, whatever it said. So on this very sample a reader tapped the chapter that promises good
+ * news and the first thing on it was their own front door stamped **Unfavourable** in red. That is
+ * not a wrong verdict — the door really is unfavourable — it is the wrong shelf, and a category that
+ * contradicts its own contents teaches a reader to distrust every other category on the screen.
+ *
+ * The mapping is the rooms' mapping, so the door is filed by the same logic as everything else:
+ * favourable and middling read well; "read both ways" is precisely what "Good to know" is for (it
+ * already holds the disputes, and a door the sources disagree about IS one); unfavourable is a thing
+ * to fix. The door stays free to read in every one of them — see [DOOR_IS_FREE].
+ */
+private fun doorChapter(v: PadaVerdict): Int = when (v) {
+    PadaVerdict.AUSPICIOUS, PadaVerdict.MODERATE -> TAB_RIGHT
+    PadaVerdict.MIXED -> TAB_MORE
+    PadaVerdict.INAUSPICIOUS -> TAB_FIX
+}
+
+/** The door's own block, wherever [doorChapter] sends it. */
+@Composable
+private fun DoorSection(door: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean) {
+    SectionLabel("Your front door")
+    Spacer(Modifier.height(VastuTheme.spacing.s3))
+    DoorCard(door, zones, remediesOnly)
+    Spacer(Modifier.height(VastuTheme.spacing.s6))
+}
+
 @Composable
 private fun ChapterFix(
     defects: List<Defect>,
@@ -440,10 +497,18 @@ private fun ChapterFix(
     unlocked: Boolean,
     remediesOnly: Boolean,
     expandAll: Boolean,
+    door: DoorResult?,
 ) {
     val colors = VastuTheme.colors
+    door?.let { DoorSection(it, zones, remediesOnly) }
     if (defects.isEmpty()) {
-        VText("No defects to rank — the placements read well.", style = VastuTheme.type.body, color = colors.textSecondary)
+        VText(
+            // Not "the placements read well" when an unfavourable door is sitting directly above it.
+            if (door != null) "Nothing else here needs fixing."
+            else "No defects to rank — the placements read well.",
+            style = VastuTheme.type.body,
+            color = colors.textSecondary,
+        )
         return
     }
     VText(
@@ -481,15 +546,11 @@ private fun ChapterRight(
     expandAll: Boolean,
 ) {
     val colors = VastuTheme.colors
-    // ⭐ The front door leads this chapter and is ALWAYS free ([FreeTier]). It is the highest-weighted
-    // single element in the reading, and the 32 named positions sat unused in the rule data for the
-    // app's first eight builds while the screen showed nothing about the door at all.
-    door?.let {
-        SectionLabel("Your front door")
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        DoorCard(it, zones, remediesOnly)
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-    }
+    // ⭐ The front door leads this chapter WHEN IT READS WELL ([doorChapter]) and is ALWAYS free
+    // ([FreeTier]). It is the highest-weighted single element in the reading, and the 32 named
+    // positions sat unused in the rule data for the app's first eight builds while the screen showed
+    // nothing about the door at all.
+    door?.let { DoorSection(it, zones, remediesOnly) }
     if (good.isEmpty()) {
         VText("No room came back already right this time.", style = VastuTheme.type.body, color = colors.textSecondary)
         return
@@ -523,9 +584,20 @@ private fun ChapterMore(
     notIdeal: List<RoomResult>,
     zones: List<ZoneInfo>,
     unlocked: Boolean,
+    remediesOnly: Boolean,
     expandAll: Boolean,
+    door: DoorResult?,
 ) {
     val colors = VastuTheme.colors
+
+    // A door the sources read both ways belongs with the other things the schools disagree about,
+    // which is the section immediately below this one ([doorChapter]).
+    //
+    // ⚠ [remediesOnly] is threaded in for this one call and must stay threaded. The door's
+    // explanation offers a layout change unless it is set, so hardcoding it here would hand "move
+    // your front door" to someone buying a built flat — the exact v0.6.6 ruling the report already
+    // broke once, through a different door.
+    door?.let { DoorSection(it, zones, remediesOnly) }
 
     if (notIdeal.isNotEmpty()) {
         SectionLabel("Not ideal — and not a fault")
