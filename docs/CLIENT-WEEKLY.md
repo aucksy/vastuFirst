@@ -105,9 +105,35 @@ developer account.
 
 ## Week of 3–9 August 2026
 
-Nine new versions this week. The short version: **the app stopped redrawing your home and started
-working on your own plan instead**, a better plan reader went in, and the whole app was read through
-end to end and fixed in three rounds.
+Ten new versions this week. The short version: **the app stopped redrawing your home and started
+working on your own plan instead**, a better plan reader went in, the whole app was read through
+end to end and fixed in three rounds, and the question of languages is now settled — the app is
+English.
+
+### Sunday 9 August — the app is English, and that is now a decision rather than a wait
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.7.10/vastufirst-v0.7.10.apk
+
+**VastuFirst is an English app, and it is staying that way.** Until this build the first screen
+carried five greyed-out language buttons — Hindi, Tamil, Telugu, Marathi, Bengali — under the line
+"English for now, more languages soon". They are gone, and so is the plan behind them. The screen now
+ends on Continue, and the three "what brings you here?" cards sit higher up the page than before.
+
+**The honest reason.** Most of the words in this product are not buttons and headings. They are the
+Vastu writing: why a room in that direction is a problem, what the tradition attaches to it, what you
+can do instead. Translating that properly means finding a person who reads Vastu, once for every
+language — and running rule text through a machine translator would produce something confident and
+wrong, five times over. That is not a shortcut worth taking, and a promise sitting on the first
+screen with nothing behind it is not worth keeping. So the promise comes off.
+
+**One thing that has not changed, and should not:** the app still writes numbers the way your own
+phone writes them, so a phone set to a language that uses a comma still shows 4,7 rather than 4.7.
+That is your phone's own setting rather than a translation of the app, and it stays.
+
+**And one small thing found by looking at the screen rather than by any test.** On a phone set to the
+largest text size, the green tick that confirms which option you have picked was being drawn bigger
+than the circle around it, so it came out as a bare diagonal slash. The circle now grows with the
+text instead of cropping the tick.
 
 ### Thursday 6 August — the scan flow stops redrawing your home
 
