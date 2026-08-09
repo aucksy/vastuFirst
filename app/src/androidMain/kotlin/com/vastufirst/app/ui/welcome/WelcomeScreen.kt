@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -149,8 +150,14 @@ private fun IntentCard(title: String, subtitle: String, selected: Boolean, onCli
             VText(text = subtitle, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         }
         if (selected) {
+            // ⚠ The badge scales WITH the font, and must (UI-POLISH §3E: no fixed-size box around
+            // text). Found by looking at the rendered screen, 9 Aug 2026: at 200 % font scale the
+            // tick was drawn larger than the circle clipping it, so the confirmation of the user's
+            // choice came out as a bare diagonal slash. Fine at 1.0 and 1.3, broken at 2.0 — which
+            // is exactly the reader this app is for. The circle grows instead of cropping the tick.
+            val badge = VastuTheme.sizes.iconSm * LocalDensity.current.fontScale
             Box(
-                Modifier.size(VastuTheme.sizes.iconSm).clip(CircleShape).background(colors.primary),
+                Modifier.size(badge).clip(CircleShape).background(colors.primary),
                 contentAlignment = Alignment.Center,
             ) {
                 VText("✓", style = VastuTheme.type.caption, color = colors.onPrimary)

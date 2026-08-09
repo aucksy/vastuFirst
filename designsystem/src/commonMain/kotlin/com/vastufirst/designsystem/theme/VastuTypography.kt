@@ -1,4 +1,4 @@
-// VastuTypography.kt — the type ramp (Impl PRD §3.4; ramp from the handoff).
+﻿// VastuTypography.kt — the type ramp (Impl PRD §3.4; ramp from the handoff).
 //
 // The ramp (from handoff/VastuTheme.kt comments):
 //   display  Marcellus 34/1.2 (400)   h1 28/1.25   h2 22/1.3    h3 18/1.35
@@ -39,14 +39,14 @@ import com.vastufirst.designsystem.generated.resources.marcellus_regular
 import org.jetbrains.compose.resources.Font
 
 /** The three font roles, all bundled OFL faces (see FONTS note above). */
-private data class ScriptFamilies(
+private data class TypeFamilies(
     val display: FontFamily,   // Marcellus (serif)
     val sans: FontFamily,      // DM Sans
     val mono: FontFamily,      // DM Mono
 )
 
 @Composable
-private fun latinFamilies(): ScriptFamilies = ScriptFamilies(
+private fun latinFamilies(): TypeFamilies = TypeFamilies(
     display = FontFamily(Font(Res.font.marcellus_regular, FontWeight.Normal)),
     sans = FontFamily(
         Font(Res.font.dm_sans_regular, FontWeight.Normal),
