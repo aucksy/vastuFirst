@@ -75,11 +75,20 @@ internal class RoomEvaluator(
         ) to flagged.toList()
     }
 
-    /** The fraction of the room's own area lying in the prohibited zones it was flagged for. */
+    /**
+     * The fraction of the room's own area lying in the prohibited zones it was flagged for.
+     *
+     * ⚠ Quantised to four places on the way out. The polygon areas behind it are accumulated from
+     * pada rectangles whose edges are computed from the analysis rectangle, so the last couple of
+     * bits move with the home's absolute position on the canvas. Four places is far finer than
+     * anything a reader could perceive and coarse enough that the same home cannot score
+     * differently for being drawn lower down the sheet (§0.4).
+     */
     private fun encroachedShare(flagged: Set<Zone>, overlaps: PadaOverlaps, roomArea: Double): Double {
         if (roomArea <= 0.0) return 1.0
         val bad = flagged.sumOf { overlaps.perZone[it] ?: 0.0 }
-        return (bad / roomArea).coerceIn(0.0, 1.0)
+        val raw = (bad / roomArea).coerceIn(0.0, 1.0)
+        return Math.round(raw * 10_000.0) / 10_000.0
     }
 
     /**

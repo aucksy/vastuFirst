@@ -46,14 +46,23 @@ internal class Scorer(private val config: RulesetConfig) {
         // this the corner is charged TWICE — once by dropping the room's own points and again in
         // full here — so a room three per cent into a forbidden zone still cost a whole MAJOR
         // penalty. The defect itself is untouched: it is still raised, listed and remedied.
+        //
+        // ⚠ EACH DEFECT'S SCALED PENALTY IS ROUNDED TO A WHOLE NUMBER BEFORE IT IS SUMMED, and that
+        // is not tidiness. Summing fractions and subtracting the total put the final `round` on a
+        // knife edge: `PlanConversionRoundTripTest` caught the same home scoring 0.4 in one corner
+        // of the canvas and 0.6 in another, because position must never be a scoring term (§0.4) and
+        // a fractional penalty made it one. Whole numbers in, whole number out.
         val shareOf = roomResults.associate { it.roomId to it.encroachedShare }
         val rawPenalty = defects
             .filter { it.provenance != Provenance.DISP }
-            .sumOf { d -> (config.penalties[d.severity.name] ?: 0) * penaltyFactor(d.roomId?.let(shareOf::get)) }
-        val penalty = minOf(rawPenalty, config.penaltyCap.toDouble())
+            .sumOf { d ->
+                val full = config.penalties[d.severity.name] ?: 0
+                Math.round(full * penaltyFactor(d.roomId?.let(shareOf::get))).toInt()
+            }
+        val penalty = minOf(rawPenalty, config.penaltyCap)
 
         val score = Math.round(base - penalty).toInt().coerceIn(0, 100)
-        return ScoreResult(score, base, Math.round(penalty).toInt())
+        return ScoreResult(score, base, penalty)
     }
 
     /**

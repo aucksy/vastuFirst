@@ -120,4 +120,38 @@ class PartialCreditTest {
     fun `the acceptance fixture still scores 31`() {
         assertEquals(31, VastuEngine().analyze(Fixtures.sample01()).score)
     }
+
+    /**
+     * ⚠ REGRESSION. The first cut of partial credit summed FRACTIONAL penalties and subtracted the
+     * total, which put the final rounding on a knife edge — the same home scored 0.4 drawn in one
+     * corner of the canvas and 0.6 drawn in another. Position is never a scoring term (§0.4), so a
+     * fractional penalty quietly made the app wrong in a way no reader could ever have explained.
+     * Each defect's scaled penalty is now rounded to a whole number before it is summed, and the
+     * share itself is quantised. `PlanConversionRoundTripTest` owns the app-level version of this;
+     * this one keeps the guarantee inside the engine, where the arithmetic actually lives.
+     */
+    @Test
+    fun `the same home scores the same wherever it sits`() {
+        val engine = VastuEngine()
+        val reference = engine.analyze(clippingPlan()).score
+        for (shift in listOf(1.0, 4.0, 7.5, 23.0)) {
+            val moved = clippingPlan().let { p ->
+                val lvl = p.levels.first()
+                p.copy(
+                    levels = listOf(
+                        lvl.copy(
+                            outline = lvl.outline.map { it.copy(x = it.x + shift, y = it.y + shift) },
+                            rooms = lvl.rooms.map { r ->
+                                r.copy(polygon = r.polygon.map { it.copy(x = it.x + shift, y = it.y + shift) })
+                            },
+                        ),
+                    ),
+                )
+            }
+            assertEquals(
+                reference, engine.analyze(moved).score,
+                "score moved after shifting the whole home by $shift — position must never score",
+            )
+        }
+    }
 }
