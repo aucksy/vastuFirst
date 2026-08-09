@@ -71,25 +71,40 @@ one, and it is not something we were willing to ship.
 
 ## 🔭 What's coming
 
-High-level, in roughly the order we expect to do it. No dates — these move when your decisions above
-land.
+The plan for this app has six stages. **Stages 0, 1 and 2 are finished** — the scoring engine, drawing
+a home, the compass, the free score and the paid report. That was the 4 August delivery.
 
-- **Scanning will stop falling back to a grid entirely.** Today, when the app can read your room
-  names but cannot work out where they sit on the sheet, it hands you a grid of squares to arrange
-  them on. That is the last place the old drawing screen appears in scanning, and it is going: you
-  will place a room by tapping where it is **on your own plan** instead. On the plans we test
-  against, about one in six needs this.
-- **A polish round.** The score reveal, the empty screens, the small movements and the finish of the
-  thing — the difference between an app that works and one that feels finished.
-- **Getting it on the Play Store.** Blocked on the developer account (see above) — everything on our
-  side is ready to go the day it exists.
-- **Switching on the ₹699 payment.** Built and waiting; it needs your decision on how the money is
-  collected before it goes live.
-- **A finer reading of directions.** The app scores against 8 directions today. The tradition also
-  has a 16-direction reading, which is more precise; the app already says "16 zones (soon)" where it
-  will appear.
-- **A dark theme**, if you want one. The app is deliberately light-only today, which is a choice we
-  can revisit — it is worth a conversation rather than an assumption.
+**We are in stage 3 now: real-world testing.** Its finish line is written down rather than felt — no
+serious bugs left open, and every main journey working on three real phones. We are fixing from your
+feedback continuously; the three-phone pass still has to happen.
+
+**Stage 4 is the largest piece still ahead.** In rough order:
+
+- **Reading a plan without ever falling back to a grid.** When the app can read your room names but
+  not work out where they sit, it still hands you a grid of squares. You will place a room by tapping
+  where it is on your own plan instead. About one plan in six needs this today.
+- **Six languages.** The app is English-only. The welcome screen's language buttons do nothing yet,
+  deliberately. This one needs a Vastu-literate human translator — machine-translated rule text would
+  be worse than none, so it is not a shortcut we will take.
+- **The Vastu assistant** — ask a question, get an answer drawn only from the rule set, with the
+  source named, and an honest "the texts do not say" when they do not.
+- **Flats treated properly** as their own case, with a report honest about what a flat owner cannot
+  move.
+- **The finer 16-direction reading**, alongside today's 8. The app already says "16 zones (soon)"
+  where it will appear.
+- **A polish round** — the score reveal, the empty screens, the finish of the thing.
+
+**Stage 5 — money and iPhone.** The ₹699 payment is built and switched off, waiting on your decision
+about how it is collected. A shop for remedies is planned. **iPhone has not started**: the app was
+built from day one so that this is a re-targeting job rather than writing it twice, but it is real
+work and it is a whole stage.
+
+**Stage 6 — launch.** The disclaimer, the privacy policy and the sources page are in the app.
+**Terms of use and a refund policy still have to be written** — those are needed before the store will
+take it. The store listing, the data-safety declaration and the content rating are all waiting on the
+developer account.
+
+**No dates on any of this.** Several of them move only when a decision above lands.
 
 ## Week of 3–9 August 2026
 
