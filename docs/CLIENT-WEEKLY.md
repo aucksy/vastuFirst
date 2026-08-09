@@ -105,10 +105,43 @@ developer account.
 
 ## Week of 3–9 August 2026
 
-Ten new versions this week. The short version: **the app stopped redrawing your home and started
-working on your own plan instead**, a better plan reader went in, the whole app was read through
-end to end and fixed in three rounds, and the question of languages is now settled — the app is
-English.
+Eleven new versions this week. The short version: **the app stopped redrawing your home and started
+working on your own plan instead**, a better plan reader went in, the whole app was read through end
+to end and fixed in three rounds, the question of languages is settled — the app is English — and
+**the report itself was rebuilt so it can actually be read**, with the entrance, kitchen and toilets
+now free.
+
+### Sunday 9 August, later — the report is rebuilt, and three rooms are now free to read
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.8.0/vastufirst-v0.8.0.apk
+
+**The report now opens by telling you how the home did.** Until this build it opened straight into
+the front door and never gave an overall verdict at all — you had to read to the end to find out
+where you stood. The first thing on the screen is now the score, one plain sentence, and a single
+band across the whole home showing how many rooms are already right, how many are not ideal, and how
+many need work.
+
+**What is right is shown before what is wrong.** "Already right" used to sit underneath every
+problem, so someone with a perfectly decent home reached the end feeling told off. The balance is now
+the second thing they see.
+
+**One long scroll became three short ones** — what to fix first, what is already right, and what is
+worth knowing — with the count on each. And every finding is now a single line you tap to open: the
+room, its direction and how it read are always on show, and the whole reason, the Sanskrit name, the
+deity, where the rule comes from and every remedy sit one tap underneath. **Nothing was taken out.**
+Open everything and the report is exactly as long as it was; it simply no longer arrives all at once.
+
+**Your entrance, kitchen and toilets are now free to read in full.** They are the three the tradition
+weighs heaviest and the three most people already have an opinion about before they open the app.
+Every other room still shows its name and how it read — only the reasoning behind it is part of the
+₹699. The score and the number of problems are never hidden behind the price; a free result that
+hides how many faults a home has, to sell the number, is not something we will build.
+
+**And one real fault, found by looking at the screens rather than by any test.** If you were buying a
+home, or already living in one, the report's top recommendation was to *move or resize the room on
+the drawing* — advice that only makes sense while a plan is still on paper, and the opposite of what
+this app promises those two readers. It had been there since the report was first written. A buyer
+and a resident now see only remedies they can actually carry out.
 
 ### Sunday 9 August — the app is English, and that is now a decision rather than a wait
 
