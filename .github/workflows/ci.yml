@@ -14,6 +14,22 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # ⭐⭐ THIS REPLACES `[skip ci]` ON THE GOLDENS COMMIT, AND THE DIFFERENCE IS A WHOLE RELEASE.
+    #
+    # The render gate records goldens and pushes them back here. That push must not start CI again —
+    # it would verify the pictures it just wrote. The obvious way to say so was `[skip ci]` in the
+    # commit message, and it worked, but `[skip ci]` is not scoped to this workflow: GitHub reads it
+    # off the HEAD COMMIT OF ANY PUSH, including a TAG push. So the goldens commit became a commit no
+    # release could ever be cut from:
+    #
+    #   · tag the goldens commit      -> Release is skipped ENTIRELY, in silence, no APK, no error;
+    #   · tag the commit before it    -> Release runs and fails, because the goldens on that tree are
+    #                                    the pre-change pictures. Both happened, on v0.9.1.
+    #
+    # Naming the bot's own commit instead skips exactly this workflow and nothing else, so a tag on
+    # the goldens commit still builds a release. Keep the string in step with the commit message
+    # below — they are one mechanism written in two places.
+    if: "!contains(github.event.head_commit.message, 'ci: record screen render goldens')"
     # The render gate commits freshly-recorded goldens back to the branch (UI-POLISH §6.3), so the
     # job needs write access. Everything else here is read-only.
     permissions:
@@ -240,7 +256,10 @@ jobs:
           fi
           git config user.name "VastuFirst CI"
           git config user.email "simpleapps108@gmail.com"
-          git commit -m "ci: record screen render goldens [skip ci]"
+          # ⚠ NO `[skip ci]` HERE — see the job-level `if:` at the top of this file. That marker also
+          # suppresses a TAG push, which made every goldens commit un-releasable. The `if:` skips
+          # this workflow by name instead, leaving the release path alone. Keep the two in step.
+          git commit -m "ci: record screen render goldens"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
