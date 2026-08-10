@@ -650,6 +650,10 @@ object ScanMapper {
             val p = printed.getOrNull(i) ?: continue
             val b = boxes[i]
             if (b.w <= 0.0 || b.h <= 0.0 || p.widthMm <= 0.0 || p.depthMm <= 0.0) continue
+            // ⚠ The SCALE is fitted long-against-long, deliberately, even though the OUTPUT below
+            // uses the printed order. A scale is one number and has no orientation, and the reader
+            // gets orientation wrong on two rooms in three — pairing its width against a printed
+            // width would feed that error straight into the one figure every room depends on.
             ratios += maxOf(b.w, b.h) / maxOf(p.widthMm, p.depthMm)
             ratios += minOf(b.w, b.h) / minOf(p.widthMm, p.depthMm)
         }
@@ -660,13 +664,20 @@ object ScanMapper {
         return boxes.mapIndexed { i, b ->
             val p = printed.getOrNull(i) ?: return@mapIndexed b
             if (b.w <= 0.0 || b.h <= 0.0 || p.widthMm <= 0.0 || p.depthMm <= 0.0) return@mapIndexed b
-            val long = maxOf(p.widthMm, p.depthMm) * scale
-            val short = minOf(p.widthMm, p.depthMm) * scale
-            if (!long.isFinite() || !short.isFinite() || long <= 0.0 || short <= 0.0) return@mapIndexed b
-            // The reader's own orientation is kept: which way round the room lies is its problem,
-            // not the caption's — the caption states two lengths and never which is across.
-            val w = (if (b.w >= b.h) long else short).coerceAtMost(1.0)
-            val h = (if (b.w >= b.h) short else long).coerceAtMost(1.0)
+            // ⭐ ORIENTATION COMES FROM THE PRINTED ORDER — first number is the width — exactly as
+            // [reshapeToPrinted] resolves it for the grid, and for the same measured reason. This
+            // deferred to the reader's rectangle first, which is the arrangement that was already
+            // tried and rejected for the grid: the reader called the owner's passage three times
+            // wider than tall, so matching its sense merely restated the error at a new ratio.
+            // Trusting the printed order corrects four of the six dimensioned rooms on his plan;
+            // deferring to the drawing corrected none.
+            //
+            // It also has to agree with the grid, or this screen contradicts the thing it exists to
+            // let someone check: a bedroom drawn landscape here while the score treats it as
+            // portrait is worse than no picture at all.
+            val w = (p.widthMm * scale).coerceAtMost(1.0)
+            val h = (p.depthMm * scale).coerceAtMost(1.0)
+            if (!w.isFinite() || !h.isFinite() || w <= 0.0 || h <= 0.0) return@mapIndexed b
             // ⚠ Safety net for a MIS-READ caption. The median scale shrugs off one bad size, but the
             // room that owns it does not: `6750X4350` read as feet instead of millimetres would draw
             // a bedroom over half the sheet. A printed size that disagrees with the reader's own

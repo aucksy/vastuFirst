@@ -108,6 +108,23 @@ class ScanTintPrintedSizeTest {
                 }
             }
 
+            // ⭐ ORIENTATION MUST FOLLOW THE PRINTED ORDER, not the reader's rectangle — the same
+            // ruling `reshapeToPrinted` follows for the grid, pinned here because this screen's
+            // whole job is letting someone check what we read. A bedroom printed 3.72 x 4.50 drawn
+            // landscape, while the grid we scored has it portrait, is a picture that contradicts the
+            // answer. The first cut of this fix kept the reader's sense and did exactly that.
+            for (room in after.rooms) {
+                val drawn = room.printedBox ?: continue
+                val printed = RoomDimensions.parse(room.printedSize.ifBlank { room.label }) ?: continue
+                if (printed.widthMm == printed.depthMm) continue
+                val printedIsWide = printed.widthMm > printed.depthMm
+                if (drawn.w > drawn.h != printedIsWide) {
+                    say("$id: ${room.label} is drawn ${if (drawn.w > drawn.h) "wide" else "tall"} " +
+                        "but prints ${if (printedIsWide) "wide" else "tall"}")
+                    worsened++
+                }
+            }
+
             // 19 x 19 taps across the whole photograph — every wall, every corner, and the margin
             // outside the home, which is where a tap most easily changes its mind about a side.
             var moved = 0
