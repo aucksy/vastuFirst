@@ -554,7 +554,9 @@ private fun RoomsSection(
                 name = name,
                 code = r.type.microLabel(),
                 codeColor = r.type.editorColor(),
-                direction = r.zone.short(),
+                // ⚠ Capitalised HERE, not in [short], which also feeds running prose where "the
+                // centre" must stay lowercase ("Toilet — centre"). A pill is a label, not a sentence.
+                direction = r.zone.short().replaceFirstChar { it.uppercase() },
                 status = r.verdict.roomStatus(),
                 selected = open,
                 expanded = open,

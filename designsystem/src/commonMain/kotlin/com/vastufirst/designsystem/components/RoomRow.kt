@@ -116,15 +116,19 @@ fun VastuRoomRow(
     body: (@Composable () -> Unit)? = null,
 ) {
     val colors = VastuTheme.colors
-    val accent = if (selected) codeColor else colors.borderDefault
+    // ⚠ The open row is marked in a NEUTRAL colour, never the room's own. Tinting it by room type
+    // put an orange wash behind an open kitchen and a red one behind an open toilet — sitting
+    // directly beside a red "Review" pill, which reads as alarm when all it means is "this is the
+    // one you are looking at". Seen in the first render. Selection is state, not a verdict.
+    val accent = if (selected) colors.primary else colors.borderDefault
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(VastuTheme.shapes.md)
-            .background(if (selected) codeColor.copy(alpha = 0.10f) else colors.surfaceRaised)
+            .background(colors.surfaceRaised)
             .border(
-                if (selected) VastuTheme.borders.strong else VastuTheme.borders.regular,
+                if (selected) VastuTheme.borders.focus else VastuTheme.borders.regular,
                 accent,
                 VastuTheme.shapes.md,
             )
@@ -150,16 +154,30 @@ fun VastuRoomRow(
             Spacer(Modifier.width(VastuTheme.spacing.s3))
             Column(Modifier.weight(1f)) {
                 VText(name, style = VastuTheme.type.h3, color = colors.textPrimary, maxLines = 2)
-                if (direction != null || note != null) {
-                    // ⚠ FlowRow, not Row. At 200 % font on a 320 dp phone the direction pill and the
-                    // printed size together are wider than the column, and a Row draws them into each
-                    // other — the defect UI-POLISH §3.D names and §6.7b proves the geometry gate
-                    // cannot see. Wrapping costs a line only where a line was going to be lost anyway.
+                if (direction != null || status != null || note != null) {
+                    // ⭐⭐ THE PILLS SIT UNDER THE NAME, NOT BESIDE IT — and this is not a style choice.
+                    //
+                    // ⚠ FOUND BY LOOKING, 10 Aug 2026, on the first render of this row. The owner's
+                    // sketch puts the result pill on the right of the row, and built that way it
+                    // measures FIRST and takes the width it wants, leaving the weighted name column
+                    // whatever is left. At 200 % font that broke a room's name across two lines in
+                    // the middle of the word — "Bedroo / m" — and at 320 dp it broke a direction the
+                    // same way, "South-Wes / t". Every geometry number was green for both: the boxes
+                    // are the size they claim to be, it is the words inside them that are wrong,
+                    // which is exactly the class UI-POLISH §6.7b says only a picture catches.
+                    //
+                    // In a FlowRow under the name, the name has the full column and each pill either
+                    // fits beside its neighbour or takes its own line whole. Nothing competes for the
+                    // name's width, so no word can be cut in half at any size in the matrix.
+                    //
+                    // The cost is the sketch's right-hand column of results, which was genuinely
+                    // easier to run an eye down. Correct at every size wins over tidy at one.
                     FlowRow(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
                         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
                     ) {
+                        if (status != null) RoomStatusPill(status)
                         if (direction != null) {
                             TagPill(text = direction, color = colors.textSecondary)
                         }
@@ -168,10 +186,6 @@ fun VastuRoomRow(
                         }
                     }
                 }
-            }
-            if (status != null) {
-                Spacer(Modifier.width(VastuTheme.spacing.s2))
-                RoomStatusPill(status)
             }
             if (body != null) {
                 Spacer(Modifier.width(VastuTheme.spacing.s2))
