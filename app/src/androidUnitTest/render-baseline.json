@@ -59,6 +59,7 @@
   "scan-retype": 0,
   "scan-review": 0,
   "scan-review-door": 0,
+  "scan-review-printed": 0,
   "score": 0,
   "score-covered": 0,
   "score-insufficient": 0,
