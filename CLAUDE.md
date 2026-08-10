@@ -166,8 +166,16 @@ Rules for it, all binding:
 - **No codes, ever.** Not `G4`, not `S8`, not `F3`, not `§6.2b`, not `v0.3.14`-as-an-identifier, not
   a file or class name. The owner does not read every line I print and will not go looking up a label.
   If a checklist row matters, **write the question out** instead of pointing at its number.
-- **Each "yours" item stands alone.** It must make sense to someone who read nothing else in the
-  session. "Is a row of squares to drag easier than an empty grid?" — not "please check item G4".
+- **⭐ Each "yours" item stands alone — this is a HARD RULE, restated 10 Aug 2026 because it kept
+  being broken.** The test is pass/fail: hand the item, alone, to someone who has read nothing else —
+  not the message above it, not the session. If they cannot tell WHAT is being asked, WHY it matters,
+  and WHAT the options are, rewrite it. Each item names the SCREEN it is about, spells out the
+  question, gives the options with what each costs, and gives the recommendation.
+  **Banned:** "as explained above", "the one I described", and any bare *it / this / that / the new
+  one* that only resolves by reading upward. A four-line question he can answer beats a one-line
+  question he cannot — length is not the constraint, self-containment is.
+  Failure that produced this: *"Do you want the result pill back on the right of the row?"* — which
+  row, which screen, what pill, what happens either way. (Full rule: `D:\Apps\CLAUDE.md`.)
 - **Say what is NOT done**, in the same plain words, especially anything blocking.
 - **Short.** If it runs past roughly a screen, it is too long — the detail belongs in `docs/`.
 - Assume he read **nothing** above the wrap-up. This applies even mid-session, whenever I hand
