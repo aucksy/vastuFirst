@@ -185,6 +185,9 @@ fun ScanReviewContent(
     // first time this went in. The mapper refuses a plan over twenty rooms, so the longest list this
     // can ever draw is twenty rows — laziness buys nothing here and costs the checks their eyes.
     val listScroll = rememberScrollState()
+    // ⚠ Declared out here, not inside the constraints block below: [tapRoom] closes over it and is
+    // defined above that block.
+    val rowTopMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
     val rowY = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
 
@@ -212,7 +215,6 @@ fun ScanReviewContent(
     // the gate is right that it must be fixed rather than ratcheted away.
     BoxWithConstraints(Modifier.screenRoot(colors.paper)) {
     val planCap = minOf(VastuTheme.sizes.planPane, maxHeight * PLAN_MAX_VIEWPORT_SHARE)
-    val rowTopMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
     // ⚠ The bottom padding belongs to the LIST, not to this column, and that is a correctness fix
     // rather than a tidy-up. Padding the column stops the scrolling list 24 dp short of the screen
     // edge, so whichever row straddles its lower edge is cut by a CONTAINER — which the geometry
