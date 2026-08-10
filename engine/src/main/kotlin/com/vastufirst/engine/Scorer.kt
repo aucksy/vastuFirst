@@ -70,9 +70,16 @@ internal class Scorer(private val config: RulesetConfig) {
      *
      * Full for anything that is not a room — a cut corner, the site, a fixture — because "how much
      * of the room is over the line" is meaningless for those, and for every defect when the credit
-     * is off. For a room it ramps linearly to full at [EncroachmentConfig.fullPenaltyShare]: at the
-     * default half, a room a tenth over the line pays a fifth of the penalty, and one half over
-     * pays all of it.
+     * is off. For a room it ramps linearly to full at [EncroachmentConfig.fullPenaltyShare], which
+     * is 1.0 since the 10 Aug 2026 ruling: a room a tenth over the line pays a tenth of the penalty,
+     * and only a room wholly over it pays all of it.
+     *
+     * ⭐ That constant is the fix, not a tidy-up. At the previous 0.5 the penalty hit full strength
+     * at HALF over, so a room a fifth over kept four fifths of its marks and paid two fifths of the
+     * penalty — one corner billed twice, at two different rates, which is precisely what
+     * proportional credit was introduced to stop. `PartialCreditTest` pins the ramp; measured over
+     * the eight recorded real plans it lifted the median home from 3.9 to 5.0 out of 10 while
+     * removing nothing from any report.
      */
     private fun penaltyFactor(share: Double?): Double {
         if (!config.encroachment.proportionalCredit || share == null) return 1.0

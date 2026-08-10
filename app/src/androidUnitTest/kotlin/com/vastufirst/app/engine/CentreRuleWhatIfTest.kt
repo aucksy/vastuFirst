@@ -129,8 +129,11 @@ class CentreRuleWhatIfTest {
         // gain a north-east or south-west finding it did not have.
         Candidate("centre is the single middle square", zoneAt = CENTRE_1X1),
 
-        // (f) Pure arithmetic: let the fine ramp all the way instead of maxing out at halfway.
-        Candidate("fine ramps to full only when wholly over", fullPenaltyShare = 1.0),
+        // ⭐ (f) THE ONE THAT WAS CHOSEN, 10 Aug 2026 — pure arithmetic, and the only candidate that
+        // buys nothing with the reader's findings. Both rows are kept so the evidence for the ruling
+        // stays visible in every build: the shipped value, and the half-way ramp it replaced.
+        Candidate("· shipped: fine ramps like the marks do", fullPenaltyShare = 1.0),
+        Candidate("· rejected: fine hit full at half over", fullPenaltyShare = 0.5),
 
         // The two extras the owner asked for in the same run — free, no extra round trip.
         Candidate("silent placement scores 6.0 not 4.5", suboptimalPoints = 60),
@@ -218,6 +221,13 @@ class CentreRuleWhatIfTest {
 
     // ───────────────────────── the twin ─────────────────────────
 
+    /**
+     * ⚠ [share] is the share of the room lying in the CENTRE alone. It is deliberately not the
+     * room's overall encroached share, which sums every forbidden direction the room is flagged for
+     * — printing that under a "centre" heading would overstate the centre on any room that also
+     * clips, say, the north-east, and this evidence block exists precisely to judge how much of the
+     * centre problem is real.
+     */
     private data class CentreHit(val roomId: String, val type: RoomType, val share: Double)
 
     private data class Measured(
@@ -242,7 +252,7 @@ class CentreRuleWhatIfTest {
             scoreOf[case.id] = scoreOf(ruleSet, candidate, rooms, case, defects)
             findingsOf[case.id] = defects.size
             centreDetail[case.id] = rooms.filter { Zone.BRAHMASTHAN in it.flagged }
-                .map { CentreHit(it.id, it.type, it.share) }
+                .map { CentreHit(it.id, it.type, it.centreShare) }
             if (case.isReal) {
                 findings += defects.size
                 centreFindings += defects.count { it.zone == Zone.BRAHMASTHAN && it.roomId != null }
@@ -260,6 +270,8 @@ class CentreRuleWhatIfTest {
         val weight: Double,
         val flagged: List<Zone>,
         val share: Double,
+        /** The share of the room in the CENTRE alone — evidence only, never part of the score. */
+        val centreShare: Double = 0.0,
     )
 
     private fun evaluate(ruleSet: RuleSet, c: Candidate, case: Case, rr: RoomResult): TwinRoom {
@@ -307,10 +319,12 @@ class CentreRuleWhatIfTest {
             val bad = flagged.sumOf { perZone[it] ?: 0.0 }
             quantise(bad / roomArea)
         }
+        val centreShare = if (roomArea <= 0.0) 0.0 else (perZone[Zone.BRAHMASTHAN] ?: 0.0) / roomArea
         return TwinRoom(
             rr.roomId, rr.type, notScored = false,
             points = pointsFor(ruleSet, c, verdict, baseVerdict, flagged.isNotEmpty(), share),
             weight = rule.weight, flagged = flagged.toList(), share = share,
+            centreShare = quantise(centreShare),
         )
     }
 

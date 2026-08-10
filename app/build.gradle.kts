@@ -128,8 +128,10 @@ android {
         applicationId = "com.vastufirst.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 49
-        versionName = "0.8.1"
+        // ⚠ These lagged the tags: v0.9.0 shipped still calling itself 0.8.1, so an installed build
+        // could not be told apart from the one before it on the phone. Bump BOTH with every tag.
+        versionCode = 50
+        versionName = "0.9.1"
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.

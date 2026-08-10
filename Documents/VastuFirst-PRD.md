@@ -353,8 +353,31 @@ That was measured before it was changed, over five real recorded plans: it took 
 ```
 share    = (room area lying in the flagged prohibited zones) / (room's own area)
 points   = DEFECT + (points the room's MAIN zone earns − DEFECT) × (1 − share)
-penalty  = severity penalty × min(1, share / fullPenaltyShare)      fullPenaltyShare = 0.5
+penalty  = severity penalty × min(1, share / fullPenaltyShare)      fullPenaltyShare = 1.0
 ```
+
+**⭐ `fullPenaltyShare` was 0.5 and became 1.0 on 10 August 2026 (owner ruling), and the constant is the whole of that change.** At 0.5 the penalty reached full strength when a room was merely *half* over the line, so a room a fifth over kept four fifths of its marks and paid **two** fifths of the penalty — the same corner billed twice, at two different rates, which is exactly what proportional credit exists to stop. At 1.0 the penalty ramps precisely as the marks do.
+
+It was measured before it was changed, across all eight recorded real plans plus both worked examples, by re-deriving every candidate from the engine's own per-pada overlap areas (`CentreRuleWhatIfTest`, which refuses to be believed until it reproduces the engine's real score plan by plan):
+
+| Candidate | Median of the eight real plans | Findings removed from the reader's report |
+|---|---|---|
+| Unchanged | 3.9 | – |
+| **`fullPenaltyShare = 1.0`** | **5.0** | **none** |
+| Brahmasthan flag needs 10 % of the room | 4.5 | 6 of 37 |
+| Brahmasthan flag needs 20 % of the room | 5.3 | 12 of 37 |
+| Same threshold on every prohibited zone | 5.3 | 17 of 37 |
+| Brahmasthan flag needs 25 % of the centre covered | 4.5 | 10 of 37 |
+| Brahmasthan flag needs 50 % of the centre covered | 5.3 | 18 of 37 |
+| `brahmasthanExtent = CENTRAL_1X1` | 5.3 | 10 of 37, **plus 7 re-attributed to another zone** |
+
+Every one of the eight improved and none fell. **The ruling is the only candidate that buys nothing with the reader's findings**, which is why it wins over the threshold options even where they score higher — and it leaves §15 at exactly 31 and `sample-02` at 100.
+
+Three findings from that measurement are recorded here because they close open questions rather than merely informing this one:
+
+- **19 of the 37 findings across the eight real plans are a room over the Brahmasthan** — confirming the §4.5.2b estimate — but only 7 of those 19 are a room a fifth or more over it, and exactly one room in eight homes covers half the centre. **The centre findings are mostly genuine**, so any candidate that suppresses them is discarding true defects.
+- **`CENTRAL_1X1` is declined.** It is not among the three readings M-05 (§13) says a reviewer might endorse; it moves the §15 fixture off 31; and it *re-attributes* seven findings to a neighbouring zone rather than removing them, so a reader is told a different corner is wrong.
+- **The door is not the drag it was assumed to be.** Only one of the eight real plans has an `INAUSPICIOUS` main door at all; raising `padaPoints.INAUSPICIOUS` from 15 to 40 does not move the median (3.9 → 3.9). Raising `scorePoints.SUBOPTIMAL` from 45 to 60 moves it only to 4.1, and excluding silent placements from the score entirely is actively *worse* — one real plan falls from 2.0 to 1.2, because removing the middling rooms leaves the poor ones dominating the average. Both also move §15 off 31 and would require rewriting the worked example.
 
 A room wholly inside a zone it may not occupy has `share = 1.0` and is therefore unchanged: it still scores 10 and still pays its penalty in full. Defects that are not attached to a room — cuts, extensions, the site, fixtures — are never discounted.
 

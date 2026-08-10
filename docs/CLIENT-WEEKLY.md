@@ -103,6 +103,45 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 10–16 August 2026
+
+### Monday 10 August — the penalty on a room that only clips a wrong area was double what it should have been
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.9.1/vastufirst-v0.9.1.apk
+**This is the one to install.**
+
+**Last week's fix was right but only half applied.** A room that overlaps a place it should not be
+now keeps its marks in proportion — a room a fifth over the line keeps four fifths of them, which is
+fair. But the separate penalty added to the home's total did not follow the same rule. It reached its
+full weight as soon as a room was merely *half* over. So that same room kept four fifths of its marks
+and was charged two fifths of the penalty: one corner counted against the home twice, at two
+different rates.
+
+**The penalty is now charged at exactly the same proportion as the marks.** A room a tenth over the
+line costs a tenth of the penalty. Only a room genuinely built in the wrong place costs all of it,
+exactly as before.
+
+**Across the real home plans we test against, the typical score went from about 4 out of 10 to
+about 5, and every single one of the eight improved. None went down.** The best-laid-out home still
+scores 10 out of 10, and the worked example we check every build against is unchanged.
+
+**Nothing was hidden to lift those numbers, and that was checked rather than assumed.** Before
+changing anything we measured eight different ways of making scores fairer against every test home.
+Most of them worked by simply not mentioning some problems any more — one of them would have stopped
+telling you about eighteen of the thirty-seven problems those homes have. **The one we chose removes
+nothing.** Every problem the report raised before, it still raises, with the same reason and the
+same suggestions.
+
+**One thing worth knowing while we were in there.** We checked whether the front door was dragging
+scores down, since most door positions are considered unfavourable. It is not — only one of the eight
+test homes has its door in an unfavourable position at all, and making that position cost less does
+not move the typical score at all. So we have left it alone rather than change something that reads
+as generous but fixes nothing.
+
+**If you saved a home in an earlier version, its score will have changed.** The app now tells you so
+and explains why in plain words, rather than simply showing a different number the next time you open
+it.
+
 ## Week of 3–9 August 2026
 
 Thirteen new versions this week. The short version: **the app stopped redrawing your home and started

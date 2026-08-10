@@ -75,8 +75,16 @@ data class EncroachmentConfig(
      * The share of a room that must sit on forbidden ground before its defect counts at FULL
      * penalty. Below it the penalty ramps linearly; at or above it, nothing is discounted.
      * Only consulted when [proportionalCredit] is on.
+     *
+     * ⭐ 1.0 SINCE 10 AUG 2026 (owner ruling), and the value is the whole point. At the previous 0.5
+     * the penalty reached full strength when a room was merely HALF over the line, so a room a fifth
+     * over kept four fifths of its marks and paid two fifths of the penalty — the same corner billed
+     * twice, at two different rates. At 1.0 the penalty ramps exactly as the marks do, which is what
+     * [proportionalCredit] said it would do in the first place. Measured across the eight recorded
+     * real plans before it was changed: the median home rose from 3.9 to 5.0 out of 10, every one of
+     * the eight improved, none fell, and NOT ONE finding was removed from any report.
      */
-    val fullPenaltyShare: Double = 0.5,
+    val fullPenaltyShare: Double = 1.0,
 )
 
 @Serializable

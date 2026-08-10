@@ -1,5 +1,5 @@
 {
-  "version": "2026.08.01-1",
+  "version": "2026.08.10-1",
   "kbDraft": "2.0",
-  "changeNote": "Prayer rooms now count towards your score. The old texts put the shrine at a home's centre; modern practice puts it in the north-east. We follow the north-east; no position is a fault. Your report explains both."
+  "changeNote": "Your score may have gone up. A room that crosses into a wrong area by only a corner now loses marks in proportion to how much of it is really over the line, and the extra penalty on top is charged at that same proportion instead of at double it. Nothing has been taken out of your report: every point it raised before, it still raises, with the same explanation and the same suggested fixes."
 }

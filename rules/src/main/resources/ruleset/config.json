@@ -10,7 +10,7 @@
     "roomAreaFraction": 0.02,
     "analysisRectAreaFraction": 0.005,
     "proportionalCredit": true,
-    "fullPenaltyShare": 0.5
+    "fullPenaltyShare": 1.0
   },
   "tieBreak": {
     "withinFraction": 0.01,

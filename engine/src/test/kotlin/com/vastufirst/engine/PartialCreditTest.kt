@@ -4,6 +4,7 @@ import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Level
 import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
+import com.vastufirst.shared.Provenance
 import com.vastufirst.shared.Room
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Verdict
@@ -101,6 +102,52 @@ class PartialCreditTest {
         assertTrue(
             analysis.defectPenalty >= 8,
             "a room wholly in a forbidden zone must still cost its full penalty",
+        )
+    }
+
+    /**
+     * ⭐⭐ THE FINE IS CHARGED AT THE ROOM'S OWN SHARE — not at double it (owner ruling, 10 Aug 2026).
+     *
+     * Partial credit already hands a room back its marks in proportion: a room a fifth over the line
+     * keeps four fifths of them. The penalty did not match. It reached FULL strength once a room was
+     * merely HALF over, so that same room kept 80 % of its marks and paid 40 % of the fine — one
+     * corner billed twice, at two different rates, which is the very thing §4.5.2b was written to
+     * stop. It was only ever a conservative half-step, and it is now the honest whole one.
+     *
+     * Measured across the eight recorded real plans before it was changed: the median home rose from
+     * 3.9 to 5.0 out of 10, all eight improved, none fell, and **not one finding left any report** —
+     * the only candidate of the eight examined that bought nothing with the reader's findings.
+     *
+     * This test fails the moment the ramp constant stops being 1.0, which is the point: the value is
+     * a Vastu-neutral piece of arithmetic that is easy to "tune" back without anyone noticing.
+     */
+    @Test
+    fun `the fine is charged at the same share as the marks, never at double it`() {
+        val shareOf = analysis.roomResults.associate { it.roomId to it.encroachedShare }
+        val atTheRoomsOwnShare = analysis.defects
+            .filter { it.provenance != Provenance.DISP }
+            .sumOf { d ->
+                val share = d.roomId?.let(shareOf::get) ?: 1.0
+                Math.round(fullPenaltyFor(d.severity.name) * share).toInt()
+            }
+        assertEquals(
+            minOf(atTheRoomsOwnShare, 30), analysis.defectPenalty,
+            "a room must pay exactly the share of the fine it is over the line by — no ramp multiplier",
+        )
+
+        // And the behavioural half: what the engine charges must be strictly LESS than the old
+        // half-way ramp would have charged on this same home. Reverting the constant fails here even
+        // if the sum above is ever rewritten in the same shape as the code it checks.
+        val atTheOldHalfWayRamp = analysis.defects
+            .filter { it.provenance != Provenance.DISP }
+            .sumOf { d ->
+                val share = d.roomId?.let(shareOf::get) ?: 1.0
+                Math.round(fullPenaltyFor(d.severity.name) * (share / 0.5).coerceAtMost(1.0)).toInt()
+            }
+        assertTrue(
+            analysis.defectPenalty < atTheOldHalfWayRamp,
+            "penalty ${analysis.defectPenalty} is not below the old half-way ramp's " +
+                "$atTheOldHalfWayRamp — the clipping room is still being charged at double its share",
         )
     }
 
