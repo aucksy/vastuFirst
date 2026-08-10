@@ -75,8 +75,16 @@ class Sample01Test {
         assertTrue(analysis.notAssessed.containsAll(listOf("X-09", "X-11", "X-12", "X-13")))
     }
 
+    /**
+     * The stamp must be carried through onto the result, because a saved home is re-scored against
+     * it and told when its number moves. Pinned to the DATASET rather than to a literal: a literal
+     * only fired on deliberate bumps, and was silent through v0.9.0 changing the scoring with no
+     * bump at all — see the note in `RuleDataTest` and `scripts/check-ruleset-version.sh`.
+     */
     @Test
     fun `ruleSetVersion is stamped`() {
-        assertEquals("2026.08.01-1", analysis.ruleSetVersion)
+        val shipped = com.vastufirst.rules.RuleSetLoader.loadDefault().version
+        assertEquals(shipped, analysis.ruleSetVersion)
+        assertTrue(analysis.ruleSetVersion.isNotBlank())
     }
 }

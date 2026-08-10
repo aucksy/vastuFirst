@@ -38,10 +38,26 @@ class RuleDataTest {
         assertEquals(17, score)
     }
 
+    /**
+     * ⚠ THIS TEST USED TO PIN THE VERSION STRING AS A LITERAL, and that was the wrong shape — it
+     * failed on every legitimate version bump (pure noise) while staying green through the one
+     * failure that matters: v0.9.0 changed how every home is scored and never moved the version at
+     * all, so saved homes re-scored in silence and the note the app shows still described the
+     * release before it. A literal here could not have caught that, because nothing changed here.
+     *
+     * So the shape it needs is: the version must EXIST and be dated, and — the real guarantee —
+     * changing any rule file must change it. The second half cannot be seen from inside a test that
+     * only reads the current dataset, so it lives in `scripts/check-ruleset-version.sh`, which
+     * compares the two in the commit itself.
+     */
     @Test
     fun `the shipped dataset loads and validates`() {
         val rs = RuleSetLoader.loadDefault()
         assertEquals(32, rs.doorPadas.size)
-        assertEquals("2026.08.01-1", rs.version)
+        assertTrue(
+            Regex("""^\d{4}\.\d{2}\.\d{2}-\d+$""").matches(rs.version),
+            "the ruleset version must be a dated stamp a user's saved score can be compared " +
+                "against; got '${rs.version}'",
+        )
     }
 }

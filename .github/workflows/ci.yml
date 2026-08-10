@@ -62,6 +62,17 @@ jobs:
       - name: Client-log check (the newest release is written up for the client)
         run: bash scripts/check-client-log.sh
 
+      # ⭐ A rule edit must move the version stamp with it. v0.9.0 changed how every home is scored
+      # and left the stamp alone, so saved scores moved in silence and the explanation the app shows
+      # still described the release before. No test could see it — the fault lives in the relation
+      # between two files across a commit, which only git can read. The push range is passed so a
+      # multi-commit push is judged whole (the rules edit and the bump may be separate commits).
+      - name: Ruleset version check (a rule change moves the stamp users are told about)
+        run: |
+          BEFORE='${{ github.event.before }}'
+          case "$BEFORE" in ''|0000000000000000000000000000000000000000) BEFORE='HEAD~1' ;; esac
+          bash scripts/check-ruleset-version.sh "$BEFORE" HEAD
+
       - name: Module-boundary check (engine/rules/shared/data are Android-free)
         run: bash scripts/check-boundaries.sh
 
