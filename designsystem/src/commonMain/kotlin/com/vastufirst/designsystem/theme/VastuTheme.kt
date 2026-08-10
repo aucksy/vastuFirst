@@ -114,6 +114,11 @@ data class VastuSizes(
     val planThumb: Dp = 60.dp,       // saved-plan thumbnail
     val dot: Dp = 6.dp,              // provenance / status dot
     val logo: Dp = 54.dp,            // welcome brand mark
+    // ⭐ The pinned floor-plan pane on "check what we read" (owner, 10 Aug 2026: the plan must not
+    // scroll away and more rooms must fit under it). A CAP, not a height: a wide sheet still draws
+    // shorter than this. It exists so the list underneath always starts on screen — including at
+    // 200 % font, where an uncapped picture pushed the first room below the fold.
+    val planPane: Dp = 260.dp,
 )
 
 @Immutable

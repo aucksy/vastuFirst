@@ -150,35 +150,13 @@ class LongScreenBottomScreenshotTest {
 
 
     /**
-     * ⭐⭐ THE BOTTOM OF THE OWNER'S OWN ROOM LIST — the one picture this whole 6 Aug 2026 change
-     * turns on, and the one no top-of-screen golden can ever contain.
-     *
-     * His plan reads eleven rooms. The fix he asked for — one continuous balcony captioned three
-     * times becoming ONE room that still prints all three of its sizes — lands near the END of that
-     * list, because rooms are ordered down the sheet and his long balcony runs along the bottom of
-     * it. Photographing only the top of this screen would have shown the change nowhere at all,
-     * which is exactly the trap this file exists for.
+     * ⛔ REMOVED 10 Aug 2026 — "scan-review-door bottom". The review screen no longer scrolls as a
+     * whole (owner: "The floor plan on this screen should not scroll upwards, only the list of rooms
+     * should be scrollable"), so its buttons are pinned and always on screen: there is no bottom half
+     * to scroll to, and `performScrollTo` on a node with no scrolling ancestor throws rather than
+     * photographing anything. The matrix goldens for scan-review-door now contain those buttons at
+     * every configuration, which is what this capture existed to guarantee.
      */
-    @Test
-    fun scanReviewDoor_bottom() {
-        val outcome = ScanMapper.map(
-            RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
-            imageAspect = 1399.0 / 1389.0,
-        ) as com.vastufirst.shared.scan.ScanOutcome.Placed
-        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
-            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
-        )
-        captureBottomPair("scan-review-door", anchor = hasText("Put the front door somewhere else")) {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = android.graphics.Bitmap
-                    .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
-                    .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
-                    .asImageBitmap(),
-                rooms = outcome.rooms,
-                door = door,
-            )
-        }
-    }
 
     /** The ₹699 screen's ending: the feature list under the buy button — the paid promise itself. */
     @Test

@@ -7,21 +7,29 @@
 // picture of record, the extracted rooms are a list beside it, and tapping a room tints roughly
 // where on the picture it was read, so "did it find my kitchen?" is answerable at a glance.
 //
+// ⭐⭐ REBUILT 10 AUG 2026, to three instructions from the owner:
+//   1. *"Tapping a room on the floor plan should also highlight it the same way it highlights when
+//      tapping the room on the list… Build a common UI/UX for this room highlight."* Both ends now
+//      call one handler, and the drawing lives in one component shared with the report.
+//   2. *"The floor plan on this screen should not scroll upwards, only the list of rooms should be
+//      scrollable."* The plan is pinned; the list scrolls under it.
+//   3. *"try to fit more rooms in visible below."* The rows lost a line each and the plan gained a
+//      height cap, so more of the list is on screen at once.
+//
 // ⚠ HONESTY LIMITS, stated on screen rather than hidden:
 //   · The tint is APPROXIMATE. Room boxes are fractions of the BUILDING's outer wall (prompt
 //     contract). Since prompt v4 (4 Aug 2026) the reply also carries the building's own box on the
-//     page, and ScanMapper.pageSource composes the two — measured on 35 approved scans, this took
-//     Green Court's tint centres from 0.18–0.28 of the sheet off to 0.007–0.033. Older replies
-//     carry no building box and draw as before. Either way the subtitle keeps saying "roughly".
-//   · This screen VERIFIES; it does not redraw. A room read as the wrong KIND is re-typed on the
-//     results screen before this one. What it deliberately no longer offers is the guided grid:
-//     since 6 Aug 2026 the scan flow never opens the editor at all (owner: "I intend to remove the
-//     floor plan builder / modifier from the Scan flow completely"), so the door and North are now
-//     marked on this same photograph and the redrawing is confined to the draw-it-yourself path.
+//     page, and ScanMapper.pageSource composes the two. Either way the subtitle keeps saying
+//     "roughly".
+//   · This screen VERIFIES; it does not redraw. Since 6 Aug 2026 the scan flow never opens the
+//     editor at all, so the door and North are marked on this same photograph.
+//   · NO DIRECTION AND NO VERDICT APPEAR HERE, and that is not an omission. Both are worked out
+//     from North, which has not been marked yet at this point in the flow — a room's direction and
+//     its one-word result are shown on the report, where they are known. Showing either here would
+//     mean inventing one.
 package com.vastufirst.app.ui.scan
 
 import android.graphics.BitmapFactory
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,27 +39,26 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import com.vastufirst.app.ui.common.label
+import com.vastufirst.app.ui.common.PlanRoom
+import com.vastufirst.app.ui.common.PlanWithRooms
 import com.vastufirst.app.ui.common.editorColor
+import com.vastufirst.app.ui.common.label
+import com.vastufirst.app.ui.common.roomDisplayNames
 import com.vastufirst.app.ui.common.screenRoot
+import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.IconTapButton
@@ -60,34 +67,10 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
-import com.vastufirst.designsystem.components.VastuListRow
-import com.vastufirst.designsystem.foundation.clickableTap
+import com.vastufirst.designsystem.components.VastuRoomRow
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
-
-/**
- * ⭐⭐ THE PICTURE IS SIZED BY ITS OWN SHAPE, AND THE PAGE SCROLLS (owner, 6 Aug 2026: "enlarge the
- * floor plan — it is too small").
- *
- * ⚠ The obvious fix was tried first and rendered wrong, which is why the harness exists. Splitting
- * the height between the plan and the room list — even heavily in the plan's favour — leaves the
- * plan sized by whatever is LEFT OVER, and on a square builder's sheet that means height-limited:
- * about 60 % of the width it had. Worse, it fails hardest exactly where it matters most. At a 200 %
- * font the headings and buttons take so much of the fixed height that the plan came out SMALLER
- * than before the change, and the room list was clipped through the middle of a word.
- *
- * Giving the plan its own aspect ratio makes it full width at every font scale — as large as the
- * screen can draw it, which is what "enlarge" actually means — and the page scrolls for the rest.
- * The bounds stop a freakishly tall or wide sheet from taking the whole screen or becoming a slot.
- */
-private const val PLAN_MIN_ASPECT = 0.7f
-private const val PLAN_MAX_ASPECT = 1.8f
-
-/** Width ÷ height for the plan box: the picture's own shape, within [PLAN_MIN_ASPECT]..max. */
-private fun planAspect(image: ImageBitmap?): Float =
-    image?.takeIf { it.width > 0 && it.height > 0 }
-        ?.let { (it.width.toFloat() / it.height).coerceIn(PLAN_MIN_ASPECT, PLAN_MAX_ASPECT) }
-        ?: 1.2f
+import kotlinx.coroutines.launch
 
 /** What the scan hands this screen: the picture it read, and the rooms it read off it. */
 class ScanReviewData(
@@ -111,6 +94,30 @@ class ScanReviewData(
  */
 class ScanReviewHandover {
     var data: ScanReviewData? = null
+}
+
+/**
+ * ⭐ The id [toGridRooms] gives the scanned room at [index] — the ONE place this convention lives.
+ *
+ * ⚠ It is the only thread tying a SCORED room back to the rectangle it was read from, which is what
+ * lets the report draw the same photograph and tint the same room. Spelling it out twice is how the
+ * two halves silently stop agreeing.
+ */
+fun scanRoomId(index: Int): String = "scan-$index"
+
+/** Every scanned room as the shared plan component needs it, in the scan's own order. */
+fun planRoomsOf(rooms: List<ScannedRoom>): List<PlanRoom> {
+    val names = roomDisplayNames(rooms.map { it.type })
+    return rooms.mapIndexed { i, r ->
+        PlanRoom(
+            id = scanRoomId(i),
+            type = r.type,
+            name = r.label.ifBlank { names[i] },
+            // The printed-size box when the plan stated one, else the reader's own rectangle. Only
+            // the PICTURE uses the corrected box — the front-door frame keeps `source`, deliberately.
+            box = r.printedBox ?: r.source,
+        )
+    }
 }
 
 @Composable
@@ -142,9 +149,9 @@ fun ScanReviewScreen(
  * fused row that showed "no size printed" would have quietly deleted three real measurements.
  */
 private fun sizeNote(room: ScannedRoom): String = when {
-    room.readInParts.size > 1 -> " · one space: " + room.readInParts.joinToString(" + ")
-    room.printedSize.isNotBlank() -> " · " + room.printedSize
-    else -> " · no size printed"
+    room.readInParts.size > 1 -> "one space: " + room.readInParts.joinToString(" + ")
+    room.printedSize.isNotBlank() -> room.printedSize
+    else -> "no size printed"
 }
 
 /** The screen as a pure function of its inputs — the seam the render harness draws. */
@@ -165,15 +172,24 @@ fun ScanReviewContent(
     startSelected: Int = -1,
 ) {
     val colors = VastuTheme.colors
-    var selected by remember { mutableStateOf(startSelected) }
-    val aspect = planAspect(image)
+    var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
+    val planRooms = remember(rooms) { planRoomsOf(rooms) }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
-    Column(
-        Modifier
-            .screenRoot(colors.paper)
-            .verticalScroll(rememberScrollState())
-            .padding(VastuTheme.spacing.s6),
-    ) {
+    /**
+     * ⭐⭐ THE ONE HANDLER BOTH ENDS CALL. Tapping a room on the picture and tapping it in the list
+     * do the identical thing — select it, and bring its row into view — because they are the same
+     * function. The owner asked for exactly this ("works the same way if user taps the room in list
+     * or room on floor plan"), and two handlers is how that promise quietly breaks.
+     */
+    fun tapRoom(id: String) {
+        selected = if (selected == id) null else id
+        val index = planRooms.indexOfFirst { it.id == id }
+        if (index >= 0) scope.launch { listState.animateScrollToItem(index) }
+    }
+
+    Column(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -183,62 +199,29 @@ fun ScanReviewContent(
             VText("Check what we read", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        // ⭐ Two lines, not three (owner, 6 Aug 2026: "enlarge the floor plan — it is too small").
-        // Every line of prose above the picture is a line taken off the picture, and this screen's
-        // whole job is looking at the plan. The honesty words stay: "as you scanned it" is the
-        // promise that we never redrew it, "roughly" is the tint's stated limit.
         VText(
-            "Your plan, as you scanned it. Tap a room to see roughly where we read it.",
+            "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
             style = VastuTheme.type.bodySm,
             color = colors.textSecondary,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
+        // ⭐ PINNED. Outside the scrolling list on purpose (owner: "The floor plan on this screen
+        // should not scroll upwards, only the list of rooms should be scrollable") — the picture is
+        // what the list is being checked against, so scrolling it away defeats the screen.
         if (image != null) {
-            val tint = rooms.getOrNull(selected)
-            val tintColor = tint?.type?.editorColor() ?: colors.primary
-            // Read in composable scope: theme locals are not readable inside the draw lambda.
-            val strokeDp = VastuTheme.spacing.s1
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(aspect)
-                    .semantics {
-                        contentDescription =
-                            tint?.let { "Your plan, showing roughly where ${it.type.label()} was read" }
-                                ?: "Your scanned plan"
-                    },
-            ) {
-                // Fit the photo into this box, centred — then everything else draws in ITS frame.
-                val scale = minOf(size.width / image.width, size.height / image.height)
-                val drawn = Size(image.width * scale, image.height * scale)
-                val origin = Offset((size.width - drawn.width) / 2f, (size.height - drawn.height) / 2f)
-                drawImage(
-                    image = image,
-                    dstOffset = IntOffset(origin.x.toInt(), origin.y.toInt()),
-                    dstSize = IntSize(drawn.width.toInt(), drawn.height.toInt()),
-                )
-                // The printed-size box when the plan stated one, else the reader's own rectangle.
-                // Only the PICTURE uses the corrected box — the front-door frame keeps [source],
-                // deliberately (see the note on ScannedRoom.printedBox).
-                val box = tint?.printedBox ?: tint?.source
-                if (box != null) {
-                    val topLeft = Offset(
-                        origin.x + (box.x.toFloat() * drawn.width),
-                        origin.y + (box.y.toFloat() * drawn.height),
-                    )
-                    val area = Size(box.w.toFloat() * drawn.width, box.h.toFloat() * drawn.height)
-                    drawRect(color = tintColor.copy(alpha = 0.28f), topLeft = topLeft, size = area)
-                    drawRect(
-                        color = tintColor,
-                        topLeft = topLeft,
-                        size = area,
-                        style = Stroke(width = strokeDp.toPx() / 2f),
-                    )
-                }
-            }
+            PlanWithRooms(
+                image = image,
+                rooms = planRooms,
+                selectedId = selected,
+                onTapRoom = ::tapRoom,
+                maxHeight = VastuTheme.sizes.planPane,
+            )
         } else {
-            Box(Modifier.fillMaxWidth().aspectRatio(aspect), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.fillMaxWidth().aspectRatio(com.vastufirst.app.ui.common.PLAN_DEFAULT_ASPECT),
+                contentAlignment = Alignment.Center,
+            ) {
                 GuidanceState(
                     title = "The photo could not be shown",
                     body = "Every room we read is still listed below, and your score still works.",
@@ -246,41 +229,38 @@ fun ScanReviewContent(
             }
         }
 
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
         SectionLabel("${rooms.size} rooms read from your plan")
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        // ⚠ A plain Column, not a LazyColumn — a lazy list cannot live inside a scrolling page, and
-        // it has nothing to earn here: the mapper refuses a plan over twenty rooms outright, so the
-        // longest list this can ever draw is twenty single-line rows.
-        Column {
-            rooms.forEachIndexed { index, room ->
-                val checkFlagged = room.flags.isNotEmpty()
-                val shown = selected == index
-                VastuListRow(
-                    title = room.label.ifBlank { room.type.label() },
-                    subtitle = room.type.label() + sizeNote(room),
-                    modifier = Modifier.clickableTap(onClickLabel = "show this room on the plan") {
-                        selected = if (shown) -1 else index
-                    },
-                    trailing = {
-                        VText(
-                            text = if (shown) "Shown" else if (checkFlagged) "Check" else "›",
-                            style = VastuTheme.type.caption,
-                            color = if (shown) colors.primary
-                            else if (checkFlagged) colors.warning
-                            else colors.textTertiary,
-                        )
-                    },
+
+        // ⚠ A LazyColumn is legal HERE and was not before: this screen no longer scrolls as a whole,
+        // so there is no outer scroll for a lazy list to be illegally nested inside. It is what lets
+        // a tap on the picture scroll the matching row into view, which a plain Column cannot do.
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+        ) {
+            items(planRooms, key = { it.id }) { pr ->
+                val index = planRooms.indexOf(pr)
+                val room = rooms[index]
+                VastuRoomRow(
+                    name = pr.name,
+                    code = room.type.microLabel(),
+                    codeColor = room.type.editorColor(),
+                    // No direction and no verdict: North is not marked yet. See the file note.
+                    note = room.type.label() + " · " + sizeNote(room),
+                    selected = selected == pr.id,
+                    onTap = { tapRoom(pr.id) },
                 )
             }
         }
 
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
         // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant we do it
         // ourselves when Entry is clearly marked? we ask only if its not"). But not asking is not the
         // same as not saying: the front door is the heaviest input the engine weighs, so what we read
-        // is stated here in one line, on the screen whose whole job is checking our reading, with the
-        // way to change it beside it. Silence would have been the app deciding and saying nothing.
+        // is stated here in one line, with the way to change it beside it.
         if (door != null) {
             VText(
                 "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}.",

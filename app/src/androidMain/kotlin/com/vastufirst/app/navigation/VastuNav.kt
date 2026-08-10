@@ -380,6 +380,17 @@ fun VastuNavHost() {
                 val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
                 LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
                 val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                // ⭐ The scanned photograph, decoded once, and the rectangles each room was read
+                // from. Present only for a home that arrived by scan — a hand-drawn one has no
+                // photograph and the report falls back to its zone map. Gated on the handover rather
+                // than "is there a picture lying around", for the same reason the North dial is: a
+                // photo left over from an earlier scan appearing under someone else's home would be
+                // a lie about whose plan is being read.
+                val scanned = scanHandover.data
+                val planImage = remember(scanned) { scanned?.decodeImage() }
+                val planRooms = remember(scanned) {
+                    scanned?.rooms?.let { com.vastufirst.app.ui.scan.planRoomsOf(it) }.orEmpty()
+                }
                 ReportScreen(
                     vm = vm,
                     onDone = { nav.goHome() },
@@ -401,6 +412,8 @@ fun VastuNavHost() {
                     // Recovery when rooms survived a process kill but the intent answer didn't:
                     // back to the first question, on the same shared draft, so nothing redraws.
                     onRestart = { nav.go(Routes.WELCOME) },
+                    planImage = planImage,
+                    planRooms = planRooms,
                 )
             }
         }

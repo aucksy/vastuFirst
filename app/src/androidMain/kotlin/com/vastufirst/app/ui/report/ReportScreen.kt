@@ -18,19 +18,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
+import com.vastufirst.app.ui.common.PlanRoom
+import com.vastufirst.app.ui.common.PlanWithRooms
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.editorColor
@@ -77,6 +84,7 @@ import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
+import kotlinx.coroutines.launch
 
 /**
  * Full report (§6.5/§6.6) — branches on intent (§2).
@@ -119,6 +127,9 @@ fun ReportScreen(
     onEditEntry: () -> Unit = {},
     onAddDetails: () -> Unit = {},
     onRestart: () -> Unit = {},
+    /** The scanned photograph and its room rectangles, when this home arrived by scan. */
+    planImage: ImageBitmap? = null,
+    planRooms: List<PlanRoom> = emptyList(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
@@ -138,6 +149,8 @@ fun ReportScreen(
         onEditEntry = onEditEntry,
         onAddDetails = onAddDetails,
         onRestart = onRestart,
+        planImage = planImage,
+        planRooms = planRooms,
     )
 }
 
@@ -202,6 +215,13 @@ fun ReportContent(
     rows: Int = GRID,
     /** Drives the honest "what this covers" line — the score's caveat, moved here with it. */
     siteAnswers: SiteAnswers = SiteAnswers(),
+    /**
+     * ⭐ The user's OWN scanned plan, and the rectangles each room was read from — present only when
+     * this home arrived by scan. With them, the picture of the home is the photograph they took and
+     * every room on it is tappable; without them (a home drawn by hand) it is the zone map.
+     */
+    planImage: ImageBitmap? = null,
+    planRooms: List<PlanRoom> = emptyList(),
     onUnlock: () -> Unit = {},
     onDone: () -> Unit = {},
     onEditNorth: () -> Unit = {},
@@ -286,6 +306,29 @@ fun ReportContent(
      */
     var openRoomId by rememberSaveable { mutableStateOf<String?>(null) }
 
+    /**
+     * Where each room's row currently sits, so tapping the room ON THE PICTURE can bring its row
+     * into view. Held in root coordinates and combined with the live scroll position, which makes it
+     * independent of how deeply the row is nested inside the page.
+     */
+    val rowY = remember { mutableStateMapOf<String, Int>() }
+    val scope = rememberCoroutineScope()
+    val rowMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
+
+    /**
+     * ⭐⭐ THE ONE HANDLER BOTH ENDS CALL — the whole of what the owner asked for: *"Build a common
+     * UI/UX for this room highlight in the list which works the same way if user taps the room in
+     * list or room on floor plan"*. Tapping a room on the picture and tapping its row do the
+     * identical thing, because they are the same function. Two handlers is how that quietly breaks.
+     */
+    fun tapRoom(id: String) {
+        val closing = openRoomId == id
+        openRoomId = if (closing) null else id
+        if (!closing) {
+            rowY[id]?.let { y -> scope.launch { scroll.animateScrollTo((scroll.value + y - rowMarginPx).coerceAtLeast(0)) } }
+        }
+    }
+
     // ⚠ The pay bar's own MEASURED height, not a guess at it. It is two lines of text plus a 52 dp
     // button, so at 200 % font it stands about 230 dp tall — three and a half times the fixed 64 dp
     // of clearance an earlier draft reserved, which left it sitting squarely on top of "Done — see
@@ -343,17 +386,35 @@ fun ReportContent(
             // change North or Main Entry but not the room because that approach is gone"). The
             // room-by-room editor left the scan flow on 6 Aug; offering a way back into it from here
             // would be a control leading to a screen this flow no longer has.
-            if (rooms.isNotEmpty()) {
+            if (rooms.isNotEmpty() || planImage != null) {
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
                 SectionLabel("Your home, as we read it")
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    ZoneMap(
-                        model = buildZoneMapModel(rooms, a, north, cols, rows),
-                        modifier = Modifier.fillMaxWidth(ZONE_MAP_WIDTH_FRACTION),
-                        showLabels = false,
-                        contentDescription = "Your plan with Vastu zones, North at $north degrees.",
+                // ⭐⭐ THE PHOTOGRAPH WINS WHEN WE HAVE ONE. A scanned home's picture of record is
+                // the sheet the reader photographed — this screen never redraws it — and every room
+                // on it is tappable, which is the other half of the shared highlight behaviour: the
+                // SAME handler the list rows call, so the two ends cannot drift apart. A home drawn
+                // by hand has no photograph, so it keeps the zone map.
+                //
+                // ⚠ One picture, not two. Showing the photo AND the zone map would be two drawings
+                // of the same home stacked on the screen the owner asked to make shorter.
+                if (planImage != null && planRooms.isNotEmpty()) {
+                    PlanWithRooms(
+                        image = planImage,
+                        rooms = planRooms,
+                        selectedId = openRoomId,
+                        onTapRoom = { id -> tapRoom(id) },
+                        maxHeight = VastuTheme.sizes.planPane,
                     )
+                } else {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        ZoneMap(
+                            model = buildZoneMapModel(rooms, a, north, cols, rows),
+                            modifier = Modifier.fillMaxWidth(ZONE_MAP_WIDTH_FRACTION),
+                            showLabels = false,
+                            contentDescription = "Your plan with Vastu zones, North at $north degrees.",
+                        )
+                    }
                 }
                 Spacer(Modifier.height(VastuTheme.spacing.s4))
                 VText(
@@ -406,7 +467,8 @@ fun ReportContent(
                 remediesOnly = remediesOnly,
                 expandAll = expandAll,
                 openRoomId = openRoomId,
-                onTapRoom = { id -> openRoomId = if (openRoomId == id) null else id },
+                onTapRoom = ::tapRoom,
+                onRowPlaced = { id, y -> rowY[id] = y },
             )
 
             // ⚠ A defect with no room behind it — a cut corner, an extension, a water tank, the
@@ -672,6 +734,7 @@ private fun RoomsSection(
     expandAll: Boolean,
     openRoomId: String?,
     onTapRoom: (String) -> Unit,
+    onRowPlaced: (String, Int) -> Unit,
 ) {
     val colors = VastuTheme.colors
     if (rooms.isEmpty()) return
@@ -710,6 +773,7 @@ private fun RoomsSection(
                 status = r.verdict.roomStatus(),
                 selected = open,
                 expanded = open,
+                modifier = Modifier.onGloballyPositioned { onRowPlaced(r.roomId, it.positionInRoot().y.toInt()) },
                 onTap = { onTapRoom(r.roomId) },
                 body = {
                     if (!free) {

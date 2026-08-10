@@ -103,7 +103,9 @@ fun toGridRooms(rooms: List<ScannedRoom>, cols: Int, rows: Int): List<GridRoom> 
 }
 
 private fun ScannedRoom.toGridRoom(index: Int, rect: CellRect) = GridRoom(
-    id = "scan-$index",
+    // ⚠ The one place this convention is DEFINED is scanRoomId — the report reads it back to tie a
+    // scored room to the rectangle on the photograph it was read from.
+    id = scanRoomId(index),
     type = type,
     col = rect.col,
     row = rect.row,
