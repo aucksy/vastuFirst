@@ -34,6 +34,12 @@ class ScanViewModel(
      * phone). Empty hides every picker and keeps the shipping behaviour exactly as before.
      */
     val modelChoices: List<String> = emptyList(),
+    /**
+     * ⭐ Which reader to use, read from SETTINGS rather than picked on the scan screen (owner,
+     * 10 Aug 2026). Because it is a setting and not a chip on a screen that gets rebuilt, the choice
+     * now survives a retry — which the chip did not.
+     */
+    private val readerChoice: ReaderChoice = InMemoryReaderChoice(),
 ) : ViewModel() {
 
     var state by mutableStateOf<ScanUiState>(if (canRead) ScanUiState.Idle else ScanUiState.NotConfigured)
@@ -41,14 +47,16 @@ class ScanViewModel(
 
     /**
      * The model the next scan must use, or null for Auto — the shipping primary-plus-second-opinion
-     * path. An explicit pick reads with that one model only, deterministically.
+     * path. An explicit pick reads with that one model only, deterministically. Set in Settings.
      */
-    var chosenModel by mutableStateOf<String?>(null)
-        private set
+    private val chosenModel: String?
+        get() = readerChoice.chosen()?.takeIf { it in modelChoices }
 
-    fun chooseModel(model: String?) {
-        chosenModel = if (model != null && model in modelChoices) model else null
-    }
+    /**
+     * The model the next read will use, or null for Auto — the saved setting, filtered to what this
+     * build actually offers. Visible so a test can pin the fallback without reaching into prefs.
+     */
+    fun modelForNextRead(): String? = chosenModel
 
     private var lastSource: Any? = null
 

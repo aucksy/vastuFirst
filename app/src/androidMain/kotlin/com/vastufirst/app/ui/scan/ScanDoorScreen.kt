@@ -16,6 +16,12 @@
 // says nothing, plus the way back in from "change it" when it does.
 package com.vastufirst.app.ui.scan
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -168,9 +174,33 @@ fun ScanDoorContent(
                             ?: "Your plan. Tap the wall your front door is on."
                     },
             ) {
+                // The travelling hint's position, 0..1 around the outline. Runs only while no door
+                // has been marked, so it stops for good the moment the question is answered.
+                val hintPhase by if (marker == null) {
+                    rememberInfiniteTransition(label = "door-hint").animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(tween(5200, easing = LinearEasing), RepeatMode.Restart),
+                        label = "door-hint-phase",
+                    )
+                } else {
+                    remember { mutableStateOf(0f) }
+                }
                 Canvas(Modifier.fillMaxSize()) {
                     val fit = fitPhoto(image.width, image.height, size.width, size.height)
                         ?: return@Canvas
+                    // ⭐ THE NUDGE (owner, 10 Aug 2026: "Mark your main entry screen when used should
+                    // have some intuitive animation which indicates what they need to do"). Until a
+                    // door is marked, a ring travels around the home's own outline — the exact
+                    // rectangle a tap is measured against — so "tap the wall" stops being an
+                    // instruction with no visible target and becomes a thing moving where you tap.
+                    //
+                    // ⚠ It stops the moment a door is marked. A hint still running after the task is
+                    // done is a distraction, and worse, it competes with the marker for attention on
+                    // the one screen where the marker is the answer.
+                    //
+                    // ⚠ A still photograph cannot show this moving; what a golden can show is that it
+                    // sits ON the outline and never covers the marker.
                     drawImage(
                         image = image,
                         dstOffset = IntOffset(fit.originX.toInt(), fit.originY.toInt()),
@@ -190,6 +220,21 @@ fun ScanDoorContent(
                         size = Size(frame.w.toFloat() * fit.width, frame.h.toFloat() * fit.height),
                         style = Stroke(width = strokeDp.toPx() / 2f),
                     )
+                    if (marker == null) {
+                        val fx = frame.x.toFloat(); val fy = frame.y.toFloat()
+                        val fw = frame.w.toFloat(); val fh = frame.h.toFloat()
+                        // One lap of the perimeter, in fractions of the outline.
+                        val p = hintPhase
+                        val (hx, hy) = when {
+                            p < 0.25f -> (fx + fw * (p / 0.25f)) to fy
+                            p < 0.50f -> (fx + fw) to (fy + fh * ((p - 0.25f) / 0.25f))
+                            p < 0.75f -> (fx + fw * (1f - (p - 0.50f) / 0.25f)) to (fy + fh)
+                            else -> fx to (fy + fh * (1f - (p - 0.75f) / 0.25f))
+                        }
+                        val at = Offset(fit.originX + hx * fit.width, fit.originY + hy * fit.height)
+                        drawCircle(color = colors.primary.copy(alpha = 0.30f), radius = strokeDp.toPx() * 2.5f, center = at)
+                        drawCircle(color = colors.primary, radius = strokeDp.toPx() * 1.2f, center = at)
+                    }
                     if (marker != null) {
                         val at = Offset(
                             fit.originX + marker.first * fit.width,

@@ -116,18 +116,23 @@ class ScanGatesTest {
         assertEquals("Some Model", shortModelName("some-model"))
     }
 
+    /**
+     * ⭐ The reader pick now comes from SETTINGS, not from a chip on the scan screen (owner,
+     * 10 Aug 2026), so what this pins moved with it: a saved choice is honoured, and a saved choice
+     * that is no longer on offer falls back to Auto rather than sending a request for a model that
+     * does not exist. That second half is the whole reason the check exists — the setting outlives
+     * the config file that produced it.
+     */
     @Test
-    fun `an explicit model pick only accepts a model that is on offer`() {
-        val model = ScanViewModel(
+    fun `a saved reader pick is honoured, and a stale one falls back to Auto`() {
+        fun vmWith(saved: String?) = ScanViewModel(
             reader = neverCalled, decode = neverDecodes, canRead = true, modelChoices = twoModels,
+            readerChoice = InMemoryReaderChoice(saved),
         )
-        assertEquals(null, model.chosenModel, "Auto — the shipping path — is the default")
-        model.chooseModel(twoModels[1])
-        assertEquals(twoModels[1], model.chosenModel)
-        // A stale or mistyped id (say, after a config edit) silently falls back to Auto rather
-        // than sending a request for a model that no longer exists.
-        model.chooseModel("openai/some-retired-model")
-        assertEquals(null, model.chosenModel)
+        assertEquals(null, vmWith(null).modelForNextRead(), "Auto — the shipping path — is the default")
+        assertEquals(twoModels[1], vmWith(twoModels[1]).modelForNextRead())
+        // A stale or mistyped id (say, after a config edit) silently falls back to Auto.
+        assertEquals(null, vmWith("openai/some-retired-model").modelForNextRead())
     }
 
     /**

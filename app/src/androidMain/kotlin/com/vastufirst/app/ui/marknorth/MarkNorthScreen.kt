@@ -16,6 +16,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -110,9 +113,12 @@ fun MarkNorthContent(
         VText("Drag the N dial, or use the slider. Everything else follows from this.", style = VastuTheme.type.body, color = colors.textSecondary)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
+        // ⭐ The nudge runs until the reader first moves North, then never again in this session.
+        var touchedNorth by rememberSaveable { mutableStateOf(false) }
         NorthDial(
             model = model,
-            onNorthChange = onNorthChange,
+            onNorthChange = { touchedNorth = true; onNorthChange(it) },
+            hintPulse = !touchedNorth,
             contentDescription = "Floor plan compass. North at $north degrees. Drag to set North.",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))

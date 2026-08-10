@@ -115,11 +115,9 @@ fun ScanRoute(
         onCorrectRoom = vm::correctRoom,
         onDrawInstead = onDrawInstead,
         onBack = onBack,
-        // The owner's reader-comparison levers (4 Aug 2026): pick the model before a scan, or
-        // rescan the same picture with a named model from any result.
+        // The owner's reader-comparison lever: rescan the same picture with a named model from any
+        // result. Picking the reader BEFORE a scan moved to Settings on 10 Aug 2026.
         modelChoices = vm.modelChoices,
-        chosenModel = vm.chosenModel,
-        onChooseModel = vm::chooseModel,
         onRescanWith = vm::rescanWith,
         // The 2D gate's escape hatch — no scan, no network, just the reading we already had.
         onReadAnyway = vm::readAnyway,

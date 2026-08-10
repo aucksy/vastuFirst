@@ -14,7 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +88,7 @@ import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -151,8 +156,15 @@ fun ReportScreen(
         onRestart = onRestart,
         planImage = planImage,
         planRooms = planRooms,
+        introMillis = READING_MILLIS,
     )
 }
+
+/**
+ * The beat between "read my home" and the report. Long enough to read the line above the bar, short
+ * enough that nobody taps again thinking it missed them.
+ */
+const val READING_MILLIS = 1600L
 
 /**
  * ⭐ THE END OF THE DOCUMENT, SO THE HARNESS CAN SCROLL TO IT.
@@ -222,6 +234,21 @@ fun ReportContent(
      */
     planImage: ImageBitmap? = null,
     planRooms: List<PlanRoom> = emptyList(),
+    /**
+     * ⭐ How long the "reading your home" animation runs before the report appears, and whether the
+     * score counts up when it does (owner, 10 Aug 2026: "let there be some animation with progress
+     * bar before we show the score.. and the let score populate with animation").
+     *
+     * ⚠ DEFAULT ZERO, and that is deliberate. A screenshot harness photographs a screen the instant
+     * it settles: with an animation running, every golden in the matrix would either capture a
+     * progress bar instead of the report, or a score frozen at 0.0 partway through counting. Zero
+     * means "no animation" and is what every test uses; the real screen passes the real duration,
+     * and the animation gets its OWN golden through [ReadingProgress] so it is still photographed.
+     *
+     * ⚠ It is also a DELIBERATE PAUSE. The engine finishes in about 50 milliseconds, so without this
+     * the reader would see a flash and nothing else. It is not covering up slow work.
+     */
+    introMillis: Long = 0L,
     onUnlock: () -> Unit = {},
     onDone: () -> Unit = {},
     onEditNorth: () -> Unit = {},
@@ -267,6 +294,17 @@ fun ReportContent(
         return
     }
     val a = analysis
+
+    // ⭐ THE READING ANIMATION. Held here rather than on its own route so the report is already
+    // composed behind it — the reader watches a progress bar and then sees their own home, with no
+    // second navigation and no chance of landing back on it with the Back button.
+    var reading by remember(a) { mutableStateOf(introMillis > 0L) }
+    if (reading) {
+        LaunchedEffect(a) { delay(introMillis); reading = false }
+        ReadingProgress(introMillis)
+        return
+    }
+
     if (a.quality == AnalysisQuality.INSUFFICIENT) {
         Box(
             Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
@@ -363,7 +401,10 @@ fun ReportContent(
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s4))
-            VerdictHeader(a.score, defects.size, remediesOnly, unlocked)
+            // ⚠ The number counts up ONLY when the animation ran. In a still photograph a counting
+            // number is a number caught mid-count, and every golden would show a score that is not
+            // this home's score.
+            VerdictHeader(a.score, defects.size, remediesOnly, unlocked, countUp = introMillis > 0L)
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             BalanceMeter(
@@ -554,6 +595,64 @@ fun ReportContent(
     }
 }
 
+/**
+ * ⭐⭐ "READING YOUR HOME" — the moment between the North dial and the report (owner, 10 Aug 2026).
+ *
+ * ⚠ PUBLIC, and it takes its duration, for the same reason the report's chapters used to be public:
+ * a screen the harness cannot reach is a screen no picture has ever contained. Rendered with a
+ * duration of zero it draws its first frame and settles, which is what the golden photographs.
+ *
+ * ⚠ The bar is HONEST about what it is: it fills over a known, fixed time, because the work behind
+ * it takes about fifty milliseconds and finishes long before the bar does. It is a beat to let the
+ * reader arrive, not a measurement of progress, so it never pretends to report one — no percentage,
+ * no "almost there", nothing that would be a lie.
+ */
+@Composable
+fun ReadingProgress(durationMillis: Long, modifier: Modifier = Modifier) {
+    val colors = VastuTheme.colors
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    val fill by animateFloatAsState(
+        targetValue = if (started) 1f else 0f,
+        animationSpec = tween(durationMillis = durationMillis.toInt().coerceAtLeast(0)),
+        label = "reading",
+    )
+    Column(
+        modifier
+            .screenRoot(colors.paper)
+            .padding(VastuTheme.spacing.s6),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        VText("Reading your home", style = VastuTheme.type.h2, color = colors.textPrimary)
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        VText(
+            "Placing every room on the traditional grid, and weighing it against the rules.",
+            style = VastuTheme.type.body,
+            color = colors.textSecondary,
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(VastuTheme.sizes.progressTrack)
+                .clip(VastuTheme.shapes.full)
+                .background(colors.surface),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fill)
+                    .height(VastuTheme.sizes.progressTrack)
+                    .clip(VastuTheme.shapes.full)
+                    .background(colors.primary),
+            )
+        }
+    }
+}
+
+/** How long the score takes to climb to its real value once the report appears. */
+private const val SCORE_COUNT_MILLIS = 900
+
 /* ─────────────────────────── the opening verdict ─────────────────────────── */
 
 /**
@@ -566,9 +665,22 @@ fun ReportContent(
 // ReportContent having it is exactly why this compiled in my head and not on the runner.
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun VerdictHeader(score: Int, defectCount: Int, remediesOnly: Boolean, unlocked: Boolean) {
+private fun VerdictHeader(
+    score: Int,
+    defectCount: Int,
+    remediesOnly: Boolean,
+    unlocked: Boolean,
+    countUp: Boolean = false,
+) {
     val colors = VastuTheme.colors
     val mark = LocalDecimalMark.current
+    // The number climbs to the real score; the band word and colour follow it up, so the whole
+    // header settles together instead of the pill snapping to green over a number still at two.
+    val shown by animateIntAsState(
+        targetValue = score,
+        animationSpec = tween(durationMillis = if (countUp) SCORE_COUNT_MILLIS else 0),
+        label = "score",
+    )
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
         // Baseline-aligned so "6.4" and "/ 10" sit on one line; FlowRow so the band word drops to its
         // own line at 200 % font rather than squeezing the number.
@@ -578,9 +690,9 @@ private fun VerdictHeader(score: Int, defectCount: Int, remediesOnly: Boolean, u
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
             VText(
-                scoreOutOfTen(score, mark),
+                scoreOutOfTen(shown, mark),
                 style = VastuTheme.type.display,
-                color = scoreBandColor(score),
+                color = scoreBandColor(shown),
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
             VText(
@@ -590,8 +702,8 @@ private fun VerdictHeader(score: Int, defectCount: Int, remediesOnly: Boolean, u
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
             TagPill(
-                text = bandWord(score),
-                color = scoreBandColor(score),
+                text = bandWord(shown),
+                color = scoreBandColor(shown),
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
         }

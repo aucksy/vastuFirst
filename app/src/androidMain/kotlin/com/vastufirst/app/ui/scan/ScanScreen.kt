@@ -86,8 +86,6 @@ fun ScanScreen(
      * the accessibility pass unchanged.
      */
     modelChoices: List<String> = emptyList(),
-    chosenModel: String? = null,
-    onChooseModel: (String?) -> Unit = {},
     onRescanWith: (String) -> Unit = {},
     /** ⭐ Carry on with a refused reply's own alternative reading — see `ScanOutcome.ifRead`. */
     onReadAnyway: () -> Unit = {},
@@ -104,10 +102,7 @@ fun ScanScreen(
 
         when (state) {
             ScanUiState.Idle ->
-                IdleBody(
-                    onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable,
-                    modelChoices, chosenModel, onChooseModel,
-                )
+                IdleBody(onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable)
             ScanUiState.Reading -> ReadingBody()
             is ScanUiState.Done ->
                 DoneBody(
@@ -132,9 +127,6 @@ private fun IdleBody(
     onTakePhoto: () -> Unit,
     onDrawInstead: () -> Unit,
     cameraUnavailable: Boolean,
-    modelChoices: List<String> = emptyList(),
-    chosenModel: String? = null,
-    onChooseModel: (String?) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     VText("Upload your plan", style = VastuTheme.type.h2, color = colors.textPrimary)
@@ -190,47 +182,14 @@ private fun IdleBody(
         )
     }
 
-    if (modelChoices.isNotEmpty()) {
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-        ReaderPicker(modelChoices, chosenModel, onChooseModel)
-    }
+    // ⛔ THE READER PICKER IS GONE FROM THIS SCREEN (owner, 10 Aug 2026: "Remove the Luna and Gemini
+    // model selection and put them in settings for now") — do not put it back. It was a row of model
+    // names on the screen a customer meets when they are about to photograph their home: a comparison
+    // lever for us, and one more reason to hesitate for them, on the screen the whole paid flow
+    // depends on. It lives in Settings now, where choosing one also survives a retry.
 
     Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
-}
-
-/**
- * ⭐ Which AI reads the plan — the owner's comparison lever (4 Aug 2026: "I should be able to change
- * the model before scanning too"). Auto is today's shipping path (the primary model, with the
- * second-opinion escalation when its own reply says the image is not a 2D plan); a named pick reads
- * with that one model only, deterministically. A wrapping FlowRow, per the design rule that chips
- * that can overflow never side-scroll.
- */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun ReaderPicker(
-    modelChoices: List<String>,
-    chosenModel: String?,
-    onChooseModel: (String?) -> Unit,
-) {
-    val colors = VastuTheme.colors
-    SectionLabel("Which AI reads it · testing")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-    ) {
-        VastuChip("Auto", selected = chosenModel == null, onClick = { onChooseModel(null) })
-        modelChoices.forEach { m ->
-            VastuChip(shortModelName(m), selected = chosenModel == m, onClick = { onChooseModel(m) })
-        }
-    }
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "Auto is the normal choice — it asks ${shortModelName(modelChoices.first())} and gets a " +
-            "second opinion when needed.",
-        style = VastuTheme.type.bodySm, color = colors.textTertiary,
-    )
 }
 
 @Composable

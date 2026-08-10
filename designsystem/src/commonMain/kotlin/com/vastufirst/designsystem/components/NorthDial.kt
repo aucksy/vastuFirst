@@ -1,5 +1,10 @@
 package com.vastufirst.designsystem.components
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,6 +55,11 @@ fun NorthDial(
     onNorthChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    /**
+     * Breathe a ring around the knob until the reader first moves the dial. Off by default so the
+     * render harness photographs the dial at rest; the screen turns it on until North is touched.
+     */
+    hintPulse: Boolean = false,
 ) {
     val haptics = LocalVastuHaptics.current
     // Tracks the last whole degree emitted, so the tick fires once per degree crossed while dragging
@@ -118,6 +128,34 @@ fun NorthDial(
                 .size(hit),
             contentAlignment = Alignment.Center,
         ) {
+            // ⭐ THE NUDGE (owner, 10 Aug 2026: "Mark the North page also need to have some intuitive
+            // animation which indicates what they need to do"). A ring breathes outward from the
+            // knob until the reader first moves the dial, which is the only instruction this screen
+            // really needs: THIS is the thing you drag.
+            //
+            // ⚠ It stops for good on the first change, and it is drawn BEHIND the knob so it can
+            // never obscure the one control it is pointing at. A hint that keeps pulsing after you
+            // have understood it is a distraction, not a hint.
+            //
+            // ⚠ A still photograph cannot show this moving. What a golden CAN check is that it never
+            // covers the knob and never changes the dial's size — which is why it draws inside the
+            // knob's own hit box rather than as an overlay.
+            if (hintPulse) {
+                val transition = rememberInfiniteTransition(label = "knob-hint")
+                val pulse by transition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(1400), RepeatMode.Restart),
+                    label = "knob-hint-pulse",
+                )
+                Canvas(Modifier.matchParentSize()) {
+                    val maxR = size.minDimension / 2f
+                    drawCircle(
+                        color = arrowColor.copy(alpha = (1f - pulse) * 0.35f),
+                        radius = maxR * (0.55f + 0.45f * pulse),
+                    )
+                }
+            }
             // The direction arrow (design: the sage triangle above the N circle). Drawn first, so the
             // circle sits over its base, and rotated by the North bearing so it always points
             // radially OUTWARD from the dial centre — at North=0 that is straight up, exactly the

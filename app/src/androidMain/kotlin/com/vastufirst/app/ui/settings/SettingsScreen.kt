@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.ui.window.Dialog
 import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
+import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
@@ -55,6 +57,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
     consent: PlanReadingConsent = koinInject(),
+    readerChoice: com.vastufirst.app.ui.scan.ReaderChoice = koinInject(),
+    recipe: com.vastufirst.shared.scan.PlanReadRecipe = koinInject(),
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
     // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
@@ -64,10 +68,17 @@ fun SettingsScreen(
     // the screen recomposes, and cleared the moment the user acts either way — nobody should be
     // asked twice about the same crash.
     var crash by remember { mutableStateOf(CrashLog.lastCrash(context)) }
+    var reader by remember { mutableStateOf(readerChoice.chosen()) }
+    val readerOptions = remember(recipe) {
+        listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel)
+    }
     SettingsContent(
         onLegal = onLegal,
         onPrivacy = onPrivacy,
         onBack = onBack,
+        readerOptions = readerOptions,
+        chosenReader = reader,
+        onChooseReader = { m -> readerChoice.set(m); reader = m },
         onDeleteAll = homeViewModel::deleteAll,
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
@@ -110,6 +121,7 @@ private fun sendCrashEmail(context: Context, body: String) {
 }
 
 /** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsContent(
     onLegal: () -> Unit,
@@ -123,6 +135,14 @@ fun SettingsContent(
     hasCrashReport: Boolean = false,
     onSendCrash: () -> Unit = {},
     onDismissCrash: () -> Unit = {},
+    /**
+     * ⭐ Which AI reads a plan — moved here out of the scan flow (owner, 10 Aug 2026: "Remove the
+     * Luna and Gemini model selection and put them in settings for now"). Empty on a build with no
+     * reading key, which hides the whole section rather than offering a choice that cannot work.
+     */
+    readerOptions: List<String> = emptyList(),
+    chosenReader: String? = null,
+    onChooseReader: (String?) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     var showConfirm by remember { mutableStateOf(false) }
@@ -152,6 +172,35 @@ fun SettingsContent(
             // experiences on the same plan; that comparison is settled, and a switch that could send
             // a scan back into the editor contradicts the flow it would have been switching away
             // from. Scans are checked on the photo, and that is not a preference any more.
+        }
+
+        if (readerOptions.isNotEmpty()) {
+            Spacer(Modifier.height(VastuTheme.spacing.s6))
+            SectionLabel("Which AI reads a plan · testing")
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            // ⚠ FlowRow, per the standing rule that chips which can overflow wrap rather than
+            // side-scroll — a model name is long and there is no bound on how long the next one is.
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+            ) {
+                VastuChip("Auto", selected = chosenReader == null, onClick = { onChooseReader(null) })
+                readerOptions.forEach { m ->
+                    VastuChip(
+                        com.vastufirst.app.ui.scan.shortModelName(m),
+                        selected = chosenReader == m,
+                        onClick = { onChooseReader(m) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                "Auto is the normal choice — it asks " +
+                    com.vastufirst.app.ui.scan.shortModelName(readerOptions.first()) +
+                    " and gets a second opinion when needed. A named pick reads with that one only, " +
+                    "and now stays chosen if you try a plan again.",
+                style = VastuTheme.type.bodySm, color = colors.textTertiary,
+            )
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))

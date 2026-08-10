@@ -13,6 +13,7 @@ import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.DisputesSection
+import com.vastufirst.app.ui.report.ReadingProgress
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -131,6 +132,18 @@ class ScoreDrivenScreensScreenshotTest {
      * that used to be an eternal "Reading your home…" spinner. Renders the guidance card with the
      * "answer the first question" way out, so the trap's replacement is a screen someone has seen.
      */
+    /**
+     * ⭐ The beat between "read my home" and the report — a whole screen a reader now sees on every
+     * single reading, and one no golden would otherwise contain, because the report's own goldens
+     * all render with the animation switched off so they photograph the report rather than this.
+     *
+     * ⚠ Rendered with a duration of ZERO. The bar draws its first frame and settles, which is the
+     * frame worth checking: the words, the track, and that nothing is clipped at 200 % font on a
+     * 320 dp phone. What a picture cannot check is that it moves.
+     */
+    @Test
+    fun reading_progress() = render("reading") { ReadingProgress(durationMillis = 0L) }
+
     @Test
     fun report_lost_intent() = render("report-lost-intent") {
         ReportContent(analysis = null, intent = null, rooms = rooms, north = north)
