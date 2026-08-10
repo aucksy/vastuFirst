@@ -105,13 +105,48 @@ developer account.
 
 ## Week of 3–9 August 2026
 
-Twelve new versions this week. The short version: **the app stopped redrawing your home and started
+Thirteen new versions this week. The short version: **the app stopped redrawing your home and started
 working on your own plan instead**, a better plan reader went in, the whole app was read through end
-to end and fixed in three rounds, the question of languages is settled — the app is English — and
-**the report itself was rebuilt so it can actually be read**, with the entrance, kitchen and toilets
-now free.
+to end and fixed in three rounds, the question of languages is settled — the app is English — **the
+report itself was rebuilt so it can actually be read**, with the entrance, kitchen and toilets now
+free, and **the scoring was found to be harsher than it should have been, and corrected**.
 
-### Sunday 9 August, last thing — the front door is filed where it belongs
+### Sunday 9 August, last of the day — the scores were harsher than they should have been
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.9.0/vastufirst-v0.9.0.apk
+**This is the one to install.**
+
+**A room that only clipped the corner of a place it should not be was being treated as though the
+whole room were sitting there.** The app divides a home into nine parts, and some rooms are not
+meant to occupy certain ones. If a bedroom overlapped a forbidden part by a corner — five square
+feet on a thousand-square-foot flat was enough — that bedroom lost every mark it had, exactly as if
+it had been built entirely in the wrong place. Worse, the same corner was counted against the home a
+second time in the overall total. One small overlap, charged twice.
+
+**On real flats this was the difference between a fair reading and a discouraging one.** In an
+ordinary home something almost always sits over the middle of the plan, and the middle is one of the
+places most rooms are not meant to be. So home after home came out at one or two out of ten, no
+matter how sensibly it was laid out.
+
+**A room is now marked down by how much of it is actually in the wrong place.** Mostly where it
+should be, with a corner over the line, and it keeps most of its marks. Genuinely built in the wrong
+place, and it loses them all, exactly as before.
+
+**Nothing has been hidden to make the numbers look better.** Every problem the report listed before,
+it still lists, in the same words, with the same reason and the same suggestions. That was the line
+we would not cross: the score is our own invention and can be corrected, but what the tradition says
+about your home is not ours to soften. Only the number moved.
+
+**Across the real home plans we test against, the typical score went from about 2 out of 10 to about
+4**, and the worst of them from 0.5 to 3.1. Homes that were genuinely well laid out were always
+scoring well and still do.
+
+**Separately, a house could be called "long and narrow" when it was not.** A home whose proportions
+sit exactly on the line between ordinary and elongated could be judged either way, depending on
+nothing more than where on the page it had been drawn. It is now judged on its shape alone, and a
+home exactly on that line counts as ordinary.
+
+### Sunday 9 August, earlier — the front door is filed where it belongs
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.8.1/vastufirst-v0.8.1.apk
 **This is the one to install** — the rebuilt report from earlier today, with three things put right.
@@ -130,7 +165,7 @@ sitting a line short of its neighbours.
 **And the bottom of the free report is now checked before every release, not just the top.** That is
 the half where the rooms you have not paid to read are listed, so it is the half worth watching.
 
-### Sunday 9 August, earlier — the report is rebuilt, and three rooms are now free to read
+### Sunday 9 August, earlier still — the report is rebuilt, and three rooms are now free to read
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.8.0/vastufirst-v0.8.0.apk
 
