@@ -18,6 +18,7 @@ import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.report.TAG_PAY_CLEARANCE
+import com.vastufirst.app.ui.report.TAG_ROOMS_END
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.unlock.UnlockContent
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -60,9 +61,10 @@ class LongScreenBottomScreenshotTest {
         config: String,
         anchor: SemanticsMatcher,
         fontScale: Float,
+        qualifiers: String = RenderMatrix.BASE,
         content: @Composable () -> Unit,
     ) {
-        RuntimeEnvironment.setQualifiers(RenderMatrix.BASE)
+        RuntimeEnvironment.setQualifiers(qualifiers)
         runComposeUiTest {
             setContent {
                 val base = LocalDensity.current
@@ -82,14 +84,39 @@ class LongScreenBottomScreenshotTest {
         anchor: SemanticsMatcher,
         content: @Composable () -> Unit,
     ) {
-        captureBottom(screen, "bottom", anchor, 1.0f, content)
-        captureBottom(screen, "bottom_font2_0", anchor, 2.0f, content)
+        // ⚠ Named, not positional: `qualifiers` now sits between the font scale and the content, so a
+        // positional call would hand the composable to it and fail to compile.
+        captureBottom(screen, "bottom", anchor, 1.0f, content = content)
+        captureBottom(screen, "bottom_font2_0", anchor, 2.0f, content = content)
     }
 
     /** The paid document's ending: disputes, the disclaimer, and the only way out of the flow. */
     @Test
     fun report_bottom() = captureBottomPair("report", anchor = hasText("Done — see all my plans")) {
         ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.BUILDING)
+    }
+
+    /**
+     * ⭐⭐ THE ROOM LIST ITSELF — the screen's whole point, and photographed nowhere until this test.
+     *
+     * The list sits BETWEEN the top-of-page goldens and the bottom-of-page ones: every report golden
+     * stops above it and every bottom golden starts below it. On the run that introduced the list it
+     * therefore appeared in none of the eight configurations, on a change that was entirely about it.
+     *
+     * ⚠ Three configs, and each earns its place. The room row is the most shatter-prone thing in the
+     * app — a circle, a name, a direction pill, a one-word verdict and an arrow on ONE line — and
+     * §6.7b is explicit that a row can draw its ink wider than its box with every measurement green.
+     * So: the baseline to see it as designed, 200 % font because that is where a row runs out of
+     * width, and 320 dp because that is the narrowest phone we support.
+     */
+    @Test
+    fun report_rooms() {
+        val content: @Composable () -> Unit = {
+            ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.BUILDING)
+        }
+        captureBottom("report", "rooms", hasTestTag(TAG_ROOMS_END), 1.0f, content = content)
+        captureBottom("report", "rooms_font2_0", hasTestTag(TAG_ROOMS_END), 2.0f, content = content)
+        captureBottom("report", "rooms_w320", hasTestTag(TAG_ROOMS_END), 1.0f, "+w320dp-h711dp-port-xhdpi", content)
     }
 
     /** The remedies-only branch ends on the same elements but gets there through different cards. */

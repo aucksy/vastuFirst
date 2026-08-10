@@ -126,6 +126,22 @@ fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit, onUnlock: () -> Unit 
  */
 const val TAG_PAY_CLEARANCE = "report.payClearance"
 
+/**
+ * ⭐ THE END OF THE ROOM LIST, SO THE HARNESS CAN SCROLL TO IT — and this tag is the whole reason
+ * the list is photographed at all.
+ *
+ * ⚠ FOUND BY LOOKING, 10 Aug 2026, the first time the list was rendered. Every report golden starts
+ * at the top and every bottom-half golden ends at the last control, and the room list sits between
+ * them — so on the run that introduced it, the one thing the change was FOR appeared in no picture
+ * at any of the eight configurations. That is the "a golden is a viewport, not a document" defect
+ * (UI-POLISH §6.4) landing on brand-new UI, and the geometry gate cannot stand in for it: rows
+ * shatter by drawing ink wider than a box every number agrees is the right size (§6.7b).
+ *
+ * Tagged rather than anchored on a room's name because the names come from the fixture's own rooms
+ * and would change with it, and an anchor that silently stops matching photographs the wrong place.
+ */
+const val TAG_ROOMS_END = "report.roomsEnd"
+
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -568,6 +584,15 @@ private fun RoomsSection(
             )
         }
     }
+    // The list's true last element, so a scrolled capture lands on the tail of the list rather than
+    // minimally into its first row. ⚠ fillMaxWidth is load-bearing: a tag makes this a real semantics
+    // node, and a node given only a height measures ZERO WIDE, which the geometry gate fails on sight.
+    Spacer(
+        Modifier
+            .testTag(TAG_ROOMS_END)
+            .fillMaxWidth()
+            .height(VastuTheme.spacing.s1),
+    )
 }
 
 /** Said once, on every room the tradition does not place — the report's existing wording. */
