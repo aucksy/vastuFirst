@@ -34,25 +34,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
@@ -176,7 +178,14 @@ fun ScanReviewContent(
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
     val planRooms = remember(rooms) { planRoomsOf(rooms) }
-    val listState = rememberLazyListState()
+    // ⚠ A PLAIN SCROLLING COLUMN, NOT A LAZY LIST — and the original note on this screen was right.
+    // A lazy list only composes the rows you can see, so every room below the fold is not in the
+    // semantics tree at all: the geometry gate cannot measure it, the accessibility checker cannot
+    // read it, and a test cannot scroll to it. Six render tests failed for exactly that reason the
+    // first time this went in. The mapper refuses a plan over twenty rooms, so the longest list this
+    // can ever draw is twenty rows — laziness buys nothing here and costs the checks their eyes.
+    val listScroll = rememberScrollState()
+    val rowY = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
 
     /**
@@ -186,9 +195,13 @@ fun ScanReviewContent(
      * or room on floor plan"), and two handlers is how that promise quietly breaks.
      */
     fun tapRoom(id: String) {
-        selected = if (selected == id) null else id
-        val index = planRooms.indexOfFirst { it.id == id }
-        if (index >= 0) scope.launch { listState.animateScrollToItem(index) }
+        val opening = selected != id
+        selected = if (opening) id else null
+        // Row positions are held in root coordinates and combined with the live scroll offset, so
+        // this works however deeply the row is nested — the same arithmetic the report uses.
+        if (opening) rowY[id]?.let { y ->
+            scope.launch { listScroll.animateScrollTo((listScroll.value + y - rowTopMarginPx).coerceAtLeast(0)) }
+        }
     }
 
     // ⚠⚠ THE VIEWPORT DECIDES HOW BIG THE PINNED PICTURE MAY BE — found by the geometry gate,
@@ -199,6 +212,7 @@ fun ScanReviewContent(
     // the gate is right that it must be fixed rather than ratcheted away.
     BoxWithConstraints(Modifier.screenRoot(colors.paper)) {
     val planCap = minOf(VastuTheme.sizes.planPane, maxHeight * PLAN_MAX_VIEWPORT_SHARE)
+    val rowTopMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
     // ⚠ The bottom padding belongs to the LIST, not to this column, and that is a correctness fix
     // rather than a tidy-up. Padding the column stops the scrolling list 24 dp short of the screen
     // edge, so whichever row straddles its lower edge is cut by a CONTAINER — which the geometry
@@ -250,17 +264,21 @@ fun ScanReviewContent(
         SectionLabel("${rooms.size} rooms read from your plan")
         Spacer(Modifier.height(VastuTheme.spacing.s2))
 
-        // ⚠ A LazyColumn is legal HERE and was not before: this screen no longer scrolls as a whole,
-        // so there is no outer scroll for a lazy list to be illegally nested inside. It is what lets
-        // a tap on the picture scroll the matching row into view, which a plain Column cannot do.
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            state = listState,
+        // ⛔ A PLAIN COLUMN IN ITS OWN SCROLL — never a lazy list. A lazy list composes only the rows
+        // you can see, so every room below the fold is absent from the semantics tree: the geometry
+        // gate cannot measure it, the accessibility checker cannot read it, and no test can scroll to
+        // it. Six render tests failed on exactly that the first time this went in. The mapper refuses
+        // a plan over twenty rooms, so this list is at most twenty rows — laziness buys nothing and
+        // costs the checks their eyes. Scrolling to a tapped row is done from recorded positions, the
+        // same way the report does it.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(listScroll),
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-            contentPadding = PaddingValues(bottom = VastuTheme.spacing.s6),
         ) {
-            items(planRooms, key = { it.id }) { pr ->
-                val index = planRooms.indexOf(pr)
+            planRooms.forEachIndexed { index, pr ->
                 val room = rooms[index]
                 VastuRoomRow(
                     name = pr.name,
@@ -270,6 +288,7 @@ fun ScanReviewContent(
                     note = room.type.label() + " · " + sizeNote(room),
                     selected = selected == pr.id,
                     onTap = { tapRoom(pr.id) },
+                    modifier = Modifier.onGloballyPositioned { rowY[pr.id] = it.positionInRoot().y.toInt() },
                 )
             }
             // ⭐ THE TAIL RIDES AT THE END OF THE LIST, not pinned beneath it.
@@ -280,7 +299,7 @@ fun ScanReviewContent(
             // is no "last thing left over" — the reader scrolls to it, which is exactly how they
             // reached these buttons before the plan was pinned. The plan stays pinned, which is what
             // was actually asked for.
-            item {
+            run {
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
                 // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant
                 // we do it ourselves when Entry is clearly marked? we ask only if its not"). But not
@@ -308,6 +327,7 @@ fun ScanReviewContent(
                         style = VastuButtonStyle.SECONDARY,
                     )
                 }
+                Spacer(Modifier.height(VastuTheme.spacing.s6))
             }
         }
     }
