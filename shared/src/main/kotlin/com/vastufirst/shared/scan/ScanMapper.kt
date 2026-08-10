@@ -65,6 +65,26 @@ object ScanMapper {
     const val SIZED_SHARE_TO_TRUST = 2.0 / 3.0
 
     /**
+     * How many rooms must print a size before [tightenToPrinted] will fit a scale from them.
+     *
+     * Three, so the median that sets the scale rests on six measurements rather than one room's
+     * mis-transcribed caption. Below it the sheet is left exactly as the reader drew it, which is
+     * the honest answer: a scale fitted on one room is a guess wearing a measurement's clothes.
+     */
+    const val MIN_PRINTED_TO_FIT = 3
+
+    /**
+     * How far a room's printed size may disagree with the reader's own rectangle, in area, before
+     * [tightenToPrinted] concludes the CAPTION was mis-read and leaves that room alone.
+     *
+     * Four-fold. The reader's rectangles are imprecise (±7 % on a small room, measured) but never
+     * absurd, so a four-fold disagreement is not a correction waiting to be applied — it is a
+     * millimetre caption parsed as feet, and applying it would draw one bedroom across half the
+     * sheet. Deliberately loose: this is a catastrophe guard, not a tuning dial.
+     */
+    const val MAX_PRINTED_DISAGREEMENT = 4.0
+
+    /**
      * …and an absolute ceiling that no reply passes, sizes or not.
      *
      * ⚠ Stated as a judgement, because that is what it is. The largest genuine single home in the
@@ -317,8 +337,14 @@ object ScanMapper {
      * [imageAspect] is width ÷ height of the source image, supplied by the platform layer — the model
      * is never asked, because measuring is the thing it cannot do. It only chooses the shape of the
      * drawing grid; `null` gives a square one.
+     *
+     * ⚠ [tightenTints] exists for ONE reason and it is not configurability: [tightenToPrinted]
+     * changes the boxes the front door is placed through, and "the door does not move" is a claim
+     * that has to be MEASURED rather than argued. `ScanTintPrintedSizeTest` runs every recorded
+     * plan both ways and compares. Nothing in the app ever passes it — the app has one behaviour,
+     * and a caller that could turn this off would be a setting nobody asked for.
      */
-    fun map(draft: ScanDraft, imageAspect: Double? = null): ScanOutcome {
+    fun map(draft: ScanDraft, imageAspect: Double? = null, tightenTints: Boolean = true): ScanOutcome {
         val dropped = ArrayList<DroppedSpace>()
 
         // ---- 1. sanitise geometry ------------------------------------------------------------
@@ -345,7 +371,7 @@ object ScanMapper {
         fun notes() = ScanNotes(coverage, variation, draft.planConfidence, dropped.toList())
 
         // ---- 3. triage (L0) — the refusals a user can actually act on --------------------------
-        triage(draft, boxes)?.let { return ScanOutcome.Refused(it, notes(), ifRead(it, draft, imageAspect)) }
+        triage(draft, boxes)?.let { return ScanOutcome.Refused(it, notes(), ifRead(it, draft, imageAspect, tightenTints)) }
 
         // ---- 4. captions → room types (L1: the model's 95 %-accurate skill) --------------------
         val typed = ArrayList<Candidate>(clean.size)
@@ -388,15 +414,20 @@ object ScanMapper {
         }
 
         // Top-to-bottom, left-to-right — the order someone reads a plan, so the palette makes sense.
-        val identified = rooms
-            .sortedWith(compareBy({ it.box.y }, { it.box.x }))
-            .map {
-                ScannedRoom(
-                    it.type, it.box.label, rect = null, flags = it.flags.toSet(),
-                    printedSize = it.box.printedSize, source = pageSource(draft.building, it.box),
-                    readInParts = it.parts,
-                )
-            }
+        // The tint is drawn at the printed size here too: the ASSISTED path threw away the reader's
+        // ARRANGEMENT, not its captions, and this screen is exactly where someone checks what we read.
+        val ordered = rooms.sortedWith(compareBy({ it.box.y }, { it.box.x }))
+        val identifiedPages = ordered.map { pageSource(draft.building, it.box) }
+        val identifiedSources =
+            if (tightenTints) tightenToPrinted(identifiedPages, ordered.map { RoomDimensions.of(it.box) })
+            else identifiedPages
+        val identified = ordered.mapIndexed { i, cand ->
+            ScannedRoom(
+                cand.type, cand.box.label, rect = null, flags = cand.flags.toSet(),
+                printedSize = cand.box.printedSize, source = identifiedSources[i],
+                readInParts = cand.parts,
+            )
+        }
 
         // ---- 6. the objective gates (L2 is a bonus, never a promise) ---------------------------
         // ⚠ Coverage is deliberately NOT a gate — see [MAX_TRUSTED_ROOMS]. It is still measured and
@@ -515,11 +546,17 @@ object ScanMapper {
             placedRooms = chosen.rooms
         }
 
+        // The on-photo box for each room: composed onto the page, then redrawn at the size the
+        // plan itself prints (see [tightenToPrinted]) instead of the size the reader guessed.
+        val pageBoxes = placedRooms.map { pageSource(draft.building, it.first.box) }
+        val printedSizes = placedRooms.map { RoomDimensions.of(it.first.box) }
+        val sources = if (tightenTints) tightenToPrinted(pageBoxes, printedSizes) else pageBoxes
+
         val out = placedRooms
-            .map { (c, rect, _) ->
+            .mapIndexed { i, (c, rect, _) ->
                 ScannedRoom(
                     c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize,
-                    source = pageSource(draft.building, c.box),
+                    source = sources[i],
                     readInParts = c.parts,
                 )
             }
@@ -550,6 +587,103 @@ object ScanMapper {
             w = box.w * b.w,
             h = box.h * b.h,
         )
+    }
+
+    /**
+     * ⭐⭐ DRAW EACH ROOM AT THE SIZE ITS OWN CAPTION PRINTS, not the size the reader guessed
+     * (owner, 10 Aug 2026: "almost every time the boxes we are placing over the rooms are slightly
+     * bigger than actual rooms").
+     *
+     * **What was actually wrong, measured before anything was changed.** Nothing in this codebase
+     * enlarges a box — the review screen draws the reader's own rectangle. The August building-box
+     * fix put those rectangles in the right PLACE and was verified against paper truth (composed
+     * layout fits the truth sheets at slope 1.00–1.03, no stretch). But that verification graded
+     * only where each box's CENTRE landed. A box the right size and one half again too big score
+     * identically on a centre test, so a size error passed straight through it, unmeasured, for six
+     * days.
+     *
+     * Measured properly — 330 room dimensions across 16 recorded live readings, each converted to
+     * feet through its own sheet's scale so plans of different sizes pool — the reader adds a
+     * roughly CONSTANT margin of about five inches to every wall, whatever that wall's length:
+     *
+     * ```
+     *   true wall          drawn as
+     *   under 5 ft         +7 %      <- a small toilet: the one that looks obviously wrong
+     *   5–8 ft             +2 %
+     *   8–12 ft            −3 %
+     *   12–18 ft           −3 %
+     *   over 18 ft         −4 %      <- big rooms are slightly SMALL, not big
+     * ```
+     *
+     * So it is not an inflation, it is a fixed margin, and it disfigures small rooms only. Shrinking
+     * everything by a constant would have made the living rooms worse.
+     *
+     * **The fix reuses the principle this file already runs on** (see [reshapeToPrinted]): the
+     * reader reads printed TEXT at about 95 % and guesses rectangles at 40–70 %, so where a caption
+     * states the size, the caption wins. The reader's CENTRE is kept — that is the part measurement
+     * showed to be sound — and the extent is replaced by the printed size at the sheet's own scale.
+     *
+     * **The scale is fitted from the reader's own boxes** (median of drawn ÷ printed over every
+     * sized room, both axes), which means a sheet keeps its overall size and only the DISTRIBUTION
+     * between rooms is corrected. That is deliberate: a median cannot see a uniform inflation, and
+     * with the evidence available it would be inventing one to correct it. Same reasoning as
+     * [reshapeToPrinted]'s "total area is preserved, not imposed".
+     *
+     * A room whose caption prints no size keeps the reader's box untouched, and a sheet with fewer
+     * than [MIN_PRINTED_TO_FIT] sized rooms is left entirely alone — a scale fitted on one or two
+     * rooms is a guess dressed up as a measurement.
+     *
+     * ⚠ [ScannedRoom.source] is NOT tint-only any more, whatever older comments say: since 6 Aug
+     * `ScanDoorGeometry` maps a tap on the photo through the UNION of these boxes to place the front
+     * door, which the engine scores at the highest weight of anything. `ScanTintPrintedSizeTest`
+     * therefore measures the door before and after over every recorded plan, and this change ships
+     * only because that door does not move.
+     */
+    internal fun tightenToPrinted(boxes: List<ScanBox>, printed: List<PrintedSize?>): List<ScanBox> {
+        val ratios = ArrayList<Double>()
+        for (i in boxes.indices) {
+            val p = printed.getOrNull(i) ?: continue
+            val b = boxes[i]
+            if (b.w <= 0.0 || b.h <= 0.0 || p.widthMm <= 0.0 || p.depthMm <= 0.0) continue
+            ratios += maxOf(b.w, b.h) / maxOf(p.widthMm, p.depthMm)
+            ratios += minOf(b.w, b.h) / minOf(p.widthMm, p.depthMm)
+        }
+        if (ratios.size < MIN_PRINTED_TO_FIT * 2) return boxes
+        val scale = median(ratios)
+        if (!scale.isFinite() || scale <= 0.0) return boxes
+
+        return boxes.mapIndexed { i, b ->
+            val p = printed.getOrNull(i) ?: return@mapIndexed b
+            if (b.w <= 0.0 || b.h <= 0.0 || p.widthMm <= 0.0 || p.depthMm <= 0.0) return@mapIndexed b
+            val long = maxOf(p.widthMm, p.depthMm) * scale
+            val short = minOf(p.widthMm, p.depthMm) * scale
+            if (!long.isFinite() || !short.isFinite() || long <= 0.0 || short <= 0.0) return@mapIndexed b
+            // The reader's own orientation is kept: which way round the room lies is its problem,
+            // not the caption's — the caption states two lengths and never which is across.
+            val w = (if (b.w >= b.h) long else short).coerceAtMost(1.0)
+            val h = (if (b.w >= b.h) short else long).coerceAtMost(1.0)
+            // ⚠ Safety net for a MIS-READ caption. The median scale shrugs off one bad size, but the
+            // room that owns it does not: `6750X4350` read as feet instead of millimetres would draw
+            // a bedroom over half the sheet. A printed size that disagrees with the reader's own
+            // rectangle by more than [MAX_PRINTED_DISAGREEMENT]-fold is not a correction, it is a
+            // parse failure — keep the reader's box, which is merely imprecise rather than absurd.
+            val grew = (w * h) / (b.w * b.h)
+            if (grew > MAX_PRINTED_DISAGREEMENT || grew < 1.0 / MAX_PRINTED_DISAGREEMENT) {
+                return@mapIndexed b
+            }
+            b.copy(
+                x = (b.x + b.w / 2.0 - w / 2.0).coerceIn(0.0, 1.0 - w),
+                y = (b.y + b.h / 2.0 - h / 2.0).coerceIn(0.0, 1.0 - h),
+                w = w,
+                h = h,
+            )
+        }
+    }
+
+    private fun median(values: List<Double>): Double {
+        val v = values.sorted()
+        val n = v.size
+        return if (n % 2 == 1) v[n / 2] else (v[n / 2 - 1] + v[n / 2]) / 2.0
     }
 
     /** One complete placement pass. Pure: it never touches a [Candidate]'s flags. */
@@ -959,9 +1093,16 @@ object ScanMapper {
      * to [PlanImageType.TWO_D_PLAN], so its own triage can never return [RefusalReason.NOT_2D]
      * again and can never ask for a third pass.
      */
-    private fun ifRead(reason: RefusalReason, draft: ScanDraft, imageAspect: Double?): ScanOutcome? {
+    private fun ifRead(
+        reason: RefusalReason,
+        draft: ScanDraft,
+        imageAspect: Double?,
+        tightenTints: Boolean,
+    ): ScanOutcome? {
         if (reason != RefusalReason.NOT_2D) return null
-        return when (val retry = map(draft.copy(planType = PlanImageType.TWO_D_PLAN), imageAspect)) {
+        return when (
+            val retry = map(draft.copy(planType = PlanImageType.TWO_D_PLAN), imageAspect, tightenTints)
+        ) {
             is ScanOutcome.Refused -> null
             is ScanOutcome.Assisted -> retry
             // ⭐⭐ A DRAWN LAYOUT IS NEVER OFFERED HERE — see [AssistReason.ANGLED_VIEW]. If the

@@ -125,8 +125,15 @@ data class ScanDraft(
      * off. Measured over 35 approved scans against the paper truth: composing rooms through this
      * box lands Green Court's centres at 0.007–0.033 (from 0.17–0.28) and every eyeballed overlay
      * snaps to the real rooms. Null on older replies and pre-v4 recordings — everything degrades
-     * to today's drawing. Used ONLY for the tint ([ScannedRoom.source]); the mapper's placement
-     * maths never reads it, so scores are untouched by design.
+     * to today's drawing.
+     *
+     * ⚠ CORRECTION (10 Aug 2026). This note used to end "Used ONLY for the tint; the mapper's
+     * placement maths never reads it, so scores are untouched by design." That stopped being true
+     * two days after it was written: since 6 Aug the front door is marked on the photograph, and
+     * `ScanDoorGeometry` maps that tap through the UNION of the composed room boxes. The door is
+     * the highest-weighted element the engine scores, so this box now reaches the score by that
+     * route. The placement GRID still never reads it. Anything changing these boxes must measure
+     * the door — `ScanTintPrintedSizeTest` does.
      */
     val building: ScanBox? = null,
 )
