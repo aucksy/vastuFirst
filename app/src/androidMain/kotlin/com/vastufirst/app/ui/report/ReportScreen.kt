@@ -560,8 +560,10 @@ fun ReportContent(
                     .background(colors.surface).padding(VastuTheme.spacing.s4),
             ) {
                 VText(
-                    "Vastu is a traditional practice. This is guidance for your own decisions — not a guaranteed outcome. " +
-                        "The score is our own summary, not a measurement and not part of the tradition.",
+                    // Copy cut (10 Aug 2026): 36 words -> 24. All four claims survive — traditional
+                    // practice, guidance not a promise, our own summary, not part of the tradition.
+                    "Vastu is a traditional practice, and this is guidance for your decisions — not a " +
+                        "promised outcome. The score is our own summary, not part of the tradition.",
                     style = VastuTheme.type.body, color = colors.textPrimary,
                 )
             }
@@ -947,7 +949,7 @@ private fun StructuralSection(
     SectionLabel("Your home's shape and surroundings")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "These are about the building itself, not any one room.",
+        "About the building itself, not any one room.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s3))

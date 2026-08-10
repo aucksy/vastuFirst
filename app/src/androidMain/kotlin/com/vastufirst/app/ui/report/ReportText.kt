@@ -183,9 +183,12 @@ fun doorUnnamedNote(d: DoorResult): String? =
  */
 fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
     val parts = mutableListOf(
-        "The tradition lays 32 named positions around the plan's edge, eight to a wall, and " +
-            "judges the entrance by the one it stands on. Yours is ${padaStanding(d.verdict)}. " +
-            "The front door carries more weight here than any single room.",
+        // Copy cut (10 Aug 2026): 44 words -> 27. Every claim survives whole — 32 named positions,
+        // eight to a wall, judged on the one the door stands on, this door's standing, and that it
+        // outweighs any single room. Only the joining words went.
+        "The tradition names 32 positions around the plan's edge, eight per wall, and reads the " +
+            "entrance by the one it stands on. Yours is ${padaStanding(d.verdict)} — and the front " +
+            "door outweighs any single room.",
     )
     // ⚠ A door can read unfavourably without raising a problem of its own — only the South-West
     // corner arc does that. So the reader would otherwise be told the most important element in the
@@ -202,14 +205,12 @@ fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
             "Only two or three of the eight positions on any wall count favourable — the exact " +
                 "spot along the same wall matters."
         } else {
-            "Only two or three positions on each wall count favourable, so a door moved a few " +
-                "feet along the same wall can read differently. While the plan is still on paper, " +
-                "walk this through with whoever is drawing it."
+            "Only two or three positions per wall count favourable, so a door moved a few feet " +
+                "along the same wall reads differently. Worth raising while it is still on paper."
         }
     }
     if (d.spansTwoPadas) {
-        parts += "Your doorway spans two of these positions; it is read on the one it mostly " +
-            "sits on."
+        parts += "Your doorway spans two positions; it is read on the one it mostly sits on."
     }
     return parts.joinToString(" ")
 }

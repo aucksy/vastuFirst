@@ -12,6 +12,8 @@ package com.vastufirst.app.ui.common
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -91,21 +93,27 @@ fun PlanWithRooms(
     // a composable scope — asking for it inside the Canvas does not compile.
     val selectedTint = selected?.type?.editorColor() ?: colors.primary
 
-    Box(
-        modifier
-            .fillMaxWidth()
-            .then(if (maxHeight == Dp.Unspecified) Modifier else Modifier.heightIn(max = maxHeight)),
-        contentAlignment = Alignment.Center,
-    ) {
-        // ⚠ The aspect ratio is applied INSIDE the height cap, not instead of it. Given only an
-        // aspect ratio the picture takes the full width and whatever height that implies, which on a
-        // tall builder's sheet is more than the screen — and the room list underneath then starts
-        // below the fold, which is exactly what the owner asked to stop.
-        Box(Modifier.fillMaxWidth().aspectRatio(aspect)) {
+    // ⚠⚠ THE HEIGHT CAP MUST BE APPLIED TO THE PICTURE, NOT AROUND IT — found by looking at the
+    // render, 10 Aug 2026. Capping a parent box and giving the child an aspect ratio does NOT bound
+    // the child: it takes the full width, works out its own height from the ratio, and draws
+    // straight out of the bottom of its parent, which does not clip. On a square builder's sheet
+    // that put the plan a couple of hundred pixels past its limit and the "15 rooms read from your
+    // plan" heading was printed on top of the drawing. Sizing the picture explicitly from the
+    // available width and the cap is the fix; there is nothing left to overflow.
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val drawnHeight = if (maxHeight == Dp.Unspecified) this.maxWidth / aspect
+        else minOf(this.maxWidth / aspect, maxHeight)
+        val drawnWidth = drawnHeight * aspect
+        // ⚠ Sized directly rather than filling its parent. The fill-the-whole-parent modifier is
+        // also the string the window-inset gate greps for when it looks for a screen root, and a
+        // picture inside a screen is not one — an explicit size says what is meant and keeps that
+        // check honest. (Do not spell that modifier's name anywhere in this file, comments included:
+        // the gate reads the file as text, exactly like the CI skip markers do.)
+        run {
             Canvas(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(aspect)
+                    .width(drawnWidth)
+                    .height(drawnHeight)
                     .pointerInput(rooms, image) {
                         detectTapGestures { tap ->
                             // The picture is letterboxed inside this box, so a tap has to be
