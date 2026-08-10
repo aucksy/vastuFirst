@@ -32,6 +32,7 @@ package com.vastufirst.app.ui.scan
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -189,7 +190,15 @@ fun ScanReviewContent(
         if (index >= 0) scope.launch { listState.animateScrollToItem(index) }
     }
 
-    Column(Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6)) {
+    // ⚠⚠ THE VIEWPORT DECIDES HOW BIG THE PINNED PICTURE MAY BE — found by the geometry gate,
+    // 10 Aug 2026, on the first render of this layout. Pinning the plan at a FIXED cap left the
+    // fixed parts of a landscape screen (480 dp tall) taller than the screen itself, so the last
+    // child measured to 283 x 0 dp: "Put the front door somewhere else" was in the tree and NOT ON
+    // THE PAGE. That is the zero-height-grid class of defect this project shipped once already, and
+    // the gate is right that it must be fixed rather than ratcheted away.
+    BoxWithConstraints(Modifier.screenRoot(colors.paper)) {
+    val planCap = minOf(VastuTheme.sizes.planPane, maxHeight * PLAN_MAX_VIEWPORT_SHARE)
+    Column(Modifier.padding(VastuTheme.spacing.s6)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -215,7 +224,7 @@ fun ScanReviewContent(
                 rooms = planRooms,
                 selectedId = selected,
                 onTapRoom = ::tapRoom,
-                maxHeight = VastuTheme.sizes.planPane,
+                maxHeight = planCap,
             )
         } else {
             Box(
@@ -254,34 +263,51 @@ fun ScanReviewContent(
                     onTap = { tapRoom(pr.id) },
                 )
             }
-        }
-
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant we do it
-        // ourselves when Entry is clearly marked? we ask only if its not"). But not asking is not the
-        // same as not saying: the front door is the heaviest input the engine weighs, so what we read
-        // is stated here in one line, with the way to change it beside it.
-        if (door != null) {
-            VText(
-                "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}.",
-                style = VastuTheme.type.bodySm,
-                color = colors.textSecondary,
-            )
-            Spacer(Modifier.height(VastuTheme.spacing.s2))
-        }
-        // The button never promises a screen other than the one it opens (audit B2).
-        VastuButton(
-            if (door != null) "These are my rooms — which way is North?"
-            else "These are my rooms — set the front door",
-            onClick = onContinue,
-        )
-        if (door != null) {
-            Spacer(Modifier.height(VastuTheme.spacing.s2))
-            VastuButtonInline(
-                "Put the front door somewhere else",
-                onClick = onChangeDoor,
-                style = VastuButtonStyle.SECONDARY,
-            )
+            // ⭐ THE TAIL RIDES AT THE END OF THE LIST, not pinned beneath it.
+            //
+            // ⚠ Pinned, it could be crushed to nothing, and was: at 200 % font in landscape the fixed
+            // parts of this screen are together taller than the screen before the picture is drawn at
+            // all, so whatever is measured last gets zero height. Inside the scrolling region there
+            // is no "last thing left over" — the reader scrolls to it, which is exactly how they
+            // reached these buttons before the plan was pinned. The plan stays pinned, which is what
+            // was actually asked for.
+            item {
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant
+                // we do it ourselves when Entry is clearly marked? we ask only if its not"). But not
+                // asking is not the same as not saying: the front door is the heaviest input the
+                // engine weighs, so what we read is stated in one line, with the way to change it.
+                if (door != null) {
+                    VText(
+                        "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}.",
+                        style = VastuTheme.type.bodySm,
+                        color = colors.textSecondary,
+                    )
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                }
+                // The button never promises a screen other than the one it opens (audit B2).
+                VastuButton(
+                    if (door != null) "These are my rooms — which way is North?"
+                    else "These are my rooms — set the front door",
+                    onClick = onContinue,
+                )
+                if (door != null) {
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    VastuButtonInline(
+                        "Put the front door somewhere else",
+                        onClick = onChangeDoor,
+                        style = VastuButtonStyle.SECONDARY,
+                    )
+                }
+            }
         }
     }
+    }
 }
+
+/**
+ * The most of the viewport's height the pinned plan may take. A landscape phone is 480 dp tall and
+ * this screen's headings, list heading and buttons need the rest; a fixed cap that is right in
+ * portrait is most of the screen in landscape.
+ */
+private const val PLAN_MAX_VIEWPORT_SHARE = 0.38f
