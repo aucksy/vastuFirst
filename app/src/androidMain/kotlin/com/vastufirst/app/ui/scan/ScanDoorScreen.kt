@@ -103,6 +103,8 @@ fun ScanDoorScreen(
         rooms = data?.rooms.orEmpty(),
         door = door,
         onDoor = onDoor,
+        // The real screen nudges; the harness never does. See [ScanDoorContent.hintPulse].
+        hintPulse = true,
         onNext = onNext,
         onBack = onBack,
     )
@@ -117,6 +119,16 @@ fun ScanDoorContent(
     onDoor: (GridDoor) -> Unit = {},
     onNext: () -> Unit = {},
     onBack: () -> Unit = {},
+    /**
+     * ⚠⚠ DEFAULT OFF, AND THE HARNESS MUST NEVER TURN IT ON. The travelling hint is an INFINITE
+     * animation, and an infinite animation never lets a composition go idle — the screenshot harness
+     * waits for idle before it photographs, so a screen with one running is a screen it waits on
+     * forever. It hung a cloud build for forty minutes on 10 Aug 2026, mid-way through re-recording
+     * every golden, with no error at all: just a step that never finished.
+     *
+     * The real screen turns it on; every test leaves it off.
+     */
+    hintPulse: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
@@ -176,7 +188,7 @@ fun ScanDoorContent(
             ) {
                 // The travelling hint's position, 0..1 around the outline. Runs only while no door
                 // has been marked, so it stops for good the moment the question is answered.
-                val hintPhase by if (marker == null) {
+                val hintPhase by if (marker == null && hintPulse) {
                     rememberInfiniteTransition(label = "door-hint").animateFloat(
                         initialValue = 0f,
                         targetValue = 1f,

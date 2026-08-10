@@ -403,6 +403,33 @@ Also invisible to screenshots, and therefore requiring code review or a device: 
 field, gesture and nested-scroll conflicts, flicker and layout shift as data lands, state loss on
 rotation or process death, double-tap duplicate navigation, and real TalkBack behaviour.
 
+### ⛔ 6.7a AN INFINITE ANIMATION HANGS THE HARNESS — FOREVER, AND SILENTLY
+
+**Found the hard way, 10 August 2026.** Two "nudge" animations went in — a ring breathing on the
+North dial, a ring travelling round the plan on the entry screen — each built with
+`rememberInfiniteTransition`. The next cloud build reached "record goldens" and **stopped**. Not
+failed: stopped. Forty minutes on one step, no error, no output, every gate before it green. The
+screenshot harness waits for the composition to go idle before it photographs, and a composition
+with an infinite animation in it **never goes idle**.
+
+The rule, and it is absolute:
+
+> **Every animation is OFF by default at the `…Content` seam, and only the real screen turns it on.**
+
+- The flag lives on the stateless content composable (`hintPulse: Boolean = false`,
+  `introMillis: Long = 0L`), so every test and every golden gets the still frame for free.
+- The `…Screen` wrapper — the one that touches the ViewModel — passes the real value.
+- **Never** default one to on "because it looks better in the preview". The preview is not the thing
+  that has to finish.
+
+This applies to `rememberInfiniteTransition` above all, but the same care belongs on any long
+animation: a golden captured mid-transition is a photograph of a frame no user ever sees, which is
+its own quieter version of the same defect.
+
+⚠ And an animation therefore gets its OWN golden of its resting frame — see `reading` for the
+progress screen. What no picture can ever check is that the thing MOVES; that is a phone test, and
+saying so is not optional.
+
 ### ⚠ 6.7b The gate measures BOXES, not GLYPHS — text can overflow and nothing fires
 
 **Found on 1 August 2026, by looking at a picture.** The report's reading toggle rendered

@@ -81,6 +81,8 @@ fun MarkNorthScreen(
         onNorthChange = vm::updateNorth,
         onRead = onRead,
         onBack = onBack,
+        // The real screen nudges; the harness never does. See [MarkNorthContent.hintPulse].
+        hintPulse = true,
         cols = vm.gridCols,
         rows = vm.gridRows,
         planImage = planImage,
@@ -99,6 +101,17 @@ fun MarkNorthContent(
     cols: Int = GRID,
     rows: Int = GRID,
     planImage: ImageBitmap? = null,
+    /**
+     * ⚠⚠ DEFAULT OFF, AND THE HARNESS MUST NEVER TURN IT ON. The nudge is an INFINITE animation, and
+     * an infinite animation never lets a composition go idle — the screenshot harness waits for idle
+     * before it photographs, so a screen with one running is a screen the harness waits on forever.
+     * It hung a whole cloud build for forty minutes on 10 Aug 2026, mid-way through re-recording
+     * every golden, with no error of any kind: just a step that never finished.
+     *
+     * The real screen turns it on; every test leaves it off. Same rule as the report's reading
+     * animation, which was written this way from the start and is why that one did not hang.
+     */
+    hintPulse: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val model = buildZoneMapModel(rooms, analysis, north, cols, rows, planImage)
@@ -118,7 +131,7 @@ fun MarkNorthContent(
         NorthDial(
             model = model,
             onNorthChange = { touchedNorth = true; onNorthChange(it) },
-            hintPulse = !touchedNorth,
+            hintPulse = hintPulse && !touchedNorth,
             contentDescription = "Floor plan compass. North at $north degrees. Drag to set North.",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
