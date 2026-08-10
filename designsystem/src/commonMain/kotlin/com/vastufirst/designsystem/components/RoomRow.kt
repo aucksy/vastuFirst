@@ -142,14 +142,20 @@ fun VastuRoomRow(
             .padding(VastuTheme.spacing.s4),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // ⚠ THE CIRCLE CARRIES THE COLOUR; THE LETTER CARRIES THE MEANING, so the letter is
+            // ordinary dark ink and not the room's own colour. Drawn in its own colour it was a pale
+            // tint on a paler tint of itself, and Google's accessibility checker failed it for
+            // contrast on five rooms at once — a two-letter code nobody can read is the whole of what
+            // that circle is for. The tint still tells kitchens from bedrooms at a glance, and it was
+            // never the only thing doing so.
             Box(
                 Modifier
                     .size(VastuTheme.sizes.tileSm)
                     .clip(CircleShape)
-                    .background(codeColor.copy(alpha = 0.18f)),
+                    .background(codeColor.copy(alpha = 0.22f)),
                 contentAlignment = Alignment.Center,
             ) {
-                VText(code, style = VastuTheme.type.caption, color = codeColor)
+                VText(code, style = VastuTheme.type.caption, color = colors.textPrimary)
             }
             Spacer(Modifier.width(VastuTheme.spacing.s3))
             Column(Modifier.weight(1f)) {
