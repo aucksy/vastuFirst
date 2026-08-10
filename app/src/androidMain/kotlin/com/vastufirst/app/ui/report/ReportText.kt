@@ -186,9 +186,12 @@ fun doorExplanation(d: DoorResult, remediesOnly: Boolean = false): String {
         // Copy cut (10 Aug 2026): 44 words -> 27. Every claim survives whole — 32 named positions,
         // eight to a wall, judged on the one the door stands on, this door's standing, and that it
         // outweighs any single room. Only the joining words went.
-        "The tradition names 32 positions around the plan's edge, eight per wall, and reads the " +
-            "entrance by the one it stands on. Yours is ${padaStanding(d.verdict)} — and the front " +
-            "door outweighs any single room.",
+        // ⚠ "32 named positions" is PINNED by two tests and must survive every copy cut. It is the
+        // reading itself — the 32-position table is what the door verdict comes from — and a
+        // shortened sentence that drops it explains a verdict by asserting it. Cut around it.
+        "The tradition lays 32 named positions around the plan's edge, eight per wall, and reads " +
+            "the entrance by the one it stands on. Yours is ${padaStanding(d.verdict)} — and the " +
+            "front door outweighs any single room.",
     )
     // ⚠ A door can read unfavourably without raising a problem of its own — only the South-West
     // corner arc does that. So the reader would otherwise be told the most important element in the
