@@ -9,6 +9,7 @@ import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.designsystem.components.VastuProvenance
+import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.components.ZoneMapModel
 import com.vastufirst.designsystem.components.ZoneMapRoom
@@ -28,6 +29,52 @@ fun Verdict.toVastu(): VastuVerdict = when (this) {
     Verdict.SUBOPTIMAL -> VastuVerdict.SUBOPTIMAL
     Verdict.DEFECT -> VastuVerdict.DEFECT
     Verdict.NOT_SCORED -> VastuVerdict.NOT_ASSESSED
+}
+
+/**
+ * ⭐ The engine's four verdicts, collapsed to the ONE WORD a room row carries (owner, 10 Aug 2026).
+ *
+ * ⚠ The collapse is on the WORD ONLY. "Not ideal" and "Defect" both read `REVIEW`; both still open
+ * onto their own verdict, reason, provenance and remedies. No finding is removed, softened or merged
+ * — that rule outranks every presentation change (Product PRD §4.5.2b).
+ *
+ * ⚠ `NOT_SCORED` gets its own third word rather than being folded into either. It means the tradition
+ * does not place that room — about one room in eight — and calling it "Aligned" would be an approval
+ * we never gave, while "Review" would invent a problem the report does not raise.
+ */
+fun Verdict.roomStatus(): VastuRoomStatus = when (this) {
+    Verdict.IDEAL, Verdict.ACCEPTABLE -> VastuRoomStatus.ALIGNED
+    Verdict.SUBOPTIMAL, Verdict.DEFECT -> VastuRoomStatus.REVIEW
+    Verdict.NOT_SCORED -> VastuRoomStatus.NOT_RATED
+}
+
+/**
+ * Reading order for the unified room list: what needs looking at, then what we could not rate, then
+ * what is already right. Within a band the engine's own order is kept, so the ranking that "fix
+ * first" used to carry survives — the list is sorted, not re-scored.
+ */
+fun VastuRoomStatus.readingOrder(): Int = when (this) {
+    VastuRoomStatus.REVIEW -> 0
+    VastuRoomStatus.NOT_RATED -> 1
+    VastuRoomStatus.ALIGNED -> 2
+}
+
+/**
+ * "Bedroom 2" — the room's kind, numbered only when the home has more than one of that kind.
+ *
+ * ⚠ A placeholder for the plan's OWN printed name ("MASTER BEDROOM 1"), which the scan reads and
+ * then drops on the way into the engine: the engine's room carries a type and no label. Numbering by
+ * kind is what a hand-drawn plan can support too, so it is the right default either way — but a
+ * scanned plan should eventually show the words actually printed on the sheet.
+ */
+fun roomDisplayNames(types: List<RoomType>): List<String> {
+    val total = types.groupingBy { it }.eachCount()
+    val seen = mutableMapOf<RoomType, Int>()
+    return types.map { t ->
+        val n = (seen[t] ?: 0) + 1
+        seen[t] = n
+        if ((total[t] ?: 0) > 1) "${t.label()} $n" else t.label()
+    }
 }
 
 fun Provenance.toVastu(): VastuProvenance = when (this) {
