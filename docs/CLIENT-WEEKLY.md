@@ -105,6 +105,38 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Monday 10 August, later — the boxes on "check what we read" now match the rooms
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.9.2/vastufirst-v0.9.2.apk
+**This is the one to install.**
+
+**When you tap a room on the "check what we read" screen, the shaded box was bigger than the room
+it was pointing at.** Not by a lot, and not on every room — but reliably on the small ones. A toilet
+would be shaded about a tenth larger than it really is, while a big living room was fine, and it
+made the whole screen look approximate at exactly the moment it is asking you to confirm we read
+your plan correctly.
+
+**The cause was a habit of the plan-reading service, not of the app.** It draws a box around each
+room with a small margin left over — roughly five inches of extra wall, added the same whether the
+wall is four feet long or eighteen. On a small room that is a tenth of it. On a large one it
+disappears.
+
+**Your plan already prints the answer, so we now use it.** Where the drawing says "KITCHEN 8'1" X
+9'5"", we shade that size, in that position. Measured across every test plan we hold, the rooms on
+a page went from disagreeing with each other about their own plan's scale by as much as double, to
+agreeing exactly.
+
+**Rooms are also drawn the right way round now.** A bedroom that is taller than it is wide was
+sometimes shaded wider than tall, which is the sort of thing you notice immediately and cannot
+un-see. It now follows the printed measurements, the same way the layout behind your score already
+does — so the picture and the score agree.
+
+**Your score is untouched by this.** It is the same number, worked out the same way, from the same
+layout. This changes only what you are shown while checking our reading.
+
+**Where a plan prints no sizes**, nothing changes — those boxes stay as they were, and the screen
+still says "roughly", because that is what they are.
+
 ### Monday 10 August — the penalty on a room that only clips a wrong area was double what it should have been
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.9.1/vastufirst-v0.9.1.apk
