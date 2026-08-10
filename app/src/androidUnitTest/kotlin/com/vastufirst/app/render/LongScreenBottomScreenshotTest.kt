@@ -19,7 +19,6 @@ import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.report.TAG_PAY_CLEARANCE
 import com.vastufirst.app.ui.report.TAG_ROOMS_END
-import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.unlock.UnlockContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -36,8 +35,8 @@ import org.robolectric.annotation.GraphicsMode
  * ⭐ THE BOTTOM HALF OF EVERY LONG DOCUMENT, FINALLY PHOTOGRAPHED (audit D2).
  *
  * A golden is a viewport, not a document. Every capture in [captureAcrossMatrix] starts at the top
- * of the screen, so the report's lower sections (the disputes payoff, the disclaimer, the way out),
- * the score's "biggest problems" list and the unlock screen's feature list had never appeared in ANY
+ * of the screen, so the report's lower sections (the room list, the disputes payoff, the
+ * disclaimer, the way out) and the unlock screen's feature list had never appeared in ANY
  * golden at ANY config — §6.7b's "producing them is not optional and neither is looking" could not
  * apply to the half of the page it had never seen. Fixture tricks (report-clean, report-prayer)
  * lift SOME lower sections into frame; this test does the general thing instead: render the real
@@ -149,18 +148,6 @@ class LongScreenBottomScreenshotTest {
         )
     }
 
-    /** The free score's ending: the ranked problems, the unlock card and the way back to the list. */
-    @Test
-    fun score_bottom() = captureBottomPair("score", anchor = hasText("See all my plans")) {
-        ScoreContent(
-            rooms = RenderFixtures.sampleRooms,
-            north = RenderFixtures.sampleNorth,
-            intent = RenderFixtures.sampleIntent,
-            analysis = RenderFixtures.sampleAnalysis,
-            onUnlock = {},
-            onFix = {},
-        )
-    }
 
     /**
      * ⭐⭐ THE BOTTOM OF THE OWNER'S OWN ROOM LIST — the one picture this whole 6 Aug 2026 change

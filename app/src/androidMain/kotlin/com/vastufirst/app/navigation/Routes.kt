@@ -3,7 +3,15 @@ package com.vastufirst.app.navigation
 /**
  * The Phase 2 screen graph (Product PRD §6). The guided-grid path lives in a nested "newplan"
  * graph so every screen in it shares one [com.vastufirst.app.ui.newplan.NewPlanViewModel]:
- * Home → Welcome → Add home → (Guided grid | Sample) → Mark North → Score → Report.
+ * Home → Welcome → Add home → (Guided grid | Scan) → Mark North → Report.
+ *
+ * ⛔ THERE IS NO SCORE SCREEN, since 10 Aug 2026 (owner: "After the North is marked, jump straight
+ * to Report screen"). The free score used to sit between North and the report, showing the number,
+ * a zone map and the top three problems, and then selling the report. The report now opens on the
+ * number itself and reads the entrance, kitchen and toilets in full for free, so the middle screen
+ * was asking a reader to look at a summary of a document they were about to be handed. Everything
+ * only it had — the zone map, the way back into North and the front door, the "what this covers"
+ * caveat and the extra site questions — moved into the report; nothing was dropped.
  */
 object Routes {
     // A one-frame decider (start destination): sends a returning user to their saved plans, and a
@@ -46,7 +54,6 @@ object Routes {
     const val SCAN_DOOR = "scan_door"
     const val GUIDED_GRID = "guided_grid"
     const val MARK_NORTH = "mark_north"
-    const val SCORE = "score"
 
     /**
      * ⭐ The one door back into an unfinished home (v0.6.6). The editor's destination takes an
@@ -74,12 +81,15 @@ object Routes {
     fun guidedGridForDoor() = "$GUIDED_GRID?$ARG_DOOR_MODE=true"
 
     /**
-     * ⭐ North, opened from an already-saved home rather than from the end of the drawing flow
-     * (v0.6.6). The flag decides only the way OUT: back to the score it came from, instead of
-     * pushing a second score on top of the first. Until this release a saved home's North could not
-     * be changed at all — the only thing on offer was renaming it.
+     * ⭐ North, opened from an already-read home rather than from the end of the drawing flow
+     * (v0.6.6). The flag decides only the way OUT: back to the report it came from, instead of
+     * pushing a second report on top of the first. Until v0.6.6 a saved home's North could not be
+     * changed at all — the only thing on offer was renaming it.
+     *
+     * ⚠ Named `fromScore` until 10 Aug 2026, when the score screen it referred to was removed. A
+     * flag that names a screen the app no longer has is how the next session reinstates it.
      */
-    const val ARG_FROM_SCORE = "fromScore"
+    const val ARG_FROM_REPORT = "fromReport"
 
     /**
      * ⭐ North, marked on the SCANNED PHOTO rather than on our redrawing of it (owner, 6 Aug 2026).
@@ -93,17 +103,28 @@ object Routes {
      */
     const val ARG_FROM_SCAN = "fromScan"
     const val MARK_NORTH_ROUTE =
-        "$MARK_NORTH?$ARG_FROM_SCORE={$ARG_FROM_SCORE}&$ARG_FROM_SCAN={$ARG_FROM_SCAN}"
-    fun markNorthFromScore() = "$MARK_NORTH?$ARG_FROM_SCORE=true"
+        "$MARK_NORTH?$ARG_FROM_REPORT={$ARG_FROM_REPORT}&$ARG_FROM_SCAN={$ARG_FROM_SCAN}"
+    fun markNorthFromReport() = "$MARK_NORTH?$ARG_FROM_REPORT=true"
     fun markNorthFromScan() = "$MARK_NORTH?$ARG_FROM_SCAN=true"
 
     /**
-     * The optional "a few more things" step — water tank, tree, the road outside. Reached from
-     * the score rather than placed before it: the free score is meant to be quick, and forcing
+     * The optional "a few more things" step — water tank, tree, the road outside. Reached from the
+     * report rather than placed before it: getting to a reading is meant to be quick, and forcing
      * four more questions on everyone would cost every user time to catch the minority who have
-     * something to report. The score screen says what it did and did not look at instead.
+     * something to report. The report's "what this covers" section says what it did and did not
+     * look at instead, and offers this.
      */
     const val MORE_DETAILS = "more_details"
     const val UNLOCK = "unlock"
+
+    /**
+     * ⭐ Where the flow now LANDS, straight off the North dial (10 Aug 2026). The optional id is how
+     * an already-saved home is reopened from the saved-homes list; arriving without one means the
+     * home is already in the shared draft, and passing an id then would pull a different home over
+     * the top of it.
+     */
     const val REPORT = "report"
+    const val ARG_PLAN_ID = "planId"
+    const val REPORT_ROUTE = "$REPORT?$ARG_PLAN_ID={$ARG_PLAN_ID}"
+    fun reportForPlan(planId: String) = "$REPORT?$ARG_PLAN_ID=$planId"
 }

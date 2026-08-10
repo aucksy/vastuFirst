@@ -18,7 +18,6 @@ import com.vastufirst.app.ui.legal.PrivacyScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportContent
-import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.app.ui.settings.SettingsContent
 import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.ui.unlock.UnlockContent
@@ -137,8 +136,12 @@ class AccessibilityTest {
             "marknorth" to {
                 MarkNorthContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleAnalysis, {}, {}, {})
             },
-            "score" to {
-                ScoreContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleIntent, RenderFixtures.sampleAnalysis, {}, {})
+            "report-landing" to {
+                // Where the flow lands since 10 Aug 2026, in place of the free score screen.
+                ReportContent(
+                    analysis = RenderFixtures.sampleAnalysis, intent = RenderFixtures.sampleIntent,
+                    rooms = RenderFixtures.sampleRooms, north = RenderFixtures.sampleNorth,
+                )
             },
             "report" to { ReportContent(RenderFixtures.sampleAnalysis, Intent.BUILDING) },
         )

@@ -11,12 +11,9 @@ import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.details.MoreDetailsContent
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
-import com.vastufirst.app.ui.marknorth.CompassQuality
-import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.DisputesSection
 import com.vastufirst.app.ui.report.ReportContent
-import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Zone
@@ -58,37 +55,10 @@ class ScoreDrivenScreensScreenshotTest {
     fun markNorth() = render("marknorth") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            // A phone WITH a compass, helper closed — i.e. what almost every user sees on arrival: the
-            // one-line offer above the dial and the double-check card above the button.
-            compass = CompassState(supported = true),
         )
     }
 
-    /**
-     * ⭐ The compass helper OPEN — three lines of instruction, a live reading and two buttons, on a
-     * screen that already carries a dial, a slider, four chips and a stepper. It is the tallest state
-     * Mark North has ever had, and no screenshot can press the button that opens it, so it gets its
-     * own golden or it ships unseen (CLAUDE.md §2b).
-     */
-    @Test
-    fun markNorth_compass() = render("marknorth-compass") {
-        MarkNorthContent(
-            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            compass = CompassState(supported = true, live = true, headingDeg = 42f),
-        )
-    }
 
-    /** The same helper with the phone asking to be calibrated — the warning has to be readable too. */
-    @Test
-    fun markNorth_compass_calibrating() = render("marknorth-compass-calibrating") {
-        MarkNorthContent(
-            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            compass = CompassState(
-                supported = true, live = true, headingDeg = 187f,
-                quality = CompassQuality.NEEDS_CALIBRATION,
-            ),
-        )
-    }
 
     /**
      * ⭐ North set on the user's OWN scanned plan rather than on our redrawing of it (owner,
@@ -102,7 +72,6 @@ class ScoreDrivenScreensScreenshotTest {
     fun markNorth_onPhoto() = render("marknorth-photo") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            compass = CompassState(supported = true),
             planImage = android.graphics.Bitmap
                 .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
                 .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
@@ -110,10 +79,6 @@ class ScoreDrivenScreensScreenshotTest {
         )
     }
 
-    @Test
-    fun score() = render("score") {
-        ScoreContent(rooms = rooms, north = north, intent = intent, analysis = analysis, onUnlock = {}, onFix = {})
-    }
 
     /**
      * ⭐ The optional "a few more things" step, in both the states that matter: nothing answered (the
@@ -136,23 +101,29 @@ class ScoreDrivenScreensScreenshotTest {
         )
     }
 
-    /** The score once the extras are in — the "what this covers" line has to change with them. */
+    /**
+     * ⭐ The three states the FREE SCORE screen used to own, now owned by the report.
+     *
+     * ⚠ These are not decoration. Each replaced a forever spinner or a dead end, and the screen that
+     * learned them was deleted on 10 Aug 2026 when North started leading straight here. A recovery
+     * card nobody has photographed is a recovery card nobody has checked still appears.
+     */
     @Test
-    fun score_with_details() = render("score-covered") {
-        ScoreContent(
-            rooms = rooms, north = north, intent = intent, analysis = analysis, onUnlock = {}, onFix = {},
+    fun report_with_details() = render("report-covered") {
+        ReportContent(
+            analysis = analysis, intent = Intent.BUILDING, rooms = rooms, north = north,
             siteAnswers = SiteAnswers(declined = SiteItem.entries.toSet()),
         )
     }
 
     @Test
-    fun score_insufficient() = render("score-insufficient") {
-        ScoreContent(rooms = rooms, north = north, intent = intent, analysis = RenderFixtures.insufficientAnalysis, onUnlock = {}, onFix = {})
+    fun report_insufficient() = render("report-insufficient") {
+        ReportContent(analysis = RenderFixtures.insufficientAnalysis, intent = Intent.BUILDING, rooms = rooms, north = north)
     }
 
     @Test
-    fun score_loading() = render("score-loading") {
-        ScoreContent(rooms = rooms, north = north, intent = intent, analysis = null, onUnlock = {}, onFix = {})
+    fun report_loading() = render("report-loading") {
+        ReportContent(analysis = null, intent = Intent.BUILDING, rooms = rooms, north = north)
     }
 
     /**
@@ -161,8 +132,8 @@ class ScoreDrivenScreensScreenshotTest {
      * "answer the first question" way out, so the trap's replacement is a screen someone has seen.
      */
     @Test
-    fun score_lost_intent() = render("score-lost-intent") {
-        ScoreContent(rooms = rooms, north = north, intent = null, analysis = null, onUnlock = {}, onFix = {})
+    fun report_lost_intent() = render("report-lost-intent") {
+        ReportContent(analysis = null, intent = null, rooms = rooms, north = north)
     }
 
     @Test

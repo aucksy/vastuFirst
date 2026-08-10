@@ -31,8 +31,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
+import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.editorColor
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.SiteItem
+import com.vastufirst.app.ui.details.coverageLine
+import com.vastufirst.app.ui.newplan.GRID
+import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.common.readingOrder
 import com.vastufirst.app.ui.common.roomDisplayNames
 import com.vastufirst.app.ui.common.roomStatus
@@ -43,6 +49,7 @@ import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.BalanceMeter
 import com.vastufirst.designsystem.components.LocalDecimalMark
+import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.VastuButton
@@ -52,6 +59,7 @@ import com.vastufirst.designsystem.components.TagPill
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuRoomRow
+import com.vastufirst.designsystem.components.ZoneMap
 import com.vastufirst.designsystem.components.VerdictPill
 import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.components.scoreBandColor
@@ -59,6 +67,7 @@ import com.vastufirst.designsystem.components.scoreOutOfTen
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Analysis
+import com.vastufirst.shared.AnalysisQuality
 import com.vastufirst.shared.Defect
 import com.vastufirst.shared.Dispute
 import com.vastufirst.shared.DoorResult
@@ -102,7 +111,15 @@ import com.vastufirst.app.ui.common.screenRoot
  * locked. The score and the counts are never hidden — see the note in [FreeTier].
  */
 @Composable
-fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit, onUnlock: () -> Unit = {}) {
+fun ReportScreen(
+    vm: NewPlanViewModel,
+    onDone: () -> Unit,
+    onUnlock: () -> Unit = {},
+    onEditNorth: () -> Unit = {},
+    onEditEntry: () -> Unit = {},
+    onAddDetails: () -> Unit = {},
+    onRestart: () -> Unit = {},
+) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
@@ -110,8 +127,17 @@ fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit, onUnlock: () -> Unit 
         analysis = analysis,
         intent = vm.intent,
         unlocked = vm.unlocked,
+        rooms = vm.rooms,
+        north = vm.north,
+        cols = vm.gridCols,
+        rows = vm.gridRows,
+        siteAnswers = vm.siteAnswers,
         onUnlock = onUnlock,
         onDone = onDone,
+        onEditNorth = onEditNorth,
+        onEditEntry = onEditEntry,
+        onAddDetails = onAddDetails,
+        onRestart = onRestart,
     )
 }
 
@@ -142,6 +168,13 @@ const val TAG_PAY_CLEARANCE = "report.payClearance"
  */
 const val TAG_ROOMS_END = "report.roomsEnd"
 
+/**
+ * How much of the width the zone map takes. Carried over from the score screen unchanged: the dial
+ * is a circle, so its width is also its height, and full width made it taller than the fold on a
+ * 320 dp phone.
+ */
+private const val ZONE_MAP_WIDTH_FRACTION = 0.62f
+
 /** Full report as a pure function of its state — no ViewModel — so the render harness can draw it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -158,25 +191,73 @@ fun ReportContent(
      * contain an opened card. Both of those are how a paid feature quietly stops working.
      */
     expandAll: Boolean = false,
+    /**
+     * ⭐ The user's placed rooms and their North — inherited from the free score screen this report
+     * REPLACED (owner, 10 Aug 2026: "After the North is marked, jump straight to Report screen").
+     * They drive the zone map, which is the only picture of the reader's own home in the flow.
+     */
+    rooms: List<GridRoom> = emptyList(),
+    north: Int = 0,
+    cols: Int = GRID,
+    rows: Int = GRID,
+    /** Drives the honest "what this covers" line — the score's caveat, moved here with it. */
+    siteAnswers: SiteAnswers = SiteAnswers(),
     onUnlock: () -> Unit = {},
     onDone: () -> Unit = {},
+    onEditNorth: () -> Unit = {},
+    onEditEntry: () -> Unit = {},
+    onAddDetails: () -> Unit = {},
+    onRestart: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
-    val a = analysis
     val resolvedIntent = intent ?: Intent.BUILDING
     val remediesOnly = resolvedIntent != Intent.BUILDING
 
-    if (a == null) {
-        // Never a forever spinner: if the draft was reclaimed in the background, offer a way back to
-        // the saved plans instead of trapping the user on "Preparing your report…".
-        Column(
+    // ⭐⭐ THE RECOVERY STATES THAT ARRIVE HERE INSTEAD OF A SPINNER — inherited whole from the free
+    // score screen this report REPLACED (owner, 10 Aug 2026: "After the North is marked, jump
+    // straight to Report screen"). This screen is now where the flow LANDS, so every dead end the
+    // score screen had learned to catch is a dead end a reader can still reach. Removing that screen
+    // without carrying these would have turned four honest guidance cards back into the forever
+    // spinner they were each written to replace.
+    if (analysis == null) {
+        Box(
             Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+            contentAlignment = Alignment.Center,
         ) {
-            Spacer(Modifier.height(VastuTheme.spacing.s8))
-            LoadingState("Preparing your report…")
-            VastuButton("Go to my plans", onClick = onDone, style = VastuButtonStyle.SECONDARY)
+            when {
+                // Draft present AND complete, engine still computing (normal, ~50 ms).
+                // ⚠ `intent != null` is part of "complete": without it the engine can never produce a
+                // result, so this would be a spinner with no exit — the process-killed session's trap.
+                rooms.isNotEmpty() && intent != null -> LoadingState("Reading your home…")
+                // Rooms survived a process kill but the first answer did not. Send the reader to
+                // answer exactly that, keeping their rooms.
+                rooms.isNotEmpty() -> GuidanceState(
+                    title = "One answer went missing",
+                    body = "Your rooms are safe. The first question — what brings you to Vastu — was lost when the app closed. Answer it again and we'll read your home.",
+                    action = { VastuButton("Answer the first question", onClick = onRestart) },
+                )
+                // Nothing on screen and nothing computed — the phone reclaimed the in-progress plan.
+                else -> GuidanceState(
+                    title = "Let's pick up where you left off",
+                    body = "We couldn't find this plan on screen — it may have closed in the background. Head back to your saved plans to reopen it.",
+                    action = { VastuButton("Go to my plans", onClick = onDone) },
+                )
+            }
+        }
+        return
+    }
+    val a = analysis
+    if (a.quality == AnalysisQuality.INSUFFICIENT) {
+        Box(
+            Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
+            contentAlignment = Alignment.Center,
+        ) {
+            GuidanceState(
+                title = "Let's finish your plan",
+                body = a.notes.firstOrNull()?.message
+                    ?: "Add a few rooms and your front door, and we'll read your home.",
+                action = { VastuButton("Change your plan", onClick = onEditEntry) },
+            )
         }
         return
     }
@@ -253,6 +334,50 @@ fun ReportContent(
                 NotesStrip(a.notes)
             }
 
+            // ⭐ THE PICTURE OF THEIR OWN HOME, and the way back into it — both inherited from the
+            // score screen this report replaced. The buttons sit directly under the picture on
+            // purpose: that picture is where someone NOTICES something is wrong (a room facing the
+            // wrong way, North pointing the wrong way), and it is where they should be able to say so.
+            //
+            // ⚠ NORTH AND THE FRONT DOOR ONLY — never the rooms (owner, 10 Aug 2026: "allow them to
+            // change North or Main Entry but not the room because that approach is gone"). The
+            // room-by-room editor left the scan flow on 6 Aug; offering a way back into it from here
+            // would be a control leading to a screen this flow no longer has.
+            if (rooms.isNotEmpty()) {
+                Spacer(Modifier.height(VastuTheme.spacing.s6))
+                SectionLabel("Your home, as we read it")
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    ZoneMap(
+                        model = buildZoneMapModel(rooms, a, north, cols, rows),
+                        modifier = Modifier.fillMaxWidth(ZONE_MAP_WIDTH_FRACTION),
+                        showLabels = false,
+                        contentDescription = "Your plan with Vastu zones, North at $north degrees.",
+                    )
+                }
+                Spacer(Modifier.height(VastuTheme.spacing.s4))
+                VText(
+                    "Not quite right? Change it — your score and this report follow.",
+                    style = VastuTheme.type.bodySm, color = colors.textSecondary,
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                VastuButton(
+                    "Change which way North is",
+                    onClick = onEditNorth,
+                    style = VastuButtonStyle.SECONDARY,
+                    large = false,
+                    modifier = Modifier.testTag("report.edit.north"),
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VastuButton(
+                    "Change where the front door is",
+                    onClick = onEditEntry,
+                    style = VastuButtonStyle.SECONDARY,
+                    large = false,
+                    modifier = Modifier.testTag("report.edit.entry"),
+                )
+            }
+
             // ⭐ START HERE — the one thing to do first. The old report ranked its problems but never
             // said "begin with this", so a reader facing eight cards had to work out the entry point
             // themselves. Always free: it is the single most useful sentence on the screen.
@@ -302,13 +427,38 @@ fun ReportContent(
                 NotCheckedSection(a.notChecked)
             }
 
+            // ⭐ WHAT THE READING ACTUALLY LOOKED AT — the score screen's honesty line, moved here
+            // with everything else it owned. The score has only ever come from rooms, the front door
+            // and the shape, but it reads as a complete verdict when it is really a CEILING: a home
+            // with its water tank in the worst possible corner scored the same as one with it in the
+            // best, because nothing ever asked. Saying so is not optional for a paid product, and the
+            // sentence comes with the way to close the gap.
+            //
+            // ⚠ The old wording sent the reader to "the score screen" for those extra questions. That
+            // screen no longer exists, so the sentence would have pointed at nothing — the button
+            // below IS the way there now.
+            Spacer(Modifier.height(VastuTheme.spacing.s6))
+            SectionLabel("What this covers")
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(coverageLine(siteAnswers), style = VastuTheme.type.body, color = colors.textSecondary)
+            if (siteAnswers.answeredCount < SiteItem.entries.size) {
+                Spacer(Modifier.height(VastuTheme.spacing.s3))
+                VastuButton(
+                    "Answer a few more and check more",
+                    onClick = onAddDetails,
+                    style = VastuButtonStyle.SECONDARY,
+                    large = false,
+                )
+            }
+
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             Box(
                 Modifier.fillMaxWidth().clip(VastuTheme.shapes.md)
                     .background(colors.surface).padding(VastuTheme.spacing.s4),
             ) {
                 VText(
-                    "Vastu is a traditional practice. This is guidance for your own decisions — not a guaranteed outcome.",
+                    "Vastu is a traditional practice. This is guidance for your own decisions — not a guaranteed outcome. " +
+                        "The score is our own summary, not a measurement and not part of the tradition.",
                     style = VastuTheme.type.body, color = colors.textPrimary,
                 )
             }

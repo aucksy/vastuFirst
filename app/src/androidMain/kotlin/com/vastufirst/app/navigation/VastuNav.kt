@@ -38,7 +38,6 @@ import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.app.ui.scan.gridForOutcome
 import com.vastufirst.app.ui.scan.scannedRooms
 import com.vastufirst.app.ui.scan.toGridRooms
-import com.vastufirst.app.ui.score.ScoreScreen
 import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
 import com.vastufirst.app.ui.welcome.WelcomeScreen
@@ -96,7 +95,7 @@ fun VastuNavHost() {
         composable(Routes.HOME) {
             HomeScreen(
                 onAddHome = { nav.go(Routes.NEWPLAN_GRAPH) },
-                onOpenPlan = { id -> nav.go("${Routes.SCORE}?planId=$id") },
+                onOpenPlan = { id -> nav.go(Routes.reportForPlan(id)) },
                 // ⭐ Straight to the editor with the unfinished home in it — the ONLY route that
                 // brings one back. It lands inside the newplan graph without going through Welcome,
                 // because the user has already answered those questions once; Back returns here.
@@ -204,7 +203,7 @@ fun VastuNavHost() {
                         )
                         // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026). The grid
                         // rooms above are still populated, because they are what the engine scores
-                        // and what the score screen draws — but the user never sees or touches them
+                        // and what the report draws — but the user never sees or touches them
                         // on this path. They check, mark the door and set North on their own photo.
                         //
                         // ⚠ The `else` below is the one route left from a scan into the editor, and
@@ -212,7 +211,7 @@ fun VastuNavHost() {
                         // there is no geometry to score and somebody has to supply it. Measured on
                         // the 44 recorded real plans: 24 place, 9 arrive unplaced, 11 are refused.
                         // Removing this branch today would strand about one readable plan in six
-                        // with no route to a score at all. It goes when placing rooms by tapping
+                        // with no route to a reading at all. It goes when placing rooms by tapping
                         // the PHOTO exists to replace it — not before.
                         if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
                             reviewHandover.data = com.vastufirst.app.ui.scan.ScanReviewData(
@@ -254,7 +253,15 @@ fun VastuNavHost() {
                     handover = handover,
                     door = planVm.door,
                     onDoor = planVm::updateDoor,
-                    onNext = { nav.go(Routes.markNorthFromScan()) },
+                    // ⚠ Which way out depends on where this was entered from. In the flow it is
+                    // followed by North. Reached from the report's "change where the front door is",
+                    // the report is already behind us — so go BACK to it rather than pushing North
+                    // and then a second report on top of the first.
+                    onNext = {
+                        if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
+                            nav.go(Routes.markNorthFromScan())
+                        }
+                    },
                     onBack = { nav.popBackStack() },
                 )
             }
@@ -273,7 +280,15 @@ fun VastuNavHost() {
                 LaunchedEffect(draftId) { if (draftId != null) vm.resumeDraft(draftId) }
                 GuidedGridScreen(
                     vm = vm,
-                    onNext = { nav.go(Routes.MARK_NORTH) },
+                    // ⚠ Which way out depends on where this was entered from. In the flow it is
+                    // followed by North. Reached from the report's "change where the front door is",
+                    // the report is already behind us — so go BACK to it rather than pushing North
+                    // and then a second report on top of the first.
+                    onNext = {
+                        if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
+                            nav.go(Routes.MARK_NORTH)
+                        }
+                    },
                     // The on-photo review sends the user here to mark their front door (audit B2).
                     startInDoorMode = entry.arguments?.getBoolean(Routes.ARG_DOOR_MODE) ?: false,
                 )
@@ -281,7 +296,7 @@ fun VastuNavHost() {
             composable(
                 route = Routes.MARK_NORTH_ROUTE,
                 arguments = listOf(
-                    navArgument(Routes.ARG_FROM_SCORE) { type = NavType.BoolType; defaultValue = false },
+                    navArgument(Routes.ARG_FROM_REPORT) { type = NavType.BoolType; defaultValue = false },
                     navArgument(Routes.ARG_FROM_SCAN) { type = NavType.BoolType; defaultValue = false },
                 ),
             ) { entry ->
@@ -297,57 +312,33 @@ fun VastuNavHost() {
                 val planImage = remember(fromScan, scanHandover.data) {
                     if (fromScan) scanHandover.data?.decodeImage() else null
                 }
-                // ⚠ Which way out. At the END of the drawing flow this screen pushes the score, as it
-                // always has. Opened from an ALREADY-SAVED home's score ("change which way North
-                // is"), it goes BACK to the score it came from instead — pushing a second copy would
-                // put the score behind the score, so Back would land on the same screen again. The
-                // score reads North straight off the shared draft, so returning shows the new number.
-                val fromScore = entry.arguments?.getBoolean(Routes.ARG_FROM_SCORE) ?: false
-                // ⭐ Opened from a saved home's score, the dial is an EXPERIMENT until confirmed
-                // (audit B5). Every dial move autosaves ~50 ms later — that is what keeps the score
-                // live — so before this, "just seeing" a different North had silently rewritten the
-                // saved home by the time Back was pressed. Back (chevron AND system gesture) now
-                // puts the entry value back; only the confirm button keeps the new North.
+                // ⚠ Which way out. At the END of the flow this screen pushes the REPORT — since
+                // 10 Aug 2026 there is no score screen between the two (owner: "After the North is
+                // marked, jump straight to Report screen"). Opened from an already-read home's report
+                // ("change which way North is"), it goes BACK to the report it came from instead —
+                // pushing a second copy would put the report behind the report, so Back would land on
+                // the same screen again. The report reads North straight off the shared draft, so
+                // returning shows the new number and the re-sorted room list.
+                val fromReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
+                // ⭐ Opened from an already-read home's report, the dial is an EXPERIMENT until
+                // confirmed (audit B5). Every dial move autosaves ~50 ms later — that is what keeps
+                // the reading live — so before this, "just seeing" a different North had silently
+                // rewritten the saved home by the time Back was pressed. Back (chevron AND system
+                // gesture) now puts the entry value back; only the confirm button keeps the new North.
                 val entryNorth = rememberSaveable { vm.north }
                 val cancelExperiment: () -> Unit = {
-                    if (fromScore && vm.north != entryNorth) vm.updateNorth(entryNorth)
+                    if (fromReport && vm.north != entryNorth) vm.updateNorth(entryNorth)
                     nav.popBackStack()
                 }
-                if (fromScore) BackHandler(onBack = cancelExperiment)
+                if (fromReport) BackHandler(onBack = cancelExperiment)
                 MarkNorthScreen(
                     vm = vm,
-                    onRead = { vm.save(); if (fromScore) nav.popBackStack() else nav.go(Routes.SCORE) },
+                    onRead = { vm.save(); if (fromReport) nav.popBackStack() else nav.go(Routes.REPORT) },
                     onBack = cancelExperiment,
                     planImage = planImage,
                 )
             }
-            composable(
-                route = "${Routes.SCORE}?planId={planId}",
-                arguments = listOf(navArgument("planId") { type = NavType.StringType; nullable = true; defaultValue = null }),
-            ) { entry ->
-                val vm = sharedVm(nav, entry)
-                val planId = entry.arguments?.getString("planId")
-                LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
-                ScoreScreen(
-                    vm = vm,
-                    // ⭐ Always the report now, paid or not (9 Aug 2026). The report itself is the
-                    // shop window: unpaid, it reads the entrance, kitchen and toilets in full and
-                    // shows every other room by name with its reasoning locked ([FreeTier]). A
-                    // paywall standing in front of it could only describe what was behind it, which
-                    // is a far weaker thing to sell than the report a reader is already holding.
-                    onUnlock = { nav.go(Routes.REPORT) },
-                    // No draft id: the home on screen is already loaded into the shared draft, and
-                    // an id here would try to pull an unfinished home over the top of it.
-                    onFix = { nav.go(Routes.GUIDED_GRID) },
-                    onChangeNorth = { nav.go(Routes.markNorthFromScore()) },
-                    onDone = { nav.goHome() },
-                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
-                    // Recovery when rooms survived a process kill but the intent answer didn't:
-                    // back to the first question, on the same shared draft, so nothing redraws.
-                    onRestart = { nav.go(Routes.WELCOME) },
-                )
-            }
-            // The optional extras. Both ways out land back on the score, which re-reads the live
+            // The optional extras. Both ways out land back on the report, which re-reads the live
             // analysis — so an answer given here shows up in the number immediately.
             composable(Routes.MORE_DETAILS) { entry ->
                 val vm = sharedVm(nav, entry)
@@ -366,18 +357,50 @@ fun VastuNavHost() {
                     // stack — pop back to the one the reader was in, which recomposes unlocked.
                     // Pushing a second copy would leave the paywall's report stacked under it and
                     // make Back walk through a screen the reader already finished with.
-                    if (!nav.popBackStack(Routes.REPORT, inclusive = false)) {
+                    // ⚠ popBackStack matches the DECLARED ROUTE PATTERN, not the address that was
+                    // navigated to. The report's destination now carries an optional plan id, so the
+                    // pattern is the one with the placeholder in it — passing the bare word would
+                    // silently match nothing and push a second report every time.
+                    if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
                         nav.navigate(Routes.REPORT) { popUpTo(Routes.UNLOCK) { inclusive = true }; launchSingleTop = true }
                     }
                 })
             }
-            composable(Routes.REPORT) { entry ->
+            // ⭐⭐ WHERE THE FLOW LANDS. North pushes this directly (10 Aug 2026); the free score
+            // screen that used to sit between them is gone, and everything only it had came here.
+            composable(
+                route = Routes.REPORT_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_PLAN_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
                 val vm = sharedVm(nav, entry)
+                // Only when the saved-homes list sent an id. Arriving from the flow there is no id,
+                // and loading one would pull a different home over the draft already on screen.
+                val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
+                LaunchedEffect(planId) { if (planId != null) vm.loadById(planId) }
+                val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 ReportScreen(
                     vm = vm,
                     onDone = { nav.goHome() },
                     // The pay bar on the report is the only route to checkout now.
                     onUnlock = { nav.go(Routes.UNLOCK) },
+                    onEditNorth = { nav.go(Routes.markNorthFromReport()) },
+                    // ⚠ Two different screens mark the same thing, and which one is right depends on
+                    // how this home arrived. A scanned home marks its door ON THE PHOTOGRAPH (owner,
+                    // 6 Aug 2026: marking the door "should happen only on this actual floor plan and
+                    // not on the floor plan builder"); a home drawn by hand has no photograph, so it
+                    // marks the door on the grid it was drawn on. Sending a drawn home to the photo
+                    // screen would show it a blank rectangle.
+                    onEditEntry = {
+                        nav.go(
+                            if (scanHandover.data != null) Routes.SCAN_DOOR else Routes.guidedGridForDoor(),
+                        )
+                    },
+                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
+                    // Recovery when rooms survived a process kill but the intent answer didn't:
+                    // back to the first question, on the same shared draft, so nothing redraws.
+                    onRestart = { nav.go(Routes.WELCOME) },
                 )
             }
         }
