@@ -47,7 +47,7 @@ class ScanTintPrintedSizeTest {
      */
     private fun scaleSpread(rooms: List<ScannedRoom>): Double? {
         val ratios = rooms.mapNotNull { r ->
-            val box = r.source ?: return@mapNotNull null
+            val box = r.printedBox ?: r.source ?: return@mapNotNull null
             val printed = RoomDimensions.parse(r.printedSize.ifBlank { r.label }) ?: return@mapNotNull null
             if (box.w <= 0.0 || box.h <= 0.0 || printed.widthMm <= 0.0 || printed.depthMm <= 0.0) {
                 return@mapNotNull null
@@ -94,10 +94,11 @@ class ScanTintPrintedSizeTest {
             if (spreadBefore != null && spreadAfter != null && spreadAfter > spreadBefore + 1e-6) worsened++
 
             // Every room's CENTRE must survive untouched — that is the half of the reader's answer
-            // the measurement showed to be sound, and the half the door's frame is built from.
+            // the measurement showed to be sound. The first cut clamped the corrected box into the
+            // page and slid a large room's centre by 0.074 of the sheet; this is what caught it.
             for (i in before.rooms.indices) {
                 val b = before.rooms[i].source
-                val a = after.rooms[i].source
+                val a = after.rooms[i].printedBox ?: after.rooms[i].source
                 if (b == null || a == null) continue
                 val movedX = abs((b.x + b.w / 2) - (a.x + a.w / 2))
                 val movedY = abs((b.y + b.h / 2) - (a.y + a.h / 2))
@@ -135,19 +136,17 @@ class ScanTintPrintedSizeTest {
         assertTrue(measured >= 4, "only $measured recorded plans were measured — the corpus is not being read")
         assertTrue(worsened == 0, "$worsened plan(s) got WORSE or lost a room — see the lines above")
 
-        // ⚠ THIS BOUND IS A CATASTROPHE GUARD AND IS DELIBERATELY LOOSE ON ITS FIRST RUN, which is
-        // stated here rather than left for someone to discover. The front door is placed through the
-        // UNION of these boxes, so shrinking them shrinks that frame and a tap out in the page margin
-        // can legitimately land differently. How OFTEN was the open question, and inventing a
-        // threshold before seeing the number is how a gate ends up never firing. The exact figure is
-        // printed above; the bound is tightened to it in the same session that first reads it, and
-        // if it is zero this becomes `== 0`. A bound quietly widened later to admit a regression
-        // would be the failure this whole file exists to prevent.
-        val ceiling = measured * 361 / 20
+        // ⭐ A HARD ZERO, AND IT WAS EARNED RATHER THAN ASSUMED. The first cut of this change
+        // corrected [ScannedRoom.source] in place, and this very check measured the cost: 182 of
+        // 2888 taps placed a DIFFERENT front door — the highest-weighted element the engine scores,
+        // moved as a side effect of fixing a picture. That is why the corrected box now travels
+        // beside the reader's rectangle instead of replacing it, and why zero is the only bound
+        // worth writing here: the door is untouched BY CONSTRUCTION, so any drift means the two
+        // boxes have been wired together again by someone who did not read the note on printedBox.
         assertTrue(
-            totalMoved <= ceiling,
-            "$totalMoved of ${measured * 361} taps now place a different front door (ceiling $ceiling) " +
-                "— the highest-weighted thing the engine scores has moved materially",
+            totalMoved == 0,
+            "$totalMoved of ${measured * 361} taps now place a different front door. The tint box " +
+                "and the door frame have been coupled again — see ScannedRoom.printedBox.",
         )
     }
 }

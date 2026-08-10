@@ -218,7 +218,10 @@ fun ScanReviewContent(
                     dstOffset = IntOffset(origin.x.toInt(), origin.y.toInt()),
                     dstSize = IntSize(drawn.width.toInt(), drawn.height.toInt()),
                 )
-                val box = tint?.source
+                // The printed-size box when the plan stated one, else the reader's own rectangle.
+                // Only the PICTURE uses the corrected box — the front-door frame keeps [source],
+                // deliberately (see the note on ScannedRoom.printedBox).
+                val box = tint?.printedBox ?: tint?.source
                 if (box != null) {
                     val topLeft = Offset(
                         origin.x + (box.x.toFloat() * drawn.width),

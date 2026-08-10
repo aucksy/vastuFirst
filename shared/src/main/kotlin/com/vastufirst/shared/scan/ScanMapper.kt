@@ -424,8 +424,9 @@ object ScanMapper {
         val identified = ordered.mapIndexed { i, cand ->
             ScannedRoom(
                 cand.type, cand.box.label, rect = null, flags = cand.flags.toSet(),
-                printedSize = cand.box.printedSize, source = identifiedSources[i],
+                printedSize = cand.box.printedSize, source = identifiedPages[i],
                 readInParts = cand.parts,
+                printedBox = identifiedSources[i].takeIf { it != identifiedPages[i] },
             )
         }
 
@@ -556,8 +557,12 @@ object ScanMapper {
             .mapIndexed { i, (c, rect, _) ->
                 ScannedRoom(
                     c.type, c.box.label, rect, c.flags.toSet(), c.box.printedSize,
-                    source = sources[i],
+                    // [source] keeps the reader's own rectangle, because the front-door frame is
+                    // built from it and must not move; the corrected box rides alongside for the
+                    // picture. See the note on [ScannedRoom.printedBox].
+                    source = pageBoxes[i],
                     readInParts = c.parts,
+                    printedBox = sources[i].takeIf { it != pageBoxes[i] },
                 )
             }
             .sortedWith(compareBy({ it.rect!!.row }, { it.rect!!.col }))
@@ -671,12 +676,12 @@ object ScanMapper {
             if (grew > MAX_PRINTED_DISAGREEMENT || grew < 1.0 / MAX_PRINTED_DISAGREEMENT) {
                 return@mapIndexed b
             }
-            b.copy(
-                x = (b.x + b.w / 2.0 - w / 2.0).coerceIn(0.0, 1.0 - w),
-                y = (b.y + b.h / 2.0 - h / 2.0).coerceIn(0.0, 1.0 - h),
-                w = w,
-                h = h,
-            )
+            // ⚠ THE CENTRE IS NOT CLAMPED, and the first cut of this clamped it into the page. That
+            // looked harmless and was not: a large room near an edge cannot hold its printed size
+            // inside 0..1, so the clamp SLID IT, and on greencourt-526 the lobby's centre moved 0.074
+            // of the sheet — throwing away the one part of the reader's answer that measurement
+            // showed to be sound in order to protect a page edge the drawing already clips.
+            b.copy(x = b.x + b.w / 2.0 - w / 2.0, y = b.y + b.h / 2.0 - h / 2.0, w = w, h = h)
         }
     }
 

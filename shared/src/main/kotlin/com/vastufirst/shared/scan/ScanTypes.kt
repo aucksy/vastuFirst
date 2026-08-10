@@ -230,6 +230,33 @@ data class ScannedRoom(
      * positionally (see the note on [ScanBox]).
      */
     val readInParts: List<String> = emptyList(),
+    /**
+     * ⭐⭐ THE BOX TO DRAW ON THE PHOTOGRAPH — this room at the size its own caption PRINTS, rather
+     * than the size the reader guessed. Null when the caption printed no size, when the sheet had
+     * too few sized rooms to fit a scale, or when the printed size disagreed with the reader so
+     * wildly it must be a misread (see `ScanMapper.tightenToPrinted`). Drawing falls back to
+     * [source], which is what every screen did before this existed.
+     *
+     * ⚠⚠ **WHY THIS IS A SECOND FIELD AND NOT A BETTER [source].** It was one field first, and the
+     * measurement said no. [source] has quietly had TWO jobs since 6 Aug 2026: it tints the review
+     * screen, and — through the UNION of every room's box — it is the frame a tap on the photo is
+     * converted through to place the FRONT DOOR, the highest-weighted element the engine scores.
+     * The two jobs want different rectangles. The tint wants each room's true extent. The frame
+     * wants the home's outline, and it has been tuned against that behaviour through several
+     * releases.
+     *
+     * Correcting [source] in place did fix the tint — every sized plan's rooms went from disagreeing
+     * about their sheet's scale by 33–129 % to agreeing exactly — but it also moved the front door
+     * on **182 of 2888 sampled taps across eight recorded plans**, which is a score change nobody
+     * asked for. Measured, not predicted; the owner's instruction was "I cant have you messing up
+     * what is already working". So the corrected box is carried alongside, the picture uses it, and
+     * the door maths keeps the exact rectangle it has always had.
+     *
+     * Whether the DOOR should also move to these boxes is a real open question — the frame they
+     * describe is measured rather than padded, so it is probably better — but it is a separate
+     * change with its own before-and-after, not a side effect of fixing a picture.
+     */
+    val printedBox: ScanBox? = null,
 )
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */
