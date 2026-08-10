@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -198,7 +199,14 @@ fun ScanReviewContent(
     // the gate is right that it must be fixed rather than ratcheted away.
     BoxWithConstraints(Modifier.screenRoot(colors.paper)) {
     val planCap = minOf(VastuTheme.sizes.planPane, maxHeight * PLAN_MAX_VIEWPORT_SHARE)
-    Column(Modifier.padding(VastuTheme.spacing.s6)) {
+    // ⚠ The bottom padding belongs to the LIST, not to this column, and that is a correctness fix
+    // rather than a tidy-up. Padding the column stops the scrolling list 24 dp short of the screen
+    // edge, so whichever row straddles its lower edge is cut by a CONTAINER — which the geometry
+    // gate rightly reports as clipped content, because from the outside it cannot be told apart from
+    // a row whose box is genuinely too small. Running the list to the bottom of the window makes
+    // that row cut by the FOLD, which is the edge of the photograph and not a defect. It also looks
+    // better: a list should run off the bottom of the screen, not stop just above it.
+    Column(Modifier.padding(horizontal = VastuTheme.spacing.s6).padding(top = VastuTheme.spacing.s6)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -249,6 +257,7 @@ fun ScanReviewContent(
             modifier = Modifier.fillMaxWidth().weight(1f),
             state = listState,
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+            contentPadding = PaddingValues(bottom = VastuTheme.spacing.s6),
         ) {
             items(planRooms, key = { it.id }) { pr ->
                 val index = planRooms.indexOf(pr)
