@@ -19,7 +19,7 @@
   "scan-consent": 0,
   "scan-door": 0,
   "scan-idle": 0,
-  "scan-review": 3,
+  "scan-review": 0,
   "score": 0,
   "settings": 1,
   "unlock": 4,
