@@ -128,6 +128,23 @@ document gets re-obeyed by the next session that reads the document and not the 
 replaced by font scale 2.0, 360 dp and 320 dp — real configurations on a real English phone, and
 unlike the language configs they actually change the rendered picture.
 
+## 2f. ⭐ HARD RULE — never write a CI skip marker into a commit MESSAGE (10 Aug 2026)
+
+GitHub reads the skip markers — `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]` — out of the
+**head commit message of any push, including a TAG push.** Two consequences, both paid for on v0.9.1
+inside half an hour:
+
+- **A commit carrying one can never be released from.** Tag it and the release workflow does not run
+  at all: no APK, no failure, no entry in the runs list. Silence that looks exactly like success.
+- **It fires from anywhere in the message, including prose.** The commit that *documented* this trap
+  quoted the marker in its own body and thereby skipped itself, and then the tag on it too.
+
+So: **describe a marker, never spell it.** Write "the skip marker" in a commit message. Spelling it
+inside a *file* is fine — only commit messages are scanned.
+
+The mechanism itself is now a job-level `if:` in `ci.yml` that names the bot's own goldens commit,
+which skips that one workflow and leaves the release path alone. Do not reintroduce the marker there.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."
