@@ -19,26 +19,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.defectTitle
+import com.vastufirst.app.ui.common.editorColor
+import com.vastufirst.app.ui.common.readingOrder
+import com.vastufirst.app.ui.common.roomDisplayNames
+import com.vastufirst.app.ui.common.roomStatus
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.toVastu
+import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.BalanceMeter
 import com.vastufirst.designsystem.components.LocalDecimalMark
@@ -46,11 +47,11 @@ import com.vastufirst.designsystem.components.LoadingState
 import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
-import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.TagPill
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.components.VastuRoomRow
 import com.vastufirst.designsystem.components.VerdictPill
 import com.vastufirst.designsystem.components.VastuVerdict
 import com.vastufirst.designsystem.components.scoreBandColor
@@ -83,7 +84,13 @@ import com.vastufirst.app.ui.common.screenRoot
  *  1. **It opens with a verdict.** Score, band, one sentence — before any finding.
  *  2. **[BalanceMeter] shows what is RIGHT before what is wrong.** A reader with a decent home used
  *     to close this feeling accused, because "already right" sat below every problem.
- *  3. **Three chapters, not one scroll** — fix first / already right / good to know, with counts.
+ *  3. **⛔ The three chapters are GONE (10 Aug 2026, owner) — do not reinstate them.** "Fix first /
+ *     already right / good to know" made the reader pick a chapter before they could see their own
+ *     home, and put the same room in a different place depending on how it had scored, so "where is
+ *     my kitchen?" had three possible answers. [RoomsSection] replaces all three with ONE list of
+ *     every room, worst first, each carrying its direction and a single word. The ranking the "fix
+ *     first" chapter existed for survives as the sort order — nothing is re-scored and no finding is
+ *     dropped; a finding with no room behind it moves to [StructuralSection] rather than vanishing.
  *  4. **Every finding collapses.** The headline, room, zone and verdict are always visible; the whole
  *     reason, the zone's meaning, the layout change and every remedy are one tap down. ⚠ Nothing is
  *     CUT — the Sanskrit, the deities, the provenance on every line and the sentence admitting when
@@ -109,19 +116,6 @@ fun ReportScreen(vm: NewPlanViewModel, onDone: () -> Unit, onUnlock: () -> Unit 
 }
 
 /**
- * The three chapters.
- *
- * ⚠ Public, and [ReportContent] takes an [initialTab], for ONE reason: a chapter the harness cannot
- * open is a chapter no picture has ever contained. Two thirds of the paid report would otherwise be
- * unphotographable — the exact shape of defect UI-POLISH §6.4 was written after ("a golden is a
- * viewport, not a document"). Every chapter is rendered at the full config matrix because every
- * chapter can be selected from a test.
- */
-const val TAB_FIX = 0
-const val TAB_RIGHT = 1
-const val TAB_MORE = 2
-
-/**
  * ⭐ THE END OF THE DOCUMENT, SO THE HARNESS CAN SCROLL TO IT.
  *
  * ⚠ Scrolling to the last *control* is NOT the same thing and would photograph a lie. The pay bar
@@ -139,7 +133,6 @@ fun ReportContent(
     analysis: Analysis?,
     intent: Intent?,
     unlocked: Boolean = true,
-    initialTab: Int = TAB_FIX,
     /**
      * Open every finding at once.
      *
@@ -176,13 +169,25 @@ fun ReportContent(
     val defects = a.defects
     val notIdeal = a.roomResults.filter { it.verdict == Verdict.SUBOPTIMAL }
     val good = a.roomResults.filter { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE }
-    val moreCount = notIdeal.size + a.disputes.size + a.notChecked.size
 
     // ⚠ Hoisted ABOVE the `when` that swaps chapters (UI-POLISH §3.B). Scroll state declared inside a
     // branch is torn down and recreated every time the branch changes, which silently jumps the
     // reader back to the top — the same defect the room palette had in v0.2.1.
     val scroll = rememberScrollState()
-    var tab by rememberSaveable { mutableIntStateOf(initialTab) }
+
+    /**
+     * ⭐ THE ONE ROOM THE READER IS LOOKING AT — the whole of the shared behaviour, held here.
+     *
+     * One tap opens a room AND marks it, because the owner asked for a single behaviour that works
+     * the same from the list and from the plan: *"Build a common UI/UX for this room highlight in
+     * the list which works the same way if user taps the room in list or room on floor plan"*. Two
+     * separate ideas — "which one is open" and "which one is tinted" — is exactly how those two ends
+     * drift apart, so there is only one, and the plan above will read this same value.
+     *
+     * ⚠ rememberSaveable: an open room must survive a rotation and a brief process reclaim, or the
+     * reader loses their place mid-report — the same reason the old finding cards used it.
+     */
+    var openRoomId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // ⚠ The pay bar's own MEASURED height, not a guess at it. It is two lines of text plus a 52 dp
     // button, so at 200 % font it stands about 230 dp tall — three and a half times the fixed 64 dp
@@ -196,19 +201,6 @@ fun ReportContent(
     // converts at the use site.
     val density = LocalDensity.current
     var payBarPx by remember { mutableIntStateOf(0) }
-
-    // ⭐ CHOOSING A CHAPTER SCROLLS TO IT — without this the chips are navigation that looks broken.
-    // The verdict, the balance meter and "start here" fill about a screenful and a half above them,
-    // so on a phone the new chapter opens entirely below the fold: you tap "Good to know", the
-    // screen does not visibly change, and the only clue is a chip that went dark. Seen by putting
-    // the three chapter goldens side by side. Scrolling the chips to the top makes the swap
-    // obvious and keeps them in reach for the next one.
-    var chipsY by remember { mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
-    fun goToChapter(next: Int) {
-        tab = next
-        scope.launch { scroll.animateScrollTo(chipsY) }
-    }
 
     Box(Modifier.screenRoot(colors.paper)) {
         Column(
@@ -253,35 +245,45 @@ fun ReportContent(
                 StartHere(top, a.roomResults, remediesOnly)
             }
 
-            // ---- chapters -------------------------------------------------------------------
-            // FlowRow of chips, NOT a segmented control (UI-POLISH §6.7b). Three fixed-width segments
-            // holding "Already right" shatter at 200 % font on a 320 dp phone — the ink is drawn wider
-            // than the segment and characters are lost off both ends, with every geometry gate green.
-            // Chips wrap onto their own line instead, where each has the full width to itself.
+            // ---- one list, not three chapters ------------------------------------------------
+            // ⭐ THE THREE CHAPTERS ARE GONE (owner, 10 Aug 2026, with a picture of what replaces
+            // them). "Fix first / Already right / Good to know" made the reader choose a chapter
+            // before they could see their own home, and the same room could only ever appear in one
+            // of them — so "where is my kitchen?" was a question the report answered in three
+            // different places depending on how the kitchen had scored.
+            //
+            // One list of every room, worst first, each carrying its direction and a single word.
+            // The ranking the "fix first" chapter existed for is still here: it is the sort order.
             Spacer(Modifier.height(VastuTheme.spacing.s6))
-            FlowRow(
-                Modifier
-                    .fillMaxWidth()
-                    // Where the chips sit in the scroll, so choosing a chapter can bring that
-                    // chapter to the top. See [goToChapter].
-                    .onGloballyPositioned { chipsY = it.positionInParent().y.toInt() },
-                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-            ) {
-                // ⚠ `onClick` is NOT the last parameter of VastuChip (modifier is), so a trailing
-                // lambda does not compile here. Named, deliberately.
-                VastuChip("Fix first (${defects.size})", selected = tab == TAB_FIX, onClick = { goToChapter(TAB_FIX) })
-                VastuChip("Already right (${good.size})", selected = tab == TAB_RIGHT, onClick = { goToChapter(TAB_RIGHT) })
-                VastuChip("Good to know ($moreCount)", selected = tab == TAB_MORE, onClick = { goToChapter(TAB_MORE) })
+            a.doorResult?.let { DoorSection(it, zones, remediesOnly) }
+
+            RoomsSection(
+                rooms = a.roomResults,
+                defects = defects,
+                zones = zones,
+                unlocked = unlocked,
+                remediesOnly = remediesOnly,
+                expandAll = expandAll,
+                openRoomId = openRoomId,
+                onTapRoom = { id -> openRoomId = if (openRoomId == id) null else id },
+            )
+
+            // ⚠ A defect with no room behind it — a cut corner, an extension, a water tank, the
+            // centre of the home — cannot ride on a room row, and dropping it would delete a real
+            // finding from the report. It gets its own section, kept below the rooms because it is
+            // rarer and harder to act on.
+            val structural = defects.filter { it.roomId == null }
+            if (structural.isNotEmpty()) {
+                Spacer(Modifier.height(VastuTheme.spacing.s6))
+                StructuralSection(structural, a.roomResults, zones, unlocked, remediesOnly, expandAll)
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
-            val door = a.doorResult
-            val doorTab = door?.let { doorChapter(it.verdict) }
-            when (tab) {
-                TAB_RIGHT -> ChapterRight(door?.takeIf { doorTab == TAB_RIGHT }, good, zones, unlocked, remediesOnly, expandAll)
-                TAB_MORE -> ChapterMore(a, notIdeal, zones, unlocked, remediesOnly, expandAll, door?.takeIf { doorTab == TAB_MORE })
-                else -> ChapterFix(defects, a.roomResults, zones, unlocked, remediesOnly, expandAll, door?.takeIf { doorTab == TAB_FIX })
+            DisputesSection(a.disputes)
+
+            if (a.notChecked.isNotEmpty()) {
+                Spacer(Modifier.height(VastuTheme.spacing.s6))
+                NotCheckedSection(a.notChecked)
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -458,29 +460,16 @@ private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean)
     }
 }
 
-/* ─────────────────────────── chapters ─────────────────────────── */
+/* ─────────────────────────── the sections ─────────────────────────── */
 
 /**
- * ⭐ WHICH CHAPTER THE FRONT DOOR BELONGS IN — decided by how the door READS, not by a fixed slot.
+ * The front door's own block — first, always, and always free.
  *
- * ⚠ FOUND BY LOOKING AT THE RENDERED CHAPTER, 9 Aug 2026. The door used to lead "Already right"
- * always, whatever it said. So on this very sample a reader tapped the chapter that promises good
- * news and the first thing on it was their own front door stamped **Unfavourable** in red. That is
- * not a wrong verdict — the door really is unfavourable — it is the wrong shelf, and a category that
- * contradicts its own contents teaches a reader to distrust every other category on the screen.
- *
- * The mapping is the rooms' mapping, so the door is filed by the same logic as everything else:
- * favourable and middling read well; "read both ways" is precisely what "Good to know" is for (it
- * already holds the disputes, and a door the sources disagree about IS one); unfavourable is a thing
- * to fix. The door stays free to read in every one of them — see [DOOR_IS_FREE].
+ * ⭐ It leads the report because it is the highest-weighted single element in the whole reading
+ * ([DOOR_IS_FREE]), and it now has ONE home rather than being filed into whichever chapter matched
+ * its verdict. That filing existed to stop an unfavourable door leading a chapter called "already
+ * right" — a problem the chapters created and their removal takes away with them.
  */
-private fun doorChapter(v: PadaVerdict): Int = when (v) {
-    PadaVerdict.AUSPICIOUS, PadaVerdict.MODERATE -> TAB_RIGHT
-    PadaVerdict.MIXED -> TAB_MORE
-    PadaVerdict.INAUSPICIOUS -> TAB_FIX
-}
-
-/** The door's own block, wherever [doorChapter] sends it. */
 @Composable
 private fun DoorSection(door: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean) {
     SectionLabel("Your front door")
@@ -489,35 +478,128 @@ private fun DoorSection(door: DoorResult, zones: List<ZoneInfo>, remediesOnly: B
     Spacer(Modifier.height(VastuTheme.spacing.s6))
 }
 
+/**
+ * ⭐⭐ EVERY ROOM, ONCE, WORST FIRST — the list the owner drew.
+ *
+ * Each row is the room's kind, the direction it sits in, and one word: **Review**, **Aligned** or
+ * **Not rated**. Tapping it opens that room's whole reasoning, and marks it on the plan above.
+ *
+ * ⚠ WHAT THIS MUST NEVER DO, and the reason the mapping below is written out room by room rather
+ * than filtered: **lose a finding.** The three chapters between them showed every defect, every
+ * "not ideal" room and every already-right room. This shows every ROOM — so a room carrying a
+ * defect must open onto the DEFECT's reasoning (its remedies, its provenance, its rank), not onto
+ * the milder room-level explanation. A room with more than one defect shows all of them. The only
+ * finding that cannot live on a room row is one with no room behind it, and that has its own
+ * section ([StructuralSection]) rather than being dropped.
+ *
+ * ⚠ The free tier is unchanged and still decided in ONE place ([FreeTier]): entrance, kitchen and
+ * toilets read in full, every other room still named with its verdict and its direction, reasoning
+ * behind the price. A locked row is not a blurred teaser — Product PRD §6.4.
+ */
 @Composable
-private fun ChapterFix(
+private fun RoomsSection(
+    rooms: List<RoomResult>,
     defects: List<Defect>,
+    zones: List<ZoneInfo>,
+    unlocked: Boolean,
+    remediesOnly: Boolean,
+    expandAll: Boolean,
+    openRoomId: String?,
+    onTapRoom: (String) -> Unit,
+) {
+    val colors = VastuTheme.colors
+    if (rooms.isEmpty()) return
+
+    // Defects keyed by the room they belong to, so a room row can open onto its own finding.
+    val defectsByRoom = defects.filter { it.roomId != null }.groupBy { it.roomId }
+
+    // ⚠ The display name is worked out over the WHOLE list before sorting, so "Bedroom 2" is the
+    // second bedroom on the plan — not the second one that happened to score badly.
+    val names = roomDisplayNames(rooms.map { it.type })
+    val ordered = rooms
+        .mapIndexed { i, r -> r to names[i] }
+        .sortedBy { (r, _) -> r.verdict.roomStatus().readingOrder() }
+
+    SectionLabel("Your rooms (${rooms.size})")
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    VText(
+        "Worst first. Tap a room to see where it sits and why.",
+        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+    )
+    Spacer(Modifier.height(VastuTheme.spacing.s3))
+    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
+        ordered.forEachIndexed { i, (r, name) ->
+            val roomDefects = defectsByRoom[r.roomId].orEmpty()
+            val free = unlocked || r.isFreeToRead()
+            // The first readable row starts open, so a reader meets the depth of this report at once
+            // instead of a column of shut rows they have to guess their way into.
+            val open = expandAll || openRoomId == r.roomId || (openRoomId == null && i == 0 && free)
+            VastuRoomRow(
+                name = name,
+                code = r.type.microLabel(),
+                codeColor = r.type.editorColor(),
+                direction = r.zone.short(),
+                status = r.verdict.roomStatus(),
+                selected = open,
+                expanded = open,
+                onTap = { onTapRoom(r.roomId) },
+                body = {
+                    if (!free) {
+                        VText(
+                            "Reasoning and remedies — in the full report",
+                            style = VastuTheme.type.bodySm, color = colors.textTertiary,
+                        )
+                    } else if (roomDefects.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                            roomDefects.forEach { DefectBody(it, zones, remediesOnly) }
+                        }
+                    } else {
+                        RoomBody(
+                            r,
+                            zones,
+                            when (r.verdict) {
+                                Verdict.SUBOPTIMAL -> whyNotIdeal(r)
+                                Verdict.NOT_SCORED -> NOT_RATED_REASON
+                                else -> whyRight(r)
+                            },
+                        )
+                    }
+                },
+            )
+        }
+    }
+}
+
+/** Said once, on every room the tradition does not place — the report's existing wording. */
+private const val NOT_RATED_REASON: String =
+    "The tradition does not say where this kind of room belongs, so we have not judged it. " +
+        "It is not a problem and it is not an approval — it simply is not covered."
+
+/**
+ * Findings with no room behind them — a cut corner, an extension, a fixture, the centre of the home.
+ *
+ * ⚠ These are real defects and they were previously ranked in "fix first" alongside the room ones.
+ * They keep their ranking and their full reasoning; only their place on the page has changed.
+ */
+@Composable
+private fun StructuralSection(
+    structural: List<Defect>,
     rooms: List<RoomResult>,
     zones: List<ZoneInfo>,
     unlocked: Boolean,
     remediesOnly: Boolean,
     expandAll: Boolean,
-    door: DoorResult?,
 ) {
     val colors = VastuTheme.colors
-    door?.let { DoorSection(it, zones, remediesOnly) }
-    if (defects.isEmpty()) {
-        VText(
-            // Not "the placements read well" when an unfavourable door is sitting directly above it.
-            if (door != null) "Nothing else here needs fixing."
-            else "No defects to rank — the placements read well.",
-            style = VastuTheme.type.body,
-            color = colors.textSecondary,
-        )
-        return
-    }
+    SectionLabel("Your home's shape and surroundings")
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Ranked by how much each one moves your score. Tap a row for the whole reason and what to do.",
+        "These are about the building itself, not any one room.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
-    Spacer(Modifier.height(VastuTheme.spacing.s4))
+    Spacer(Modifier.height(VastuTheme.spacing.s3))
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-        defects.forEachIndexed { i, d ->
+        structural.forEachIndexed { i, d ->
             val free = unlocked || d.isFreeToRead(rooms)
             FindingRow(
                 title = defectTitle(d, rooms),
@@ -526,9 +608,7 @@ private fun ChapterFix(
                 verdict = VastuVerdict.DEFECT,
                 rank = i + 1,
                 locked = !free,
-                // The first readable finding starts open, so a reader meets the depth of this report
-                // immediately instead of a column of shut rows they have to guess their way into.
-                startOpen = expandAll || (i == 0 && free),
+                startOpen = expandAll,
             ) {
                 DefectBody(d, zones, remediesOnly)
             }
@@ -537,111 +617,21 @@ private fun ChapterFix(
 }
 
 @Composable
-private fun ChapterRight(
-    door: DoorResult?,
-    good: List<RoomResult>,
-    zones: List<ZoneInfo>,
-    unlocked: Boolean,
-    remediesOnly: Boolean,
-    expandAll: Boolean,
-) {
+private fun NotCheckedSection(notChecked: List<com.vastufirst.shared.NotChecked>) {
     val colors = VastuTheme.colors
-    // ⭐ The front door leads this chapter WHEN IT READS WELL ([doorChapter]) and is ALWAYS free
-    // ([FreeTier]). It is the highest-weighted single element in the reading, and the 32 named
-    // positions sat unused in the rule data for the app's first eight builds while the screen showed
-    // nothing about the door at all.
-    door?.let { DoorSection(it, zones, remediesOnly) }
-    if (good.isEmpty()) {
-        VText("No room came back already right this time.", style = VastuTheme.type.body, color = colors.textSecondary)
-        return
-    }
+    SectionLabel("We could not check these")
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "${good.size} of your rooms are where the tradition wants them. Being told why something is right is worth as much as being told why something is wrong.",
-        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        "Neither passed nor failed — we did not have the details.",
+        style = VastuTheme.type.bodySm, color = colors.textTertiary,
     )
-    Spacer(Modifier.height(VastuTheme.spacing.s4))
-    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-        good.forEachIndexed { i, r ->
-            val free = unlocked || r.isFreeToRead()
-            FindingRow(
-                title = "${r.type.label()} — ${r.zone.short()}",
-                meta = zoneLine(r.zone, zones),
-                accent = colors.verdictIdeal,
-                verdict = r.verdict.toVastu(),
-                rank = null,
-                locked = !free,
-                startOpen = expandAll || (i == 0 && free),
-            ) {
-                RoomBody(r, zones, whyRight(r))
-            }
+    Spacer(Modifier.height(VastuTheme.spacing.s2))
+    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
+        notChecked.forEach {
+            VText("· ${notCheckedLine(it)}", style = VastuTheme.type.bodySm, color = colors.textSecondary)
         }
-    }
-}
-
-@Composable
-private fun ChapterMore(
-    a: Analysis,
-    notIdeal: List<RoomResult>,
-    zones: List<ZoneInfo>,
-    unlocked: Boolean,
-    remediesOnly: Boolean,
-    expandAll: Boolean,
-    door: DoorResult?,
-) {
-    val colors = VastuTheme.colors
-
-    // A door the sources read both ways belongs with the other things the schools disagree about,
-    // which is the section immediately below this one ([doorChapter]).
-    //
-    // ⚠ [remediesOnly] is threaded in for this one call and must stay threaded. The door's
-    // explanation offers a layout change unless it is set, so hardcoding it here would hand "move
-    // your front door" to someone buying a built flat — the exact v0.6.6 ruling the report already
-    // broke once, through a different door.
-    door?.let { DoorSection(it, zones, remediesOnly) }
-
-    if (notIdeal.isNotEmpty()) {
-        SectionLabel("Not ideal — and not a fault")
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(NOT_IDEAL_INTRO, style = VastuTheme.type.bodySm, color = colors.textSecondary)
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            notIdeal.forEachIndexed { i, r ->
-                val free = unlocked || r.isFreeToRead()
-                FindingRow(
-                    title = "${r.type.label()} — ${r.zone.short()}",
-                    meta = zoneLine(r.zone, zones),
-                    accent = colors.verdictSuboptimal,
-                    verdict = VastuVerdict.SUBOPTIMAL,
-                    rank = null,
-                    locked = !free,
-                    startOpen = expandAll || (i == 0 && free),
-                ) {
-                    RoomBody(r, zones, whyNotIdeal(r))
-                }
-            }
-        }
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-    }
-
-    DisputesSection(a.disputes)
-
-    val notChecked = a.notChecked
-    if (notChecked.isNotEmpty()) {
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-        SectionLabel("We could not check these")
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            "Neither passed nor failed — we did not have the details.",
-            style = VastuTheme.type.bodySm, color = colors.textTertiary,
-        )
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
-            notChecked.forEach {
-                VText("· ${notCheckedLine(it)}", style = VastuTheme.type.bodySm, color = colors.textSecondary)
-            }
-            notCheckedHow(notChecked).forEach {
-                VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
-            }
+        notCheckedHow(notChecked).forEach {
+            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         }
     }
 }

@@ -8,11 +8,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -146,7 +147,7 @@ fun VastuRoomRow(
             ) {
                 VText(code, style = VastuTheme.type.caption, color = codeColor)
             }
-            Box(Modifier.widthIn(min = VastuTheme.spacing.s3))
+            Spacer(Modifier.width(VastuTheme.spacing.s3))
             Column(Modifier.weight(1f)) {
                 VText(name, style = VastuTheme.type.h3, color = colors.textPrimary, maxLines = 2)
                 if (direction != null || note != null) {
@@ -169,11 +170,11 @@ fun VastuRoomRow(
                 }
             }
             if (status != null) {
-                Box(Modifier.widthIn(min = VastuTheme.spacing.s2))
+                Spacer(Modifier.width(VastuTheme.spacing.s2))
                 RoomStatusPill(status)
             }
             if (body != null) {
-                Box(Modifier.widthIn(min = VastuTheme.spacing.s2))
+                Spacer(Modifier.width(VastuTheme.spacing.s2))
                 VText(
                     if (expanded) "⌃" else "⌄",
                     style = VastuTheme.type.body,
@@ -182,9 +183,9 @@ fun VastuRoomRow(
             }
         }
         if (expanded && body != null) {
-            Box(Modifier.height(VastuTheme.spacing.s3))
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
             Box(Modifier.fillMaxWidth().height(VastuTheme.borders.regular).background(colors.borderDefault))
-            Box(Modifier.height(VastuTheme.spacing.s3))
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
             body()
         }
     }

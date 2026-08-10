@@ -16,8 +16,6 @@ import com.vastufirst.app.ui.marknorth.CompassState
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.DisputesSection
 import com.vastufirst.app.ui.report.ReportContent
-import com.vastufirst.app.ui.report.TAB_MORE
-import com.vastufirst.app.ui.report.TAB_RIGHT
 import com.vastufirst.app.ui.score.ScoreContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -191,21 +189,22 @@ class ScoreDrivenScreensScreenshotTest {
     }
 
     /**
-     * ⭐ CHAPTER 2 — "already right", led by the front door.
+     * ⭐ THE ROOM LIST WITH EVERY ROW OPEN — what replaced the three chapter goldens (10 Aug 2026).
      *
-     * Rendered explicitly because a chapter behind a chip is a chapter no golden contains. This is the
-     * half of the report that tells a reader what is WORKING, which is the whole reason the report was
-     * rebuilt; shipping it unphotographed would repeat the mistake it exists to fix.
+     * `report-right` and `report-more` photographed two chapters that no longer exist. What they
+     * were really protecting was the report's DEPTH: that a room which reads well still explains
+     * itself, and that a "not ideal" room is not silently downgraded to a row with no reasoning
+     * behind it. Opening every row photographs exactly that, on one picture instead of two — and it
+     * is the only golden in which an opened room's provenance, zone meaning and remedies appear at
+     * all, because a collapsed row's reasoning is not even in the semantics tree.
+     *
+     * ⚠ The content those chapters uniquely held is still covered: not-ideal rooms by
+     * `report-notideal`, the schools-disagree payoff by `report-disputes`, and everything below the
+     * fold by the bottom-half pair in LongScreenBottomScreenshotTest.
      */
     @Test
-    fun report_chapter_right() = render("report-right") {
-        ReportContent(analysis = analysis, intent = Intent.BUILDING, initialTab = TAB_RIGHT)
-    }
-
-    /** ⭐ CHAPTER 3 — not-ideal rooms, where the schools disagree, and what could not be checked. */
-    @Test
-    fun report_chapter_more() = render("report-more") {
-        ReportContent(analysis = analysis, intent = Intent.BUILDING, initialTab = TAB_MORE)
+    fun report_rooms_all_open() = render("report-open") {
+        ReportContent(analysis = analysis, intent = Intent.BUILDING, expandAll = true)
     }
 
     /**
