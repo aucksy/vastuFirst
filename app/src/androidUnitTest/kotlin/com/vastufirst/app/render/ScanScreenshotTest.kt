@@ -118,6 +118,42 @@ class ScanScreenshotTest {
             .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
             .asImageBitmap()
 
+    /**
+     * ⭐⭐ A TINTED BOX ON A PLAN THAT ACTUALLY PRINTS ITS SIZES — the picture that was missing.
+     *
+     * [scanReview] is the only golden that shows a tint, and it is driven by `plan-01`, which is the
+     * one fixture family in the whole corpus printing **no room sizes at all**. So when the boxes
+     * were corrected to draw at the printed size (10 Aug 2026, `ScannedRoom.printedBox`), the change
+     * altered nothing this gate photographs: every golden verified clean and the fix was invisible.
+     * That is the same blind spot as a golden that never scrolls and a gate that measures boxes
+     * rather than glyphs — the number was green and the picture was never taken.
+     *
+     * So this photographs the owner's own flat, every one of whose fifteen rooms prints a size, with
+     * a room selected that the correction actually moved. It fails loudly if no such room exists,
+     * because a golden that silently falls back to the reader's rectangle would quietly become
+     * another picture of nothing.
+     */
+    @Test
+    fun scanReviewPrintedSizes() {
+        val flat = ScanMapper.map(RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply)
+            as ScanOutcome.Placed
+        val corrected = flat.rooms.indexOfFirst { it.printedBox != null }
+        check(corrected >= 0) {
+            "No room on the owner's own flat draws at its printed size, so this golden would " +
+                "photograph the reader's rectangle and prove nothing. Either the correction " +
+                "regressed or this fixture stopped printing sizes."
+        }
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = planPhoto(),
+                rooms = flat.rooms,
+                startSelected = corrected,
+            )
+        }
+        captureAcrossMatrix("scan-review-printed", content)
+        writeManifestAcrossMatrix("scan-review-printed", content)
+    }
+
     @Test
     fun scanReviewWithDoorReadFromThePlan() {
         val outcome = ownersPlan()
