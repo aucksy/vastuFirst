@@ -105,6 +105,48 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Monday 10 August, evening — the app now asks you for two things, and then just tells you
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.10.0/vastufirst-v0.10.0.apk
+**This is the one to install.**
+
+**The whole path through the app is shorter.** Photograph your plan, say which way North is, and
+you are looking at your report. The free summary screen that used to sit in between — a number, a
+picture and the three worst problems, followed by an offer to read the report — is gone. It was a
+summary of a document you were about to be handed, shown on the way to being handed it.
+
+**Your rooms are now one list, worst first.** Each room shows its direction and a single word —
+**Review** or **Aligned** — and opening one tells you why, where the tradition says it, and what to
+do about it. The report used to split your home across three sections you had to choose between,
+which meant "where is my kitchen?" had three possible answers depending on how the kitchen had
+scored. Nothing has been removed: every problem the report raised before it still raises, with the
+same reason and the same suggestions.
+
+**Tap a room on your plan and it lights up in the list. Tap it in the list and it lights up on the
+plan.** Every room we read is outlined on your own photograph, so you can see what is tappable
+rather than hunting for it. On the checking screen the plan now stays put while only the list
+scrolls, and more of your rooms fit on screen at once.
+
+**Marking your front door and marking North both show you what to do.** A ring travels around your
+home's outline until you tap a wall; a ring pulses on the compass dial until you turn it. Both stop
+as soon as you have done it.
+
+**After you tap "read my home" there is a short pause with a progress bar, and then your score
+counts up to its number.** Worth knowing: the app works your score out in a fraction of a second.
+That pause is deliberate, to let the moment land — it is not the app struggling.
+
+**Two things have been taken away on purpose.** The score no longer moves while you turn the
+compass dial, because a number that changes as you turn invites you to hunt for the best-scoring
+North rather than the true one. And "use my phone's compass" is gone; North is set by hand. That one
+has a real cost and you should know it: if North is set wrongly, every direction in the report is
+wrong while still looking right. The screen still asks you to confirm what North means for your own
+kitchen before it scores anything.
+
+**Small things:** the report opens with your own photograph rather than our drawing of your home,
+with buttons under it to change North or the front door. The report reads shorter again — our own
+wording, never the tradition's. And the choice of which AI reads a plan has moved into Settings,
+out of the way.
+
 ### Monday 10 August, later — the boxes on "check what we read" now match the rooms
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.9.2/vastufirst-v0.9.2.apk

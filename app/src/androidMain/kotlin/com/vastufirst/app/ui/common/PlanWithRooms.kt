@@ -11,12 +11,10 @@
 package com.vastufirst.app.ui.common
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,8 +75,15 @@ fun PlanWithRooms(
     selectedId: String?,
     onTapRoom: (String) -> Unit,
     modifier: Modifier = Modifier,
-    /** Caps the picture's height so the list under it is not pushed off the screen. */
-    maxHeight: Dp = Dp.Unspecified,
+    /**
+     * Caps the picture's height so the list under it is not pushed off the screen.
+     *
+     * ⚠ NOT called `maxHeight`. Inside a BoxWithConstraints the scope has its own `maxHeight`, and it
+     * is the CLOSER name — so a bare `maxHeight` in the body would silently read the box's constraint
+     * instead of this cap, and the cap would never apply. It compiles, it runs, and the picture
+     * overflows exactly as it did before the fix.
+     */
+    maxPlanHeight: Dp = Dp.Unspecified,
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
@@ -101,8 +106,8 @@ fun PlanWithRooms(
     // plan" heading was printed on top of the drawing. Sizing the picture explicitly from the
     // available width and the cap is the fix; there is nothing left to overflow.
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val drawnHeight = if (maxHeight == Dp.Unspecified) this.maxWidth / aspect
-        else minOf(this.maxWidth / aspect, maxHeight)
+        val drawnHeight = if (maxPlanHeight == Dp.Unspecified) this.maxWidth / aspect
+        else minOf(this.maxWidth / aspect, maxPlanHeight)
         val drawnWidth = drawnHeight * aspect
         // ⚠ Sized directly rather than filling its parent. The fill-the-whole-parent modifier is
         // also the string the window-inset gate greps for when it looks for a screen root, and a

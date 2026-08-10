@@ -445,7 +445,7 @@ fun ReportContent(
                         rooms = planRooms,
                         selectedId = openRoomId,
                         onTapRoom = { id -> tapRoom(id) },
-                        maxHeight = VastuTheme.sizes.planPane,
+                        maxPlanHeight = VastuTheme.sizes.planPane,
                     )
                 } else {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

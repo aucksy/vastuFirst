@@ -232,7 +232,7 @@ fun ScanReviewContent(
                 rooms = planRooms,
                 selectedId = selected,
                 onTapRoom = ::tapRoom,
-                maxHeight = planCap,
+                maxPlanHeight = planCap,
             )
         } else {
             Box(
