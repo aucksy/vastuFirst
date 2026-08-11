@@ -311,11 +311,15 @@ fun ScanReviewContent(
             VText("Check what we read", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
-            style = VastuTheme.type.bodySm,
-            color = colors.textSecondary,
-        )
+        // ⚠ Not an invitation to tap rooms when there are none. In the lost-reading state the card
+        // below already explains what happened, so this line only has to not contradict it.
+        if (rooms.isNotEmpty()) {
+            VText(
+                "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
+                style = VastuTheme.type.bodySm,
+                color = colors.textSecondary,
+            )
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         // ⭐ PINNED. Outside the scrolling list on purpose (owner: "The floor plan on this screen
