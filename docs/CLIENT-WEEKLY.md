@@ -106,6 +106,50 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Tuesday 11 August, night — fourteen things that were still wrong, found by arguing with ourselves
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.14.0/vastufirst-v0.14.0.apk
+**This is the one to install.**
+
+We went back through every defect anyone had ever written down for this app and checked each one
+against the app as it stands, because most of that list had quietly been fixed and nobody had said
+so. Then a second reader tried to prove each survivor was imaginary. Fourteen survived and are fixed
+here. Three of them matter.
+
+**"Delete all my data" was leaving photographs of your home on the phone.** The button promises it
+permanently removes everything. It emptied both of the app's databases and left behind every picture
+taken with the in-app camera — and nothing in the app had ever removed one, so they only piled up.
+Somebody handing their phone to a shop, having been told everything was gone, still had photographs
+of their own floor plan on it. Taking a new photo now clears the old one, the delete button clears
+the folder, and the warning says so.
+
+**A different property's floor plan could appear under your home — the same fault as last week, by a
+door we had missed.** Last week's build closed two of the three ways in. The third: scan a plan, read
+its report, go to your saved homes, tap a home you had *started and not finished*, and finish it —
+and its report opened with the other property's photograph under "Your home, as we read it". Worse,
+"change where the front door is" then invited you to mark a door on that wrong picture, and the door
+you marked was measured against the wrong home and applied to yours. The front door is the single
+biggest thing in the score. Closed properly this time.
+
+**The reading screen promised "a few seconds" and could sit dead still for over two minutes.** Nothing
+on that screen moves, so a slow read is indistinguishable from a frozen app — and the natural
+response is to force-close it and lose the scan. It now says "Still reading — a detailed plan can
+take up to a minute", then "Taking a second look at your plan". And when a read did fail, every
+cause printed "Check you're online", so people with perfect signal were sent to fix their Wi-Fi when
+our own reader was slow. It now says our reader didn't answer in time, because that is usually the
+truth.
+
+**The other eleven, briefly:** a crash report was deleted even when no email app opened, so you would
+think you had sent it; the back arrow jumped two screens if you double-tapped it; "start this home
+again" quietly kept the compass bearing from the previous home; "Step 2 of 3" is gone, because two
+different screens both claimed to be step one and the upload path is five screens; "A few more
+things" had two buttons doing the same thing, so "Back" looked like it discarded your answers when
+it saved them; plans that print every measurement twice were wrapping every row on the checking
+screen; Settings offered a choice of AI reader in builds that have no key to call one; and if your
+phone ran out of memory mid-scan you came back to a screen offering to confirm a reading of zero
+rooms — it now says the reading was lost and offers to read the plan again. Two more were in the
+payment code, which is switched off, and are fixed before it is ever switched on.
+
 ### Tuesday 11 August, late — three things from the original list, now in the app
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.13.0/vastufirst-v0.13.0.apk
