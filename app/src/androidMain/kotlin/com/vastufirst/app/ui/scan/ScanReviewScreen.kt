@@ -50,9 +50,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -330,20 +330,41 @@ fun ScanReviewContent(
                 maxPlanHeight = planCap,
             )
         } else {
+            // ⚠⚠ CAPPED, NOT SHAPED — found by the geometry gate the moment this state was first
+            // photographed (11 Aug 2026). An aspect ratio is a HEIGHT derived from the WIDTH, and a
+            // landscape phone is wide: full width ÷ 1.2 came out taller than the whole 480 dp
+            // screen, so everything below it was squeezed out and "0 ROOMS READ FROM YOUR PLAN"
+            // measured 196 × 0 dp — in the tree, and not on the page. That is the zero-height class
+            // this project shipped once already, arriving by a new road, in the one state nobody had
+            // ever drawn. The pinned plan has been bounded by [planCap] since the same defect hit it
+            // in landscape; its stand-in gets the same bound, and no fixed shape at all.
             Box(
-                Modifier.fillMaxWidth().aspectRatio(com.vastufirst.app.ui.common.PLAN_DEFAULT_ASPECT),
+                Modifier.fillMaxWidth().heightIn(max = planCap),
                 contentAlignment = Alignment.Center,
             ) {
                 GuidanceState(
-                    title = "The photo could not be shown",
-                    body = "Every room we read is still listed below, and your score still works.",
+                    title = if (rooms.isEmpty()) "Your reading was lost" else "The photo could not be shown",
+                    // ⚠ The old body claimed "every room we read is still listed below, and your
+                    // score still works" — which is true when only the picture failed, and a plain
+                    // untruth when the whole reading has gone, because then nothing is listed below
+                    // and there is no score. The two cases now say what is actually the case.
+                    body = if (rooms.isEmpty()) {
+                        "Your phone needed the memory back while we were working. " +
+                            "Nothing was saved, so please read your plan again."
+                    } else {
+                        "Every room we read is still listed below, and your score still works."
+                    },
                 )
             }
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        SectionLabel("${rooms.size} rooms read from your plan")
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        // "0 rooms read from your plan" is not a heading for a list, it is a heading for a hole —
+        // the card above already explains it, so the list heading only appears when there is a list.
+        if (rooms.isNotEmpty()) {
+            SectionLabel("${rooms.size} rooms read from your plan")
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+        }
 
         // ⛔ A PLAIN COLUMN IN ITS OWN SCROLL — never a lazy list. A lazy list composes only the rows
         // you can see, so every room below the fold is absent from the semantics tree: the geometry
