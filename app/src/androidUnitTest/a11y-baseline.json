@@ -1,9 +1,9 @@
 {
-  "addhome": 30,
+  "addhome": 3,
   "editor": 0,
   "editor-empty": 1,
   "editor-selected": 0,
-  "home": 30,
+  "home": 1,
   "home-discard": 0,
   "home-empty": 0,
   "home-remove": 0,
@@ -20,9 +20,9 @@
   "scan-consent": 0,
   "scan-door": 0,
   "scan-idle": 0,
-  "scan-review": 30,
+  "scan-review": 8,
   "score": 0,
-  "settings": 30,
-  "unlock": 30,
+  "settings": 1,
+  "unlock": 4,
   "welcome": 0
 }
