@@ -1071,8 +1071,15 @@ fun GuidedGridContent(
             )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
         }
+        // ⭐ THE BUTTON SAYS WHAT IT WILL DO. Opened from a finished report ("change where the front
+        // door is") this screen does NOT go on to North — it hands the reader straight back to the
+        // report they came from, because pushing North would stack a second report on the first. The
+        // label said "Next — mark North" on that path anyway, so the one control on the screen named
+        // a step it never opens and the reader landed somewhere else entirely.
         VastuButton(
-            "Next — mark North", onClick = onNext, enabled = rooms.isNotEmpty() && !parked,
+            if (startInDoorMode) "Done — back to my report" else "Next — mark North",
+            onClick = onNext,
+            enabled = rooms.isNotEmpty() && !parked,
             modifier = Modifier.testTag("editor.next"),
         )
     }

@@ -158,11 +158,23 @@ fun UnlockContent(
             // list rather than under it). Each line is still a real section of the report ("Layout
             // change and remedy for each" used to be true and still hid the problem: the remedies
             // were the same two lines on almost every problem).
+            // ⭐⭐ TWO OF THESE FOUR WERE SELLING SOMETHING THE FREE REPORT ALREADY GIVES AWAY, which
+            // is the one thing a payment screen must never do (Product PRD §6.4 — "no bait").
+            //
+            // · "Your front door by name" — the front door is FREE, deliberately and permanently
+            //   (FreeTier.DOOR_IS_FREE). Before paying a reader already sees its wall, its position
+            //   out of the 32, its Sanskrit name and quarter and the whole explanation. It was the
+            //   fourth reason given to spend ₹699 and it was already on the screen behind this one.
+            // · "The rooms rated not ideal, which the free score only counts" — the free report does
+            //   not merely count them. It names every one, with its direction and its verdict. What
+            //   is actually behind the wall is the REASON, which is a different and honest promise.
+            //
+            // Each line below is now something a reader genuinely cannot see until they pay.
             listOf(
-                "Every problem ranked, with the whole reason behind it",
+                "The whole reason behind every problem — not only the entrance, kitchen and toilets, which are free",
                 "Remedies for that problem in that direction — and where none exists, we say so",
-                "The rooms rated not ideal, which the free score only counts",
-                "Your front door by name, and the source behind every rule",
+                "Why each of your other rooms reads the way it does, not just its verdict",
+                "The classical source behind every rule we apply to your home",
             ).forEach { Feature(it) }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))

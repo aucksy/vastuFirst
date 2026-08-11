@@ -1,5 +1,5 @@
 {
-  "version": "2026.08.10-1",
+  "version": "2026.08.11-1",
   "kbDraft": "2.0",
-  "changeNote": "Your score may have gone up. A room that crosses into a wrong area by only a corner now loses marks in proportion to how much of it is really over the line, and the extra penalty on top is charged at that same proportion instead of at double it. Nothing has been taken out of your report: every point it raised before, it still raises, with the same explanation and the same suggested fixes."
+  "changeNote": "Your score has not moved, and nothing has been taken out of your report. We corrected two lines in it. Three of the things we say we could not check pointed you at a screen the app no longer has; they now point at the button on your report that actually asks. The fourth — a mirror facing a bed, or a beam running over one — used to promise we would check it if you answered a few more questions, and there has never been a question for it. It now says plainly that we do not check that one, and why."
 }

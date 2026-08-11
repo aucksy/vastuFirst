@@ -95,6 +95,8 @@ fun ScanDoorScreen(
     onDoor: (GridDoor) -> Unit,
     onNext: () -> Unit,
     onBack: () -> Unit,
+    /** See [ScanDoorContent.returnsToReport] — opened from a report, this screen goes back to it. */
+    returnsToReport: Boolean = false,
 ) {
     val data = handover.data
     val image = remember(data) { data?.decodeImage() }
@@ -105,6 +107,7 @@ fun ScanDoorScreen(
         onDoor = onDoor,
         // The real screen nudges; the harness never does. See [ScanDoorContent.hintPulse].
         hintPulse = true,
+        returnsToReport = returnsToReport,
         onNext = onNext,
         onBack = onBack,
     )
@@ -129,6 +132,14 @@ fun ScanDoorContent(
      * The real screen turns it on; every test leaves it off.
      */
     hintPulse: Boolean = false,
+    /**
+     * ⭐ TRUE when the reader came here from a finished report by tapping "change where the front
+     * door is". Nothing about the marking changes — only what the button at the bottom is allowed to
+     * say. Opened that way the screen does NOT go on to North; it hands the reader straight back to
+     * the report they came from, so a button reading "Next — which way is North?" was promising a
+     * screen it never opens.
+     */
+    returnsToReport: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
@@ -288,7 +299,13 @@ fun ScanDoorContent(
         // says outright what it could not weigh — and a button that refuses to move is how a person
         // gets stuck on the last screen before their result.
         VastuButton(
-            if (door != null) "Next — which way is North?" else "Skip — I'll leave the door out",
+            when {
+                // Came from a finished report: this button returns there, and says so.
+                returnsToReport && door != null -> "Done — back to my report"
+                returnsToReport -> "Leave the door out — back to my report"
+                door != null -> "Next — which way is North?"
+                else -> "Skip — I'll leave the door out"
+            },
             onClick = onNext,
         )
         // ⚠ No second "Back" button under this one. The header already carries the ‹ chevron, and a

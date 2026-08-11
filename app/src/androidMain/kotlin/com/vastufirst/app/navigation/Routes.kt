@@ -108,6 +108,19 @@ object Routes {
     fun markNorthFromScan() = "$MARK_NORTH?$ARG_FROM_SCAN=true"
 
     /**
+     * ⭐ The on-photo door screen opened from a FINISHED REPORT ("change where the front door is")
+     * rather than from the middle of the flow. Exactly [ARG_FROM_REPORT] on North, for exactly the
+     * same reason: the flag decides the way OUT — back to the report it came from, instead of
+     * pushing North and then a second report on top of the first.
+     *
+     * It also decides what the button at the bottom is allowed to SAY. Without it that button read
+     * "Next — which way is North?" on a path that never goes near North: a control naming a screen
+     * it does not open, on the screen that sets the heaviest input in the whole reading.
+     */
+    const val SCAN_DOOR_ROUTE = "$SCAN_DOOR?$ARG_FROM_REPORT={$ARG_FROM_REPORT}"
+    fun scanDoorFromReport() = "$SCAN_DOOR?$ARG_FROM_REPORT=true"
+
+    /**
      * The optional "a few more things" step — water tank, tree, the road outside. Reached from the
      * report rather than placed before it: getting to a reading is meant to be quick, and forcing
      * four more questions on everyone would cost every user time to catch the minority who have

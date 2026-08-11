@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.ui.grid.GuidedGridContent
+import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.report.TAG_PAY_CLEARANCE
 import com.vastufirst.app.ui.report.TAG_ROOMS_END
@@ -194,8 +196,48 @@ class LongScreenBottomScreenshotTest {
     @Test
     fun unlock_paid_bottom() = captureBottomPair(
         "unlock-paid",
-        anchor = hasText("Your front door by name, and the source behind every rule"),
+        anchor = hasText("The classical source behind every rule we apply to your home"),
     ) {
         UnlockContent(state = BillingState(mode = BillingMode.READY, price = "₹699.00"))
+    }
+
+    /**
+     * ⭐ THE DRAWING SCREEN'S ENDING — the half of it nobody had ever seen.
+     *
+     * The guided grid is the longest screen in the app: a title, the plan, the shape question, the
+     * plot-size steppers, the room palette, the selected-room tools, and only then the button that
+     * leaves. Every existing golden of it starts at the top, so at 200 % font — where this screen is
+     * several windows tall — the controls a reader has to reach appeared in NO picture at ANY
+     * configuration. The report and the unlock screen already had this capture; the screen where the
+     * customer does the most work did not.
+     *
+     * Anchored on the button that leaves, because that is the screen's true last element and the one
+     * whose reachability is the whole question.
+     */
+    @Test
+    fun editor_bottom() = captureBottomPair("editor", anchor = hasTestTag("editor.next")) {
+        val sample = SamplePlans.all.first()
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+        )
+    }
+
+    /**
+     * The same ending from the EMPTY grid — the state every hand-drawn home actually starts in, and
+     * the one where the palette a reader must reach sits furthest down the page.
+     */
+    @Test
+    fun editor_empty_bottom() = captureBottomPair("editor-empty", anchor = hasTestTag("editor.next")) {
+        GuidedGridContent(
+            rooms = emptyList(),
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+        )
     }
 }

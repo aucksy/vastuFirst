@@ -28,6 +28,8 @@ import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuButtonInline
+import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -48,6 +50,7 @@ import com.vastufirst.app.ui.common.screenRoot
 fun WelcomeScreen(
     vm: NewPlanViewModel,
     onContinue: () -> Unit,
+    onPrivacy: () -> Unit = {},
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen below renders
     // headlessly from fixture state in the screenshot harness (UI-POLISH §6, stateless-content).
@@ -55,6 +58,7 @@ fun WelcomeScreen(
         intent = vm.intent,
         onIntentChange = { vm.intent = it },
         onContinue = onContinue,
+        onPrivacy = onPrivacy,
     )
 }
 
@@ -64,6 +68,15 @@ fun WelcomeContent(
     intent: Intent?,
     onIntentChange: (Intent) -> Unit,
     onContinue: () -> Unit,
+    /**
+     * ⭐⭐ THE ONLY DOOR TO THE PRIVACY POLICY A NEW READER HAS. On a fresh install the app skips the
+     * saved-homes screen entirely and opens here, and the gear that reaches Settings — and through it
+     * the policy, the sources page and "delete all my data" — lives only on that screen. So until
+     * somebody had finished a whole home and tapped through to the end of a report, the policy was
+     * unreachable: exactly the wrong way round, because the person who wants to read it first is the
+     * person who has not yet handed us a picture of their home.
+     */
+    onPrivacy: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     val chosen = intent
@@ -114,6 +127,14 @@ fun WelcomeContent(
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
+        // Quiet, and under the button on purpose — it must be findable, not sold. See [onPrivacy].
+        VastuButtonInline(
+            text = "Privacy",
+            onClick = onPrivacy,
+            style = VastuButtonStyle.SECONDARY,
+            modifier = Modifier.testTag("welcome.privacy"),
+        )
     }
 }
 

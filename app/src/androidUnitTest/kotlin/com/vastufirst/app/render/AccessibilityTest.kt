@@ -144,6 +144,14 @@ class AccessibilityTest {
                 )
             },
             "report" to { ReportContent(RenderFixtures.sampleAnalysis, Intent.BUILDING) },
+            // ⭐ THE MONEY SCREEN, which had never been through this pass. `unlock` was here; the
+            // report as a NON-PAYING reader sees it was not — and that is the version with the
+            // locked rows, the sticky pay bar and the tap targets a customer meets before deciding
+            // whether to spend ₹699. Contrast and touch size on a greyed, locked row are exactly
+            // what this pass is for, and exactly where nobody had looked.
+            "report-free" to {
+                ReportContent(RenderFixtures.sampleAnalysis, Intent.BUYING, unlocked = false)
+            },
         )
         screens.forEach { (name, content) -> writeA11yManifest(name, content) }
     }

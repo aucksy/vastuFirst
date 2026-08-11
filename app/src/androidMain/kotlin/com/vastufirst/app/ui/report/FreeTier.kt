@@ -58,7 +58,23 @@ fun Defect.isFreeToRead(rooms: List<RoomResult>): Boolean {
     return type in FREE_ROOM_TYPES
 }
 
-/** How many findings in this analysis stay locked until the report is bought. */
-fun Analysis.lockedCount(): Int =
-    defects.count { !it.isFreeToRead(roomResults) } +
-        roomResults.count { !it.isFreeToRead() }
+/**
+ * ⭐⭐ WHAT IS ACTUALLY BEHIND THE ₹699 — counted as TWO things, because it is two things.
+ *
+ * These used to be added together and sold as one number: *"6 more findings, with the reason and
+ * remedies for each."* Both halves of that sentence were wrong on the app's own bundled home.
+ *
+ * - **"findings"** — the sum counts every locked ROOM as well as every locked problem, and most
+ *   locked rooms are rooms the very same report calls *already right*. Nothing was found about them.
+ * - **"remedies for each"** — a room that is already right has no remedy, and never will have. The
+ *   money bar was promising a remedy for rooms with nothing wrong.
+ * - and a room that DOES have a problem was counted twice, once in each half.
+ *
+ * Counted apart, each number describes one section of the report the reader can actually see is
+ * locked, and each sentence about it can be true. Product PRD §6.4 — *"no hidden wall, no bait"* —
+ * is about exactly this sentence, because it is the last thing read before spending money.
+ */
+fun Analysis.lockedProblemCount(): Int = defects.count { !it.isFreeToRead(roomResults) }
+
+/** How many ROOM readings stay locked — including rooms with nothing wrong, which is most of them. */
+fun Analysis.lockedRoomCount(): Int = roomResults.count { !it.isFreeToRead() }

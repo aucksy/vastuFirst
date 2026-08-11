@@ -418,10 +418,17 @@ fun ReportContent(
             VerdictHeader(a.score, defects.size, remediesOnly, unlocked, countUp = introMillis > 0L)
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
+            // ⭐⭐ ALL THREE NUMBERS COUNT ROOMS. The third one used to count PROBLEMS, beside two
+            // that count rooms, under a heading about rooms and above a label reading "need fixing".
+            // A single room with two problems made the bar read 2, and a plan-wide problem with no
+            // room behind it (the centre of the home, the road outside) added to a room tally it was
+            // never part of — so the three could add up to more rooms than the home has. The
+            // problems themselves are untouched and every one is still listed below, ranked; this is
+            // only the meter finally measuring what its own labels say it measures.
             BalanceMeter(
                 right = good.size,
                 notIdeal = notIdeal.size,
-                needsFixing = defects.size,
+                needsFixing = a.roomResults.count { it.verdict == Verdict.DEFECT },
             )
 
             if (a.notes.isNotEmpty()) {
@@ -1136,6 +1143,27 @@ private fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): S
 /* ─────────────────────────── the pay bar ─────────────────────────── */
 
 /**
+ * The money bar's one sentence, as a pure function so it can be read and tested on its own — this
+ * is the last thing a reader sees before deciding to spend ₹699, and every clause in it has to be
+ * true of what unlocking actually reveals.
+ *
+ * A problem carries a remedy; a room carries the reading behind its verdict, and most locked rooms
+ * are rooms nothing is wrong with. So the two are named separately and only the problems are
+ * promised remedies.
+ */
+internal fun payBarPromise(problems: Int, rooms: Int): String = when {
+    problems > 0 && rooms > 0 ->
+        "$problems more ${if (problems == 1) "problem" else "problems"} with their remedies, " +
+            "and $rooms more ${if (rooms == 1) "room" else "rooms"} read in full"
+    problems > 0 ->
+        "$problems more ${if (problems == 1) "problem" else "problems"}, " +
+            "with the whole reason and the remedies"
+    rooms > 0 ->
+        "$rooms more ${if (rooms == 1) "room" else "rooms"}, each read in full"
+    else -> "The whole reading, with the reason behind every verdict"
+}
+
+/**
  * Sticky, and it names what is still locked rather than shouting a price.
  *
  * ⚠ It sits over the scroll, so the column above reserves clearance for it — a bottom bar that
@@ -1144,7 +1172,12 @@ private fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): S
 @Composable
 private fun PayBar(modifier: Modifier, a: Analysis, onUnlock: () -> Unit) {
     val colors = VastuTheme.colors
-    val locked = a.lockedCount()
+    // ⭐ Problems and rooms counted apart — see the note on these two in FreeTier. Added together
+    // and sold as "N more findings, with the reason and remedies for each", the number counted
+    // rooms with nothing wrong as findings, promised them a remedy they can never have, and counted
+    // a room that DOES have a problem twice. Two numbers, two true clauses, no bait.
+    val lockedProblems = a.lockedProblemCount()
+    val lockedRooms = a.lockedRoomCount()
     Column(
         modifier
             .fillMaxWidth()
@@ -1154,8 +1187,7 @@ private fun PayBar(modifier: Modifier, a: Analysis, onUnlock: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
     ) {
         VText(
-            if (locked > 0) "$locked more findings, with the reason and remedies for each"
-            else "The whole reading, with the reason and remedies for each finding",
+            payBarPromise(lockedProblems, lockedRooms),
             style = VastuTheme.type.bodySm,
             color = colors.textSecondary,
         )

@@ -49,7 +49,7 @@ fun BalanceMeter(
     if (total <= 0) return
 
     val spoken = buildString {
-        append("Of $total rooms checked: ")
+        append("Of the rooms the tradition rates: ")
         append("$right already right")
         if (notIdeal > 0) append(", $notIdeal not ideal")
         if (needsFixing > 0) append(", $needsFixing need fixing")
@@ -62,7 +62,17 @@ fun BalanceMeter(
             .semantics(mergeDescendants = true) { contentDescription = spoken },
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
     ) {
-        SectionLabel("How your $total rooms read")
+        // ⭐⭐ NO NUMBER IN THIS HEADING, deliberately. It used to read "How your $total rooms read",
+        // and $total is the three segments added up — which is not the number of rooms and cannot be
+        // made into it. Rooms the tradition does not rate at all (an entrance, a passage, a
+        // balcony) are in none of the three, so the same report announced "How your 10 rooms read"
+        // at the top and "Your rooms (11)" a few scrolls down: one document, two counts of the same
+        // thing, and the reader left to work out which one is lying.
+        //
+        // The room list below carries the authoritative count and always has. The three numbers
+        // here are what they say on their own labels, and the heading no longer claims a total it
+        // cannot stand behind.
+        SectionLabel("How your rooms read")
 
         Row(
             Modifier
