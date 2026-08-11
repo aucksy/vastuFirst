@@ -194,6 +194,26 @@ class ScanScreenshotTest {
         writeManifestAcrossMatrix("scan-review-printed", content)
     }
 
+    /**
+     * ⭐⭐ THE CHECK SCREEN AFTER ANDROID RECLAIMED THE APP — a real state, and one no picture has
+     * ever contained.
+     *
+     * Everything this screen draws comes from a single in-memory slot that does not survive the OS
+     * killing the app; the back stack does survive, so a reader comes back to this destination with
+     * no photograph and no rooms. Until 11 Aug 2026 the green button still read "These are my
+     * rooms", offering to confirm a reading of zero rooms and score an empty home. It now offers the
+     * only honest thing — reading the plan again — and that swap is exactly the kind of change a
+     * golden must hold, because nothing else in the harness can reach this state.
+     */
+    @Test
+    fun scanReviewAfterProcessDeath() {
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(image = null, rooms = emptyList())
+        }
+        captureAcrossMatrix("scan-review-lost", content)
+        writeManifestAcrossMatrix("scan-review-lost", content)
+    }
+
     @Test
     fun scanReviewWithDoorReadFromThePlan() {
         val outcome = ownersPlan()
