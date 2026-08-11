@@ -53,7 +53,20 @@ class HomeViewModel(
                 reason = engine.ruleSetChangeNote(),
                 // Total on purpose: a home this build cannot re-run is dropped from the card
                 // entirely rather than reported with a made-up number.
-                rescore = { plan -> runCatching { engine.analyze(plan.plan).score }.getOrNull() },
+                //
+                // ⚠ AND A HOME THE ENGINE CANNOT ACTUALLY JUDGE COUNTS AS ONE IT COULD NOT RE-RUN.
+                // `analyze` never throws — it answers an unscoreable plan with score 0 and quality
+                // INSUFFICIENT — so catching only the exception let a 0 through as if it were a real
+                // reading. Nothing hits this today, because a home saved from this app always has
+                // enough on it to score. The day anyone tightens what counts as readable, this card
+                // would have told somebody their home went from 7.1 to 0.0 and then written that 0
+                // to disk when they tapped to acknowledge it. Left as a live trap it is a number
+                // this product cannot defend; one extra condition removes it.
+                rescore = { plan ->
+                    runCatching { engine.analyze(plan.plan) }.getOrNull()
+                        ?.takeIf { it.quality != com.vastufirst.shared.AnalysisQuality.INSUFFICIENT }
+                        ?.score
+                },
             )
         }
         // ⚠ Off the main thread. Re-scoring is a full engine run per saved home, and it would

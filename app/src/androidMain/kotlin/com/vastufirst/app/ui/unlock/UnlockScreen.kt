@@ -58,25 +58,42 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
             scope.launch {
                 problem = null
                 state = state.copy(busy = true)
-                val result = billing.purchase()
-                state = billing.state.copy(busy = false)
-                when (result) {
-                    is PurchaseResult.Purchased, is PurchaseResult.AlreadyOwned -> onUnlocked()
-                    // Backing out is not an error and must not be reported as one.
-                    is PurchaseResult.Cancelled -> Unit
-                    is PurchaseResult.Failed -> problem = result.message
+                // ⚠ THE BUSY FLAG IS CLEARED IN A `finally`, NOT AFTER THE CALL. Rotating the phone
+                // or the OS reclaiming the app while Google's payment sheet is open CANCELS this
+                // coroutine, so the line that cleared it never ran — and the buyer came back to a
+                // screen whose pay button and "I already paid" button were both greyed out, for the
+                // rest of the session, with no way to finish and no way to restore. Nothing can
+                // strand them now, whatever kills the wait. (Payments are off today; this must not
+                // be discovered on the day they are switched on.)
+                try {
+                    val result = billing.purchase()
+                    when (result) {
+                        is PurchaseResult.Purchased, is PurchaseResult.AlreadyOwned -> onUnlocked()
+                        // Backing out is not an error and must not be reported as one.
+                        is PurchaseResult.Cancelled -> Unit
+                        is PurchaseResult.Failed -> problem = result.message
+                    }
+                } finally {
+                    state = billing.state.copy(busy = false)
                 }
             }
         },
         onRestore = {
             scope.launch {
                 problem = null
-                val result = billing.restore()
-                state = billing.state
-                when (result) {
-                    is PurchaseResult.AlreadyOwned -> onUnlocked()
-                    is PurchaseResult.Failed -> problem = result.message
-                    else -> problem = "We couldn't find a purchase on this Google account."
+                // ⚠ Restore takes the same busy latch the pay button has, so a double-tap cannot
+                // fire two restores — the one control on this screen that had no guard at all.
+                if (state.busy) return@launch
+                state = state.copy(busy = true)
+                try {
+                    val result = billing.restore()
+                    when (result) {
+                        is PurchaseResult.AlreadyOwned -> onUnlocked()
+                        is PurchaseResult.Failed -> problem = result.message
+                        else -> problem = "We couldn't find a purchase on this Google account."
+                    }
+                } finally {
+                    state = billing.state.copy(busy = false)
                 }
             }
         },

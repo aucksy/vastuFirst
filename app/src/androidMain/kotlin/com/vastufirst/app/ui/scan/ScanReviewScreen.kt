@@ -414,12 +414,24 @@ fun ScanReviewContent(
                 // ⚠ It used to say "which way is North?" because North came next. North now comes
                 // BEFORE this screen — that is what lets the rows above carry a direction at all —
                 // so this is the LAST step whenever the plan named its own entrance, and it says so.
-                VastuButton(
-                    if (door != null) "These are my rooms — read my home"
-                    else "These are my rooms — set the front door",
-                    onClick = onContinue,
-                )
-                if (door != null) {
+                //
+                // ⭐⭐ AND IT NEVER OFFERS TO CONFIRM NOTHING. Everything this screen draws comes
+                // from one in-memory slot that does not survive Android reclaiming the app. Come
+                // back to a killed session and the reading is gone: no photograph, no rooms — and
+                // the button still said "These are my rooms", inviting somebody to confirm a reading
+                // of zero rooms and score an empty home. There is nothing to confirm, so the only
+                // honest offer is to read the plan again.
+                if (rooms.isEmpty()) {
+                    VastuButton("Scan your plan again", onClick = onBack)
+                } else {
+                    VastuButton(
+                        if (door != null) "These are my rooms — read my home"
+                        else "These are my rooms — set the front door",
+                        onClick = onContinue,
+                    )
+                }
+                // Nothing to move a door on when the reading is gone — see the empty case above.
+                if (door != null && rooms.isNotEmpty()) {
                     Spacer(Modifier.height(VastuTheme.spacing.s2))
                     VastuButtonInline(
                         "Put the front door somewhere else",

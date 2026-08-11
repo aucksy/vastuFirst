@@ -89,7 +89,14 @@ fun SettingsScreen(
         readerOptions = readerOptions,
         chosenReader = reader,
         onChooseReader = { m -> readerChoice.set(m); reader = m },
-        onDeleteAll = homeViewModel::deleteAll,
+        // ⭐ THE PHOTOGRAPHS GO TOO. The databases were never the only copy: a plan photographed
+        // with the camera is written into the app's own cache folder, and nothing in the app ever
+        // removed it — so "this permanently removes every saved home from this device" was true of
+        // the homes and false of the pictures. Cleared here, where the promise is made.
+        onDeleteAll = {
+            homeViewModel.deleteAll()
+            com.vastufirst.app.ui.scan.clearPlanPhotos(context)
+        },
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
         hasCrashReport = crash != null,
@@ -301,7 +308,11 @@ fun SettingsContent(
             ) {
                 VText("Delete all your data?", style = VastuTheme.type.h3, color = colors.textPrimary)
                 VText(
-                    "This permanently removes every saved home from this device. It can't be undone.",
+                    // Says "and any plan you photographed" because it now does that, and because
+                    // the picture is the thing a person handing their phone on actually worries
+                    // about. A promise this screen makes has to be one the button keeps.
+                    "This permanently removes every saved home from this device, and any plan you " +
+                        "photographed. It can't be undone.",
                     style = VastuTheme.type.body, color = colors.textSecondary,
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {

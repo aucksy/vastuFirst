@@ -538,6 +538,13 @@ class NewPlanViewModel(
         planId = null
         gridCols = GRID
         gridRows = GRID
+        // ⭐ North and the first question go too. "Start this home again" left the compass turned to
+        // wherever the last home ended up and the app still believing it had been told what this one
+        // is for — so a control that says "start again" did not, and the reader inherited a bearing
+        // they never set for a home they had not yet drawn. Every direction in the report depends on
+        // that bearing, so carrying it over silently is the one thing this screen must not do.
+        north = 0
+        intent = null
         restoredFromDraft = false
         roomsUnplaced = false
         _analysis.value = null

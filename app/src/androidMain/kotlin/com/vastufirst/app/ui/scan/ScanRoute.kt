@@ -152,7 +152,30 @@ fun ScanRoute(
  * picture never enters the user's gallery.
  */
 private fun newPlanPhotoUri(context: android.content.Context): Uri {
-    val dir = File(context.cacheDir, "plan-photos").apply { mkdirs() }
+    val dir = planPhotoDir(context).apply { mkdirs() }
+    // ⭐ EVERY EARLIER SHOT GOES FIRST, so at most one plan photograph is ever on the phone.
+    // Without this the folder only grew: three plans photographed meant three pictures of somebody's
+    // home sitting in the cache with nothing in the app able to remove them. The one that remains is
+    // the one being read, and "Delete all my data" now takes that too — see [clearPlanPhotos].
+    clearPlanPhotos(context)
     val file = File(dir, "plan-${System.currentTimeMillis()}.jpg")
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+/** Where the camera door writes a plan photograph. Cache, so the OS may clear it whenever it likes. */
+internal fun planPhotoDir(context: android.content.Context): File =
+    File(context.cacheDir, "plan-photos")
+
+/**
+ * ⭐ Remove every plan photograph this app's camera has written.
+ *
+ * ⚠ Called by "Delete all my data", which promises "this permanently removes every saved home from
+ * this device". It emptied the two databases and left the photographs behind — so somebody handing
+ * their phone on, having been told everything was gone, still had a picture of their own floor plan
+ * on it. The databases were never the only copy.
+ *
+ * Total on purpose: a file that cannot be deleted must not take the rest of the wipe down with it.
+ */
+internal fun clearPlanPhotos(context: android.content.Context) {
+    runCatching { planPhotoDir(context).listFiles()?.forEach { it.delete() } }
 }
