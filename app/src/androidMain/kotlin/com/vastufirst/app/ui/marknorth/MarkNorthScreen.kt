@@ -70,6 +70,8 @@ fun MarkNorthScreen(
      * always has, because the plan under the ring has never rotated.
      */
     planImage: ImageBitmap? = null,
+    /** See [MarkNorthContent.nextIsCheck] — true on the scan path, where the check screen is next. */
+    nextIsCheck: Boolean = false,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly from
     // fixture state (rooms + north + a live Analysis) in the screenshot harness (UI-POLISH §6).
@@ -80,6 +82,7 @@ fun MarkNorthScreen(
         analysis = analysis,
         onNorthChange = vm::updateNorth,
         onRead = onRead,
+        nextIsCheck = nextIsCheck,
         onBack = onBack,
         // The real screen nudges; the harness never does. See [MarkNorthContent.hintPulse].
         hintPulse = true,
@@ -112,6 +115,17 @@ fun MarkNorthContent(
      * animation, which was written this way from the start and is why that one did not hang.
      */
     hintPulse: Boolean = false,
+    /**
+     * ⭐ TRUE when this screen is followed by "Check what we read" rather than by the report — which
+     * is the whole scan path since 11 Aug 2026. North had to move in front of the check screen so
+     * that its rows could show each room's direction and one-word result; there is no direction
+     * before there is a North.
+     *
+     * It changes nothing but the words on the button, and it has to: a button reading "read my home"
+     * on a screen that opens a checklist is a control naming a screen it does not open, which this
+     * project has already logged as a defect twice.
+     */
+    nextIsCheck: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val model = buildZoneMapModel(rooms, analysis, north, cols, rows, planImage)
@@ -198,7 +212,15 @@ fun MarkNorthContent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             VastuButtonInline("Back", onClick = onBack, style = VastuButtonStyle.SECONDARY)
             VastuButton(
-                if (check.isNotEmpty()) "Yes — read my home" else "Read my home",
+                when {
+                    // ⚠ "what WE read", word for word the heading of the screen this opens. The
+                    // whole point of this flag is that the button names its destination, and "what
+                    // you read" named a different screen — one where the reader does the reading.
+                    nextIsCheck && check.isNotEmpty() -> "Yes — check what we read"
+                    nextIsCheck -> "Check what we read"
+                    check.isNotEmpty() -> "Yes — read my home"
+                    else -> "Read my home"
+                },
                 onClick = onRead,
                 modifier = Modifier.weight(1f),
             )

@@ -152,6 +152,9 @@ object RenderFixtures {
     val scannedRooms: List<GridRoom> =
         com.vastufirst.app.ui.scan.toGridRooms(scanned.rooms, scanned.cols, scanned.rows)
 
+    /** The scan's own rooms, as "Check what we read" lists them (before the grid conversion). */
+    val scannedScanRooms: List<com.vastufirst.shared.scan.ScannedRoom> = scanned.rooms
+
     /** The rectangles each room was read from, for drawing them on the photograph. */
     val scannedPlanRooms: List<com.vastufirst.app.ui.common.PlanRoom> =
         com.vastufirst.app.ui.scan.planRoomsOf(scanned.rooms)
@@ -171,6 +174,14 @@ object RenderFixtures {
                 planId = "scanned-fixture",
             )!!,
         )
+
+    /**
+     * ⭐ What "Check what we read" puts on each row since 11 Aug 2026 — the one-word result and the
+     * direction, from [scannedAnalysis], through the SAME mapper the report uses. Real verdicts on
+     * the owner's own flat, so the pills carry their real lengths.
+     */
+    val scannedReadings: Map<String, com.vastufirst.app.ui.scan.RoomReading> =
+        com.vastufirst.app.ui.scan.roomReadings(scannedAnalysis)
 
     /**
      * ⭐ A HOME WITH NO PROBLEMS, so the report's LOWER sections can actually be looked at.

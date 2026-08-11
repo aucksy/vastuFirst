@@ -283,15 +283,19 @@ fun ReportContent(
                 rooms.isNotEmpty() && intent != null -> LoadingState("Reading your home…")
                 // Rooms survived a process kill but the first answer did not. Send the reader to
                 // answer exactly that, keeping their rooms.
+                // ⚠ Copy cut 11 Aug 2026 (451 → 375 words of our own prose). Both claims survive:
+                // the rooms are safe, and the one thing missing is the first question.
                 rooms.isNotEmpty() -> GuidanceState(
                     title = "One answer went missing",
-                    body = "Your rooms are safe. We lost your first answer — what brings you to Vastu. Give it again and we'll read your home.",
+                    body = "Your rooms are safe. Tell us again what brings you to Vastu.",
                     action = { VastuButton("Answer the first question", onClick = onRestart) },
                 )
                 // Nothing on screen and nothing computed — the phone reclaimed the in-progress plan.
                 else -> GuidanceState(
-                    title = "Let's pick up where you left off",
-                    body = "We couldn't find this plan — it may have closed in the background. Open it again from your saved plans.",
+                    title = "Pick up where you left off",
+                    // ⚠ Names the plan rather than opening on "It". Nothing above this sentence on
+                    // this card says what "it" is.
+                    body = "This plan may have closed in the background. Open it from your saved plans.",
                     action = { VastuButton("Go to my plans", onClick = onDone) },
                 )
             }
@@ -316,9 +320,9 @@ fun ReportContent(
             contentAlignment = Alignment.Center,
         ) {
             GuidanceState(
-                title = "Let's finish your plan",
+                title = "Finish your plan",
                 body = a.notes.firstOrNull()?.message
-                    ?: "Add a few rooms and your front door, and we'll read it.",
+                    ?: "Add rooms and your front door, and we'll read it.",
                 action = { VastuButton("Change your plan", onClick = onEditEntry) },
             )
         }
@@ -478,7 +482,7 @@ fun ReportContent(
                 }
                 Spacer(Modifier.height(VastuTheme.spacing.s4))
                 VText(
-                    "Not right? Change it — your score follows.",
+                    "Not right? Change it; your score follows.",
                     style = VastuTheme.type.bodySm, color = colors.textSecondary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -567,6 +571,12 @@ fun ReportContent(
             if (siteAnswers.answeredCount < SiteItem.entries.size) {
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
                 VastuButton(
+                    // ⛔ DO NOT SHORTEN THIS LABEL. Three rules in the ruleset
+                    // (`notCheckedHow` on X-09, X-11 and X-12) QUOTE it word for word — "Tap
+                    // “Answer a few more and check more” on your report" — and those sentences are
+                    // printed a few lines above this button, on this same page, under "We couldn't
+                    // check these". Renaming the button turns that instruction into a search for
+                    // something that is not on screen. Caught by review, 11 Aug 2026, mid copy cut.
                     "Answer a few more and check more",
                     onClick = onAddDetails,
                     style = VastuButtonStyle.SECONDARY,
@@ -580,10 +590,11 @@ fun ReportContent(
                     .background(colors.surface).padding(VastuTheme.spacing.s4),
             ) {
                 VText(
-                    // Copy cut (10 Aug 2026): 36 words -> 24. All four claims survive — traditional
-                    // practice, guidance not a promise, our own summary, not part of the tradition.
-                    "Vastu is a traditional practice; this is guidance, not a promised outcome. " +
-                        "The score is our own summary, not part of the tradition.",
+                    // Copy cut (10 Aug 2026): 36 words -> 24, then 23 -> 18 on 11 Aug. All four
+                    // claims survive whole — traditional practice, guidance not a promise, our own
+                    // summary, and not part of the tradition.
+                    "Vastu is traditional practice; this is guidance, not a promise. " +
+                        "The score is our summary, not the tradition's.",
                     style = VastuTheme.type.body, color = colors.textPrimary,
                 )
             }
@@ -649,6 +660,10 @@ fun ReadingProgress(durationMillis: Long, modifier: Modifier = Modifier) {
         VText("Reading your home", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
+            // ⛔ "weighed" IS the sentence. Cutting it to save one word left "Every room on the
+            // traditional grid, against the rules" — which reads as an accusation that every room
+            // BREAKS the rules, on the one screen a reader stares at while waiting for their score.
+            // A joining word is a word you can lose; a verb is not. Caught by review, 11 Aug 2026.
             "Every room on the traditional grid, weighed against the rules.",
             style = VastuTheme.type.body,
             color = colors.textSecondary,
@@ -752,18 +767,22 @@ private fun bandWord(score: Int): String = when {
  * immediately below break the same home down and a reader needs the shape before the detail.
  */
 private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean, unlocked: Boolean): String {
+    // ⚠ Copy cut 11 Aug 2026. Every band keeps its own verdict and none has been merged with
+    // another — a home with no defects still says so, and a home with several still says so.
     val head = when {
-        score >= 75 && defectCount == 0 -> "Reads well throughout — nothing the tradition counts as a defect."
+        score >= 75 && defectCount == 0 -> "Reads well throughout — no defect the tradition counts."
         score >= 75 -> "Most of this home reads well."
-        score >= 50 -> "This home reads workably, with real problems to address."
+        score >= 50 -> "Workable, with real problems to address."
         else -> "Several core placements work against this home."
     }
     val tail = when {
         defectCount == 0 -> ""
-        remediesOnly -> " Everything below can be done without moving a wall."
-        else -> " Nothing is built yet — every change below is still free."
+        // ⚠ "without moving a wall" is PINNED by two tests in ReportIntentTest — it is the sentence
+        // that proves a buyer and a resident are never handed layout advice. Shorten around it.
+        remediesOnly -> " All fixable without moving a wall."
+        else -> " Nothing is built yet — every change below is free."
     }
-    val free = if (unlocked) "" else " Your entrance, kitchen and toilets are below in full, free."
+    val free = if (unlocked) "" else " Entrance, kitchen and toilets are below in full, free."
     return head + tail + free
 }
 
@@ -813,7 +832,7 @@ private fun StartHere(
             // engine never puts those two on one scale, so nothing here knows whether an
             // unfavourable door outranks the worst defect. Ranking only what is actually ranked is
             // the honest sentence, and it stayed honest when the door moved into this chapter.
-            "Of the problems ranked below, this moves your score most.",
+            "Of those ranked below, this moves your score most.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
         val first = if (remediesOnly) {
@@ -905,7 +924,7 @@ private fun RoomsSection(
     SectionLabel("Your rooms (${rooms.size})")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Worst first. Tap one for where it sits and why.",
+        "Worst first. Tap one for where and why.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -931,7 +950,7 @@ private fun RoomsSection(
                 body = {
                     if (!free) {
                         VText(
-                            "Reasoning and remedies — in the full report",
+                            LOCKED_REASONING,
                             style = VastuTheme.type.bodySm, color = colors.textTertiary,
                         )
                     } else if (roomDefects.isNotEmpty()) {
@@ -953,11 +972,15 @@ private fun RoomsSection(
                                 // the tradition does not place this kind of room and we had not
                                 // judged it — on the same page that judges it. One document, two
                                 // opposite answers about the one thing that moves the score most.
+                                //
+                                // ⚠ Copy cut 11 Aug 2026, 42 words -> 26, and BOTH claims are
+                                // load-bearing and both survive: it is read on the 32 named
+                                // positions, and it is not scored twice. Neither may ever be
+                                // dropped to make a word count — they are the honesty of the page.
                                 r.verdict == Verdict.NOT_SCORED && r.type == RoomType.ENTRANCE ->
-                                    "This is your front door, and it is read in full under " +
-                                        "“Your front door” above — on the 32 named positions " +
-                                        "the tradition uses, which is finer than the eight " +
-                                        "directions a room is read on. It is not scored twice."
+                                    "Read in full under “Your front door” above, on the " +
+                                        "tradition's 32 named positions — finer than the eight " +
+                                        "directions a room gets. Not scored twice."
                                 r.verdict == Verdict.NOT_SCORED -> NOT_RATED_REASON
                                 else -> whyRight(r)
                             },
@@ -981,7 +1004,15 @@ private fun RoomsSection(
 /** Said once, on every room the tradition does not place — the report's existing wording. */
 private const val NOT_RATED_REASON: String =
     "The tradition does not place this kind of room, so we have not judged it — " +
-        "neither a problem nor an approval, simply not covered."
+        "neither a problem nor an approval."
+
+/**
+ * ⭐ What a LOCKED row says instead of its reasoning — written once and shown in two places (a room
+ * row and a finding card), because it is one sentence to a reader and had been two literals in the
+ * code. A locked row is never a blurred teaser: it still names the room, the direction and the
+ * verdict, and only the reasoning is behind the price (Product PRD §6.4).
+ */
+private const val LOCKED_REASONING: String = "Reasoning and remedies — in the full report"
 
 /**
  * Findings with no room behind them — a cut corner, an extension, a fixture, the centre of the home.
@@ -1022,10 +1053,10 @@ private fun StructuralSection(
 @Composable
 private fun NotCheckedSection(notChecked: List<com.vastufirst.shared.NotChecked>) {
     val colors = VastuTheme.colors
-    SectionLabel("We could not check these")
+    SectionLabel("We couldn't check these")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Neither passed nor failed — we lacked the details.",
+        "Neither passed nor failed — we lacked details.",
         style = VastuTheme.type.bodySm, color = colors.textTertiary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -1093,7 +1124,7 @@ private fun FindingRow(
             // affordance; `onClickLabel` above carries it for the screen reader.
             VText(
                 when {
-                    locked -> "Reasoning and remedies — in the full report"
+                    locked -> LOCKED_REASONING
                     open -> "Close  ⌃"
                     else -> "The whole reason  ⌄"
                 },
@@ -1166,16 +1197,22 @@ private fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): S
  * are rooms nothing is wrong with. So the two are named separately and only the problems are
  * promised remedies.
  */
-internal fun payBarPromise(problems: Int, rooms: Int): String = when {
-    problems > 0 && rooms > 0 ->
-        "$problems more ${if (problems == 1) "problem with its remedies" else "problems with their remedies"}, " +
-            "and $rooms more ${if (rooms == 1) "room" else "rooms"} read in full"
-    problems > 0 ->
-        "$problems more ${if (problems == 1) "problem" else "problems"}, " +
-            "with the whole reason and the remedies"
-    rooms > 0 ->
-        "$rooms more ${if (rooms == 1) "room" else "rooms"}, each read in full"
-    else -> "The whole reading, with the reason behind every verdict"
+internal fun payBarPromise(problems: Int, rooms: Int): String {
+    // ⚠ The plurals are pulled out of the sentences rather than nested inside them. Nested, each
+    // sentence was three broken fragments to anything reading this file — including the word
+    // counter, which is how the same promise came to be counted three times over.
+    val p = if (problems == 1) "problem" else "problems"
+    val r = if (rooms == 1) "room" else "rooms"
+    // ⚠ The POSSESSIVE stays. "3 more problems with remedies" reads as a filter — three of the
+    // problems happen to have a remedy — which is a different, smaller promise than "three more
+    // problems, and the remedies for them". This is the last sentence before ₹699 is spent.
+    val pWithRemedies = if (problems == 1) "problem with its remedies" else "problems with their remedies"
+    return when {
+        problems > 0 && rooms > 0 -> "$problems more $pWithRemedies, and $rooms more $r read in full"
+        problems > 0 -> "$problems more $p, with the whole reason and the remedies"
+        rooms > 0 -> "$rooms more $r, each read in full"
+        else -> "The whole reading, and every verdict's reason"
+    }
 }
 
 /**
@@ -1320,7 +1357,7 @@ fun DisputesSection(disputes: List<Dispute>) {
     SectionLabel("Where the schools disagree")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Both readings, no winner — and which your score follows.",
+        "Both readings, no winner, and which your score follows.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s3))

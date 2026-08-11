@@ -115,10 +115,8 @@ fun ScanRoute(
         onCorrectRoom = vm::correctRoom,
         onDrawInstead = onDrawInstead,
         onBack = onBack,
-        // The owner's reader-comparison lever: rescan the same picture with a named model from any
-        // result. Picking the reader BEFORE a scan moved to Settings on 10 Aug 2026.
-        modelChoices = vm.modelChoices,
-        onRescanWith = vm::rescanWith,
+        // ⛔ NOTHING ON THIS SCREEN NAMES A MODEL any more (owner, 11 Aug 2026). The reader is picked
+        // in Settings, where a named pick also survives a retry — see the note above `RoomsBody`.
         // The 2D gate's escape hatch — no scan, no network, just the reading we already had.
         onReadAnyway = vm::readAnyway,
     )

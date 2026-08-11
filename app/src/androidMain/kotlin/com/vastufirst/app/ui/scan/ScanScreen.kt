@@ -78,15 +78,6 @@ fun ScanScreen(
      * everything above it is called positionally by the accessibility pass.
      */
     cameraUnavailable: Boolean = false,
-    /**
-     * ⭐ The reader-comparison levers (owner request, 4 Aug 2026 — a testing aid he asked to keep on
-     * the screen): the model ids on offer (from `reader-config.json`; empty hides every picker),
-     * which one the next scan must use (null = Auto, today's shipping path), the picker callback,
-     * and rescan-this-picture-with-a-named-model from any result. Defaults keep old call sites and
-     * the accessibility pass unchanged.
-     */
-    modelChoices: List<String> = emptyList(),
-    onRescanWith: (String) -> Unit = {},
     /** ⭐ Carry on with a refused reply's own alternative reading — see `ScanOutcome.ifRead`. */
     onReadAnyway: () -> Unit = {},
 ) {
@@ -107,7 +98,6 @@ fun ScanScreen(
             is ScanUiState.Done ->
                 DoneBody(
                     state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow,
-                    readBy = state.readBy, modelChoices = modelChoices, onRescanWith = onRescanWith,
                     onReadAnyway = onReadAnyway,
                 )
             is ScanUiState.Busy -> BusyBody(state.retryAfterSeconds, onRetry, onDrawInstead)
@@ -213,31 +203,27 @@ private fun DoneBody(
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
     startOpenRow: Int,
-    readBy: String? = null,
-    modelChoices: List<String> = emptyList(),
-    onRescanWith: (String) -> Unit = {},
     onReadAnyway: () -> Unit = {},
 ) {
     when (outcome) {
         is ScanOutcome.Placed -> RoomsBody(
             title = "We read ${outcome.rooms.size} rooms",
-            // ⚠ Destination-neutral on purpose: the next screen is the grid OR the on-photo review,
-            // decided by the Settings choice at the moment of the tap (VastuNav). "Check them on the
-            // grid" was written before the toggle existed and named the wrong place for half the
-            // users. Both honesty claims stay: "roughly", and nothing scored until confirmed.
+            // ⚠ Both honesty claims stay: "roughly", and nothing is scored until confirmed. The
+            // order it names is the real one since 11 Aug 2026 — North is marked first, so the
+            // checking screen after it can show each room's direction and result.
             body = "We've put them roughly where they appear on your plan. " +
-                "Check each one — nothing is scored until you say it's right.",
+                "Mark North, then check each one — nothing is scored until you say it's right.",
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },
-            cta = "Check what we read",
+            // The button names the screen it opens, and that is the North dial now.
+            cta = "Next — which way is North?",
             onUseRooms = { onUseRooms(outcome) },
             onCorrectRoom = onCorrectRoom,
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
             startOpenRow = startOpenRow,
-            readBy = readBy,
-            modelChoices = modelChoices,
-            onRescanWith = onRescanWith,
+            // A placed read goes to the North dial and never opens the editor at all.
+            canAddOnNextScreen = false,
         )
 
         is ScanOutcome.Assisted -> RoomsBody(
@@ -280,14 +266,13 @@ private fun DoneBody(
             onRetry = onRetry,
             onDrawInstead = onDrawInstead,
             startOpenRow = startOpenRow,
-            readBy = readBy,
-            modelChoices = modelChoices,
-            onRescanWith = onRescanWith,
+            // An assisted read DOES open the grid next, which is where a room can be added.
+            canAddOnNextScreen = true,
         )
 
         is ScanOutcome.Refused ->
             RefusedBody(
-                outcome.reason, onRetry, onDrawInstead, readBy, modelChoices, onRescanWith,
+                outcome.reason, onRetry, onDrawInstead,
                 // The offer exists only when there is a real read behind it — see ScanOutcome.ifRead.
                 onReadAnyway = onReadAnyway.takeIf { outcome.ifRead != null },
             )
@@ -313,41 +298,22 @@ internal fun shortModelName(id: String): String =
         }
 
 /**
- * ⭐ "Rescan with …" — the owner's model-comparison lever on every scan RESULT (4 Aug 2026: the new
- * reader "Not Good still"; he compares the two configured models on the same picture, from the
- * phone). Says which model produced the read on screen, offers each configured model as one honest
- * button, and says plainly that a rescan sends the same picture again — each send is a paid read.
+ * ⛔ THE "WHICH AI READ IT · TESTING" SECTION IS GONE (owner, 11 Aug 2026) — DO NOT PUT IT BACK.
+ *
+ * It sat on the screen a paying customer lands on the moment their plan has been read: a heading
+ * with the word "testing" in it, a sentence naming the model that produced their reading, and a
+ * button per model offering to send their plan again. Nothing on a customer's path may name a model.
+ *
+ * ⭐ WHAT REPLACES IT, so the comparison the owner uses is not lost: **Settings → "Which AI reads a
+ * plan"**, which has been there since 10 Aug 2026. Picking a named reader there makes every scan use
+ * that one reader and, unlike the chip this screen used to carry, the choice SURVIVES a retry — so
+ * comparing two readers on one plan is: pick the first, scan; pick the second, scan the same file.
+ * One place, one setting, and no model name anywhere a customer will ever look.
+ *
+ * ⚠ `readBy` still travels on [ScanUiState.Done] and nothing draws it. That is deliberate: it is the
+ * record of which reader answered, and a future crash report or diagnostic may want it. It is data,
+ * not copy.
  */
-@Composable
-private fun RescanWithSection(
-    readBy: String?,
-    modelChoices: List<String>,
-    onRescanWith: (String) -> Unit,
-) {
-    val colors = VastuTheme.colors
-    SectionLabel("Which AI read it · testing")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        if (readBy != null) "This read came from ${shortModelName(readBy)}."
-        else "This read used the automatic choice.",
-        style = VastuTheme.type.bodySm, color = colors.textSecondary,
-    )
-    Spacer(Modifier.height(VastuTheme.spacing.s3))
-    modelChoices.forEachIndexed { i, m ->
-        if (i > 0) Spacer(Modifier.height(VastuTheme.spacing.s3))
-        VastuButton(
-            "Rescan with ${shortModelName(m)}",
-            onClick = { onRescanWith(m) },
-            style = VastuButtonStyle.SECONDARY,
-            large = false,
-        )
-    }
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "A rescan sends the same picture again.",
-        style = VastuTheme.type.bodySm, color = colors.textTertiary,
-    )
-}
 
 /**
  * The printed size, short enough to sit on one caption line beside the room's name.
@@ -381,9 +347,12 @@ private fun RoomsBody(
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
     startOpenRow: Int,
-    readBy: String? = null,
-    modelChoices: List<String> = emptyList(),
-    onRescanWith: (String) -> Unit = {},
+    /**
+     * True only when the screen after this one is the GRID EDITOR — the one place a missing room can
+     * actually be added. False for a placed read, which goes to the North dial and never opens the
+     * editor at all, so the note under the dropped rooms must not promise otherwise.
+     */
+    canAddOnNextScreen: Boolean,
 ) {
     val colors = VastuTheme.colors
     // At most one row's type list is open at a time: two open lists on a phone is more chips than
@@ -427,7 +396,13 @@ private fun RoomsBody(
             }
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
-                "If any of these is a real room, add it yourself on the next screen.",
+                // ⚠ "the next screen" is only true where the next screen is the GRID — the one
+                // surface that can add a room. A placed read never opens it (owner, 6 Aug 2026), and
+                // since 11 Aug the button underneath says "which way is North?", so the promise and
+                // the control contradicted each other a centimetre apart. Both sentences are true
+                // of the path they belong to, and the grid is still one tap away either way.
+                if (canAddOnNextScreen) "If any of these is a real room, add it yourself on the next screen."
+                else "If any of these is a real room, draw your home on a grid instead — this reading cannot add it.",
                 style = VastuTheme.type.bodySm, color = colors.textTertiary,
             )
         }
@@ -437,10 +412,6 @@ private fun RoomsBody(
     VastuButton(cta, onClick = onUseRooms)
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     VastuButton("Try a different picture", onClick = onRetry, style = VastuButtonStyle.SECONDARY)
-    if (modelChoices.isNotEmpty()) {
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-        RescanWithSection(readBy, modelChoices, onRescanWith)
-    }
     Spacer(Modifier.height(VastuTheme.spacing.s6))
     OfflineAlternative(onDrawInstead)
 }
@@ -563,9 +534,6 @@ private fun RefusedBody(
     reason: RefusalReason,
     onRetry: () -> Unit,
     onDrawInstead: () -> Unit,
-    readBy: String? = null,
-    modelChoices: List<String> = emptyList(),
-    onRescanWith: (String) -> Unit = {},
     /**
      * ⭐ Non-null only on the 2D gate, and only when the same reply DID come back with rooms on it.
      * Then this refusal stops being a wall: the user can look at what we read and judge it.
@@ -623,13 +591,10 @@ private fun RefusedBody(
             VastuButton("Draw it on a grid instead", onClick = onDrawInstead, style = VastuButtonStyle.SECONDARY)
         }
     }
-    // A refusal is a result too — and the place model comparison matters most, because the
-    // second-opinion class (a furnished overhead render) is exactly what one model refuses
-    // and the other reads.
-    if (modelChoices.isNotEmpty()) {
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-        RescanWithSection(readBy, modelChoices, onRescanWith)
-    }
+    // ⛔ No model buttons under a refusal either. A refusal IS the case where comparing two readers
+    // pays best — one refuses a furnished overhead render, the other reads it — so the comparison
+    // moved to Settings rather than being dropped. It is not offered to a customer who has just been
+    // told we could not read their plan.
 }
 
 @Composable

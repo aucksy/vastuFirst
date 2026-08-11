@@ -33,9 +33,13 @@ import org.robolectric.annotation.GraphicsMode
 class ScanScreenshotTest {
 
     /**
-     * ⭐ The reader-comparison levers (owner request, 4 Aug 2026) render in every golden, from the
-     * REAL config — so a model swap in `reader-config.json` changes these pictures, which is the
-     * point: the picker can never photograph models the reader no longer calls.
+     * The real configured readers. Every "done" fixture below is still stamped with the one that
+     * read it, because that is what the app really carries on [ScanUiState.Done].
+     *
+     * ⛔ NOTHING ON THESE GOLDENS MAY PRINT ONE (owner, 11 Aug 2026). The "Which AI read it ·
+     * testing" section came off the customer's path; a model name reappearing in any of these
+     * pictures means it has crept back. Choosing a reader lives in Settings, and `settings` in
+     * [SimpleScreensScreenshotTest] is the golden that photographs it.
      */
     private val models: List<String> =
         com.vastufirst.shared.scan.ScanReaderConfigLoader.load().config
@@ -52,8 +56,38 @@ class ScanScreenshotTest {
             onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
             startOpenRow = openRow,
             cameraUnavailable = noCamera,
-            modelChoices = models,
         )
+    }
+
+    /**
+     * ⭐⭐ THE ROWS' ONE-WORD RESULT AND DIRECTION, worked out exactly the way the app works them
+     * out (owner's original list, built 11 Aug 2026): the scan's rooms through the real grid
+     * conversion, through the real front-door read, through the real engine.
+     *
+     * ⚠ Faking a map of pretty verdicts here would photograph a row that cannot happen. The whole
+     * risk this golden carries is a row with a circle, a name, a result pill, a direction pill and a
+     * printed size on it at 200 % font on a 320 dp phone — so the words in those pills have to be the
+     * real ones, at their real lengths ("Already right", "South-West").
+     */
+    private fun readingsFor(outcome: ScanOutcome.Placed): Map<String, com.vastufirst.app.ui.scan.RoomReading> {
+        val grid = com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val plan = com.vastufirst.app.ui.newplan.buildEnginePlan(
+            rooms = grid,
+            door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid),
+            intent = com.vastufirst.shared.Intent.BUILDING,
+            propertyType = com.vastufirst.shared.PropertyType.FLAT,
+            north = 0,
+            planId = "golden-scan-review",
+        )
+        val readings = com.vastufirst.app.ui.scan.roomReadings(
+            plan?.let { com.vastufirst.engine.VastuEngine().analyze(it) },
+        )
+        check(readings.isNotEmpty()) {
+            "No room on this fixture came back with a reading, so this golden would photograph the " +
+                "pill-less row the screen drew BEFORE North moved in front of it — a picture of the " +
+                "very thing this change is supposed to have fixed."
+        }
+        return readings
     }
 
     /** The clean render: measured 8/8 rooms right — the read that gets its geometry trusted. */
@@ -86,10 +120,12 @@ class ScanScreenshotTest {
         val placedOutcome = placed() as com.vastufirst.shared.scan.ScanOutcome.Placed
         val photo = android.graphics.Bitmap.createBitmap(1400, 990, android.graphics.Bitmap.Config.ARGB_8888)
             .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+        val readings = readingsFor(placedOutcome)
         val content: @androidx.compose.runtime.Composable () -> Unit = {
             com.vastufirst.app.ui.scan.ScanReviewContent(
                 image = photo.asImageBitmap(),
                 rooms = placedOutcome.rooms,
+                readings = readings,
                 startSelected = 2,
             )
         }
@@ -143,10 +179,12 @@ class ScanScreenshotTest {
                 "photograph the reader's rectangle and prove nothing. Either the correction " +
                 "regressed or this fixture stopped printing sizes."
         }
+        val readings = readingsFor(flat)
         val content: @androidx.compose.runtime.Composable () -> Unit = {
             com.vastufirst.app.ui.scan.ScanReviewContent(
                 image = planPhoto(),
                 rooms = flat.rooms,
+                readings = readings,
                 startSelected = corrected,
             )
         }
@@ -160,11 +198,13 @@ class ScanScreenshotTest {
         val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
             com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
         )
+        val readings = readingsFor(outcome)
         val content: @androidx.compose.runtime.Composable () -> Unit = {
             com.vastufirst.app.ui.scan.ScanReviewContent(
                 image = planPhoto(),
                 rooms = outcome.rooms,
                 door = door,
+                readings = readings,
                 startSelected = -1,
             )
         }

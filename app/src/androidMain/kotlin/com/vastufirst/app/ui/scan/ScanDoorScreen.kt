@@ -135,9 +135,9 @@ fun ScanDoorContent(
     /**
      * ⭐ TRUE when the reader came here from a finished report by tapping "change where the front
      * door is". Nothing about the marking changes — only what the button at the bottom is allowed to
-     * say. Opened that way the screen does NOT go on to North; it hands the reader straight back to
-     * the report they came from, so a button reading "Next — which way is North?" was promising a
-     * screen it never opens.
+     * say: opened that way it hands the reader straight back to the report they came from, and in
+     * the flow it opens their report for the first time. Either way the button names the screen it
+     * actually opens, which is the rule this flag exists to keep.
      */
     returnsToReport: Boolean = false,
 ) {
@@ -303,8 +303,11 @@ fun ScanDoorContent(
                 // Came from a finished report: this button returns there, and says so.
                 returnsToReport && door != null -> "Done — back to my report"
                 returnsToReport -> "Leave the door out — back to my report"
-                door != null -> "Next — which way is North?"
-                else -> "Skip — I'll leave the door out"
+                // ⭐ In the flow this is the LAST step since 11 Aug 2026 — North was marked two
+                // screens back, so nothing follows this but the report. It used to say "which way is
+                // North?", which is now a screen behind the reader rather than in front of them.
+                door != null -> "Read my home"
+                else -> "Skip the door — read my home"
             },
             onClick = onNext,
         )

@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.details.MoreDetailsScreen
 import com.vastufirst.app.ui.grid.GuidedGridScreen
@@ -218,7 +219,15 @@ fun VastuNavHost() {
                         // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026). The grid
                         // rooms above are still populated, because they are what the engine scores
                         // and what the report draws — but the user never sees or touches them
-                        // on this path. They check, mark the door and set North on their own photo.
+                        // on this path. They set North, check, and mark the door on their own photo.
+                        //
+                        // ⭐⭐ NORTH COMES FIRST NOW (owner, 11 Aug 2026). A placed scan goes
+                        // straight to the North dial, and the check screen follows it — because a
+                        // room has no direction and no verdict until North is marked, and the
+                        // owner's original list wants both of those ON the check screen's rows.
+                        // Ordering the flow the other way round is the only reason they were never
+                        // built. The handover is written FIRST either way: North draws the same
+                        // photograph the check screen does.
                         //
                         // ⚠ The `else` below is the one route left from a scan into the editor, and
                         // it is not a preference: it is a scan whose rooms could NOT be placed, so
@@ -232,7 +241,7 @@ fun VastuNavHost() {
                                 imageBytes = scanVm.lastImage?.bytes,
                                 rooms = outcome.rooms,
                             )
-                            nav.go(Routes.SCAN_REVIEW)
+                            nav.go(Routes.markNorthFromScan())
                         } else {
                             // ⭐ A read that could not be placed hands over NOTHING — and must also
                             // wipe whatever an earlier read left behind, or the home about to be
@@ -249,10 +258,15 @@ fun VastuNavHost() {
             composable(Routes.SCAN_REVIEW) { entry ->
                 val planVm = sharedVm(nav, entry)
                 val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                // ⭐ The live reading, so every row can carry the report's own one-word result and
+                // the direction the room sits in. It exists by now because North was marked on the
+                // screen before this one — which is exactly why that step was moved in front of it.
+                val analysis by planVm.analysis.collectAsStateWithLifecycle()
                 com.vastufirst.app.ui.scan.ScanReviewScreen(
                     handover = handover,
                     // Already read off the plan's own entrance, or null if the plan named none.
                     door = planVm.door,
+                    analysis = analysis,
                     // ⭐ WHAT we read it off, when it was a printed caption rather than a room typed
                     // as an entrance — so the screen can quote the plan's own word back. Recomputed
                     // rather than stored: it is only shown while the door still IS the one we read,
@@ -260,11 +274,31 @@ fun VastuNavHost() {
                     // there.
                     doorFromCaption = com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)
                         ?.takeIf { it.door == planVm.door }?.fromCaption,
-                    // ⭐ The front door comes before North (audit B2) — but only as a QUESTION when
-                    // the plan did not already answer it. Both steps now happen on the photograph;
-                    // this flow no longer opens the grid editor at all (owner, 6 Aug 2026).
+                    // ⭐ WHERE THIS SCREEN LEADS, and it is now the END of the flow whenever the plan
+                    // named its own entrance: North is already marked, so the only thing that can
+                    // still be missing is the front door. When the plan answered that (13 of the 24
+                    // recorded real plans that place their rooms), the reader goes straight to their
+                    // report — the standing rule that the LAST step lands on the report, with no
+                    // free score screen in between (owner, 10 Aug 2026), unchanged.
+                    //
+                    // ⚠ The save moved here with the ending. It used to sit on the North dial's
+                    // "read my home" because that was the last step; leaving it there would have
+                    // written the home to disk while the reader was still checking it.
+                    //
+                    // ⚠ The same pop-first guard the door screen uses, and for the same reason: a
+                    // reader who presses Back from their report lands HERE now, and tapping on again
+                    // would otherwise stack a second report on top of the first. Returning to the one
+                    // already on the stack shows the same live reading, because the report reads the
+                    // shared draft rather than a snapshot.
                     onContinue = {
-                        nav.go(if (planVm.door != null) Routes.markNorthFromScan() else Routes.SCAN_DOOR)
+                        if (planVm.door != null) {
+                            planVm.save()
+                            if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
+                                nav.go(Routes.REPORT)
+                            }
+                        } else {
+                            nav.go(Routes.SCAN_DOOR)
+                        }
                     },
                     onChangeDoor = { nav.go(Routes.SCAN_DOOR) },
                     onBack = { nav.popBackStack() },
@@ -286,13 +320,17 @@ fun VastuNavHost() {
                     // Opened from a finished report, this screen returns there — so the button says
                     // that, instead of naming a North step it will never open.
                     returnsToReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false,
-                    // ⚠ Which way out depends on where this was entered from. In the flow it is
-                    // followed by North. Reached from the report's "change where the front door is",
-                    // the report is already behind us — so go BACK to it rather than pushing North
-                    // and then a second report on top of the first.
+                    // ⚠ Which way out depends on where this was entered from. Reached from the
+                    // report's "change where the front door is", the report is already behind us —
+                    // so go BACK to it rather than pushing a second report on top of the first.
+                    //
+                    // ⭐ In the flow this is now the LAST step — North was marked two screens ago
+                    // (11 Aug 2026) — so it saves the home and opens the report, which is what
+                    // North's own "read my home" used to do.
                     onNext = {
                         if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
-                            nav.go(Routes.markNorthFromScan())
+                            planVm.save()
+                            nav.go(Routes.REPORT)
                         }
                     },
                     onBack = { nav.popBackStack() },
@@ -345,13 +383,20 @@ fun VastuNavHost() {
                 val planImage = remember(fromScan, scanHandover.data) {
                     if (fromScan) scanHandover.data?.decodeImage() else null
                 }
-                // ⚠ Which way out. At the END of the flow this screen pushes the REPORT — since
-                // 10 Aug 2026 there is no score screen between the two (owner: "After the North is
-                // marked, jump straight to Report screen"). Opened from an already-read home's report
-                // ("change which way North is"), it goes BACK to the report it came from instead —
-                // pushing a second copy would put the report behind the report, so Back would land on
-                // the same screen again. The report reads North straight off the shared draft, so
-                // returning shows the new number and the re-sorted room list.
+                // ⚠ Which way out, and there are now three answers.
+                //
+                //  · **Drawn by hand, or the sample home** — this is still the last step, so it saves
+                //    and pushes the REPORT. There is no score screen between the two (owner,
+                //    10 Aug 2026: "After the North is marked, jump straight to Report screen").
+                //  · **⭐ Arrived by SCAN** — North now comes FIRST (11 Aug 2026), so this leads to
+                //    "Check what we read", whose rows can finally carry each room's direction and
+                //    result because this screen has just supplied them. It does NOT save: the home
+                //    is written when the flow actually ends, two screens further on.
+                //  · **Opened from an already-read home's report** ("change which way North is") — it
+                //    goes BACK to the report it came from. Pushing a second copy would put the report
+                //    behind the report, so Back would land on the same screen again. The report reads
+                //    North straight off the shared draft, so returning shows the new number and the
+                //    re-sorted room list.
                 val fromReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
                 // ⭐ Opened from an already-read home's report, the dial is an EXPERIMENT until
                 // confirmed (audit B5). Every dial move autosaves ~50 ms later — that is what keeps
@@ -366,7 +411,18 @@ fun VastuNavHost() {
                 if (fromReport) BackHandler(onBack = cancelExperiment)
                 MarkNorthScreen(
                     vm = vm,
-                    onRead = { vm.save(); if (fromReport) nav.popBackStack() else nav.go(Routes.REPORT) },
+                    onRead = {
+                        when {
+                            fromReport -> { vm.save(); nav.popBackStack() }
+                            // A scan checks its rooms next, and the check screen (or the door screen
+                            // after it) is what saves and opens the report.
+                            fromScan -> nav.go(Routes.SCAN_REVIEW)
+                            else -> { vm.save(); nav.go(Routes.REPORT) }
+                        }
+                    },
+                    // ⭐ The button must never promise a screen it does not open. On the scan path
+                    // the next screen is the check, not the report.
+                    nextIsCheck = fromScan && !fromReport,
                     onBack = cancelExperiment,
                     planImage = planImage,
                 )

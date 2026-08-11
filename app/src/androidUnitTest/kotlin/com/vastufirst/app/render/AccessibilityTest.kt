@@ -79,21 +79,18 @@ class AccessibilityTest {
             "privacy" to { PrivacyScreen(onBack = {}) },
             "addhome" to { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) },
             "scan-idle" to {
-                // With the reader-comparison picker showing, so its chips face the same contrast
-                // and touch-target checks as every other control (owner request, 4 Aug 2026).
-                ScanScreen(
-                    ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {},
-                    modelChoices = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview"),
-                )
+                ScanScreen(ScanUiState.Idle, {}, {}, {}, {}, { _, _ -> }, {}, {})
             },
             "scan-assisted" to {
+                // ⛔ No reader picker any more (owner, 11 Aug 2026): nothing on a customer's path
+                // names a model. `readBy` is still carried on the state and still drawn by nothing.
+                // Choosing a reader lives in Settings, which this pass checks under "settings".
                 ScanScreen(
                     ScanUiState.Done(
                         ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply),
                         readBy = "openai/gpt-5.6-luna",
                     ),
                     {}, {}, {}, {}, { _, _ -> }, {}, {},
-                    modelChoices = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview"),
                 )
             },
             // The privacy gate carries more prose than any other screen, and the contrast trap this
@@ -102,11 +99,13 @@ class AccessibilityTest {
             // ⭐ The on-photo review: a canvas with a semantic description plus a tappable row per
             // room — the same two shapes (described image, actionable list row) this pass guards
             // everywhere else. Driven by the real recorded clean read through the real mapper.
+            // ⭐ With the result and direction pills on every row (11 Aug 2026) — they carry colour,
+            // so they face this pass's contrast check like everything else the app tints.
             "scan-review" to {
                 com.vastufirst.app.ui.scan.ScanReviewContent(
                     image = null,
-                    rooms = (ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
-                        as com.vastufirst.shared.scan.ScanOutcome.Placed).rooms,
+                    rooms = RenderFixtures.scannedScanRooms,
+                    readings = RenderFixtures.scannedReadings,
                     startSelected = 1,
                 )
             },

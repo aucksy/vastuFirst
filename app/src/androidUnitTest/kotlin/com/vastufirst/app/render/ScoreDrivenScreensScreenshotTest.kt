@@ -68,11 +68,17 @@ class ScoreDrivenScreensScreenshotTest {
      * can: that the photo lands inside the square, that the wedge tints and the North marker still
      * read over it, and that our room rectangles have stood down rather than being drawn on top of
      * somebody's actual home.
+     *
+     * ⭐ `nextIsCheck` is TRUE here because that is the truth of the scan path since 11 Aug 2026:
+     * North is marked FIRST and "Check what we read" comes after it, so the button on this screen
+     * opens the checklist and not the report. It is the only visible difference from the golden
+     * above, and it is the one a reader would notice if it were wrong.
      */
     @Test
     fun markNorth_onPhoto() = render("marknorth-photo") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            nextIsCheck = true,
             planImage = android.graphics.Bitmap
                 .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
                 .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }

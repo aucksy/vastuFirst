@@ -16,6 +16,22 @@
 //   3. *"try to fit more rooms in visible below."* The rows lost a line each and the plan gained a
 //      height cap, so more of the list is on screen at once.
 //
+// ⭐⭐ THE RESULT AND THE DIRECTION ARE ON EVERY ROW, SINCE 11 AUG 2026 (owner's original list).
+// The row now carries the SAME one-word result and the SAME spelled-out direction the report uses —
+// they come from the identical engine result through the identical mappers, so the two screens can
+// never say different things about one room.
+//
+// ⚠ THIS IS WHY NORTH MOVED IN FRONT OF THIS SCREEN. A room has no direction until North is marked,
+// so for as long as North came afterwards there was nothing true to print here. The flow is now
+// scan → mark North → this screen → the front door (only if the plan did not name it) → report.
+// If anything ever moves North back behind this screen, the pills go blank, not wrong: [readings]
+// is empty and the row falls back to exactly what it showed before.
+//
+// ⚠ The room's VERDICT does not depend on the front door, which is why it is honest to show it here
+// even on the plans whose door is asked for on the NEXT screen. The engine evaluates a room from its
+// type and its shape (RoomEvaluator takes the room and its polygon and nothing else); the door has
+// its own reading, in its own section of the report.
+//
 // ⚠ HONESTY LIMITS, stated on screen rather than hidden:
 //   · The tint is APPROXIMATE. Room boxes are fractions of the BUILDING's outer wall (prompt
 //     contract). Since prompt v4 (4 Aug 2026) the reply also carries the building's own box on the
@@ -23,10 +39,8 @@
 //     "roughly".
 //   · This screen VERIFIES; it does not redraw. Since 6 Aug 2026 the scan flow never opens the
 //     editor at all, so the door and North are marked on this same photograph.
-//   · NO DIRECTION AND NO VERDICT APPEAR HERE, and that is not an omission. Both are worked out
-//     from North, which has not been marked yet at this point in the flow — a room's direction and
-//     its one-word result are shown on the report, where they are known. Showing either here would
-//     mean inventing one.
+//   · The printed SIZE stays on the row and is never traded away for the new pills. Checking our
+//     reading against the paper in the reader's hand is this screen's whole job.
 package com.vastufirst.app.ui.scan
 
 import android.graphics.BitmapFactory
@@ -72,7 +86,11 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuRoomRow
+import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.theme.VastuTheme
+import com.vastufirst.app.ui.common.roomStatus
+import com.vastufirst.app.ui.common.short
+import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.scan.ScannedRoom
 import kotlinx.coroutines.launch
 
@@ -124,12 +142,46 @@ fun planRoomsOf(rooms: List<ScannedRoom>): List<PlanRoom> {
     }
 }
 
+/**
+ * ⭐ ONE ROOM'S READING, in exactly the words the report uses for it: the one-word result and the
+ * direction spelled out.
+ *
+ * ⚠ Both are taken from the engine's own result through the SAME two mappers the report calls
+ * ([roomStatus], [short]). Re-deriving either here — "it's in the north half of the picture, call it
+ * North" — is how one room comes to be called two different things two screens apart, which is the
+ * defect the plan's printed name already had to be fixed for once.
+ */
+data class RoomReading(val status: VastuRoomStatus, val direction: String)
+
+/**
+ * Every scored room's reading, keyed by the id [toGridRooms] gave it — see [scanRoomId], the one
+ * place that convention lives.
+ *
+ * Empty before North is marked (no analysis yet, or none of the ids match), and empty is a real
+ * answer: the row simply shows what it always showed. It never guesses.
+ */
+fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
+    analysis?.roomResults.orEmpty().associate { r ->
+        r.roomId to RoomReading(
+            status = r.verdict.roomStatus(),
+            // ⚠ Capitalised HERE and nowhere deeper, exactly as the report does it: [short] also
+            // feeds running prose where "the centre" has to stay lowercase. A pill is a label.
+            direction = r.zone.short().replaceFirstChar { it.uppercase() },
+        )
+    }
+
 @Composable
 fun ScanReviewScreen(
     handover: ScanReviewHandover,
     door: GridDoor?,
     /** The caption the door's wall was read off, when it came from one — see [ScanReviewContent]. */
     doorFromCaption: String? = null,
+    /**
+     * ⭐ The live reading of the home, which by this point in the flow exists: North was marked on
+     * the previous screen. Null only if the engine has not answered yet, and then the rows show no
+     * result rather than a wrong one.
+     */
+    analysis: Analysis? = null,
     onContinue: () -> Unit,
     onChangeDoor: () -> Unit,
     onBack: () -> Unit,
@@ -141,6 +193,7 @@ fun ScanReviewScreen(
         rooms = data?.rooms.orEmpty(),
         door = door,
         doorFromCaption = doorFromCaption,
+        readings = remember(analysis) { roomReadings(analysis) },
         onContinue = onContinue,
         onChangeDoor = onChangeDoor,
         onBack = onBack,
@@ -183,6 +236,12 @@ fun ScanReviewContent(
      * rather than a leap of faith — and the front door is the heaviest input the engine weighs.
      */
     doorFromCaption: String? = null,
+    /**
+     * ⭐ The one-word result and the direction for each room, keyed by [scanRoomId] — see
+     * [roomReadings]. Empty means North is not known yet, and then the rows carry the plan's own
+     * name and printed size only, exactly as they did before 11 Aug 2026.
+     */
+    readings: Map<String, RoomReading> = emptyMap(),
     onContinue: () -> Unit = {},
     onChangeDoor: () -> Unit = {},
     onBack: () -> Unit = {},
@@ -296,11 +355,22 @@ fun ScanReviewContent(
         ) {
             planRooms.forEachIndexed { index, pr ->
                 val room = rooms[index]
+                // ⭐ The report's own words for this room, when North is known. Null before that,
+                // and then the row is exactly the row this screen has always drawn.
+                val reading = readings[pr.id]
                 VastuRoomRow(
                     name = pr.name,
                     code = room.type.microLabel(),
                     codeColor = room.type.editorColor(),
-                    // No direction and no verdict: North is not marked yet. See the file note.
+                    // ⭐ The one-word result and the direction, from the engine, identical to the
+                    // report's — North was marked on the screen before this one.
+                    status = reading?.status,
+                    direction = reading?.direction,
+                    // ⭐ AND THE PRINTED SIZE STAYS. It is what the reader is holding their own paper
+                    // up against; the pills are additions to this row, never a replacement for it.
+                    // Two pills and a caption is a lot for one row, which is why they sit in a
+                    // FlowRow under the name — see VastuRoomRow, where a right-hand results column
+                    // was tried, photographed, and found breaking words in half at 320 dp.
                     note = room.type.label() + " · " + sizeNote(room),
                     selected = selected == pr.id,
                     onTap = { tapRoom(pr.id) },
@@ -334,8 +404,12 @@ fun ScanReviewContent(
                     Spacer(Modifier.height(VastuTheme.spacing.s2))
                 }
                 // The button never promises a screen other than the one it opens (audit B2).
+                //
+                // ⚠ It used to say "which way is North?" because North came next. North now comes
+                // BEFORE this screen — that is what lets the rows above carry a direction at all —
+                // so this is the LAST step whenever the plan named its own entrance, and it says so.
                 VastuButton(
-                    if (door != null) "These are my rooms — which way is North?"
+                    if (door != null) "These are my rooms — read my home"
                     else "These are my rooms — set the front door",
                     onClick = onContinue,
                 )

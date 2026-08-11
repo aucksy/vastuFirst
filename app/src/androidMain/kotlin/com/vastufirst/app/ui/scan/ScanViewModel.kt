@@ -29,9 +29,12 @@ class ScanViewModel(
      */
     private val canRead: Boolean = true,
     /**
-     * ⭐ The model ids a tester may pick from — the primary and the second-opinion model out of
-     * `reader-config.json`, in that order (owner request, 4 Aug 2026: compare the readers from the
-     * phone). Empty hides every picker and keeps the shipping behaviour exactly as before.
+     * ⭐ The model ids this build can read with — the primary and the second-opinion model out of
+     * `reader-config.json`, in that order. It is what SETTINGS offers and what a saved choice is
+     * validated against; empty means "no named pick is possible", so Auto is the only path.
+     *
+     * ⛔ It is no longer offered anywhere in the scan flow (owner, 11 Aug 2026) — nothing a customer
+     * walks through may name a model. See the note above `RoomsBody` in ScanScreen.kt.
      */
     val modelChoices: List<String> = emptyList(),
     /**
@@ -83,10 +86,15 @@ class ScanViewModel(
     }
 
     /**
-     * ⭐ Same picture, a named model (owner's testing lever, 4 Aug 2026) — offered on the results
-     * screen so two readers can be compared on the identical bytes. Reuses the decoded image; no
-     * re-pick, no re-decode. Each call is one more paid read of the same photo, which the button's
-     * own caption says.
+     * ⭐ Same picture, a named model — kept as the comparison lever, but no longer reachable from any
+     * screen a customer walks through (owner, 11 Aug 2026: the model names come out of the flow).
+     * Reuses the decoded image; no re-pick, no re-decode. **Each call is one more paid read** of the
+     * same photo, which is why nothing offers it by accident: the way to compare two readers now is
+     * Settings → "Which AI reads a plan", where the pick survives a retry.
+     *
+     * ⚠ Kept rather than deleted because the gates around it are the tested ones — a build with no
+     * key cannot fire it, an unknown model id cannot fire it, and neither can a session with no
+     * picture. Deleting it would delete those three guarantees along with it.
      */
     fun rescanWith(model: String) {
         val image = lastImage ?: return

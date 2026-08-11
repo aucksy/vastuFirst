@@ -2,8 +2,20 @@ package com.vastufirst.app.navigation
 
 /**
  * The Phase 2 screen graph (Product PRD §6). The guided-grid path lives in a nested "newplan"
- * graph so every screen in it shares one [com.vastufirst.app.ui.newplan.NewPlanViewModel]:
- * Home → Welcome → Add home → (Guided grid | Scan) → Mark North → Report.
+ * graph so every screen in it shares one [com.vastufirst.app.ui.newplan.NewPlanViewModel].
+ *
+ * There are two endings and they differ only in where the checking happens:
+ *
+ *  · **Drawn by hand** — Home → Welcome → Add home → Guided grid → Mark North → Report.
+ *  · **⭐ Scanned** — Home → Welcome → Add home → Scan → **Mark North** → **Check what we read** →
+ *    front door *(only when the plan did not name its own entrance)* → Report.
+ *
+ * ⭐⭐ NORTH MOVED IN FRONT OF THE CHECK SCREEN ON 11 AUG 2026, and it is not a preference. The
+ * owner's original list asks every row of "Check what we read" to carry the room's one-word result
+ * and the direction it sits in — and a room HAS no direction until North is marked. With North
+ * behind that screen there was nothing true to print, which is the whole reason those two pills had
+ * never been built. Whatever the last step turns out to be, it goes straight to the report: there is
+ * still no free score screen anywhere in this graph.
  *
  * ⛔ THERE IS NO SCORE SCREEN, since 10 Aug 2026 (owner: "After the North is marked, jump straight
  * to Report screen"). The free score used to sit between North and the report, showing the number,
@@ -36,11 +48,13 @@ object Routes {
     const val SCAN = "scan"
 
     /**
-     * ⭐ The ON-PHOTO review (owner request, 4 Aug 2026; Settings toggle). The user's own scanned
-     * picture stays on screen and the extracted rooms are a tappable checklist over it — the
-     * alternative to confirming on the guided grid, reached only when the toggle is on AND the
-     * scan placed its rooms; every other scan still confirms on the grid, which remains the only
-     * surface that can FIX a wrong read.
+     * ⭐ The ON-PHOTO review (owner request, 4 Aug 2026). The user's own scanned picture stays on
+     * screen and the extracted rooms are a tappable checklist over it. Reached only when the scan
+     * PLACED its rooms; a scan that could not place them goes to the grid, which remains the only
+     * surface that can fix where a room sits.
+     *
+     * ⭐ It now comes AFTER [MARK_NORTH] (11 Aug 2026), so each row can carry the room's direction
+     * and its one-word result — neither of which exists before North is marked.
      */
     const val SCAN_REVIEW = "scan_review"
 
@@ -111,11 +125,11 @@ object Routes {
      * ⭐ The on-photo door screen opened from a FINISHED REPORT ("change where the front door is")
      * rather than from the middle of the flow. Exactly [ARG_FROM_REPORT] on North, for exactly the
      * same reason: the flag decides the way OUT — back to the report it came from, instead of
-     * pushing North and then a second report on top of the first.
+     * pushing a second report on top of the first.
      *
-     * It also decides what the button at the bottom is allowed to SAY. Without it that button read
-     * "Next — which way is North?" on a path that never goes near North: a control naming a screen
-     * it does not open, on the screen that sets the heaviest input in the whole reading.
+     * It also decides what the button at the bottom is allowed to SAY — "back to my report" for a
+     * reader who came from one, and "read my home" when this is the last step of the flow. A control
+     * naming a screen it does not open is a defect this project has logged twice.
      */
     const val SCAN_DOOR_ROUTE = "$SCAN_DOOR?$ARG_FROM_REPORT={$ARG_FROM_REPORT}"
     fun scanDoorFromReport() = "$SCAN_DOOR?$ARG_FROM_REPORT=true"

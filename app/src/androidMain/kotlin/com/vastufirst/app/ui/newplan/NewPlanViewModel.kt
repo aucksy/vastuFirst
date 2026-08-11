@@ -213,9 +213,17 @@ class NewPlanViewModel(
                 val result = withContext(compute) { engine.analyze(plan) }
                 _analysis.value = result
                 // Autosave edits to an ALREADY-saved home (planId != null) so a reopen → Fix → edit →
-                // Back never silently loses them, and the saved-plans list stays in sync. A brand-new
-                // draft (planId == null) is still first persisted at Mark North's "Read my home", so
-                // this never creates junk rows while the user is still drawing (E2E-ASSESSMENT §A3).
+                // Back never silently loses them, and the saved-plans list stays in sync.
+                //
+                // A brand-new draft (planId == null) is first persisted by [save], which is called
+                // by whatever screen ENDS the flow — so this never creates junk rows while the user
+                // is still drawing (E2E-ASSESSMENT §A3).
+                //
+                // ⚠ That is no longer always Mark North. Since 11 Aug 2026 North comes BEFORE the
+                // scan's checking screen, so a scanned home is first saved by "Check what we read"
+                // (or by the front-door screen after it, when the plan named no entrance). A home
+                // drawn by hand, an unplaced scan and the bundled sample still save at North.
+                // Naming one screen here is how a later session comes to believe the wrong one.
                 planId?.let { id ->
                     if (name == null) name = "Home ${repo.nextHomeNumber()}"
                     val saved = SavedPlan(
