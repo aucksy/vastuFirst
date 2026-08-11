@@ -215,4 +215,26 @@ class ViewModelScreensScreenshotTest {
         captureAcrossMatrix("settings", content)
         writeManifestAcrossMatrix("settings", content)
     }
+
+    /**
+     * ⭐⭐ SETTINGS AS A RELEASED BUILD ACTUALLY SHOWS IT. The picture above is taken with no
+     * plan-reading key, which HIDES a whole section — the reader picker, headed "Which AI reads a
+     * plan · testing", with a chip per model and a paragraph about second opinions. Every shipped
+     * build has that key, so every customer sees that section and no golden has ever contained it:
+     * not at 320 dp, not at 200 % font, not dark, not right-to-left, and the accessibility pass has
+     * never seen it either. A section that ships to everyone and is drawn for nobody is exactly what
+     * this harness exists to catch.
+     */
+    @Test
+    fun settings_with_reader_choice() {
+        val content: @Composable () -> Unit = {
+            SettingsContent(
+                onLegal = {}, onBack = {}, onDeleteAll = {},
+                readerOptions = listOf("openai/gpt-5.6-luna", "google/gemini-3.1-pro-preview"),
+                chosenReader = null,
+            )
+        }
+        captureAcrossMatrix("settings-reader", content)
+        writeManifestAcrossMatrix("settings-reader", content)
+    }
 }

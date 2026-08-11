@@ -110,7 +110,13 @@ fun UnlockContent(
             // figure would be a promise the app is not the one keeping.
             VText(state.price ?: FALLBACK_PRICE, style = VastuTheme.type.scoreDisplay, color = colors.textPrimary)
             VText(
-                "one-time · this home, forever",
+                // ⭐ WITH PAYMENTS OFF, THE BIGGEST THING ON THE MONEY SCREEN IS A NUMBER NOBODY IS
+                // CHARGED. The small grey notice under the button has always said so, but a reader
+                // takes the page in the other way round — the price is in the largest type on it,
+                // and "one-time · this home, forever" beside it reads as a live offer. The caption
+                // now carries the same truth as the notice, at the one spot the eye lands first.
+                if (state.mode == BillingMode.DISABLED) "the planned price — not charged in this version"
+                else "one-time · this home, forever",
                 style = VastuTheme.type.body, color = colors.textTertiary,
                 modifier = Modifier.align(Alignment.Bottom).padding(bottom = VastuTheme.spacing.s3),
             )

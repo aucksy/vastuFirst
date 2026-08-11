@@ -202,6 +202,33 @@ class LongScreenBottomScreenshotTest {
     }
 
     /**
+     * ⭐⭐ THE STRETCH OF SCREEN THE ₹699 DECISION IS ACTUALLY MADE ON — and it was in no picture.
+     *
+     * Every free-report golden either stops just above the room list or starts just below it, so the
+     * greyed, LOCKED room rows — the ones reading "Reasoning and remedies — in the full report" —
+     * had never been drawn at any width or font size. That is precisely the part a non-paying reader
+     * scrolls through while deciding whether to spend money, and the part where the product's own
+     * rule (a locked row is not a blurred teaser — it still names the room, the zone and the verdict)
+     * is either kept or broken. Nobody could tell which.
+     */
+    @Test
+    fun report_free_rooms() {
+        val content: @Composable () -> Unit = {
+            ReportContent(
+                analysis = RenderFixtures.sampleAnalysis,
+                intent = Intent.BUYING,
+                unlocked = false,
+            )
+        }
+        captureBottom("report-free", "rooms", hasTestTag(TAG_ROOMS_END), 1.0f, content = content)
+        captureBottom("report-free", "rooms_font2_0", hasTestTag(TAG_ROOMS_END), 2.0f, content = content)
+        captureBottom(
+            "report-free", "rooms_w320", hasTestTag(TAG_ROOMS_END), 1.0f,
+            "+w320dp-h711dp-port-xhdpi", content,
+        )
+    }
+
+    /**
      * ⭐ THE DRAWING SCREEN'S ENDING — the half of it nobody had ever seen.
      *
      * The guided grid is the longest screen in the app: a title, the plan, the shape question, the
