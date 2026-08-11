@@ -276,7 +276,22 @@ fun ScanDoorContent(
                 }
             }
         } else {
-            Box(Modifier.fillMaxWidth().aspectRatio(aspect), contentAlignment = Alignment.Center) {
+            // ⚠ NO aspectRatio ON THIS ONE, and that is a fix, not an omission (11 Aug 2026).
+            //
+            // An aspect ratio is a FIXED height derived from the width, so the box was 1.2 : 1
+            // whatever was inside it — and at 200 % font this sentence needs more than that. It was
+            // cut mid-word: "we will say so o…". The reader of this screen has just been told their
+            // photo could not be shown, and the sentence telling them they can carry on anyway was
+            // the one being truncated.
+            //
+            // The ratio exists to hold the PLAN's shape. With no plan there is nothing to hold, and
+            // this column scrolls, so letting the box be as tall as its own words costs nothing.
+            //
+            // ⚠ Found by the bottom-of-screen golden added in the same commit, not by any gate: the
+            // matrix goldens all draw this screen WITH a photo, so the fallback had never been
+            // photographed at any size. The geometry gate could not see it either — these captures
+            // emit no manifest. Only the picture showed it.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 GuidanceState(
                     title = "The photo could not be shown",
                     body = "You can carry on without marking the door — we will say so on your score.",
