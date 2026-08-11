@@ -129,6 +129,12 @@ data class VastuSizes(
     // Going further would fill the width on a square sheet and cost a second row, and on a PORTRAIT
     // sheet no cap ever fills the width — that is the shape of the paper, not a setting.
     val planPane: Dp = 320.dp,
+    // ⭐ How much of the window the guided-grid editor keeps back for everything UNDER the plan —
+    // the plot-size steppers, the room palette and the button that leaves the screen. The plan is
+    // then allowed only the width whose grid fits what is left, so a phone turned on its side still
+    // shows a control. A RESERVE measured off the live window, not a size: in portrait the window is
+    // tall enough that this never binds and the plan is exactly as big as it always was.
+    val editorControlsReserve: Dp = 200.dp,
 )
 
 @Immutable

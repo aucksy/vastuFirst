@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -67,6 +68,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
 import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.editorColor
@@ -556,6 +558,28 @@ fun GuidedGridContent(
         // SpaceBetween label row would mirror WEST↔EAST and the grid would flip, silently reversing
         // every Vastu direction the engine scored. The render harness caught this on the ar-XB pass.
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        // ⭐⭐ THE PLAN MUST NOT EAT THE WHOLE WINDOW — the landscape defect, and the other half of
+        // the trap docs/UI-POLISH.md names: capping a PARENT does not bound a child that carries an
+        // aspect ratio. Sizing the grid from WIDTH alone is right in portrait and wrong the moment
+        // the phone turns. At 854 dp wide the square grid measured about 806 dp tall inside a 480 dp
+        // window, so a reader who rotated saw a slice of their plan and NOT ONE control — plot size,
+        // the room palette and the button that leaves the screen were all a long scroll below.
+        //
+        // The bound is on the WIDTH of the whole plan block, not on the grid's height, and that is
+        // deliberate: NORTH sits above the grid and WEST · SOUTH · EAST below it, and all three are
+        // full-width rows. Shrinking only the grid would have left those labels spanning the window
+        // while the plan they label sat narrow in the middle — the directions pointing nowhere near
+        // the edges they name, on the screen whose entire job is directions.
+        //
+        // The cap comes from the WINDOW, never a design number: whatever height the window has, keep
+        // a slice back for the controls underneath, then allow only the width whose grid fits what
+        // is left. Portrait is untouched by construction — the reserve leaves far more height than a
+        // width-driven grid ever asks for on a phone.
+        val planBlockCap = (LocalConfiguration.current.screenHeightDp.dp -
+            VastuTheme.sizes.editorControlsReserve)
+            .coerceAtLeast(VastuTheme.sizes.control * 4) * (cols.toFloat() / rows.toFloat())
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = planBlockCap)) {
         // NORTH above the plan, WEST · SOUTH · EAST below it. Users of a Vastu app think in
         // directions, and this is the vocabulary the report uses (§2). The labels sit outside the
         // grid box so they cost the plan no width — a cell is only 34 dp on a 320 dp phone.
@@ -901,6 +925,8 @@ fun GuidedGridContent(
             VText("SOUTH", style = VastuTheme.type.caption, color = colors.textTertiary)
             VText("EAST", style = VastuTheme.type.caption, color = colors.textTertiary)
         }
+        } // end plan block column
+        } // end centring box (width-bounded so a turned phone still shows the controls)
         } // end LTR lock (compass never mirrors)
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,10 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.data.SavedDraft
@@ -445,9 +448,14 @@ private fun PlanRow(plan: SavedPlan, now: Long, onOpen: (String) -> Unit, onRena
             // ⚠ No contentDescription here, on purpose. The whole row is clickable, so it is already
             // ONE merged node to a screen reader; a description added inside would be appended to
             // the row's text rather than replacing it, and the row would read the score twice.
-            Column(horizontalAlignment = Alignment.End) {
-                VText(scoreOutOfTen(plan.score, mark), style = VastuTheme.type.h2, color = scoreBandColor(plan.score))
-                VText("/10", style = VastuTheme.type.caption, color = colors.textTertiary)
+            // ⭐ LOCKED to left-to-right, same reason as the compass and the report's own score:
+            // "/10" is a fraction, and a slash before digits is neutral to the bidi algorithm, so
+            // under an RTL locale it was drawn as "10/" — a broken number under the score.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Column(horizontalAlignment = Alignment.End) {
+                    VText(scoreOutOfTen(plan.score, mark), style = VastuTheme.type.h2, color = scoreBandColor(plan.score))
+                    VText("/10", style = VastuTheme.type.caption, color = colors.textTertiary)
+                }
             }
         },
     )

@@ -18,6 +18,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,8 +37,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.PlanRoom
@@ -693,6 +696,13 @@ private fun VerdictHeader(
         label = "score",
     )
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
+        // ⭐ THE SCORE IS LOCKED TO LEFT-TO-RIGHT, exactly as the compass is (GuidedGridScreen).
+        // "3.1 / 10" is a fraction, not a sentence: under an RTL locale the row mirrored and the
+        // reader was shown "10 / 3.1" — the same number read upside down, on the one line the whole
+        // product is about. A slash between digits is neutral to the bidi algorithm, so this cannot
+        // be fixed by wording; the direction has to be pinned. The band word rides along so it stays
+        // beside the number it describes.
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         // Baseline-aligned so "6.4" and "/ 10" sit on one line; FlowRow so the band word drops to its
         // own line at 200 % font rather than squeezing the number.
         FlowRow(
@@ -717,6 +727,7 @@ private fun VerdictHeader(
                 color = scoreBandColor(shown),
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
+        }
         }
         VText(verdictSentence(score, defectCount, remediesOnly, unlocked), style = VastuTheme.type.body, color = colors.textSecondary)
     }

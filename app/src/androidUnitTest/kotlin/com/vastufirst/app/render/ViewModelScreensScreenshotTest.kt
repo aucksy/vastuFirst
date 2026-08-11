@@ -42,6 +42,22 @@ class ViewModelScreensScreenshotTest {
         writeManifestAcrossMatrix("welcome", content)
     }
 
+    /**
+     * ⭐ THE VERY FIRST SCREEN, IN THE STATE IT ACTUALLY OPENS IN — nothing chosen yet and Continue
+     * greyed out. It had never been rendered. The only picture of Welcome showed an answer already
+     * selected, which is a state no first-time user is ever in: the app starts with no intent and
+     * the button disabled until one is picked. The screen every single customer sees before any
+     * other was therefore the one screen no reviewer could look at.
+     */
+    @Test
+    fun welcome_first_launch() {
+        val content: @Composable () -> Unit = {
+            WelcomeContent(intent = null, onIntentChange = {}, onContinue = {})
+        }
+        captureAcrossMatrix("welcome-first", content)
+        writeManifestAcrossMatrix("welcome-first", content)
+    }
+
     @Test
     fun home() {
         val content: @Composable () -> Unit = {

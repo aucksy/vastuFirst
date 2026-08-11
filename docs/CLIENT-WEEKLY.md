@@ -87,8 +87,9 @@ feedback continuously; the three-phone pass still has to happen.
   source named, and an honest "the texts do not say" when they do not.
 - **Flats treated properly** as their own case, with a report honest about what a flat owner cannot
   move.
-- **The finer 16-direction reading**, alongside today's 8. The app already says "16 zones (soon)"
-  where it will appear.
+- **The finer 16-direction reading**, alongside today's 8. Today the app reads 8 and says so plainly
+  in Settings; where the 16-zone school reads a room differently, the report already shows both under
+  "where the schools disagree".
 - **A polish round** — the score reveal, the empty screens, the finish of the thing.
 
 **Stage 5 — money and iPhone.** The ₹699 payment is built and switched off, waiting on your decision
