@@ -165,7 +165,13 @@ fun SettingsContent(
             // "School profile / Traditional 8-zone" was our own jargon on a screen a customer opens.
             // Same meaning, ordinary words, and shorter — which also stops the value squeezing the
             // label on a narrow phone at a large font.
-            RowItem("Vastu reading", trailing = "8 zones")
+            // ⚠ "8 zones" was simply wrong, and a reader could catch it. The engine reads NINE —
+            // the eight directions plus the centre, the Brahmasthan — and the centre is on screen as
+            // a zone in its own right: the North preview marks a middle staircase "C" and the report
+            // scores it and calls it "Centre". Anybody counting the directions on their own report
+            // got nine and found Settings saying eight. Spelled out rather than renumbered, because
+            // "9 zones" invites the question this answers.
+            RowItem("Vastu reading", trailing = "8 directions + centre")
             // ⭐ The "Check a scan: on the photo / on the grid" row is GONE (owner, 6 Aug 2026:
             // "we will completely remove anything to do with grid and modifiable boxes from scan
             // flow… user will only interact with actual floor plan"). It existed to compare the two

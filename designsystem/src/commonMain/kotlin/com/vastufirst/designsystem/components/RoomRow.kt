@@ -42,18 +42,37 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * the report says "the tradition doesn't mention it". Calling that "Aligned" would be an approval we
  * never gave, and calling it "Review" would invent a problem. It gets its own grey word.
  */
-enum class VastuRoomStatus { ALIGNED, REVIEW, NOT_RATED }
+/**
+ * ⭐⭐ FOUR WORDS, AND THEY ARE THE METER'S OWN WORDS. There used to be three, and the middle one
+ * did two jobs at once: a merely middling room and a genuine defect were BOTH stamped "Review" in
+ * the defect red. Two things went wrong on screen because of it.
+ *
+ * - The meter at the top of the report counts rooms as *already right · not ideal · need fixing*,
+ *   and then the list underneath used none of those three words. A reader could not match the
+ *   numbers to the rows.
+ * - A home with **no defects at all** was made to look as though it had one. On the app's own good
+ *   sample the page reads "Reads well throughout — nothing the tradition counts as a defect" and
+ *   the "need fixing" count is zero, while the one middling kitchen right below it carried a red
+ *   warning pill. Amber never appeared on a room row anywhere in the product.
+ *
+ * So the middling verdict gets its own word and its own amber, and every word here is exactly the
+ * word the meter above uses. No finding is removed or softened — a defect is still red and still
+ * says so; it is the room that is NOT a defect that stops being dressed as one.
+ */
+enum class VastuRoomStatus { ALIGNED, NOT_IDEAL, NEEDS_FIXING, NOT_RATED }
 
 @Composable
 fun VastuRoomStatus.color(): Color = when (this) {
     VastuRoomStatus.ALIGNED -> VastuTheme.colors.verdictIdeal
-    VastuRoomStatus.REVIEW -> VastuTheme.colors.verdictDefect
+    VastuRoomStatus.NOT_IDEAL -> VastuTheme.colors.verdictSuboptimal
+    VastuRoomStatus.NEEDS_FIXING -> VastuTheme.colors.verdictDefect
     VastuRoomStatus.NOT_RATED -> VastuTheme.colors.verdictNotAssessed
 }
 
 private fun VastuRoomStatus.label(): String = when (this) {
-    VastuRoomStatus.ALIGNED -> "Aligned"
-    VastuRoomStatus.REVIEW -> "Review"
+    VastuRoomStatus.ALIGNED -> "Already right"
+    VastuRoomStatus.NOT_IDEAL -> "Not ideal"
+    VastuRoomStatus.NEEDS_FIXING -> "Needs fixing"
     VastuRoomStatus.NOT_RATED -> "Not rated"
 }
 
@@ -65,7 +84,13 @@ private fun VastuRoomStatus.label(): String = when (this) {
  */
 private fun VastuRoomStatus.glyph(): String = when (this) {
     VastuRoomStatus.ALIGNED -> "✓"
-    VastuRoomStatus.REVIEW -> "△"
+    // ⚠ Both middling and defect keep the triangle. It is one of the three characters this project
+    // has PHOTOGRAPHED rendering in the bundled DM Sans; reaching for a crossed circle or a filled
+    // triangle to separate them would draw an empty box on a real phone, which is a thing only the
+    // picture can tell you. The colour and the word carry the difference, and the design contract
+    // requires exactly that — never colour alone.
+    VastuRoomStatus.NOT_IDEAL -> "△"
+    VastuRoomStatus.NEEDS_FIXING -> "△"
     VastuRoomStatus.NOT_RATED -> "–"
 }
 

@@ -44,7 +44,11 @@ fun Verdict.toVastu(): VastuVerdict = when (this) {
  */
 fun Verdict.roomStatus(): VastuRoomStatus = when (this) {
     Verdict.IDEAL, Verdict.ACCEPTABLE -> VastuRoomStatus.ALIGNED
-    Verdict.SUBOPTIMAL, Verdict.DEFECT -> VastuRoomStatus.REVIEW
+    // ⭐ These two no longer collapse into one red word. See VastuRoomStatus: a middling room and a
+    // real defect were both stamped "Review" in the defect colour, so a home with nothing wrong
+    // still showed a red warning under a heading saying it had none.
+    Verdict.SUBOPTIMAL -> VastuRoomStatus.NOT_IDEAL
+    Verdict.DEFECT -> VastuRoomStatus.NEEDS_FIXING
     Verdict.NOT_SCORED -> VastuRoomStatus.NOT_RATED
 }
 
@@ -54,9 +58,13 @@ fun Verdict.roomStatus(): VastuRoomStatus = when (this) {
  * first" used to carry survives — the list is sorted, not re-scored.
  */
 fun VastuRoomStatus.readingOrder(): Int = when (this) {
-    VastuRoomStatus.REVIEW -> 0
-    VastuRoomStatus.NOT_RATED -> 1
-    VastuRoomStatus.ALIGNED -> 2
+    // Worst first, and the split of the old single "review" band into two keeps that order exactly:
+    // a real defect leads, a middling room follows it, and neither moves past what we could not rate
+    // or what is already right.
+    VastuRoomStatus.NEEDS_FIXING -> 0
+    VastuRoomStatus.NOT_IDEAL -> 1
+    VastuRoomStatus.NOT_RATED -> 2
+    VastuRoomStatus.ALIGNED -> 3
 }
 
 /**

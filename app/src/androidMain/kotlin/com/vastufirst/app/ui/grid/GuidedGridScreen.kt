@@ -489,7 +489,12 @@ fun GuidedGridContent(
             when {
                 // Names the outline the Canvas now draws, so "the wall" points at something visible
                 // instead of an outline the user had to imagine around their rooms (UAT S8).
-                doorMode -> "Your home is outlined below. Tap the wall where your main entrance is."
+                // ⚠ "front door", not "main entrance". The heading one line above says "Mark your
+                // front door", and "Entrance" is ALSO one of the room kinds in the palette on this
+                // same screen — so a reader could reasonably think they were being asked to place an
+                // entrance room instead of tapping a wall. Everywhere else in the app already says
+                // front door; this was the one line that did not.
+                doorMode -> "Your home is outlined below. Tap the wall where your front door is."
                 selected != null -> "Drag the room to move it, or pull a corner to resize."
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."

@@ -89,6 +89,7 @@ import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PadaVerdict
 import com.vastufirst.shared.RoomResult
+import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
@@ -941,9 +942,23 @@ private fun RoomsSection(
                         RoomBody(
                             r,
                             zones,
-                            when (r.verdict) {
-                                Verdict.SUBOPTIMAL -> whyNotIdeal(r)
-                                Verdict.NOT_SCORED -> NOT_RATED_REASON
+                            when {
+                                r.verdict == Verdict.SUBOPTIMAL -> whyNotIdeal(r)
+                                // ⭐⭐ THE ENTRANCE IS NOT "UNJUDGED" — it is judged higher up this
+                                // very page. The engine scores it as the FRONT DOOR, on the 32-named
+                                // positions, and the report's own words two sections above call the
+                                // door "the highest-weighted single element in the whole reading".
+                                // But an ENTRANCE room carries excludeFromScore, so it came back
+                                // NOT_SCORED like a passage, and the generic line told the reader
+                                // the tradition does not place this kind of room and we had not
+                                // judged it — on the same page that judges it. One document, two
+                                // opposite answers about the one thing that moves the score most.
+                                r.verdict == Verdict.NOT_SCORED && r.type == RoomType.ENTRANCE ->
+                                    "This is your front door, and it is read in full under " +
+                                        "“Your front door” above — on the 32 named positions " +
+                                        "the tradition uses, which is finer than the eight " +
+                                        "directions a room is read on. It is not scored twice."
+                                r.verdict == Verdict.NOT_SCORED -> NOT_RATED_REASON
                                 else -> whyRight(r)
                             },
                         )
