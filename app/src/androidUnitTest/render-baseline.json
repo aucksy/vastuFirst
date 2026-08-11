@@ -69,5 +69,6 @@
   "unlock": 0,
   "unlock-paid": 0,
   "unlock-unreachable": 0,
-  "welcome": 0
+  "welcome": 0,
+  "welcome-first": 0
 }
