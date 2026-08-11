@@ -106,6 +106,41 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Tuesday 11 August, late — three things from the original list, now in the app
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.13.0/vastufirst-v0.13.0.apk
+**This is the one to install.**
+
+**Every room on "Check what we read" now tells you how it reads and which way it faces.** That
+screen shows your own plan with the rooms we found listed underneath, so you can hold it up against
+your paper. Until now each row gave you the room's name and the size printed on your sheet and
+nothing else — you had to reach the report before you learned that the kitchen we found sits in the
+south-east and reads as already right. Each row now carries both: the same one word the report uses
+— *already right*, *not ideal*, *needs fixing* or *not rated* — and the direction spelled out. The
+size printed on your plan is still there; nothing was traded away for the new labels.
+
+**To make that possible, the app asks which way North is one step earlier.** A room has no
+direction until North is marked, so for as long as North came *after* the checking screen there was
+nothing true to put on those rows. Uploading a plan now goes: read the plan → mark North on your own
+picture → check what we read → mark the front door, but only if your plan did not already name it →
+your report. Same number of steps, better order, and the last one still opens the report directly.
+
+**The AI model names are off the customer's path.** The screen you land on after a plan is read
+carried a section headed "Which AI read it · testing", a line naming the model that read your plan,
+and a button per model offering to send it again. That was a testing tool of ours sitting in the
+middle of a paying customer's journey. It is gone. Choosing which reader to use is still available;
+it lives in Settings, where it also survives trying the same plan again, which the old buttons did
+not.
+
+**The report is shorter again — our own wording is down from 451 words to 373.** Nothing was
+removed: every finding, every reason, every remedy and every Vastu term is exactly as it was,
+including the paragraph explaining that your front door is read on the tradition's 32 named
+positions and is not counted twice. Only the joining words went.
+
+**And one thing we found while checking the above.** If your plan's picture ever fails to open, the
+front-door screen shows a card saying you can carry on without marking it. At the largest text
+setting that card was cutting its own sentence off mid-word. It now shows the whole thing.
+
 ### Tuesday 11 August, evening — we read the whole app end to end, and fixed what we found
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.12.0/vastufirst-v0.12.0.apk
