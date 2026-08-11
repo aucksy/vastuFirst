@@ -106,6 +106,84 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Tuesday 11 August, evening — we read the whole app end to end, and fixed what we found
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.12.0/vastufirst-v0.12.0.apk
+**This is the one to install.**
+
+We went through every journey in the app — first launch, uploading a plan, drawing one by hand, your
+saved homes, the report, settings — and looked at every screen the build draws, at five phone sizes
+and text settings. This is what that turned up. Nothing new was added; all of it is the app telling
+the truth about itself.
+
+**A saved home could show a different home's floor plan.** This is the one that mattered most. Once
+you had uploaded any plan, the app kept that picture for the rest of the session and drew it under
+*every* home you opened afterwards — a home you had drawn by hand, a home you reopened from your
+list — under the heading "Your home, as we read it". Your score and your rooms were always your
+own; only the picture was somebody else's. Tapping "change where the front door is" then opened that
+wrong picture to mark a door on. A saved home never has a photograph stored, so there was no case
+where showing one was right. It is gone.
+
+**The offer to unlock the report was overstating what you get.** The bar at the bottom of the free
+report said "6 more findings, with the reason and remedies for each". It was adding up two different
+things: problems, and rooms. Most of the rooms it counted are rooms the same report calls *already
+right* — nothing is wrong with them, so there is no remedy to give — and a room that does have a
+problem was being counted twice. The two are now counted separately and the sentence says only what
+paying actually reveals. The ₹699 page had the same trouble: two of its four selling points were
+things the free report already hands over in full, including your front door. Both now describe
+something you genuinely cannot see without paying.
+
+**The report gave two different counts of your own rooms.** The bar near the top said "How your 10
+rooms read" while the list further down said "Your rooms (11)". The first number was three figures
+added together, and one of the three was counting *problems* beside two that count rooms — so one
+room with two problems pushed it up, and rooms the tradition does not rate were missing from it
+altogether. All three now count rooms, and the heading no longer claims a total.
+
+**A room that is only middling wore the same red warning as a real fault.** The summary counts your
+rooms as "already right", "not ideal" and "need fixing" — and then the list underneath used none of
+those words. Every room from the last two groups was marked "Review" in the same alarm red. On a
+good home the page could say "reads well throughout, nothing the tradition counts as a defect", show
+zero under "need fixing", and still put a red mark on a kitchen right below. The list now uses the
+same four words as the summary, and middling rooms are amber. Nothing has been softened: a real
+fault is still red and still says so.
+
+**The report pointed you at a screen the app no longer has.** Three of the things it says it could
+not check told you to answer some extra questions "on the score screen" — a screen removed last
+week. They now name the button that is actually on your report. A fourth, about a mirror facing a
+bed or a beam over one, promised to check it if you answered more questions, and there has never
+been a question for it. It says plainly that we do not check that one, and why.
+
+**And on a plan that prints ENTRANCE or FOYER**, the room list used to say your front door was "not
+rated — the tradition does not place this kind of room", on the same page that reads your front door
+in full and calls it the single most important thing in the whole reading. That row now says where
+its reading is.
+
+**A button named a screen it never opened.** From a finished report, "change where the front door
+is" led to a screen whose green button said "Next — mark North" — and pressing it took you back to
+your report instead. Both versions of that screen now say where they go.
+
+**Anyone who had not finished a home could not reach the privacy policy at all.** On a fresh install
+the app opens on the first question, and the only way into Settings — and through it the policy, the
+sources page and "delete all my data" — was a gear on the saved-homes screen, which you only see
+after finishing a whole home. There is now a Privacy link on the first screen, which is where the
+person who wants to read it before trusting us with their floor plan actually is.
+
+**Turn the phone sideways while drawing and every control vanished.** The plan filled the width and
+kept going — about one and two-thirds of a screen tall — so you saw the top of your home and nothing
+else: no plot-size keys, no room list, no button to go on. The plan is now sized to leave room for
+the controls underneath.
+
+**Three smaller ones.** On a phone set to a right-to-left language the score read backwards — "10 /
+3.1" instead of "3.1 / 10". Settings said the app reads "8 zones"; it reads nine, the eight
+directions and the centre, and the centre is on your report by name. And the price screen led with
+₹699 in the largest type on it while nothing is actually charged in this version — the caption
+beside it now says so, in the same place your eye lands first.
+
+**What is still open, and honestly.** Paying is still switched off and waiting on your decision about
+how the ₹699 is collected. The report still cannot be sent to anyone — no share, no PDF — and that
+is the next thing worth building. And when the app cannot work out where your rooms sit, it still
+hands you a grid of squares to drag; placing them by tapping your own plan instead is still ahead.
+
 ### Tuesday 11 August — your report now uses the names printed on your own plan
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.11.0/vastufirst-v0.11.0.apk

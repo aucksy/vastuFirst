@@ -1168,7 +1168,7 @@ private fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): S
  */
 internal fun payBarPromise(problems: Int, rooms: Int): String = when {
     problems > 0 && rooms > 0 ->
-        "$problems more ${if (problems == 1) "problem" else "problems"} with their remedies, " +
+        "$problems more ${if (problems == 1) "problem with its remedies" else "problems with their remedies"}, " +
             "and $rooms more ${if (rooms == 1) "room" else "rooms"} read in full"
     problems > 0 ->
         "$problems more ${if (problems == 1) "problem" else "problems"}, " +
