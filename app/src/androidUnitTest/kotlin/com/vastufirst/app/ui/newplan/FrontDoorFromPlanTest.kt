@@ -35,8 +35,15 @@ class FrontDoorFromPlanTest {
         return value!!
     }
 
-    private fun room(type: RoomType, col: Int, row: Int, w: Int, h: Int, id: String = "$type-$col-$row") =
-        GridRoom(id = id, type = type, col = col, row = row, w = w, h = h)
+    private fun room(
+        type: RoomType,
+        col: Int,
+        row: Int,
+        w: Int,
+        h: Int,
+        id: String = "$type-$col-$row",
+        label: String = "",
+    ) = GridRoom(id = id, type = type, col = col, row = row, w = w, h = h, label = label)
 
     // ---- reading the door off the plan's own entrance -------------------------------------------
 
@@ -135,6 +142,139 @@ class FrontDoorFromPlanTest {
             ),
         )
         assertEquals(DoorSide.W, door.side)
+    }
+
+    // ---- the way-in caption, measured before it was written -------------------------------------
+
+    /**
+     * ⭐⭐ THE SECOND WAY IN, and it exists because the first one was COUNTED (11 Aug 2026,
+     * `node tools/scan-eval/audit-entry.mjs`). Reading the door off a room typed as an entrance fired
+     * on 7 of the 24 recorded real plans that place their rooms. Every single refusal was "no room is
+     * typed as an entrance"; the wall test and the corner tie-break refused none at all.
+     *
+     * What those plans print is `PORCH` and `VERANDAH` — the covered way in, which the label table
+     * types as a balcony because that is what a porch is. Reading the caption takes it to 13 of 24.
+     */
+    @Test
+    fun `a plan that prints a porch on one wall has told us where the door is`() {
+        val door = required(
+            "the sheet says PORCH along the south wall — that is the way in",
+            frontDoorFromEntrance(
+                listOf(
+                    room(RoomType.LIVING, col = 0, row = 0, w = 6, h = 5),
+                    room(RoomType.BALCONY, col = 1, row = 5, w = 4, h = 1, label = "PORCH 11'0\"X16'6\""),
+                ),
+            ),
+        )
+        assertEquals(DoorSide.S, door.side)
+    }
+
+    /** And it says WHICH caption it read, because "your entrance" and "your porch" are not one claim. */
+    @Test
+    fun `the reading names the caption it came from, and stays silent when the room was typed`() {
+        val fromCaption = required(
+            "read off a printed porch",
+            frontDoorRead(
+                listOf(
+                    room(RoomType.LIVING, 0, 0, 6, 5),
+                    room(RoomType.BALCONY, 1, 5, 4, 1, label = "PORCH"),
+                ),
+            ),
+        )
+        assertEquals("PORCH", fromCaption.fromCaption)
+        val fromType = required(
+            "read off a room the plan types as an entrance",
+            frontDoorRead(
+                listOf(
+                    room(RoomType.ENTRANCE, 0, 2, 1, 4, label = "FOYER"),
+                    room(RoomType.LIVING, 1, 0, 5, 8),
+                ),
+            ),
+        )
+        assertNull("a typed entrance needs no caption quoted at the reader", fromType.fromCaption)
+    }
+
+    /**
+     * ⭐ The refusals the caption route keeps, and one it adds. A car porch is where the car lives —
+     * frequently on a different wall from the front door — and two porches is a plan we cannot choose
+     * between, exactly as two foyers always was.
+     */
+    @Test
+    fun `a car porch is not a way in, and two porches is still a question`() {
+        assertNull(
+            "CAR PORCH is parking, and marking the front door from it would be a guess",
+            frontDoorFromEntrance(
+                listOf(
+                    room(RoomType.LIVING, 0, 0, 6, 5),
+                    room(RoomType.GARAGE, 1, 5, 4, 1, label = "CAR PORCH"),
+                ),
+            ),
+        )
+        assertNull(
+            "two porches, no way to choose",
+            frontDoorFromEntrance(
+                listOf(
+                    room(RoomType.LIVING, 1, 0, 4, 6),
+                    room(RoomType.BALCONY, 0, 0, 1, 6, id = "p1", label = "PORCH"),
+                    room(RoomType.BALCONY, 5, 0, 1, 6, id = "p2", label = "VERANDAH"),
+                ),
+            ),
+        )
+        assertNull(
+            "LOBBY is deliberately not a way in — it read two different walls for one Green Court flat",
+            frontDoorFromEntrance(
+                listOf(
+                    room(RoomType.LIVING, 0, 0, 6, 5),
+                    room(RoomType.CORRIDOR, 1, 5, 4, 1, label = "LOBBY"),
+                ),
+            ),
+        )
+    }
+
+    /** A room the plan TYPES as an entrance always wins — the caption route never overrules one. */
+    @Test
+    fun `a typed entrance outranks any printed caption`() {
+        val door = required(
+            "an entrance on the west wall and a porch on the south: the entrance decides",
+            frontDoorFromEntrance(
+                listOf(
+                    room(RoomType.ENTRANCE, col = 0, row = 1, w = 1, h = 4, label = "ENTRY"),
+                    room(RoomType.LIVING, col = 1, row = 0, w = 5, h = 5),
+                    room(RoomType.BALCONY, col = 1, row = 5, w = 4, h = 1, label = "PORCH"),
+                ),
+            ),
+        )
+        assertEquals(DoorSide.W, door.side)
+    }
+
+    /** The plan's own words must survive the trip into the engine and back out of a saved home. */
+    @Test
+    fun `a printed room name survives being scored and reopened`() {
+        val rooms = listOf(
+            room(RoomType.MASTER_BEDROOM, 0, 0, 3, 3, id = "scan-0", label = "MASTER BEDROOM 1"),
+            room(RoomType.TOILET, 3, 0, 2, 2, id = "scan-1", label = "ATTACHED TOILET 1"),
+        )
+        val plan = required(
+            "the draft must build a scorable plan",
+            buildEnginePlan(
+                rooms = rooms,
+                door = null,
+                intent = com.vastufirst.shared.Intent.BUILDING,
+                propertyType = com.vastufirst.shared.PropertyType.FLAT,
+                north = 0,
+                planId = "p",
+            ),
+        )
+        assertEquals(
+            "the sheet's own words reach the saved plan",
+            listOf("MASTER BEDROOM 1", "ATTACHED TOILET 1"),
+            plan.levels.first().rooms.map { it.label },
+        )
+        assertEquals(
+            "and come back when the home is reopened",
+            listOf("MASTER BEDROOM 1", "ATTACHED TOILET 1"),
+            gridRoomsFromPlan(plan).map { it.label },
+        )
     }
 
     // ---- marking the door on the photograph -----------------------------------------------------

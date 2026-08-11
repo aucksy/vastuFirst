@@ -118,6 +118,38 @@ class LongScreenBottomScreenshotTest {
         captureBottom("report", "rooms_w320", hasTestTag(TAG_ROOMS_END), 1.0f, "+w320dp-h711dp-port-xhdpi", content)
     }
 
+    /**
+     * ⭐⭐ THE ROOM LIST OF A SCANNED HOME — the ONE picture in which the plan's own printed names
+     * appear, and therefore the only proof that the 11 Aug 2026 fix landed.
+     *
+     * The owner's report showed "Master" and "Bedroom 2" beside a photograph printing "MASTER
+     * BEDROOM" and "BEDROOM 2" in as many letters, because the caption was dropped on the way into
+     * the engine. It is carried through now — and every other report golden renders a hand-drawn
+     * home, which has no printed captions at all, so not one of them could ever show the difference.
+     *
+     * ⚠ Two configs, and the second is not decoration. A printed caption is LONGER than our own name
+     * for the same room ("ATTACHED TOILET 1" against "Toilet"), and a room row is the most
+     * shatter-prone thing in this app — a circle, a name, a direction pill, a word and an arrow on
+     * one line. 200 % font is where that runs out of width, and §6.7b is explicit that the ink can
+     * overflow while every measurement stays green. So the long names get photographed at the size
+     * that breaks rows.
+     */
+    @Test
+    fun report_scanned_rooms() {
+        val content: @Composable () -> Unit = {
+            ReportContent(
+                analysis = RenderFixtures.scannedAnalysis,
+                intent = Intent.BUILDING,
+                rooms = RenderFixtures.scannedRooms,
+                cols = RenderFixtures.scannedCols,
+                rows = RenderFixtures.scannedRows,
+                planRooms = RenderFixtures.scannedPlanRooms,
+            )
+        }
+        captureBottom("report-scanned", "rooms", hasTestTag(TAG_ROOMS_END), 1.0f, content = content)
+        captureBottom("report-scanned", "rooms_font2_0", hasTestTag(TAG_ROOMS_END), 2.0f, content = content)
+    }
+
     /** The remedies-only branch ends on the same elements but gets there through different cards. */
     @Test
     fun report_living_bottom() = captureBottomPair("report-living", anchor = hasText("Done — see all my plans")) {

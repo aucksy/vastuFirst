@@ -154,6 +154,48 @@ class ScoreDrivenScreensScreenshotTest {
         ReportContent(analysis = analysis, intent = Intent.BUILDING)
     }
 
+    /**
+     * ⭐⭐ THE REPORT OF A SCANNED HOME — the picture no golden in this harness has ever contained.
+     *
+     * Every other report golden renders a home drawn by hand: no photograph, so the report falls back
+     * to the zone map and its rooms fall back to "Master", "Bedroom 2". This one renders the owner's
+     * own sheet, which means this is the only picture in which either of the 11 Aug 2026 changes can
+     * be seen at all:
+     *
+     *  · **the plan's own printed names on the room rows** — his picture showed "MASTER BEDROOM 1"
+     *    on the check screen and "Master" on the report, about the same room;
+     *  · **how big the picture is** — the pane cap went 260 → 320 dp because he read the plan as
+     *    "roughly two-thirds of the screen width", and a number cannot settle that. A picture can.
+     *
+     * ⚠ The photograph is a flat stand-in bitmap at his sheet's real proportions (1399 × 1389). The
+     * harness has no photograph, and what these goldens guard is the GEOMETRY — how much of the
+     * column the picture takes, and that the rooms are outlined over it — which is the same over any
+     * pixels.
+     *
+     * ⚠ This golden is the TOP of that report. The room list is far below the fold, so the printed
+     * names are photographed by `report_scanned_rooms` in LongScreenBottomScreenshotTest — reading
+     * this picture as proof of the names would be the viewport trap all over again.
+     */
+    @Test
+    fun report_scanned() = render("report-scanned") {
+        ReportContent(
+            analysis = RenderFixtures.scannedAnalysis,
+            intent = Intent.BUILDING,
+            rooms = RenderFixtures.scannedRooms,
+            north = 0,
+            cols = RenderFixtures.scannedCols,
+            rows = RenderFixtures.scannedRows,
+            planImage = planSheet(),
+            planRooms = RenderFixtures.scannedPlanRooms,
+        )
+    }
+
+    /** A stand-in for the scanned sheet, at the owner's plan's real proportions. */
+    private fun planSheet() = android.graphics.Bitmap
+        .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+        .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+        .asImageBitmap()
+
     @Test
     fun report_living() = render("report-living") {
         ReportContent(analysis = analysis, intent = Intent.LIVING)

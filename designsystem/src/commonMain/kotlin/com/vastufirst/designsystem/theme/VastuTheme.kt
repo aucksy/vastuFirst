@@ -114,11 +114,21 @@ data class VastuSizes(
     val planThumb: Dp = 60.dp,       // saved-plan thumbnail
     val dot: Dp = 6.dp,              // provenance / status dot
     val logo: Dp = 54.dp,            // welcome brand mark
-    // ⭐ The pinned floor-plan pane on "check what we read" (owner, 10 Aug 2026: the plan must not
-    // scroll away and more rooms must fit under it). A CAP, not a height: a wide sheet still draws
-    // shorter than this. It exists so the list underneath always starts on screen — including at
-    // 200 % font, where an uncapped picture pushed the first room below the fold.
-    val planPane: Dp = 260.dp,
+    // ⭐ The pinned floor-plan pane on "check what we read", and the photograph on the report (owner,
+    // 10 Aug 2026: the plan must not scroll away and more rooms must fit under it). A CAP, not a
+    // height: a wide sheet still draws shorter than this. It exists so the list underneath always
+    // starts on screen — including at 200 % font, where an uncapped picture pushed the first room
+    // below the fold.
+    //
+    // ⭐ RAISED 260 → 320 dp (owner, 11 Aug 2026: *"the plan ended up noticeably smaller than
+    // before, roughly two-thirds of the screen width"*). He was reading it right, and the arithmetic
+    // says why: the picture is capped by its HEIGHT, so on a squarish builder's sheet — his own is
+    // 1399 × 1389 — a 260 dp cap draws it about 260 dp wide inside a 364 dp column, which is 72 %.
+    // At 320 it draws about 88 % of the column and reads as a plan again. The trade is real and
+    // small: the picture takes roughly one more room row's worth of the screen before scrolling.
+    // Going further would fill the width on a square sheet and cost a second row, and on a PORTRAIT
+    // sheet no cap ever fills the width — that is the shape of the paper, not a setting.
+    val planPane: Dp = 320.dp,
 )
 
 @Immutable

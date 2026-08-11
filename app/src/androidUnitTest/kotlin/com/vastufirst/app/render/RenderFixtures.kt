@@ -129,6 +129,49 @@ object RenderFixtures {
             )!!,
         )
 
+    // --- a SCANNED home: the owner's OWN sheet, and the words printed on it ---
+    /**
+     * ⭐⭐ THE OWNER'S PLAN, READ THE WAY THE APP READS IT — the recorded reply for `plan-020` put
+     * through the real mapper and the real grid conversion, so these rooms carry the captions his
+     * sheet actually prints ("FOYER", "MASTER BEDROOM", the three-section balcony).
+     *
+     * ⚠ It exists because of a blind spot, not for variety. Every report golden in this harness
+     * renders a home DRAWN BY HAND: no photograph, no printed captions, so the report's picture
+     * section and its printed room names appeared in **no picture at any configuration**. That is the
+     * "a golden is a viewport" trap landing on the two things the 11 Aug 2026 release is about — the
+     * plan's own names on the report, and how big the picture is.
+     */
+    private val scanned: com.vastufirst.shared.scan.ScanOutcome.Placed =
+        com.vastufirst.shared.scan.ScanMapper.map(
+            com.vastufirst.shared.scan.RecordedScans.load(
+                com.vastufirst.shared.scan.RecordedScans.PLAN_020,
+            )!!.reply,
+            imageAspect = 1399.0 / 1389.0,
+        ) as com.vastufirst.shared.scan.ScanOutcome.Placed
+
+    val scannedRooms: List<GridRoom> =
+        com.vastufirst.app.ui.scan.toGridRooms(scanned.rooms, scanned.cols, scanned.rows)
+
+    /** The rectangles each room was read from, for drawing them on the photograph. */
+    val scannedPlanRooms: List<com.vastufirst.app.ui.common.PlanRoom> =
+        com.vastufirst.app.ui.scan.planRoomsOf(scanned.rooms)
+
+    val scannedCols: Int = scanned.cols
+    val scannedRows: Int = scanned.rows
+
+    val scannedAnalysis: Analysis =
+        VastuEngine().analyze(
+            buildEnginePlan(
+                rooms = scannedRooms,
+                // His sheet prints FOYER, so the front door is read off it rather than asked for.
+                door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(scannedRooms),
+                intent = Intent.BUILDING,
+                propertyType = PropertyType.FLAT,
+                north = 0,
+                planId = "scanned-fixture",
+            )!!,
+        )
+
     /**
      * ⭐ A HOME WITH NO PROBLEMS, so the report's LOWER sections can actually be looked at.
      *

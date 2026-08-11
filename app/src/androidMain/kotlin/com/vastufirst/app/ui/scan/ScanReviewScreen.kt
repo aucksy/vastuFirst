@@ -128,6 +128,8 @@ fun planRoomsOf(rooms: List<ScannedRoom>): List<PlanRoom> {
 fun ScanReviewScreen(
     handover: ScanReviewHandover,
     door: GridDoor?,
+    /** The caption the door's wall was read off, when it came from one — see [ScanReviewContent]. */
+    doorFromCaption: String? = null,
     onContinue: () -> Unit,
     onChangeDoor: () -> Unit,
     onBack: () -> Unit,
@@ -138,6 +140,7 @@ fun ScanReviewScreen(
         image = image,
         rooms = data?.rooms.orEmpty(),
         door = door,
+        doorFromCaption = doorFromCaption,
         onContinue = onContinue,
         onChangeDoor = onChangeDoor,
         onBack = onBack,
@@ -169,6 +172,17 @@ fun ScanReviewContent(
      * sending the user off to mark it; null means the next step is the asking.
      */
     door: GridDoor? = null,
+    /**
+     * ⭐ The caption the wall was read off — `PORCH`, `VERANDAH 9'5"X4'6"` — when the door came from
+     * a printed way-in name rather than from a room typed as an entrance. Null for the typed case,
+     * and then the line says "your plan's own entrance" as it always has.
+     *
+     * ⚠ It is shown because the two are not the same claim. A plan that prints ENTRY has told us
+     * where the door is; a plan that prints PORCH has told us where the covered way in is and we
+     * have inferred the rest. Saying which one happened is what makes "change it" an informed tap
+     * rather than a leap of faith — and the front door is the heaviest input the engine weighs.
+     */
+    doorFromCaption: String? = null,
     onContinue: () -> Unit = {},
     onChangeDoor: () -> Unit = {},
     onBack: () -> Unit = {},
@@ -309,7 +323,11 @@ fun ScanReviewContent(
                 // engine weighs, so what we read is stated in one line, with the way to change it.
                 if (door != null) {
                     VText(
-                        "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}.",
+                        if (doorFromCaption != null) {
+                            "Front door: your plan prints \"$doorFromCaption\" on ${doorSideWords(door.side)}, so we put it there."
+                        } else {
+                            "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}."
+                        },
                         style = VastuTheme.type.bodySm,
                         color = colors.textSecondary,
                     )
@@ -340,5 +358,9 @@ fun ScanReviewContent(
  * The most of the viewport's height the pinned plan may take. A landscape phone is 480 dp tall and
  * this screen's headings, list heading and buttons need the rest; a fixed cap that is right in
  * portrait is most of the screen in landscape.
+ *
+ * ⚠ Raised 0.38 → 0.42 alongside the pane cap (11 Aug 2026), so a taller cap is not silently
+ * cancelled by this on an ordinary portrait phone. It is still the guard that stops the pinned
+ * picture eating a landscape screen — that is what it is for, and it stays well under half.
  */
-private const val PLAN_MAX_VIEWPORT_SHARE = 0.38f
+private const val PLAN_MAX_VIEWPORT_SHARE = 0.42f

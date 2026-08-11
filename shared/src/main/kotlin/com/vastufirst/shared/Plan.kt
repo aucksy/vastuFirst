@@ -38,6 +38,21 @@ data class Room(
     val id: String,
     val type: RoomType,
     val polygon: List<Point>,           // supports L-shapes and non-convex
+    /**
+     * ⭐ THE NAME THE PLAN ITSELF PRINTS for this room — "MASTER BEDROOM 1", "ATT. TOILET 1" —
+     * carried verbatim, or empty for a home drawn by hand.
+     *
+     * ⚠ **The engine never reads this and must never start.** It is presentation only: the score is a
+     * function of [type] and [polygon], so a plan that captions its kitchen "AMMA'S KITCHEN" scores
+     * exactly as one that captions it "KITCHEN". Keeping it here rather than in a side map is what
+     * makes it survive being saved and reopened — the owner's report showed generic type names
+     * ("Master", "Bedroom 2") next to a photograph printing his own words, because the label was
+     * dropped at this boundary and there was nowhere for it to live.
+     *
+     * ⚠ Last, with a default, like every field added to a serialized type in this repo: an older
+     * saved home decodes without it, and positional construction in fixtures keeps its meaning.
+     */
+    val label: String = "",
 )
 
 @Serializable

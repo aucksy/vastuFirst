@@ -111,6 +111,10 @@ private fun ScannedRoom.toGridRoom(index: Int, rect: CellRect) = GridRoom(
     row = rect.row,
     w = rect.w,
     h = rect.h,
+    // ⭐ The caption the sheet prints, carried on. Before this it stopped here: the check screen
+    // showed the user's own words and the report — built from the engine's plan — showed generic
+    // type names, so the same room was called two different things two screens apart.
+    label = label,
 )
 
 /** The grid a scan's rooms should be drawn on. Placed reads carry their own; unplaced use the default. */

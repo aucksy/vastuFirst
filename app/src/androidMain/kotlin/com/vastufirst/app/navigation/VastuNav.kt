@@ -235,6 +235,13 @@ fun VastuNavHost() {
                     handover = handover,
                     // Already read off the plan's own entrance, or null if the plan named none.
                     door = planVm.door,
+                    // ⭐ WHAT we read it off, when it was a printed caption rather than a room typed
+                    // as an entrance — so the screen can quote the plan's own word back. Recomputed
+                    // rather than stored: it is only shown while the door still IS the one we read,
+                    // so a user who moves the door never sees a sentence claiming their plan put it
+                    // there.
+                    doorFromCaption = com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)
+                        ?.takeIf { it.door == planVm.door }?.fromCaption,
                     // ⭐ The front door comes before North (audit B2) — but only as a QUESTION when
                     // the plan did not already answer it. Both steps now happen on the photograph;
                     // this flow no longer opens the grid editor at all (owner, 6 Aug 2026).

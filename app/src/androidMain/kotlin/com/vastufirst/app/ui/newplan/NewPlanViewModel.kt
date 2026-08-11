@@ -52,6 +52,15 @@ data class GridRoom(
     val row: Int,
     val w: Int,
     val h: Int,
+    /**
+     * ⭐ What the scanned plan PRINTS beside this room — "MASTER BEDROOM 1" — or empty for a room
+     * drawn by hand. Two things read it and nothing else does: the report, so its room list says
+     * what the sheet says, and [com.vastufirst.app.ui.newplan.frontDoorFromEntrance], so a plan
+     * that captions a porch can have its front door read without that porch being re-typed.
+     *
+     * ⚠ It never reaches the score. The engine is a function of type and shape.
+     */
+    val label: String = "",
 )
 
 enum class DoorSide { N, E, S, W }

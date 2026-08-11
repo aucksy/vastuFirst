@@ -62,10 +62,9 @@ fun VastuRoomStatus.readingOrder(): Int = when (this) {
 /**
  * "Bedroom 2" — the room's kind, numbered only when the home has more than one of that kind.
  *
- * ⚠ A placeholder for the plan's OWN printed name ("MASTER BEDROOM 1"), which the scan reads and
- * then drops on the way into the engine: the engine's room carries a type and no label. Numbering by
- * kind is what a hand-drawn plan can support too, so it is the right default either way — but a
- * scanned plan should eventually show the words actually printed on the sheet.
+ * ⚠ The FALLBACK, not the first choice. A scanned plan prints its own names and those win
+ * ([roomNamesById]); this is what a home drawn by hand has, and what a scanned room falls back to
+ * when its caption came back blank.
  */
 fun roomDisplayNames(types: List<RoomType>): List<String> {
     val total = types.groupingBy { it }.eachCount()
@@ -75,6 +74,25 @@ fun roomDisplayNames(types: List<RoomType>): List<String> {
         seen[t] = n
         if ((total[t] ?: 0) > 1) "${t.label()} $n" else t.label()
     }
+}
+
+/**
+ * ⭐⭐ WHAT TO CALL EACH ROOM ON THE REPORT — the plan's own printed caption when there is one, and
+ * the numbered kind when there is not. Keyed by room id, so it survives the report's re-sorting.
+ *
+ * ⚠ WHY IT IS A MAP AND NOT A LIST. The report shows its rooms worst first, so its rows are not in
+ * plan order — but the numbering ("Bedroom 2") has to mean *the second bedroom on the plan*, not the
+ * second one that happened to score badly. Working the names out over the plan-ordered rooms and
+ * then looking them up by id keeps both true at once.
+ *
+ * ⚠ Numbering is applied to our OWN fallback names only. A sheet that captions two rooms identically
+ * gets two identical rows, because that is what the sheet says and inventing a number would be us
+ * writing words onto somebody's plan. The check-what-we-read screen has always behaved this way;
+ * this is the same behaviour, on the report.
+ */
+fun roomNamesById(rooms: List<GridRoom>): Map<String, String> {
+    val fallback = roomDisplayNames(rooms.map { it.type })
+    return rooms.mapIndexed { i, r -> r.id to r.label.ifBlank { fallback[i] } }.toMap()
 }
 
 fun Provenance.toVastu(): VastuProvenance = when (this) {
@@ -117,9 +135,21 @@ fun RoomType.label(): String = when (this) {
     RoomType.COURTYARD -> "Courtyard"; RoomType.UTILITY -> "Utility"; RoomType.CORRIDOR -> "Corridor"
 }
 
-/** A defect card title: "<Room> — <Zone>" when it belongs to a room, else "<Zone> — structure". */
-fun defectTitle(defect: com.vastufirst.shared.Defect, rooms: List<com.vastufirst.shared.RoomResult>): String {
-    val label = defect.roomId?.let { id -> rooms.firstOrNull { it.roomId == id }?.type?.label() }
+/**
+ * A defect card title: "<Room> — <Zone>" when it belongs to a room, else "<Zone> — structure".
+ *
+ * ⚠ [names] is the plan's own printed captions by room id, so a finding is headed by the same words
+ * as the row it belongs to. Without it the room list said "MASTER BEDROOM 1" and the finding above
+ * it said "Master", about the same room, on the same screen.
+ */
+fun defectTitle(
+    defect: com.vastufirst.shared.Defect,
+    rooms: List<com.vastufirst.shared.RoomResult>,
+    names: Map<String, String> = emptyMap(),
+): String {
+    val label = defect.roomId?.let { id ->
+        names[id]?.takeIf { it.isNotBlank() } ?: rooms.firstOrNull { it.roomId == id }?.type?.label()
+    }
     return if (label != null) "$label — ${defect.zone.short()}" else "${defect.zone.short()} — structure"
 }
 

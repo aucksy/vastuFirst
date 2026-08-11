@@ -52,6 +52,7 @@ import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.common.readingOrder
 import com.vastufirst.app.ui.common.roomDisplayNames
+import com.vastufirst.app.ui.common.roomNamesById
 import com.vastufirst.app.ui.common.roomStatus
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.label
@@ -280,13 +281,13 @@ fun ReportContent(
                 // answer exactly that, keeping their rooms.
                 rooms.isNotEmpty() -> GuidanceState(
                     title = "One answer went missing",
-                    body = "Your rooms are safe. The first question — what brings you to Vastu — was lost when the app closed. Answer it again and we'll read your home.",
+                    body = "Your rooms are safe. We lost your first answer — what brings you to Vastu. Give it again and we'll read your home.",
                     action = { VastuButton("Answer the first question", onClick = onRestart) },
                 )
                 // Nothing on screen and nothing computed — the phone reclaimed the in-progress plan.
                 else -> GuidanceState(
                     title = "Let's pick up where you left off",
-                    body = "We couldn't find this plan on screen — it may have closed in the background. Head back to your saved plans to reopen it.",
+                    body = "We couldn't find this plan — it may have closed in the background. Open it again from your saved plans.",
                     action = { VastuButton("Go to my plans", onClick = onDone) },
                 )
             }
@@ -313,7 +314,7 @@ fun ReportContent(
             GuidanceState(
                 title = "Let's finish your plan",
                 body = a.notes.firstOrNull()?.message
-                    ?: "Add a few rooms and your front door, and we'll read your home.",
+                    ?: "Add a few rooms and your front door, and we'll read it.",
                 action = { VastuButton("Change your plan", onClick = onEditEntry) },
             )
         }
@@ -322,6 +323,13 @@ fun ReportContent(
 
     val zones = a.zoneInfo
     val defects = a.defects
+    /**
+     * ⭐⭐ WHAT THIS REPORT CALLS EACH ROOM — the words the reader's own plan prints, when it was
+     * scanned from one (owner, 11 Aug 2026: his picture showed "MASTER BEDROOM 1" and the report
+     * said "Master"). A home drawn by hand has no printed captions and every row falls back to its
+     * numbered kind, exactly as before.
+     */
+    val roomNames = remember(rooms) { roomNamesById(rooms) }
     val notIdeal = a.roomResults.filter { it.verdict == Verdict.SUBOPTIMAL }
     val good = a.roomResults.filter { it.verdict == Verdict.IDEAL || it.verdict == Verdict.ACCEPTABLE }
 
@@ -459,7 +467,7 @@ fun ReportContent(
                 }
                 Spacer(Modifier.height(VastuTheme.spacing.s4))
                 VText(
-                    "Not quite right? Change it — your score and this report follow.",
+                    "Not right? Change it — your score follows.",
                     style = VastuTheme.type.bodySm, color = colors.textSecondary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -485,7 +493,7 @@ fun ReportContent(
             // themselves. Always free: it is the single most useful sentence on the screen.
             defects.firstOrNull()?.let { top ->
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
-                StartHere(top, a.roomResults, remediesOnly)
+                StartHere(top, a.roomResults, remediesOnly, roomNames)
             }
 
             // ---- one list, not three chapters ------------------------------------------------
@@ -502,6 +510,7 @@ fun ReportContent(
 
             RoomsSection(
                 rooms = a.roomResults,
+                names = roomNames,
                 defects = defects,
                 zones = zones,
                 unlocked = unlocked,
@@ -562,8 +571,8 @@ fun ReportContent(
                 VText(
                     // Copy cut (10 Aug 2026): 36 words -> 24. All four claims survive — traditional
                     // practice, guidance not a promise, our own summary, not part of the tradition.
-                    "Vastu is a traditional practice, and this is guidance for your decisions — not a " +
-                        "promised outcome. The score is our own summary, not part of the tradition.",
+                    "Vastu is a traditional practice; this is guidance, not a promised outcome. " +
+                        "The score is our own summary, not part of the tradition.",
                     style = VastuTheme.type.body, color = colors.textPrimary,
                 )
             }
@@ -629,7 +638,7 @@ fun ReadingProgress(durationMillis: Long, modifier: Modifier = Modifier) {
         VText("Reading your home", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
-            "Placing every room on the traditional grid, and weighing it against the rules.",
+            "Every room on the traditional grid, weighed against the rules.",
             style = VastuTheme.type.body,
             color = colors.textSecondary,
         )
@@ -725,15 +734,15 @@ private fun bandWord(score: Int): String = when {
  */
 private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean, unlocked: Boolean): String {
     val head = when {
-        score >= 75 && defectCount == 0 -> "This home reads well throughout, with nothing the tradition counts as a defect."
+        score >= 75 && defectCount == 0 -> "Reads well throughout — nothing the tradition counts as a defect."
         score >= 75 -> "Most of this home reads well."
-        score >= 50 -> "This home reads workably, with real problems worth addressing."
+        score >= 50 -> "This home reads workably, with real problems to address."
         else -> "Several core placements work against this home."
     }
     val tail = when {
         defectCount == 0 -> ""
         remediesOnly -> " Everything below can be done without moving a wall."
-        else -> " Nothing is built yet, so every change below is still free to make."
+        else -> " Nothing is built yet — every change below is still free."
     }
     val free = if (unlocked) "" else " Your entrance, kitchen and toilets are below in full, free."
     return head + tail + free
@@ -766,12 +775,17 @@ private fun advisableRemedies(d: Defect, remediesOnly: Boolean): List<com.vastuf
 /* ─────────────────────────── start here ─────────────────────────── */
 
 @Composable
-private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean) {
+private fun StartHere(
+    d: Defect,
+    rooms: List<RoomResult>,
+    remediesOnly: Boolean,
+    names: Map<String, String> = emptyMap(),
+) {
     val colors = VastuTheme.colors
     VastuCard(accent = colors.verdictDefect, background = colors.surfaceRaised) {
         SectionLabel("Start here", color = colors.verdictDefect)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(defectTitle(d, rooms), style = VastuTheme.type.h3, color = colors.textPrimary)
+        VText(defectTitle(d, rooms, names), style = VastuTheme.type.h3, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
             // ⚠ "Of the problems ranked below", NOT "of everything below" — the wider claim is one
@@ -780,7 +794,7 @@ private fun StartHere(d: Defect, rooms: List<RoomResult>, remediesOnly: Boolean)
             // engine never puts those two on one scale, so nothing here knows whether an
             // unfavourable door outranks the worst defect. Ranking only what is actually ranked is
             // the honest sentence, and it stayed honest when the door moved into this chapter.
-            "Of the problems ranked below, this is the one that moves your score most.",
+            "Of the problems ranked below, this moves your score most.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
         val first = if (remediesOnly) {
@@ -841,6 +855,11 @@ private fun DoorSection(door: DoorResult, zones: List<ZoneInfo>, remediesOnly: B
 @Composable
 private fun RoomsSection(
     rooms: List<RoomResult>,
+    /**
+     * ⭐ What the PLAN calls each room, by room id — "MASTER BEDROOM 1", straight off the sheet.
+     * Empty for a home drawn by hand, and then every row falls back to its numbered kind.
+     */
+    names: Map<String, String>,
     defects: List<Defect>,
     zones: List<ZoneInfo>,
     unlocked: Boolean,
@@ -856,17 +875,18 @@ private fun RoomsSection(
     // Defects keyed by the room they belong to, so a room row can open onto its own finding.
     val defectsByRoom = defects.filter { it.roomId != null }.groupBy { it.roomId }
 
-    // ⚠ The display name is worked out over the WHOLE list before sorting, so "Bedroom 2" is the
-    // second bedroom on the plan — not the second one that happened to score badly.
-    val names = roomDisplayNames(rooms.map { it.type })
+    // ⚠ The fallback name is worked out over the WHOLE list before sorting, so "Bedroom 2" is the
+    // second bedroom on the plan — not the second one that happened to score badly. The plan's own
+    // printed caption wins over it whenever the sheet supplied one.
+    val fallback = roomDisplayNames(rooms.map { it.type })
     val ordered = rooms
-        .mapIndexed { i, r -> r to names[i] }
+        .mapIndexed { i, r -> r to (names[r.roomId]?.takeIf { n -> n.isNotBlank() } ?: fallback[i]) }
         .sortedBy { (r, _) -> r.verdict.roomStatus().readingOrder() }
 
     SectionLabel("Your rooms (${rooms.size})")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Worst first. Tap a room to see where it sits and why.",
+        "Worst first. Tap one for where it sits and why.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -927,8 +947,8 @@ private fun RoomsSection(
 
 /** Said once, on every room the tradition does not place — the report's existing wording. */
 private const val NOT_RATED_REASON: String =
-    "The tradition does not say where this kind of room belongs, so we have not judged it. " +
-        "It is not a problem and it is not an approval — it simply is not covered."
+    "The tradition does not place this kind of room, so we have not judged it — " +
+        "neither a problem nor an approval, simply not covered."
 
 /**
  * Findings with no room behind them — a cut corner, an extension, a fixture, the centre of the home.
@@ -947,11 +967,6 @@ private fun StructuralSection(
 ) {
     val colors = VastuTheme.colors
     SectionLabel("Your home's shape and surroundings")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "About the building itself, not any one room.",
-        style = VastuTheme.type.bodySm, color = colors.textSecondary,
-    )
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
         structural.forEachIndexed { i, d ->
@@ -977,7 +992,7 @@ private fun NotCheckedSection(notChecked: List<com.vastufirst.shared.NotChecked>
     SectionLabel("We could not check these")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Neither passed nor failed — we did not have the details.",
+        "Neither passed nor failed — we lacked the details.",
         style = VastuTheme.type.bodySm, color = colors.textTertiary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -1247,7 +1262,7 @@ fun DisputesSection(disputes: List<Dispute>) {
     SectionLabel("Where the schools disagree")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
     VText(
-        "Both readings, no winner declared — and which one your score follows.",
+        "Both readings, no winner — and which your score follows.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
     Spacer(Modifier.height(VastuTheme.spacing.s3))

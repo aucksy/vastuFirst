@@ -17,6 +17,7 @@ import com.vastufirst.shared.editor.CellRect
 import com.vastufirst.shared.editor.Footprint
 import com.vastufirst.shared.editor.Gap
 import com.vastufirst.shared.editor.GridPoint
+import com.vastufirst.shared.scan.RoomLabels
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -60,6 +61,9 @@ fun buildEnginePlan(
             polygon = listOf(
                 Point(x0, yBottom), Point(x1, yBottom), Point(x1, yTop), Point(x0, yTop),
             ),
+            // The plan's own printed caption, carried through so a saved home reopens still knowing
+            // what its sheet called each room. Empty for a home drawn by hand. Never scored.
+            label = r.label,
         )
     }
 
@@ -183,6 +187,7 @@ fun gridRoomsFromPlan(plan: Plan): List<GridRoom> {
             row = (GRID - yTop).roundToInt(),
             w = (x1 - x0).roundToInt().coerceAtLeast(1),
             h = (yTop - yBottom).roundToInt().coerceAtLeast(1),
+            label = room.label,
         )
     }
 }
@@ -306,19 +311,55 @@ const val ENTRANCE_WALL_REACH = 1
  * It refuses far more often than it answers, on purpose, because a wrong front door is the single
  * most expensive mistake the app can make — it is the heaviest input the engine weighs. It answers
  * only when all three hold:
- *   · the plan named exactly ONE entrance. Two foyers is a plan we do not understand.
+ *   · the plan named exactly ONE way in. Two foyers is a plan we do not understand.
  *   · that room is ON an outer wall, within [ENTRANCE_WALL_REACH]. An entrance floating in the
  *     middle of the footprint is an inner lobby, and which wall the visitor came through is then a
  *     guess.
  *   · one wall is the clear nearest, or — in a corner — one contact is clearly the longer. A square
  *     entrance in a corner has two equal claims and gets neither.
  *
+ * ⭐⭐ MEASURED, 11 Aug 2026 (`node tools/scan-eval/audit-entry.mjs`), because the owner asked how
+ * often it actually fires and nobody had counted. On the 44 recorded real replies in this repo — 24
+ * of which place their rooms and can therefore be asked at all — it fired on **7**. Every one of the
+ * seventeen refusals was *"no room is typed as an entrance"*; the wall-reach test and the corner
+ * tie-break refused **zero** plans between them. So the two conditions everyone assumed were too
+ * tight were not the problem, and loosening either would have changed nothing.
+ *
+ * What the plans actually print is `PORCH`, `Porch 160x450`, `VERANDAH 9'5"X4'6"` — the covered way
+ * in, which the label table correctly types as a balcony. Reading those captions as well
+ * ([RoomLabels.namesAWayIn]) takes it to **13 of 24**, with no plan changing the wall it already
+ * had. Deliberately NOT included: `LOBBY`, which would reach 15 of 24 and then read two different
+ * walls for the two recorded scans of one Green Court flat.
+ *
  * Everything it returns is still shown to the user and still changeable; "we asked only if we had
  * to" is not the same as "we decided for you and said nothing".
  */
-fun frontDoorFromEntrance(rooms: List<GridRoom>): GridDoor? {
+fun frontDoorFromEntrance(rooms: List<GridRoom>): GridDoor? = frontDoorRead(rooms)?.door
+
+/** What the plan said about the front door: which wall, and whether the caption or the type said so. */
+data class FrontDoorRead(val door: GridDoor, val fromCaption: String?)
+
+/**
+ * ⭐ The same reading, with its SOURCE — so the screen can name what it read the door off.
+ *
+ * [FrontDoorRead.fromCaption] is null when a room was typed as an entrance outright, and carries the
+ * printed caption when the wall came from a way-in caption ([RoomLabels.namesAWayIn]) instead. The
+ * check screen says which, because "we read your entrance" and "we read the porch your plan prints"
+ * are different claims and only one of them is what actually happened.
+ */
+fun frontDoorRead(rooms: List<GridRoom>): FrontDoorRead? {
     if (rooms.isEmpty()) return null
-    val entrance = rooms.filter { it.type == RoomType.ENTRANCE }.singleOrNull() ?: return null
+    // ⭐ TYPE FIRST, CAPTION SECOND. A room the plan calls an entrance outright is the best evidence
+    // there is; the caption route only runs when there is no such room, so it can never overrule one.
+    val typed = rooms.filter { it.type == RoomType.ENTRANCE }
+    val byCaption = typed.isEmpty()
+    val candidates = if (byCaption) rooms.filter { RoomLabels.namesAWayIn(it.label) } else typed
+    val entrance = candidates.singleOrNull() ?: return null
+    val door = doorOnWallOf(entrance, rooms) ?: return null
+    return FrontDoorRead(door, if (byCaption) entrance.label else null)
+}
+
+private fun doorOnWallOf(entrance: GridRoom, rooms: List<GridRoom>): GridDoor? {
     val minC = rooms.minOf { it.col }
     val maxC = rooms.maxOf { it.col + it.w }
     val minR = rooms.minOf { it.row }

@@ -357,4 +357,39 @@ object RoomLabels {
 
     private fun ambiguousType(context: LabelContext): RoomType =
         if (context.hasDedicatedLivingRoom) RoomType.CORRIDOR else RoomType.LIVING
+
+    /**
+     * ⭐⭐ CAPTIONS THAT NAME A WAY IN — read to decide which wall the front door is on, and for
+     * nothing else. **This never changes a room's [RoomType] and therefore never changes a score
+     * by itself**: a porch stays a balcony, and is scored as one.
+     *
+     * ⚠ IT EXISTS BECAUSE THE FEATURE WAS MEASURED (11 Aug 2026, `tools/scan-eval/audit-entry.mjs`).
+     * "Skip the question when the plan already says where the entrance is" fired on **7 of the 24**
+     * recorded real plans that place their rooms. Every one of the seventeen refusals was the same
+     * reason — *no room was typed as an entrance* — and **not one** was the geometry: the wall-reach
+     * test and the corner tie-break refused **zero** plans between them, so loosening either would
+     * have bought nothing. What the plans actually print is `PORCH`, `Porch 160x450`,
+     * `VERANDAH 9'5"X4'6"` — the covered way in, which our table types as a balcony because that is
+     * what it is. Reading those captions takes it to **13 of 24**.
+     *
+     * ⚠ **LOBBY IS DELIBERATELY ABSENT, and the number is why.** Adding it reaches 15 of 24 — and
+     * then Green Court 336, read twice (clean sheet and branded sheet), puts the front door on two
+     * DIFFERENT walls. A front door is the heaviest single input the engine weighs, so a reading
+     * that cannot agree with itself about one home is worse than asking. `LOBBY` is already the
+     * caption this file treats as ambiguous ([AMBIGUOUS]); it stays a question.
+     *
+     * ⚠ `CAR PORCH` / `CAR PARKING` is where the car lives, not where the person walks in — and it
+     * is often on a different wall entirely. Excluded by name.
+     */
+    private val WAY_IN_WORDS = listOf(
+        "ENTRANCE", "ENTRY", "FOYER", "VESTIBULE", "PORCH", "VERANDAH", "VERANDA",
+    )
+
+    /** True when this printed caption names the way into the home — see [WAY_IN_WORDS]. */
+    fun namesAWayIn(raw: String): Boolean {
+        val cleaned = clean(raw)
+        if (cleaned.isEmpty()) return false
+        if (cleaned.contains("CAR")) return false
+        return WAY_IN_WORDS.any { cleaned.contains(it) }
+    }
 }
