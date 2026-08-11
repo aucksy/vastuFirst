@@ -66,6 +66,7 @@
   "scan-review-door": 0,
   "scan-review-printed": 0,
   "settings": 0,
+  "settings-reader": 0,
   "unlock": 0,
   "unlock-paid": 0,
   "unlock-unreachable": 0,
