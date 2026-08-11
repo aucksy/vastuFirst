@@ -105,6 +105,35 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Tuesday 11 August — your report now uses the names printed on your own plan
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.11.0/vastufirst-v0.11.0.apk
+**This is the one to install.**
+
+**Your report calls each room what your plan calls it.** If your drawing says MASTER BEDROOM 1 or
+ATTACHED TOILET 1, that is what the room list says — not our own generic "Master" or "Bedroom 2".
+Until now the checking screen showed your words and the report quietly swapped in ours, so the same
+room had two different names two screens apart. Your words now carry all the way through, and they
+survive saving a home and opening it again later. A home you draw by hand still gets our names,
+because there is no printed plan to read them off.
+
+**The app skips the "mark your front door" question about twice as often.** It has always been able
+to read your door off the plan when the plan names its own entrance — but we had never counted how
+often that actually happened, so we counted it, across every plan we already hold. The answer was 7
+plans in 24. Nearly every plan that still asked did so for one reason: it prints PORCH or VERANDAH
+rather than the word "entrance". Those are the covered way in, so the app now reads them too, and
+the number is 13 in 24. It still says on screen which words on your plan it read the door from, and
+you can still move it. Where it is not sure, it still asks — a front door in the wrong place is the
+most expensive mistake this app can make, so a question is cheaper than a guess.
+
+**The picture of your plan is about a third bigger**, on both the checking screen and the report. It
+had ended up filling roughly two-thirds of the width, which made a floor plan hard to read on a
+phone. The cost is about one room row before you scroll.
+
+**The report reads shorter again.** Another one word in eight of our own wording is gone. Nothing
+about your home has been removed: every finding, every reason, every remedy and every Sanskrit name
+is exactly as it was — only our joining words went.
+
 ### Monday 10 August, evening — the app now asks you for two things, and then just tells you
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.10.0/vastufirst-v0.10.0.apk
