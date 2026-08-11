@@ -133,7 +133,7 @@ class EditorScreenshotTest {
     /**
      * ⭐ The DOOR STEP, with the house drawn smaller than the plot — never rendered before this build.
      *
-     * The step tells the user "your home is outlined below, tap the wall where your main entrance is",
+     * The step tells the user "your home is outlined below, tap the wall where your front door is",
      * and the outline it refers to is drawn only in this mode. Rendering the door step is exactly how
      * UAT S8 was found (the outline did not exist, so "the outer wall" had to be guessed), so it gets
      * a golden: if the outline ever stops being drawn, or stops hugging the rooms, it shows up here.
