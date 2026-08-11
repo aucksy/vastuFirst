@@ -160,7 +160,16 @@ fun VastuRoomRow(
             .then(
                 if (onTap == null) Modifier else Modifier.clickableTap(
                     role = Role.Button,
-                    onClickLabel = if (expanded) "close this room" else "show this room on the plan and read why",
+                    // ⚠ The promise has to match the screen. On the report a row opens its whole
+                    // reasoning, so "read why" is true. On "Check what we read" there is no [body]
+                    // at all — tapping only marks the room on the photograph — and a screen reader
+                    // was announcing reasoning that never arrives. Sighted readers can see there is
+                    // no chevron; a TalkBack user only has this sentence.
+                    onClickLabel = when {
+                        body == null -> "show this room on the plan"
+                        expanded -> "close this room"
+                        else -> "show this room on the plan and read why"
+                    },
                     onClick = onTap,
                 )
             )

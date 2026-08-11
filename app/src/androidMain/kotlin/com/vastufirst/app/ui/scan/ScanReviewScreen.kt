@@ -210,7 +210,13 @@ fun ScanReviewScreen(
  */
 private fun sizeNote(room: ScannedRoom): String = when {
     room.readInParts.size > 1 -> "one space: " + room.readInParts.joinToString(" + ")
-    room.printedSize.isNotBlank() -> room.printedSize
+    // ⚠ Trimmed the same way the scan-result screen trims it, which this screen was not doing.
+    // Indian sheets usually print the SAME measurement twice — `3.72m X 4.50m ( 12'-2" x 14'-9" )` —
+    // and the repeat is what pushed this caption onto a second line on every row of a fifteen-room
+    // plan. [shortSize] drops the trailing repeat and nothing else, so the number the reader is
+    // checking against their own paper is untouched; a compound size that OPENS with a bracket is a
+    // real measurement rather than a repeat and is left whole.
+    room.printedSize.isNotBlank() -> shortSize(room.printedSize)
     else -> "no size printed"
 }
 

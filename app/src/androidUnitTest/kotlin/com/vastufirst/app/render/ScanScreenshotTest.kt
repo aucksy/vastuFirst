@@ -49,6 +49,7 @@ class ScanScreenshotTest {
         state: ScanUiState,
         openRow: Int = -1,
         noCamera: Boolean = false,
+        readingElapsedMillis: Long = 0L,
     ): @androidx.compose.runtime.Composable () -> Unit = {
         ScanScreen(
             state = state,
@@ -56,6 +57,7 @@ class ScanScreenshotTest {
             onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
             startOpenRow = openRow,
             cameraUnavailable = noCamera,
+            readingElapsedMillis = readingElapsedMillis,
         )
     }
 
@@ -267,6 +269,44 @@ class ScanScreenshotTest {
     fun scanReading() {
         captureAcrossMatrix("scan-reading", screen(ScanUiState.Reading))
         writeManifestAcrossMatrix("scan-reading", screen(ScanUiState.Reading))
+    }
+
+    /**
+     * ⭐⭐ THE WAIT WHEN IT STOPS BEING SHORT (11 Aug 2026) — the two states a reader actually gets
+     * stuck in, and the ones no picture contained.
+     *
+     * A read is usually a few seconds, but the reader is allowed 20 s to connect plus 120 s to
+     * answer, and nothing on this screen moves — the loading surface is centred text with no
+     * indicator. So the words are the ONLY thing that can tell somebody the app has not frozen, and
+     * words are exactly what a golden can check.
+     *
+     * ⚠ Driven by a plain number, not by a clock. The elapsed time is a parameter with a default of
+     * zero and the clock lives in ScanRoute, which the harness never renders — a composition that
+     * keeps ticking never goes idle, and the harness waits for idle before it photographs.
+     */
+    @Test
+    fun scanReadingStillGoing() {
+        val s = screen(ScanUiState.Reading, readingElapsedMillis = 10_000L)
+        captureAcrossMatrix("scan-reading-still", s)
+        writeManifestAcrossMatrix("scan-reading-still", s)
+    }
+
+    @Test
+    fun scanReadingSecondLook() {
+        val s = screen(ScanUiState.Reading, readingElapsedMillis = 40_000L)
+        captureAcrossMatrix("scan-reading-second-look", s)
+        writeManifestAcrossMatrix("scan-reading-second-look", s)
+    }
+
+    /**
+     * ⭐ The failure every slow or broken read lands on. Rendered because its words changed on
+     * 11 Aug 2026: it used to tell a reader on perfect Wi-Fi to go and check their Wi-Fi, whatever
+     * had actually gone wrong.
+     */
+    @Test
+    fun scanUnavailable() {
+        captureAcrossMatrix("scan-unavailable", screen(ScanUiState.Unavailable))
+        writeManifestAcrossMatrix("scan-unavailable", screen(ScanUiState.Unavailable))
     }
 
     @Test

@@ -28,7 +28,6 @@ import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.LoadingState
-import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
@@ -78,6 +77,17 @@ fun ScanScreen(
      * everything above it is called positionally by the accessibility pass.
      */
     cameraUnavailable: Boolean = false,
+    /**
+     * ⭐ How long the current read has been going, so a wait that outgrows "a few seconds" can say
+     * so — see [ReadingBody].
+     *
+     * ⚠ DEFAULT 0, AND THE CLOCK LIVES OUTSIDE THIS SCREEN, for the same reason every animation in
+     * this app is off at the stateless seam: a composition that never stops ticking never goes idle,
+     * and the screenshot harness waits for idle before it photographs. It hung a whole cloud build
+     * for forty minutes once. The harness draws this composable with the default and gets the still
+     * first frame; only [ScanRoute] runs the clock, and even there it stops after the last step.
+     */
+    readingElapsedMillis: Long = 0L,
     /** ⭐ Carry on with a refused reply's own alternative reading — see `ScanOutcome.ifRead`. */
     onReadAnyway: () -> Unit = {},
 ) {
@@ -88,13 +98,14 @@ fun ScanScreen(
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {
-        SectionLabel("Step 1 of 3")
+        // ⛔ No "Step 1 of 3" here either — see the note on AddHomeScreen. This screen and the one
+        // before it both claimed to be step one, and the scan path is five screens, not three.
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         when (state) {
             ScanUiState.Idle ->
                 IdleBody(onPickImage, onTakePhoto, onDrawInstead, cameraUnavailable)
-            ScanUiState.Reading -> ReadingBody()
+            ScanUiState.Reading -> ReadingBody(readingElapsedMillis)
             is ScanUiState.Done ->
                 DoneBody(
                     state.outcome, onUseRooms, onCorrectRoom, onRetry, onDrawInstead, startOpenRow,
@@ -182,18 +193,45 @@ private fun IdleBody(
     OfflineAlternative(onDrawInstead)
 }
 
+/**
+ * ⭐⭐ THE WAIT SAYS SOMETHING NEW WHEN IT GETS LONG (11 Aug 2026).
+ *
+ * ⚠ WHAT WAS WRONG. The screen was two lines of static text — "Reading your plan…" and "This
+ * usually takes a few seconds." — and NOTHING on it moves; the shared loading surface is centred
+ * text with no indicator at all. A normal read really is a few seconds, but the reader is allowed
+ * 20 s to connect plus 120 s to answer, and a plan the first model calls "not a flat plan" is sent
+ * to a second one afterwards. So a person can sit in front of a completely motionless screen for
+ * over two minutes having been promised "a few seconds" — which is indistinguishable from a frozen
+ * app, and the natural response is to kill it and lose the scan.
+ *
+ * Nothing here makes the read faster. It stops the app lying about how long it is taking.
+ */
 @Composable
-private fun ReadingBody() {
+private fun ReadingBody(elapsedMillis: Long) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(VastuTheme.spacing.s6))
         LoadingState("Reading your plan…")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText(
-            "This usually takes a few seconds.",
+            when {
+                // The second model is only asked once the first has answered, so a wait this long
+                // usually IS the second look. Saying so is both true and the most reassuring thing
+                // available — it tells the reader something is still happening.
+                elapsedMillis >= SECOND_LOOK_AFTER_MILLIS -> "Taking a second look at your plan."
+                elapsedMillis >= STILL_READING_AFTER_MILLIS ->
+                    "Still reading — a detailed plan can take up to a minute."
+                else -> "This usually takes a few seconds."
+            },
             style = VastuTheme.type.bodySm, color = VastuTheme.colors.textTertiary,
         )
     }
 }
+
+/** When the wait stops being "a few seconds" and says so. */
+internal const val STILL_READING_AFTER_MILLIS = 8_000L
+
+/** When it is long enough that the second reader is the likely explanation. */
+internal const val SECOND_LOOK_AFTER_MILLIS = 35_000L
 
 @Composable
 private fun DoneBody(
@@ -622,10 +660,18 @@ private fun BusyBody(retryAfterSeconds: Int?, onRetry: () -> Unit, onDrawInstead
 
 @Composable
 private fun UnavailableBody(onRetry: () -> Unit, onDrawInstead: () -> Unit) {
+    // ⚠ DOES NOT BLAME THE PHONE ANY MORE (11 Aug 2026). Every failure that is not a rate limit
+    // arrives here — the reader timing out, the service being down, a bad key — and the old words
+    // sent all of them to the same place: "Check you're online". So a person on perfect Wi-Fi was
+    // told to go and fix their Wi-Fi whenever OUR reader was slow, and the one thing they could
+    // actually do about it — try again, or draw it — read as an afterthought.
+    //
+    // Our own failure is named first because it is the likely one; theirs is still named, because
+    // it is real and the app cannot tell the two apart from here.
     GuidanceState(
-        title = "We couldn't read your plan just now",
-        body = "Reading a plan needs an internet connection. Check you're online and try again — " +
-            "or draw your home on the grid, which works completely offline.",
+        title = "Our reader didn't answer in time",
+        body = "That is usually us, not you — try again in a moment. If your phone is offline, " +
+            "reading a plan needs a connection, but drawing your home on the grid does not.",
     ) {
         Column {
             VastuButton("Try again", onClick = onRetry)

@@ -348,7 +348,31 @@ fun VastuNavHost() {
                 // Present ONLY when the user tapped an unfinished home on the saved-homes screen.
                 // Every other way into this editor arrives with no id and therefore a clean grid.
                 val draftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
-                LaunchedEffect(draftId) { if (draftId != null) vm.resumeDraft(draftId) }
+                // ⭐⭐ AND THE PHOTOGRAPH SLOT IS EMPTIED WITH IT — THE THIRD ROUTE, MISSED IN
+                // v0.12.0. That release found the scan's picture being drawn under homes it does not
+                // belong to and closed two of the three ways in: starting a new home empties the
+                // slot, and opening a saved home from the list empties it. Resuming an UNFINISHED
+                // home is the third, and it goes straight to this editor without passing either.
+                //
+                // What that cost, in one session and four taps: scan a plan, read its report, tap
+                // "see all my plans", tap a half-drawn home, finish it — and its report opens with
+                // the OTHER property's photograph under "Your home, as we read it", the other
+                // property's rooms outlined on it, and "change where the front door is" inviting the
+                // reader to mark a door on a picture of somebody else's flat. That tap is measured
+                // against the wrong plan's geometry and written into THIS home, which is the
+                // heaviest single input the engine weighs.
+                //
+                // ⚠ Emptied here rather than on the way OUT of the scan, because the scan's own
+                // screens legitimately need it right up to the report. The rule this restores is the
+                // one v0.12.0 stated: a photograph belongs to the home it was taken for, and every
+                // door into a DIFFERENT home has to close it.
+                val draftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                LaunchedEffect(draftId) {
+                    if (draftId != null) {
+                        draftHandover.data = null
+                        vm.resumeDraft(draftId)
+                    }
+                }
                 GuidedGridScreen(
                     vm = vm,
                     // ⚠ Which way out depends on where this was entered from. In the flow it is

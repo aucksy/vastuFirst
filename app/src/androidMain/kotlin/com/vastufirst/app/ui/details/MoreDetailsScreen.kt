@@ -23,8 +23,6 @@ import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
-import com.vastufirst.designsystem.components.VastuButtonInline
-import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Zone
@@ -66,7 +64,20 @@ fun MoreDetailsContent(
     ) {
         SectionLabel("Optional")
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText("A few more things", style = VastuTheme.type.h2, color = colors.textPrimary)
+        // ⭐ The chevron every other screen carries, added when the foot's duplicate "Back" button
+        // went (it did the same thing as "Done", which implied one of them discarded). The way out
+        // is still one tap and still visible — it has just moved to where the rest of the app keeps
+        // it, instead of pretending to be a choice at the bottom.
+        androidx.compose.foundation.layout.Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
+        ) {
+            com.vastufirst.designsystem.components.IconTapButton(
+                "‹", contentDescription = "Back", onClick = onBack,
+            )
+            VText("A few more things", style = VastuTheme.type.h2, color = colors.textPrimary)
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
             // Copy cut (4 Aug 2026): 37 words -> 26; the refusal-to-guess claim kept whole.
@@ -88,10 +99,18 @@ fun MoreDetailsContent(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            VastuButtonInline("Back", onClick = onBack, style = VastuButtonStyle.SECONDARY)
-            VastuButton("Save and see my score", onClick = onDone, modifier = Modifier.weight(1f))
-        }
+        // ⚠ ONE BUTTON, NOT TWO. There were two side by side — "Back" and "Save and see my score" —
+        // and they did the identical thing: every answer on this screen commits the moment it is
+        // tapped, and both callbacks were the same pop. Two buttons implies one of them discards,
+        // so a reader who changed their mind pressed "Back" believing it undid their answers. It
+        // never did. The header's ‹ chevron is still there for anyone who wants to leave; the one
+        // button below says what actually happens, which is that the answers are already in.
+        VastuButton("Done — back to my report", onClick = onDone)
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(
+            "Every answer is saved as you tap it.",
+            style = VastuTheme.type.bodySm, color = VastuTheme.colors.textTertiary,
+        )
         Spacer(Modifier.height(VastuTheme.spacing.s4))
     }
 }

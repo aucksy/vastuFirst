@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.delay
 import java.io.File
 
 /**
@@ -93,11 +95,32 @@ fun ScanRoute(
         }
     }
 
+    // ⭐ HOW LONG THIS READ HAS BEEN GOING, so the waiting screen can stop promising "a few
+    // seconds" once it plainly isn't. See ReadingBody for what the reader is spared.
+    //
+    // ⚠⚠ IT LIVES HERE, NOT IN THE SCREEN, and it STOPS. Two rules this project has already paid
+    // for: a composition that never settles never goes idle, and the screenshot harness waits for
+    // idle before it photographs — one infinite animation hung a cloud build for forty minutes with
+    // no error at all. This route is never rendered by the harness (it needs a ViewModel and the
+    // platform pickers), and even so the loop below ends after the last step rather than ticking on
+    // for the two minutes a read is allowed to take.
+    var readingElapsed by remember { mutableStateOf(0L) }
+    val isReading = vm.state is ScanUiState.Reading
+    LaunchedEffect(isReading) {
+        readingElapsed = 0L
+        if (!isReading) return@LaunchedEffect
+        delay(STILL_READING_AFTER_MILLIS)
+        readingElapsed = STILL_READING_AFTER_MILLIS
+        delay(SECOND_LOOK_AFTER_MILLIS - STILL_READING_AFTER_MILLIS)
+        readingElapsed = SECOND_LOOK_AFTER_MILLIS
+    }
+
     ScanScreen(
         state = vm.state,
         onPickImage = pickDocument,
         onTakePhoto = takePhoto,
         cameraUnavailable = cameraUnavailable,
+        readingElapsedMillis = readingElapsed,
         // "Try again" means retry the same file when the reader was busy or offline (that is the
         // fix), and choose a new file when the plan itself was the problem.
         onRetry = {

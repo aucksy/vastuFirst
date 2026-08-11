@@ -32,7 +32,6 @@ import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.shared.Analysis
 import com.vastufirst.designsystem.components.DegreeStepper
 import com.vastufirst.designsystem.components.NorthDial
-import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
@@ -133,7 +132,10 @@ fun MarkNorthContent(
     Column(
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
-        SectionLabel("Step 2 of 3")
+        // ⛔ No "Step 2 of 3" — see the note on AddHomeScreen. On the scan path this screen is
+        // followed by the checking screen and sometimes the front-door screen, so calling it the
+        // second of three told the reader they were one screen from the end when they were two or
+        // three. Reordering the flow made a wrong number wronger; removing it makes it true.
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText("Which way is North?", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))

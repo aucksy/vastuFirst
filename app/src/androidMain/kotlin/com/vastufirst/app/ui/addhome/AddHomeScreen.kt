@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -41,7 +40,14 @@ fun AddHomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {
-        SectionLabel("Step 1 of 3")
+        // ⛔ THE "STEP n OF 3" COUNTERS ARE GONE (11 Aug 2026) — do not put a number back unless it
+        // can be a TRUE one. Three screens carried a counter and it was wrong on every path: this
+        // screen and the upload screen BOTH said "Step 1 of 3", the compass said "Step 2 of 3", and
+        // no screen anywhere said step 3. Counting what a person actually walks through, a scanned
+        // home is five screens and a hand-drawn one is four — and the scanned total is not even
+        // knowable here, because the front-door step only happens when the plan did not name its own
+        // entrance. A progress counter that cannot be right is worse than none: it tells somebody
+        // they are nearly finished and then hands them two more screens.
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         VText("Add your home", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))

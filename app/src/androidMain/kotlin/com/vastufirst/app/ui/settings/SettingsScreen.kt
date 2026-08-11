@@ -69,8 +69,18 @@ fun SettingsScreen(
     // asked twice about the same crash.
     var crash by remember { mutableStateOf(CrashLog.lastCrash(context)) }
     var reader by remember { mutableStateOf(readerChoice.chosen()) }
+    // ⚠ EMPTY WHEN THE BUILD CANNOT READ PLANS AT ALL, which hides the whole section. The model
+    // names come from a settings file bundled INSIDE the app, so they are always present — but the
+    // key that lets any of them be called is not. Without this test, a keyless build offered a
+    // choice of two readers on a screen whose scan feature says, correctly, that it cannot read
+    // anything: the same "a build that cannot read plans looked exactly like one that could" trap
+    // the scan screen already has its own state for.
     val readerOptions = remember(recipe) {
-        listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel)
+        if (com.vastufirst.app.BuildConfig.PLAN_READER_KEY.isNotBlank()) {
+            listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel)
+        } else {
+            emptyList()
+        }
     }
     SettingsContent(
         onLegal = onLegal,
@@ -83,10 +93,17 @@ fun SettingsScreen(
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
         hasCrashReport = crash != null,
+        // ⚠ THE REPORT IS ONLY THROWN AWAY IF A MAIL APP ACTUALLY OPENED. It used to be deleted
+        // unconditionally: on a phone with no email app the launch failed silently, the offer
+        // vanished from Settings, and the user was left believing they had sent something that no
+        // longer existed. Now a failed launch leaves the card exactly where it was, so they can try
+        // again after installing mail — or dismiss it themselves, which is a different button.
         onSendCrash = {
-            crash?.let { text -> sendCrashEmail(context, text) }
-            CrashLog.clear(context)
-            crash = null
+            val opened = crash?.let { text -> sendCrashEmail(context, text) } ?: false
+            if (opened) {
+                CrashLog.clear(context)
+                crash = null
+            }
         },
         onDismissCrash = {
             CrashLog.clear(context)
@@ -105,7 +122,8 @@ fun SettingsScreen(
 /** A blank line in the email body, built from a character code so no editing pass can eat an escape. */
 private val LINE_BREAK: String = 10.toChar().toString()
 
-private fun sendCrashEmail(context: Context, body: String) {
+/** True when a mail app actually opened. False means nothing was sent and the report must be kept. */
+private fun sendCrashEmail(context: Context, body: String): Boolean {
     val intent = Intent(Intent.ACTION_SENDTO).apply {
         data = Uri.parse("mailto:contact@vastufirst.com")
         putExtra(Intent.EXTRA_SUBJECT, "VastuFirst — something went wrong")
@@ -115,9 +133,10 @@ private fun sendCrashEmail(context: Context, body: String) {
                 LINE_BREAK + "--- technical detail, nothing personal ---" + LINE_BREAK + body,
         )
     }
-    // No mail app on the device is a real case on a cheap phone; failing silently is better than
-    // crashing the settings screen while reporting a crash.
-    runCatching { context.startActivity(intent) }
+    // No mail app on the device is a real case on a cheap phone. Crashing the settings screen while
+    // reporting a crash would be absurd — but so is quietly binning the report, so the caller is
+    // told whether anything opened and keeps it if nothing did.
+    return runCatching { context.startActivity(intent) }.isSuccess
 }
 
 /** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */
