@@ -267,4 +267,82 @@ class LongScreenBottomScreenshotTest {
             onNext = {},
         )
     }
+
+    /* ─────────── the three endings the reorder rewrote, 11 Aug 2026 ─────────── */
+    //
+    // ⭐⭐ WHY THESE THREE EXIST. Moving Mark North in front of "Check what we read" changed the
+    // button at the BOTTOM of three scrolling screens — the one place a golden that starts at the
+    // top can never see. Every one of those buttons names the screen it opens, and getting that
+    // wrong is a defect this project has already logged twice; the first draft of this very change
+    // shipped one ("check what YOU read") past a full render matrix, because no picture contained
+    // it. A golden is a viewport, not a document — so these scroll to the ending and photograph it.
+    //
+    // ⚠ Each anchor is the screen's own last control. If an ending changes, the anchor stops
+    // matching and the test fails loudly instead of quietly photographing the wrong place.
+
+    /**
+     * "Check what we read", scrolled to its end — the screen that now finishes the scan flow when
+     * the plan named its own entrance. What has to be legible: the result and direction pills on the
+     * last rows, the line stating the door we read, and a button that says "read my home" rather
+     * than promising a North step that has already happened.
+     */
+    @Test
+    fun scan_review_bottom() = captureBottomPair(
+        "scan-review-door",
+        anchor = hasText("Put the front door somewhere else"),
+    ) {
+        val outcome = ScanMapper.map(
+            RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
+            imageAspect = 1399.0 / 1389.0,
+        ) as com.vastufirst.shared.scan.ScanOutcome.Placed
+        com.vastufirst.app.ui.scan.ScanReviewContent(
+            image = null,
+            rooms = outcome.rooms,
+            door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+                com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+            ),
+            readings = RenderFixtures.scannedReadings,
+        )
+    }
+
+    /**
+     * Mark North on a scanned plan, scrolled to its end. The button here opens the checking screen
+     * now, not the report, and must say so — the double-check card above it is what the "Yes —" is
+     * agreeing with, so the two have to read as one sentence.
+     */
+    @Test
+    fun mark_north_scan_bottom() = captureBottomPair(
+        "marknorth-photo",
+        anchor = hasText("Yes — check what we read"),
+    ) {
+        com.vastufirst.app.ui.marknorth.MarkNorthContent(
+            rooms = RenderFixtures.sampleRooms,
+            north = RenderFixtures.sampleNorth,
+            analysis = RenderFixtures.sampleAnalysis,
+            onNorthChange = {},
+            onRead = {},
+            onBack = {},
+            nextIsCheck = true,
+        )
+    }
+
+    /**
+     * Marking the front door on the photo, scrolled to its end — the last step for a plan that named
+     * no entrance. Its button used to say "which way is North?"; North is two screens behind the
+     * reader now, so it opens the report.
+     */
+    @Test
+    fun scan_door_bottom() = captureBottomPair("scan-door", anchor = hasText("Read my home")) {
+        val outcome = ScanMapper.map(
+            RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
+            imageAspect = 1399.0 / 1389.0,
+        ) as com.vastufirst.shared.scan.ScanOutcome.Placed
+        com.vastufirst.app.ui.scan.ScanDoorContent(
+            image = null,
+            rooms = outcome.rooms,
+            door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+                com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+            ),
+        )
+    }
 }
