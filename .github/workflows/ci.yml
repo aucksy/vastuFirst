@@ -282,6 +282,11 @@ jobs:
             app/build/render-manifest/**
             app/build/a11y-manifest/**
           if-no-files-found: warn
+          # These are review copies with a short useful life: the diffs matter while THIS build is
+          # being looked at, not a month later. Without this they inherit the 90-day account default
+          # and silently refill the shared 500 MB store — which is exactly how the upload started
+          # failing again on 11 Aug 2026 after the 4 Aug cleanup. The goldens themselves are in git.
+          retention-days: 7
 
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace
@@ -312,3 +317,6 @@ jobs:
           name: vastufirst-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
+          # An APK per push is the single biggest consumer of the shared store. The owner's install
+          # channel is the tagged release, so this copy only needs to outlive the day it was built.
+          retention-days: 7
