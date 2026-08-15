@@ -64,9 +64,10 @@ VARIANTS = {
     "agree": "the smallest move that makes the box agree with its own grid cells",
     "guard": "NEW - the same, only where the grid drew the room in its printed shape",
 }
-COLOUR = {"caption": (230, 120, 20), "cell": (150, 60, 170), "cellclamp": (0, 140, 170),
+COLOUR = {"caption": (230, 120, 20), "read": (20, 150, 60), "readtight": (0, 140, 170),
+          "orient": (190, 30, 90), "cell": (150, 60, 170), "cellclamp": (0, 140, 170),
           "shaped": (190, 30, 90), "hold": (120, 140, 40), "holdclamp": (0, 140, 170),
-          "agree": (120, 140, 40), "guard": (20, 150, 60)}
+          "agree": (120, 140, 40), "guard": (60, 60, 60)}
 SHOW = ("caption", "read")
 
 # How far a room's CELLS may disagree in shape with the size its caption prints before the grid is
@@ -422,10 +423,14 @@ def render(stem, want=None):
     crop = (max(0, int((b["x"] - m) * W)), max(0, int((b["y"] - m) * H)),
             min(W, int((b["x"] + b["w"] + m) * W)), min(H, int((b["y"] + b["h"] + m) * H)))
 
-    show = [k for k in (want.split(",") if want else SHOW) if k in VARIANTS]
+    asked = (want.split(",") if want else SHOW)
+    show = [k for k in asked if k in VARIANTS]
     panels = [draw_panel(plan, sets[k], VARIANTS[k], COLOUR[k], crop) for k in show]
-    panels.append(draw_panel(plan, sets["cell"], "the GRID cells themselves (what the score sees)",
-                             (40, 90, 190), crop, key="cell"))
+    # `cells` is opt-in: it answers "what does the SCORE see", which is a different question from
+    # "does the box sit on the room", and it clutters a picture meant to be handed to someone.
+    if "cells" in asked:
+        panels.append(draw_panel(plan, sets["cell"], "the GRID cells themselves (what the score sees)",
+                                 (40, 90, 190), crop, key="cell"))
     gap = 24
     sheet = Image.new("RGB", (sum(p.width for p in panels) + gap * (len(panels) - 1),
                               max(p.height for p in panels)), (255, 255, 255))
