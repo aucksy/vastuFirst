@@ -46,7 +46,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
 
         VastuCard(accent = colors.verdictIdeal) {
             VText(
-                "Your homes never leave your phone.",
+                "Your homes stay on your phone — except a plan picture you ask us to read.",
                 style = VastuTheme.type.bodyLg, color = colors.textPrimary,
             )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -85,7 +85,7 @@ private fun Section(title: String, body: String) {
 // The policy text, kept as constants so docs/PRIVACY-POLICY.md and this screen can never say
 // different things — the published page is generated from exactly these words.
 
-const val PRIVACY_UPDATED = "1 August 2026"
+const val PRIVACY_UPDATED = "15 August 2026"
 
 const val PRIVACY_COLLECT =
     "Nothing about you. We do not ask for your name, email, phone number or location, and the app " +
@@ -97,7 +97,7 @@ const val PRIVACY_UPLOAD =
         "be turned into rooms, and the rooms come back. The app asks you before it does this, every " +
         "first time, and you can turn it off again in Settings. The picture is not stored by us and " +
         "is not linked to you — there is nothing to link it to. Drawing your home by hand needs no " +
-        "internet at all and gives the same score."
+        "internet at all and is scored by exactly the same rules."
 
 const val PRIVACY_CRASH =
     "If the app closes unexpectedly, it writes what went wrong into its own private storage and " +

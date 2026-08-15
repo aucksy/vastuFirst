@@ -13,7 +13,8 @@ import android.content.Context
  * Four properties the law asks for, and each is a line of code rather than a paragraph of intent:
  * the ask is **specific** (one purpose, named recipient), it is **prior** (the gate sits before the
  * scan screen, so nothing can be sent before it is answered), it is **withdrawable** (Settings), and
- * refusing costs the user nothing (the guided grid produces the identical score).
+ * refusing still gets a full score (the guided grid is judged by the same rules — NOT the same
+ * number: only the grid asks the missing-corner question, so shape faults can differ).
  *
  * Stored on the device only. There is no account and nothing to sync.
  */

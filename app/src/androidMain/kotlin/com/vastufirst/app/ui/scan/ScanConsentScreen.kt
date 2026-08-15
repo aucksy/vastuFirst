@@ -29,7 +29,7 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * do not do — because a page of legal prose is how consent gets clicked through unread. Every line is
  * something we can stand behind: we send the one picture the user chose, we ask it to read what is
  * printed (sometimes a second model gives a second opinion — said on the card), we store nothing,
- * and the alternative next to it gives the identical score without sending anything.
+ * and the alternative next to it is judged by the same rules without sending anything.
  *
  * ⚠ It describes OUR behaviour. It makes no promises on the reading service's behalf.
  * ⚠ The "Who reads it" fact must match `reader-config.json`. When the reader moved from Groq to
@@ -98,7 +98,7 @@ fun ScanConsentScreen(
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
                 "Draw your home on the grid instead. It takes a few minutes, nothing leaves your " +
-                    "phone, and the score is exactly the same.",
+                    "phone, and it's scored by exactly the same rules.",
                 style = VastuTheme.type.bodySm, color = colors.textSecondary,
             )
             Spacer(Modifier.height(VastuTheme.spacing.s3))

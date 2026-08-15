@@ -219,7 +219,7 @@ private fun ReadingBody(elapsedMillis: Long) {
                 // available — it tells the reader something is still happening.
                 elapsedMillis >= SECOND_LOOK_AFTER_MILLIS -> "Taking a second look at your plan."
                 elapsedMillis >= STILL_READING_AFTER_MILLIS ->
-                    "Still reading — a detailed plan can take up to a minute."
+                    "Still reading — a detailed plan can take a couple of minutes."
                 else -> "This usually takes a few seconds."
             },
             style = VastuTheme.type.bodySm, color = VastuTheme.colors.textTertiary,
@@ -696,7 +696,7 @@ private fun BusyBody(retryAfterSeconds: Int?, onRetry: () -> Unit, onDrawInstead
     }
     GuidanceState(
         title = "We're reading a lot of plans right now",
-        body = "Your plan is fine — we're just busy. $wait " +
+        body = "We haven't looked at your plan yet — too many plans are being read at once. $wait " +
             "Or draw your home on the grid — it works now, no internet needed.",
     ) {
         Column {
@@ -753,8 +753,8 @@ private fun NotConfiguredBody(onDrawInstead: () -> Unit) {
     GuidanceState(
         title = "This copy of the app can't read plans",
         body = "Plan reading is switched off in this version, so there's nothing " +
-            "behind the upload button. It isn't your plan or your phone. Drawing your home on the " +
-            "grid works normally and gives exactly the same score.",
+            "behind plan reading. It isn't your plan or your phone. Drawing your home on the " +
+            "grid works normally and is scored by exactly the same rules.",
     ) {
         Column {
             VastuButton("Draw it on a grid instead", onClick = onDrawInstead)
@@ -783,7 +783,7 @@ private fun OfflineAlternative(onDrawInstead: () -> Unit) {
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(
                 "Drawing on the grid takes a few minutes, stays on your phone, " +
-                    "and gives exactly the same score.",
+                    "and is scored by exactly the same rules.",
                 style = VastuTheme.type.bodySm, color = colors.textSecondary,
             )
             Spacer(Modifier.height(VastuTheme.spacing.s3))

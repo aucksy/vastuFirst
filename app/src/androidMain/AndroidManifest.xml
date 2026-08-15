@@ -6,7 +6,9 @@
 
       Everything else in VastuFirst is computed on the device: drawing, the engine, the score, the
       report, saved homes. Reading an uploaded plan is the single feature that talks to a server, it
-      asks the user first, and refusing it costs nothing because the guided grid gives the same score.
+      asks the user first, and refusing it still gets a full score — the guided grid is judged by the
+      same rules. (Not the SAME NUMBER: the grid asks a missing-corner question the scan path never
+      asks, so shape faults can differ. Do not restore "the same score" wording anywhere.)
 
       Without this line every read fails with a SecurityException, the reader reports "we couldn't
       read your plan just now", and the feature looks broken in a way no compiler and no unit test

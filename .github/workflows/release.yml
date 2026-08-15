@@ -115,6 +115,10 @@ jobs:
             app/build/render-manifest/**
             app/build/a11y-manifest/**
           if-no-files-found: warn
+          # Longer than CI's 7 days: this is the evidence the release review gate is walked against,
+          # so it must still be there a fortnight after the tag. Still bounded — the 90-day default
+          # is what quietly refills the shared 500 MB store across the account.
+          retention-days: 14
 
       - name: Build Android app
         run: gradle :app:assembleDebug --stacktrace

@@ -239,7 +239,7 @@ fun SettingsContent(
         SectionLabel("Data & privacy")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Group {
-            RowItem("Your plans stay on this device", trailing = "On", trailingColor = colors.verdictIdeal)
+            RowItem("Saved homes stay on this device", trailing = "On", trailingColor = colors.verdictIdeal)
             // ⭐ Consent has to be withdrawable to be consent at all (DPDP, NFR §10). Tapping the row
             // flips it, and turning it off puts the upload behind the explanation screen again.
             RowItem(

@@ -1,13 +1,13 @@
 # VastuFirst — Privacy Policy
 
-**Last updated 1 August 2026.**
+**Last updated 15 August 2026.**
 
 > These are the same words the app shows under **Settings → Privacy**. They are kept in one place in
 > the code (`PrivacyScreen.kt`) so the published page and the app can never say different things.
 
 ---
 
-## Your homes never leave your phone
+## Your homes stay on your phone — except a plan picture you ask us to read
 
 Everything you draw, every score and every report is worked out on this device and saved only on this
 device. There is no account, no sign-up and no phone number.
@@ -23,8 +23,8 @@ app's own private storage on your phone, where no other app can read them.
 If you choose to have a floor plan read for you, that one picture is sent to an AI service to be
 turned into rooms, and the rooms come back. The app asks you before it does this, every first time,
 and you can turn it off again in Settings. The picture is not stored by us and is not linked to you —
-there is nothing to link it to. Drawing your home by hand needs no internet at all and gives the same
-score.
+there is nothing to link it to. Drawing your home by hand needs no internet at all and is scored by
+exactly the same rules.
 
 ## When the app crashes
 

@@ -779,8 +779,8 @@ private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean,
         defectCount == 0 -> ""
         // ⚠ "without moving a wall" is PINNED by two tests in ReportIntentTest — it is the sentence
         // that proves a buyer and a resident are never handed layout advice. Shorten around it.
-        remediesOnly -> " All fixable without moving a wall."
-        else -> " Nothing is built yet — every change below is free."
+        remediesOnly -> " Here is what you can do without moving a wall."
+        else -> " Nothing is built yet — the layout is still yours."
     }
     val free = if (unlocked) "" else " Entrance, kitchen and toilets are below in full, free."
     return head + tail + free
@@ -1288,7 +1288,10 @@ private fun padaAccent(v: PadaVerdict) = with(VastuTheme.colors) {
 
 /** Only ever drawn for someone still BUILDING — see `remediesOnly` at the top of this file. */
 @Composable
-private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — free now", text, VastuTheme.colors.primary)
+// ⚠ The trailing phrase must NOT be one of the strings ReportIntentTest bans for a buyer or a
+// resident ("still on paper", "on the drawing", "still free to make", …). This heading only ever
+// renders on the building branch, but a banned phrase here is one refactor away from a red gate.
+private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — before it's built", text, VastuTheme.colors.primary)
 
 /**
  * The remedies for THIS problem — and, where the classical texts record none, the sentence that says
