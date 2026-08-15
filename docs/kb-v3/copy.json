@@ -186,7 +186,7 @@
     "concern": "None."
    },
    {
-    "text": "Your score has not moved, and nothing has been taken out of your report. We corrected two lines in it. Three of the things we say we could not check pointed you at a screen the app no longer has; they now point at the button on your report that actually asks. The fourth — a mirror facing a bed, or a beam running over one — used to promise we would check it if you answered a few more questions, and there has never been a question for it. It now says plainly that we do not check that one, and why.",
+    "text": "Your score has gone up if your home has a corner sticking out at the North-East, North or East. We were counting that against you, and the tradition treats it as a good sign.",
     "role": "body",
     "condition": "The explanation paragraph on the notice card. It is not written in the screen's code — it comes from the rule data, so it changes with every rule release. This is exactly what it says today.",
     "concern": "Far longer than it needs to be, and written in the team's voice, not the reader's — \"we corrected two lines in it\", \"pointed you at a screen the app no longer has\" is release-note language about our own past mistakes, on the first card an older reader meets in daylight. At large font it fills the whole screen."
@@ -4586,7 +4586,7 @@
     "role": "body"
    },
    {
-    "text": "Showing the classic 8-direction reading; other schools are coming soon.",
+    "text": "Read under the classic 8-direction tradition, which is the reading this app scores.",
     "role": "body",
     "condition": "The plan asks for a school profile the engine does not run",
     "concern": "A roadmap promise printed inside a paid report. \"Coming soon\" is a commitment nobody has made, on the one document a customer keeps."

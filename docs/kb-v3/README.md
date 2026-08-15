@@ -1,51 +1,56 @@
-# Vastu Knowledge Base — Draft 3.0
+# Vastu Knowledge Base — the expert-review document
 
-The expert-review document, rebuilt on 15 August 2026 by checking every rule in
-`Documents/VastuFirst-KnowledgeBase-v2-for-Expert-Review.pdf` against the rule data the app
-actually ships, and by sweeping every user-visible string out of the source.
+The document sent to practising Vastu consultants for review. It is written as a **fresh statement
+of the rule set as it stands**, not as a record of what changed — a reviewer should read the rules
+as the app applies them today, with no commentary from us about how they got there.
 
-Draft 2.0 described the rules we *intended* to build. This draft describes the rules the engine
-*applies*. They were not the same — the clearest gap being that Draft 2.0 showed the reviewer
-fourteen problem types where the app applies thirty.
+The published PDF is `Documents/VastuFirst-KnowledgeBase-for-Expert-Review.pdf` (70 pages).
 
 ## The files
 
 | File | What it is |
 | --- | --- |
-| `body.html` | The hand-written analysis: what changed, the corrected rule tables, the open questions. Carries the whole stylesheet. Two placeholder markers are filled by the generator. |
-| `copy.json` | **Every user-visible string in the app** — 865 of them across 63 screens, each with the scenario that puts it on screen and a note where we have a concern. Swept from source, not typed by hand. |
-| `rewrites.json` | Proposed wording for the lines that promise something the app cannot deliver, contradict another screen, or use a word a home buyer would not. |
-| `build_kb.py` | Assembles the three into `kb-v3.html`. No dependencies — plain Python 3. |
-| `kb-v3.html` | The generated document. This is the file that gets published. |
+| `body.html` | The hand-written rule sections and every "Please rule" box, plus the whole stylesheet including the print rules. One placeholder marker is filled by the generator. |
+| `copy.json` | **Every user-visible string in the app** — 865 across 63 screens, each with the scenario that puts it on screen. Swept from source, not typed by hand. |
+| `build_kb.py` | Assembles the two into `kb-v3.html`. Plain Python 3, no dependencies. |
+| `kb-v3.html` | The generated document. |
 
-## Rebuilding it
+## Rebuilding it, and making the PDF
 
 ```
 python docs/kb-v3/build_kb.py
 ```
 
-It reads and writes alongside itself, so run it from anywhere. It prints the screen, string and
-flag counts, which are also printed in the document's own header — if those three numbers move,
-the header moves with them automatically.
+Then print it. Chrome's headless printer honours the `@page` and `@media print` rules in
+`body.html`, which is what produces the page breaks before each section:
 
-## ⚠ Keeping it honest
+```
+chrome --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf=out.pdf file:///ABSOLUTE/PATH/kb-v3.html
+```
 
-**`copy.json` goes stale the moment a screen's wording changes.** It is a snapshot, not a live
-read. Before sending this document to anyone, re-sweep the copy rather than trusting the file —
-a review document that quotes wording the app no longer uses is worse than no document, because
-the reviewer's corrections then apply to text nobody will ever see.
+## ⚠ Two things that make this document lie if you are not careful
 
-**The rule tables were checked against ruleset version `2026.08.15-1`.** The version stamp is in
-`rules/src/main/resources/ruleset/meta.json`. If it has moved, the tables need re-checking against
-the rule files before this goes out.
+**`copy.json` is a snapshot, not a live read.** It goes stale the moment any screen's wording
+changes. Re-sweep before sending this to anyone. A review document that quotes wording the app no
+longer uses is worse than no document, because the reviewer's corrections then apply to text nobody
+will ever see. Two lines had already drifted between the sweep and the first PDF.
 
-## What this audit changed in the product
+**The rule tables are hand-written from the rule data.** They were last checked against ruleset
+version `2026.08.15-1` (the stamp lives in `rules/src/main/resources/ruleset/meta.json`). If that
+has moved, re-check the tables against `rooms.json`, `defects.json`, `disputes.json`, `zones.json`,
+`doorPadas.json` and `remedies.json` before the document goes out.
 
-- **Fixed:** the engine scored a north-east extension as a fault — the most auspicious shape the
-  tradition recognises, and one the app's own defect text calls "welcomed" in the same report. Only
-  the south-west extension had a rule of its own; every other one fell to the catch-all. The
-  welcomed zones now live in `config.benignExtensionZones` rather than in Kotlin.
-- **Open, needs a Vastu ruling:** a room a plan labels `BATH` carries no rule at all, while the same
-  room labelled `TOILET` produces the gravest finding in the app.
-- **Open, needs a ruling:** the entrance arc the app condemns holds Yama and Gandharva but not
-  Pitra, which is the pada Draft 2.0 named as near-universally condemned.
+## What the reviewer is actually being asked
+
+Eleven boxed questions, plus a comment column on every table. The ones that change real scores:
+
+- **Where the count of the 32 door positions begins.** We anchor the north side's eight from
+  348.75°, a third of a side clockwise of the wall. A door in the middle of a north wall therefore
+  resolves to an unfavourable position rather than a favourable one, and the door is the
+  heaviest-weighted element in the whole reading.
+- **Whether a room printed `BATH` should be judged like one printed `TOILET`.** Today it carries no
+  rule at all, while `TOILET` in the north-east is the gravest fault the app reports.
+- **Which door positions the condemned south-west corner fault should cover.** Our arc holds Yama
+  and Gandharva; Pitra sits outside it.
+- **Whether the open centre should apply to every room.** Today six rooms are faulted for standing
+  on it and the rest are not.
