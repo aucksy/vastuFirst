@@ -359,14 +359,21 @@ class LongScreenBottomScreenshotTest {
      * ships to a real customer and is drawn in no picture is the exact failure this file exists for.
      *
      * ⚠ The reading is a real recorded reply PADDED to exactly [OVERFLOW_ROOMS] rooms — pinned,
-     * because the anchor below is a sentence that COUNTS the rooms that did not fit. A fixture whose
-     * size drifted with the recorded reply would rewrite its own anchor and then fail for a reason
-     * that has nothing to do with the screen.
+     * because the card names a COUNT. A fixture whose size drifted with the recorded reply would
+     * change that count and fail for a reason that has nothing to do with the screen.
+     *
+     * ⚠⚠ THE ANCHOR IS THE CARD'S LAST LINE, NOT ITS HEADING. Anchored on the heading, the first
+     * recording framed the heading at the very bottom edge and cut off every word underneath it —
+     * so the picture proved only that a card exists, not that it says anything. Scrolling to the
+     * card's final sentence brings the whole card into the window. The lesson is the same one this
+     * file was built for: what a golden proves is exactly what is inside its frame.
      */
     @Test
     fun scan_assisted_overflow_bottom() = captureBottomPair(
         "scan-assisted-overflow",
-        anchor = hasText("$OVERFLOW_OFF_GRID rooms won't fit on the grid"),
+        anchor = hasText(
+            "A room that is not on the grid is not scored. Make space on the next screen and add them yourself.",
+        ),
     ) {
         com.vastufirst.app.ui.scan.ScanScreen(
             state = com.vastufirst.app.ui.scan.ScanUiState.Done(assistedOverflow(), readBy = null),
@@ -385,8 +392,14 @@ class LongScreenBottomScreenshotTest {
         }
         val rooms = (real.rooms + padding).take(OVERFLOW_ROOMS)
         check(rooms.size == OVERFLOW_ROOMS) {
-            "The overflow fixture is ${rooms.size} rooms, not $OVERFLOW_ROOMS, so the anchor below " +
-                "would name the wrong number and this picture would never be taken."
+            "The overflow fixture is ${rooms.size} rooms, not $OVERFLOW_ROOMS."
+        }
+        // ⚠ Pins the NUMBER the card's heading prints. Without this the fixture could still overflow
+        // by some other amount and the picture would quietly photograph a different sentence.
+        val offGrid = com.vastufirst.app.ui.scan.roomsOffTheGrid(real.copy(rooms = rooms)).size
+        check(offGrid == OVERFLOW_OFF_GRID) {
+            "The overflow fixture leaves $offGrid rooms off the grid, not $OVERFLOW_OFF_GRID, so the " +
+                "heading in this picture would not be the one anybody reviewed."
         }
         return real.copy(rooms = rooms)
     }
@@ -395,8 +408,9 @@ class LongScreenBottomScreenshotTest {
         /** Rooms in the overflow fixture — comfortably past the twenty-five the grid holds. */
         const val OVERFLOW_ROOMS = 28
 
-        /** …and therefore how many the screen must say will not fit. Kept in step by hand on purpose:
-         *  if the grid's capacity ever changes, this test fails and makes somebody look at the copy. */
+        /** …and therefore how many the screen must say will not fit: 28 read, 25 placed. Not used by
+         *  the anchor any more, but kept because it is the number a reader of this picture is
+         *  checking the heading against, and it is what makes 28 the right fixture size. */
         const val OVERFLOW_OFF_GRID = 3
     }
 }
