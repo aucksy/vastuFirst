@@ -294,9 +294,13 @@ class EditorScreenshotTest {
 
     @Composable
     private fun ScannedButUnplaced() {
-        // ⚠ real-unsized, not real-dense: real-dense PLACES since the lift rule went, so an
-        // "unplaced" golden was being driven from a plan that is never unplaced.
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
+        // ⭐ real-dense, deliberately, and NOT the Assisted fixture. This golden photographs the
+        // editor's unplaced STRIP, which is switched on by `roomsUnplaced` just below rather than
+        // by the outcome kind — so any reply with enough rooms drives it, and real-dense's
+        // nineteen is what the accepted baseline was measured on. Moving it to real-unsized's
+        // twenty-one adds two more sub-48 dp chips at 320 dp and raises the ratchet for no gain
+        // in coverage. Screens that genuinely need an Assisted outcome use RecordedScans.UNSIZED.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
@@ -402,9 +406,13 @@ class EditorScreenshotTest {
 
     @Composable
     private fun RestoredUnplacedScan() {
-        // ⚠ real-unsized, not real-dense: real-dense PLACES since the lift rule went, so an
-        // "unplaced" golden was being driven from a plan that is never unplaced.
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
+        // ⭐ real-dense, deliberately, and NOT the Assisted fixture. This golden photographs the
+        // editor's unplaced STRIP, which is switched on by `roomsUnplaced` just below rather than
+        // by the outcome kind — so any reply with enough rooms drives it, and real-dense's
+        // nineteen is what the accepted baseline was measured on. Moving it to real-unsized's
+        // twenty-one adds two more sub-48 dp chips at 320 dp and raises the ratchet for no gain
+        // in coverage. Screens that genuinely need an Assisted outcome use RecordedScans.UNSIZED.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
