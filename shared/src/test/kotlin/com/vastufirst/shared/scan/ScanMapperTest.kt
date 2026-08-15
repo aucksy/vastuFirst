@@ -529,10 +529,19 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ a sheet that names a lift is a whole floor, not one home`() {
-        // The distinction the room count was proxying for, said outright. Measured across the
-        // 30-plan corpus: every sheet naming a lift is a shared floor plate, and no single-home plan
-        // names one — including three genuine 21-room villas.
+    fun `⭐⭐ a flat in a TOWER is still one home — naming the lift does not condemn the sheet`() {
+        // ⚠ THIS TEST IS THE REVERSE OF THE ONE IT REPLACES, and the reversal was measured.
+        // Until 16 Aug 2026 any caption containing LIFT sent the whole plan to the manual grid, on
+        // the stated ground that "no single-home plan names one". Four corpus sheets name a lift and
+        // three of them are one large apartment beside the tower's lift core — plan-002, plan-003
+        // and plan-004, one kitchen and one living room apiece. The fourth, plan-001, names UNIT-1
+        // to UNIT-4 and is refused as MULTI_UNIT, which is the test that actually asks whether there
+        // is more than one home on the page.
+        //
+        // Removing it took the corpus from 24 placed to 27, and the newly placed plans agree with
+        // their own printed sheets on 19 of 19 and 10 of 10 rooms. The owner's own sheet with a
+        // private lift lobby was what surfaced it: 19 rooms, 16 of them sized, and the lift word was
+        // the only thing standing between him and a placed home.
         val out = ScanMapper.map(
             draft(
                 ScanBox("LIVING ROOM", 0.0, 0.0, 0.4, 0.4, 0.9, "12'-0\" X 14'-0\""),
@@ -542,10 +551,28 @@ class ScanMapperTest {
                 ScanBox("LIFT", 0.7, 0.0, 0.2, 0.2, 0.9, "6'-0\" X 6'-0\""),
             ),
         )
-        val assisted = assertIs<ScanOutcome.Assisted>(out)
-        assertEquals(AssistReason.FLOOR_PLATE, assisted.reason)
-        assertTrue(assisted.rooms.isNotEmpty(), "the room list still survives — that is the product")
-        assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
+        val placed = assertIs<ScanOutcome.Placed>(out, "a lift beside a flat is a tower, not a floor plate")
+        // ⭐ And the lift itself is still never a scored room — that half was always right.
+        assertTrue(
+            placed.rooms.none { it.label.uppercase().contains("LIFT") },
+            "a lift must never be placed as a room; it is dropped as not habitable",
+        )
+        assertTrue(placed.rooms.size >= 4, "the home's own rooms all survive; got ${placed.rooms.size}")
+    }
+
+    @Test
+    fun `⭐ a sheet naming several UNITS is several homes, and is refused`() {
+        // The check that the lift rule was standing in front of, and the only one of the two that
+        // the corpus actually supports: plan-001 names UNIT-1 to UNIT-4 on one page.
+        val out = ScanMapper.map(
+            draft(
+                ScanBox("UNIT-1", 0.0, 0.0, 0.4, 0.4, 0.9),
+                ScanBox("UNIT-2", 0.5, 0.0, 0.4, 0.4, 0.9),
+                ScanBox("UNIT-3", 0.0, 0.5, 0.4, 0.4, 0.9),
+                ScanBox("LIFT / STAIRCASE", 0.45, 0.45, 0.1, 0.1, 0.9),
+            ),
+        )
+        assertIs<ScanOutcome.Refused>(out, "several units on one page is not one home")
     }
 
     @Test

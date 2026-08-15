@@ -266,11 +266,10 @@ enum class AssistReason {
      */
     TOO_MANY_ROOMS,
 
-    /**
-     * ⭐ The sheet names a lift, so it shows a whole floor of a building rather than one home. The
-     * rooms are still worth handing over; where they sit on the sheet is not.
-     */
-    FLOOR_PLATE,
+    // ⚠ FLOOR_PLATE was here until 16 Aug 2026 — "the sheet names a lift, so it shows a whole floor
+    // rather than one home". It was wrong on three of the four corpus sheets that name a lift, each
+    // of which is one large apartment beside a tower's lift core, and the one real floor plate is
+    // refused as MULTI_UNIT anyway. See the note where the gate used to be in ScanMapper.map.
 
     /** Every rectangle came back the same size — invented, not measured (§3j D2). */
     UNIFORM_BOXES,

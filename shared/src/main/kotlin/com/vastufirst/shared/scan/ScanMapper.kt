@@ -81,14 +81,25 @@ object ScanMapper {
     const val MIN_SIZED_SHARE = 0.7
 
     /**
-     * …and an absolute ceiling that no reply passes, sizes or not.
+     * …and an absolute ceiling that no reply passes, sizes or not: **what the drawing grid can
+     * actually hold.**
      *
-     * ⚠ Stated as a judgement, because that is what it is. The largest genuine single home in the
-     * corpus has 21 named spaces and the smallest floor plate 17, so no number separates them
-     * cleanly and this one does not try to. It is a backstop against a reply so long that its
-     * arrangement cannot be meaningful — not a claim about where houses end and buildings begin.
+     * ⚠ It was 20 until 16 Aug 2026, and 20 was a judgement that its own note admitted did not
+     * separate anything: "the largest genuine single home in the corpus has 21 named spaces and the
+     * smallest floor plate 17". Read that again — the ceiling sat one *below* the largest real home
+     * we had, so it existed partly to refuse a genuine house. Two things then removed its purpose:
+     *
+     *   · the reason for wanting a floor-plate cut at all went with the lift rule (see the note in
+     *     [map]); several homes on one page is [RoomLabels.isUnitLabel]'s question, not a count's;
+     *   · a long reply that states no sizes is already stopped by [SIZED_SHARE_TO_TRUST] one line
+     *     above, which is the case the count was ever good evidence for.
+     *
+     * So the only honest remaining limit is the editor's: the grid holds twenty-five rooms
+     * (`RoomsOffTheGridTest`), and past that the screen already names what will not fit rather than
+     * dropping it silently. Corpus effect of 20 → 25, measured: **none** — every plan lands exactly
+     * where it did. It is headroom for a large real home, not a new behaviour.
      */
-    const val MAX_ROOMS_EVER = 20
+    const val MAX_ROOMS_EVER = 25
 
     /**
      * ⭐ A reply may run this far past the edge of the page before we stop treating it as a layout.
@@ -132,7 +143,8 @@ object ScanMapper {
      * ⭐⭐ The Placed/Assisted gate when the plan prints NO sizes: **how many rooms it has**. Above
      * this, the geometry is not trusted and the rooms are handed over unplaced.
      *
-     * ⚠ No longer the first gate — see [SIZED_SHARE_TO_TRUST] and [RoomLabels.isFloorPlateLabel].
+     * ⚠ No longer the first gate — see [SIZED_SHARE_TO_TRUST]. A sheet that prints its own room
+     * sizes is trusted however many rooms it names, up to [MAX_ROOMS_EVER].
      * It now applies only to a reply we have no printed measurements for, which is the case it was
      * always really about: nothing but the reader's own rectangles, and those degrade with count.
      *
@@ -428,13 +440,24 @@ object ScanMapper {
         if (rooms.size >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
             return ScanOutcome.Assisted(identified, AssistReason.UNIFORM_BOXES, notes())
         }
-        // ⭐ A sheet that names a LIFT is a whole floor, not one home — the distinction the room
-        // count was proxying for, said outright. Checked against everything the reader read,
-        // including the spaces already dropped as not habitable, because a lift is exactly the kind
-        // of space that gets dropped.
-        if (draft.rooms.any { RoomLabels.isFloorPlateLabel(it.label) }) {
-            return ScanOutcome.Assisted(identified, AssistReason.FLOOR_PLATE, notes())
-        }
+        // ⭐⭐ THERE IS NO LIFT GATE HERE ANY MORE (16 Aug 2026), and it is not an oversight.
+        //
+        // "A sheet that names a LIFT shows a whole floor, not one home" was checked against the four
+        // corpus sheets that name one, and it is WRONG ON THREE. plan-002, plan-003 and plan-004 are
+        // each a single large apartment with the tower's lift core drawn beside or through it — one
+        // kitchen, one living room, one dining room apiece. Only plan-001 is genuinely several
+        // homes, and it is refused as MULTI_UNIT long before this point, so the lift rule never
+        // caught anything the unit rule did not.
+        //
+        // What it DID do was throw away three good reads. With it gone (audit-mapper.mjs, whole
+        // corpus): placed 24 -> 27, assisted 9 -> 6, refusals unchanged, and the newly placed plans
+        // agree with their own printed sheets on 19 of 19 and 10 of 10 rooms. Both were rendered and
+        // looked at before this shipped — every room lands in the right quarter of the home, and the
+        // lift core becomes an empty middle, which is the honest drawing of an unread space.
+        //
+        // The word still matters where it belongs: a LIFT caption is dropped as not habitable, so no
+        // lift is ever scored as a room. What is gone is condemning the whole sheet for naming one.
+        // A tower is where this app's customers live.
         if (rooms.size > MAX_ROOMS_EVER) {
             return ScanOutcome.Assisted(identified, AssistReason.TOO_MANY_ROOMS, notes())
         }

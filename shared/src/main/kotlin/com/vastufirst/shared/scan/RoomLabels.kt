@@ -111,6 +111,12 @@ object RoomLabels {
             RoomType.TOILET,
             "TOILET", "WC", "WATER CLOSET", "POWDER ROOM", "ATT TOILET", "ATTACHED TOILET",
             "COMMON TOILET", "WASHROOM", "WASH ROOM",
+            // ⭐ `PWD` is how a luxury sheet abbreviates the guest powder room, printed with its own
+            // size beside the entrance. We already knew POWDER ROOM and not this, so on the owner's
+            // 19-room sheet the one toilet nearest the front door was dropped as an unreadable word
+            // and never scored — and a toilet's position is among the heaviest things the engine
+            // weighs. Exact-match only, so it cannot swallow a longer caption.
+            "PWD",
             // `TOIL` — a caption truncated by the sheet itself, read verbatim (corpus audit).
             "TOIL",
         )
@@ -293,34 +299,20 @@ object RoomLabels {
             .joinToString(" ")
     }
 
-    /** True when this caption names a whole dwelling unit rather than a room (`UNIT-1`, `FLAT B`). */
     /**
-     * ⭐ Words that only appear on a sheet showing a whole FLOOR, not one home: a lift, a lift lobby,
-     * a lift well.
+     * ⚠ `isFloorPlateLabel` lived here until 16 Aug 2026 — "a caption naming a LIFT means the sheet
+     * shows a whole floor, not one home", used to hand the whole plan to the manual grid.
      *
-     * ⚠ Why this replaced counting rooms. The Placed/Assisted gate used to be "more than twelve rooms
-     * and we don't trust the geometry", calibrated by eye on six overlays where good reads had 10–11
-     * rooms and bad ones 15–24. The owner's own flat has **fifteen** named spaces — three balconies,
-     * a utility, a vestibule, a passage and a dressing area — which is entirely ordinary for an
-     * Indian apartment, and it was thrown out on the count alone. Its own code comment admitted the
-     * cut between 11 and 15 was "a judgement, not a measurement".
+     * It was checked against the four corpus sheets that name a lift and it is wrong on three: each
+     * of plan-002, plan-003 and plan-004 is ONE large apartment with the tower's lift core drawn
+     * beside it — one kitchen, one living room, one dining room apiece. The claim it rested on
+     * ("no single-home plan names one") was simply false. The one genuine multi-home sheet,
+     * plan-001, names UNIT-1 to UNIT-4 and is refused by [isUnitLabel] below, which is the test that
+     * actually asks the question — is there more than one home on this page?
      *
-     * A lift is the thing the eye was actually picking up. Measured across the 30-plan corpus, every
-     * sheet naming a lift is a shared floor plate (24, 25 and 17 spaces, thick with ducts and
-     * lobbies); no single-home plan names one, including three genuine 21-room villas. It says the
-     * distinction outright instead of proxying it through a number.
-     *
-     * ⚠ A duct alone is deliberately NOT enough — flats print a duct too, and one of the owner's
-     * would have been condemned by it.
+     * A lift caption is still dropped as not habitable, so no lift is ever scored as a room.
      */
-    private val FLOOR_PLATE_WORDS = listOf("LIFT", "ELEVATOR")
-
-    /** True when this caption names a lift — see [FLOOR_PLATE_WORDS]. */
-    fun isFloorPlateLabel(raw: String): Boolean {
-        val cleaned = clean(raw)
-        return FLOOR_PLATE_WORDS.any { cleaned.contains(it) }
-    }
-
+    /** True when this caption names a whole dwelling unit rather than a room (`UNIT-1`, `FLAT B`). */
     fun isUnitLabel(raw: String): Boolean {
         val words = clean(raw).split(' ').filter { it.isNotEmpty() }
         if (words.isEmpty()) return false

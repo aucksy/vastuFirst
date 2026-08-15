@@ -975,7 +975,7 @@ const MAX_TRUSTED_ROOMS = 12;
 // owner's fifteen-space flat, which is an ordinary Indian apartment. See
 // ScanMapper.SIZED_SHARE_TO_TRUST / MAX_ROOMS_EVER / MAX_OVERFLOW.
 const SIZED_SHARE_TO_TRUST = 2 / 3;
-const MAX_ROOMS_EVER = 20;
+const MAX_ROOMS_EVER = 25;   // the drawing grid's own capacity — see ScanMapper.MAX_ROOMS_EVER
 const MAX_OVERFLOW = 2.0;
 const MIN_SPILLED_ROOMS = 2;
 /** A sheet naming a lift shows a whole floor, not one home. Mirrors RoomLabels.isFloorPlateLabel. */
@@ -1791,10 +1791,14 @@ function scanMap(draft, imageAspect, opts = {}) {
   if (inject !== 'no-uniform-gate' && rooms.length >= UNIFORM_MIN_ROOMS && variation < UNIFORM_AREA_VARIATION) {
     return { kind: 'assisted', reason: 'UNIFORM_BOXES', rooms: identified, notes: notes() };
   }
-  // ⭐ A sheet naming a LIFT shows a whole floor, not one home — the distinction the room count was
-  // proxying for, said outright. Checked against everything read, including spaces already dropped
-  // as not habitable, because a lift is exactly the kind of space that gets dropped.
-  if ((draft.rooms || []).some((b) => isFloorPlateLabel(b.label))) {
+  // ⭐⭐ THERE IS NO LIFT GATE ANY MORE (16 Aug 2026). "A sheet naming a LIFT shows a whole floor,
+  // not one home" was checked against the four corpus sheets that name one and it is wrong on
+  // three: plan-002, plan-003 and plan-004 are each ONE large apartment beside a tower's lift core.
+  // The single genuine multi-home sheet, plan-001, is refused as MULTI_UNIT above and never needed
+  // it. Mirrors ScanMapper.map — the full measurement is in the note where the gate used to be.
+  // FAULT INJECTION 'floor-plate' restores it: plan-002 and plan-003 stop being placed, which is
+  // what the audit is for.
+  if (inject === 'floor-plate' && (draft.rooms || []).some((b) => isFloorPlateLabel(b.label))) {
     return { kind: 'assisted', reason: 'FLOOR_PLATE', rooms: identified, notes: notes() };
   }
   if (rooms.length > MAX_ROOMS_EVER) {
@@ -2232,8 +2236,9 @@ function scanPinnedCases(inject) {
     problems.push(`fabricated-uniform: expected assisted/UNIFORM_BOXES, got ${fab.kind}/${fab.reason || ''}`);
   }
 
-  // A dense floor plate: names read fine, geometry not trusted. The gate that catches it is the
-  // room count, so build one with more rooms than a single home has.
+  // A long reply that states NO sizes anywhere: names read fine, nothing to measure from, so its
+  // arrangement is not trusted. The gate that catches it is the room count — see
+  // SIZED_SHARE_TO_TRUST, which is what lets a long reply through when the sheet does print sizes.
   const dense = Array.from({ length: 18 }, (_, i) => ({
     label: SCAN_LABELS[i % 12], x: (i % 6) * 0.16, y: Math.floor(i / 6) * 0.33,
     w: 0.10 + (i % 3) * 0.03, h: 0.20 + (i % 2) * 0.06, confidence: 0.9,
@@ -2611,7 +2616,7 @@ const pinned = scanPinnedCases(inject);
 if (pinned.length === 0) {
   console.log('✅ the recorded Groq replies map exactly as pinned, and both fabrication detectors fire');
   console.log('   (clean render + JPEG + phone photo all Placed — the photo is a known, documented');
-  console.log('    miss that only the user\'s confirmation catches; a dense floor plate → Assisted)');
+  console.log('    miss that only the user\'s confirmation catches; a long UNSIZED reply → Assisted)');
   console.log('✅ the owner\'s own flat arrives as a HOME: placed, on a grid wide enough for it, with');
   console.log('   its living/dining drawn the way its plan prints it — and a room past the bottom of');
   console.log('   the page is shrunk onto it rather than deleted');

@@ -279,13 +279,6 @@ private fun DoneBody(
                 AssistReason.TOO_MANY_ROOMS ->
                     "We read every room name, but we can't trust where each one sits — and we " +
                         "don't guess. Drag each one to its real place."
-                // ⚠ SHORTER than the line it replaces, deliberately. This screen already carries a
-                // row per room, and with a room's type list open the geometry gate measured three
-                // more elements pushed out of view when this paragraph was merely the same length.
-                // A caption on a crowded screen is not a free place to explain things.
-                AssistReason.FLOOR_PLATE ->
-                    "This sheet shows a whole floor, not one home. Drag the rooms that are " +
-                        "yours to where they belong."
                 AssistReason.TOO_FEW_PLACED ->
                     "We read the room names but not where they sit — and we don't guess. " +
                         "Drag each one to its real place."

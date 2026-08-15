@@ -15,7 +15,7 @@ import kotlinx.coroutines.runBlocking
  *   plan-01        clean digital render   8/8 rooms placed correctly, mean IoU 0.79  → Placed
  *   plan-01-jpeg   downscaled + JPEG      6/8 correct, IoU 0.73                      → Placed
  *   plan-01-photo  simulated phone photo  2/8 correct, IoU 0.37                      → Placed ⚠ known miss
- *   real-dense     real 24-space floor plate, names perfect, rectangles scattered    → Assisted
+ *   real-dense     real 24-space flat on a whole floor, lift core down its middle   → Placed
  *   owner-flat     ⭐ the OWNER'S own 15-room apartment, every room sized on the sheet → Placed
  *
  * ⭐ `real-dense` is the reply that moved the gate from coverage to room count: its coverage (0.421)
@@ -70,26 +70,37 @@ class RecordedScanTest {
     }
 
     /**
-     * ⭐⭐ The gate is the ROOM COUNT, and this is the real reply that forced it there.
+     * ⭐⭐ THE 24-SPACE SHEET THAT WAS CALLED A FLOOR PLATE FOR A YEAR IS ONE APARTMENT.
      *
-     * A mirrored two-flat floor plate: 24 named spaces, every name read correctly, and the
-     * rectangles scattered nowhere near the rooms they name — verified by drawing them back over the
-     * plan (`tools/scan-eval/out/overlay/plan-002.png`). Its coverage is **0.421, identical to a
-     * plan that placed well**, which is why coverage could not stay as the gate.
+     * ⚠ Two claims that lived on this test have been checked against the sheet itself and both were
+     * wrong, so they are recorded here rather than quietly deleted:
+     *
+     *   · "a mirrored two-flat floor plate" — it is not. `Documents/Sample Floor plans/plan-002.webp`
+     *     has ONE kitchen, ONE living room, ONE dining room, one utility and one entrance lobby,
+     *     with four bedrooms around them. It is a single 4-bedroom flat taking a whole floor, and
+     *     the lift, staircase and lobby down its middle are the tower's core, not part of the home.
+     *   · "the rectangles scattered nowhere near the rooms they name" — that was measured on the RAW
+     *     reader output, before the building-box composition, the home framing, the wall-line snap
+     *     and the printed-size re-shape existed. Rendered through today's mapper
+     *     (`render-grid.mjs --plan=plan-002`, then `render-png.py`) and compared against the sheet
+     *     room by room, every one of the nineteen lands in the right quarter of the home.
+     *
+     * So it PLACES now, and the lift core comes out as an empty middle — which is the honest drawing
+     * of a space we did not read, and the thing the collapse rule deliberately leaves alone.
      */
     @Test
-    fun `⭐ a dense floor plate keeps its rooms and throws away its geometry`() {
+    fun `⭐⭐ the 24-space sheet is one flat in a tower, and it places`() {
         val out = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
-        val assisted = assertIs<ScanOutcome.Assisted>(out)
-        // ⭐ It now says WHY in the sheet's own terms rather than by counting: this plan prints
-        // `LIFT 1850X1850 (8 PERSON)`, so it is a floor of a building and not one home. That reads
-        // better on screen too — "this sheet shows a whole floor, it has a lift on it" is something
-        // the user can look at their own plan and agree with.
-        assertEquals(AssistReason.FLOOR_PLATE, assisted.reason)
-        assertTrue(assisted.rooms.size > ScanMapper.MAX_TRUSTED_ROOMS)
-        assertTrue(assisted.rooms.all { it.rect == null }, "Assisted must not carry geometry")
-        // The names it read are excellent, which is the whole point of the Assisted path.
-        val names = assisted.rooms.map { it.type }
+        val placed = assertIs<ScanOutcome.Placed>(out, "one flat on a whole floor is still one home")
+        assertTrue(placed.rooms.size > ScanMapper.MAX_TRUSTED_ROOMS, "got ${placed.rooms.size} rooms")
+        assertTrue(placed.rooms.all { it.rect != null }, "a Placed outcome must carry geometry")
+        // ⭐ The lift is still never scored as a room — that half of the old rule was always right.
+        assertTrue(
+            placed.rooms.none { it.label.uppercase().contains("LIFT") },
+            "the tower's lift must be dropped, never placed",
+        )
+        // The names it read are excellent, which was always the strongest thing about this reply.
+        val names = placed.rooms.map { it.type }
         assertTrue(RoomType.KITCHEN in names && RoomType.BEDROOM in names && RoomType.TOILET in names)
     }
 
