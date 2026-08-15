@@ -106,6 +106,32 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Saturday 15 August, evening — the highlight now sits on the room you tapped
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.16.0/vastufirst-v0.16.0.apk
+**This is the one to install.**
+
+After you photograph a plan, the app shows you what it read and lets you tap any room to check it.
+Tap one and it lights up on your own drawing. On some rooms — nearly always the small ones, a toilet
+or a kitchen — that highlight was drawn the wrong way round: turned across the room, reaching into
+whatever sat next to it. It looked as though the app had misread the home. It had not. It had
+mis-drawn it.
+
+The cause was a decision made last week that was right for one job and wrong for another. Most plans
+print each room's size beside its name, and those printed numbers are far more dependable than
+anything read off the shapes, so we use them to work out the home. We had also begun using them to
+draw the highlight — and **a builder's drawing is not always drawn to its own printed sizes.** One
+real plan prints a toilet as 8 foot by 5 foot 5 and then draws it the other way up, taller than it is
+wide. Across every plan we hold, one room in three is printed one way and drawn the other.
+
+So the highlight is now taken from the picture, and the printed sizes keep the job they are good at:
+working out the home and its score. Nothing about the score changes.
+
+We settled it by marking, by hand, where the rooms actually are on two real plans, and then scoring
+each room. On the two worst rooms the highlight now covers nearly all of the room, where before it
+covered about half. Every earlier measurement had compared the highlights only against each other,
+which cannot answer the one question that matters — is it on the room?
+
 ### Saturday 15 August — three things the app was doing quietly, made honest
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.15.0/vastufirst-v0.15.0.apk
