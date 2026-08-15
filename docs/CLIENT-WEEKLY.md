@@ -106,10 +106,44 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Saturday 15 August — three things the app was doing quietly, made honest
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.15.0/vastufirst-v0.15.0.apk
+**This is the one to install.**
+
+All three of these were the app doing something silently. None of them lost anybody's work. All
+three made the app say something that was not quite true about a person's own home, which is the
+one thing an app like this cannot afford.
+
+**Two saved homes could be given the same name.** The list of your homes then showed two rows nobody
+could tell apart — same name, same date, often the same score. Opening the right one, or deleting
+the right one, was a guess. The rename box now refuses a name another home already has, says so in
+the box you are typing in, and keeps Save switched off until you choose a free one.
+
+There were two ways into that, and the second was invisible. The app names new homes "Home 1",
+"Home 2" and so on, and it only recognised that exact spelling. Rename one to lower-case "home 4"
+and the app no longer saw it — so the next home you added was christened "Home 4" as well, and the
+two rows were identical from the moment they were created. Capitals and extra spaces are now
+ignored when comparing two names, so neither route is open.
+
+**The dates on your list of homes stopped at midnight.** Every home shows when you last touched it —
+"today", "yesterday", "3 days ago". That was measured once, when the screen was first drawn. If you
+left the app open overnight, every home still said "today" the following morning, and went on saying
+it until something rebuilt the screen. Nothing was lost; the dates were simply a day behind. They now
+turn over with the calendar, including on a phone that was asleep at midnight.
+
+**A scanned plan with more than 25 rooms lost the extra rooms without a word.** After a scan the app
+would say "we found 28 rooms", you would tap through, and the drawing grid would hold 25. The other
+three were gone — not in the list of things we could not use, not mentioned anywhere. The grid
+genuinely cannot hold more than 25 rooms at a size a finger can hit, so we have not changed that.
+What has changed is that the app now names the rooms that will not fit, says how many the grid holds,
+and says plainly that a room which is not on the grid is not counted in the score — and how to add it
+yourself. This affects large plans and whole-floor drawings, which is exactly the sort of sheet the
+reader hands back as a long room list.
+
 ### Tuesday 11 August, night — fourteen things that were still wrong, found by arguing with ourselves
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.14.0/vastufirst-v0.14.0.apk
-**This is the one to install.**
 
 We went back through every defect anyone had ever written down for this app and checked each one
 against the app as it stands, because most of that list had quietly been fixed and nobody had said
