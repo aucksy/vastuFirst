@@ -383,7 +383,10 @@ class LongScreenBottomScreenshotTest {
     }
 
     private fun assistedOverflow(): com.vastufirst.shared.scan.ScanOutcome.Assisted {
-        val real = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        // ⚠ Was real-dense until 16 Aug 2026. Removing the lift rule made real-dense PLACE, which
+        // turned this cast into a crash — the Assisted screen simply had no fixture left. See
+        // RecordedScans.UNSIZED: a real sheet printing no size anywhere, twenty-one spaces.
+        val real = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
             as com.vastufirst.shared.scan.ScanOutcome.Assisted
         val padding = (1..OVERFLOW_ROOMS).map {
             com.vastufirst.shared.scan.ScannedRoom(

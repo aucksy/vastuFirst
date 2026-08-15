@@ -97,12 +97,15 @@ class ScanScreenshotTest {
         ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
 
     /**
-     * A REAL 24-space floor plate: names read perfectly, rectangles scattered nowhere near the rooms
-     * they name (verified by drawing them back over the plan). Too many rooms to trust the geometry,
+     * A REAL 21-space apartment whose sheet prints **no room size anywhere**. With no printed
+     * measurement to anchor anything, that many rooms is the reader's template rather than the home,
      * so the room list is kept and the layout is thrown away. This is the path most real plans take.
+     *
+     * ⚠ Was `real-dense` until 16 Aug 2026. Removing the lift rule made `real-dense` PLACE, so this
+     * golden was photographing the Placed screen under the name "assisted" — green, and wrong.
      */
     private fun assisted(): ScanOutcome =
-        ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
 
     @Test
     fun scanIdle() {

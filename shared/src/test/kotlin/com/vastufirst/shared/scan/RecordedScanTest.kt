@@ -17,10 +17,16 @@ import kotlinx.coroutines.runBlocking
  *   plan-01-photo  simulated phone photo  2/8 correct, IoU 0.37                      → Placed ⚠ known miss
  *   real-dense     real 24-space flat on a whole floor, lift core down its middle   → Placed
  *   owner-flat     ⭐ the OWNER'S own 15-room apartment, every room sized on the sheet → Placed
+ *   real-unsized   real 21-space flat whose sheet prints NO size anywhere           → Assisted
  *
  * ⭐ `real-dense` is the reply that moved the gate from coverage to room count: its coverage (0.421)
  * is *identical* to a real plan that placed well, so coverage could not tell them apart. See
  * [ScanMapper.MAX_TRUSTED_ROOMS] for the full table of what was judged by eye.
+ *
+ * ⚠ `real-unsized` is the ONLY fixture that reaches Assisted. It was added on 16 Aug 2026 because
+ * removing the lift rule turned `real-dense` from Assisted to Placed — and with it every bundled
+ * fixture placed, so the Assisted screen and its render golden had no fixture left driving them
+ * while the whole suite stayed green.
  */
 class RecordedScanTest {
 
@@ -127,13 +133,29 @@ class RecordedScanTest {
 
     @Test
     fun `⭐ the model reported 0-95 confidence on the read it got wrong`() {
-        // S2, in the recorded data rather than in a comment. Same self-report, opposite quality.
+        // S2, in the recorded data rather than in a comment: the reader's self-report is a CONSTANT,
+        // so it can never separate a good read from a bad one. Every recorded reply says 0.95 —
+        // the clean render that places all eight rooms, and the unsized sheet whose geometry we
+        // throw away, report the identical number.
+        //
+        // ⚠ This test used to pair CLEAN against DENSE. DENSE places now, so that pair no longer
+        // shows opposite quality; the pair is CLEAN against UNSIZED, which still does.
         val clean = ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply)
-        val dense = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        val unsized = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
         assertEquals(0.95, clean.notes.modelConfidence, 1e-9)
-        assertEquals(0.95, dense.notes.modelConfidence, 1e-9)
+        assertEquals(0.95, unsized.notes.modelConfidence, 1e-9)
         assertIs<ScanOutcome.Placed>(clean)
-        assertIs<ScanOutcome.Assisted>(dense)
+        assertIs<ScanOutcome.Assisted>(unsized)
+
+        // …and it is constant across every fixture we hold, not just this pair.
+        for (id in RecordedScans.ids) {
+            assertEquals(
+                0.95,
+                ScanMapper.map(RecordedScans.load(id)!!.reply).notes.modelConfidence,
+                1e-9,
+                "$id must also self-report 0.95 — the number carries no signal",
+            )
+        }
     }
 
     @Test
@@ -147,9 +169,18 @@ class RecordedScanTest {
         assertIs<ScanOutcome.Placed>(outcomes[0])
         assertIs<ScanOutcome.Placed>(outcomes[1])
         assertIs<ScanOutcome.Placed>(outcomes[2])
-        assertIs<ScanOutcome.Assisted>(outcomes[3])
+        // ⭐ real-dense — one flat in a tower. It was Assisted until the lift rule went; it places now.
+        assertIs<ScanOutcome.Placed>(outcomes[3])
         // ⭐ The owner's own flat — a real fifteen-room apartment, placed. See OwnerFlatScanTest.
         assertIs<ScanOutcome.Placed>(outcomes[4])
+        // ⭐⭐ real-unsized — the ONE fixture that still drives the Assisted screen. If this ever goes
+        // green as Placed, the Assisted state has no coverage anywhere and the golden named for it
+        // is drawing something else. Do not "fix" it by changing the assertion.
+        assertIs<ScanOutcome.Assisted>(outcomes[RecordedScans.ids.indexOf(RecordedScans.UNSIZED)])
+        assertTrue(
+            outcomes.any { it is ScanOutcome.Assisted },
+            "at least one bundled fixture must reach Assisted, or that screen is untested",
+        )
         // …and it cycles, so a screen can be driven round the states without re-creating it.
         assertIs<ScanOutcome.Placed>(assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome)
     }

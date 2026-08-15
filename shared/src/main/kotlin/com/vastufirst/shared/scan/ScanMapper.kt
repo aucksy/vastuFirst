@@ -84,20 +84,32 @@ object ScanMapper {
      * …and an absolute ceiling that no reply passes, sizes or not: **what the drawing grid can
      * actually hold.**
      *
-     * ⚠ It was 20 until 16 Aug 2026, and 20 was a judgement that its own note admitted did not
-     * separate anything: "the largest genuine single home in the corpus has 21 named spaces and the
-     * smallest floor plate 17". Read that again — the ceiling sat one *below* the largest real home
-     * we had, so it existed partly to refuse a genuine house. Two things then removed its purpose:
+     * ⚠ It was 20 until 16 Aug 2026. **The note that raised it argued from the wrong number, and
+     * the re-justification is recorded here rather than the raise being quietly kept.** The old note
+     * said "the largest genuine single home in the corpus has 21 named spaces", so the ceiling sat
+     * one *below* a real house. That compared a RAW caption count against a gate that counts
+     * IDENTIFIED rooms — the ones left after ducts, lifts and unreadable words are dropped. Re-run
+     * against HEAD (`audit-mapper.mjs --only=corpus`), the largest identified single home in the
+     * whole corpus is **19**, not 21. So 20 was never refusing a real house; it had one room spare.
      *
+     * The raise still stands, on three grounds that survive the correction:
+     *
+     *   · one room of headroom above the largest plan we have ever seen is not headroom;
      *   · the reason for wanting a floor-plate cut at all went with the lift rule (see the note in
      *     [map]); several homes on one page is [RoomLabels.isUnitLabel]'s question, not a count's;
      *   · a long reply that states no sizes is already stopped by [SIZED_SHARE_TO_TRUST] one line
-     *     above, which is the case the count was ever good evidence for.
+     *     below — that is the case a raw count was ever good evidence for, and it is what
+     *     `RecordedScans.UNSIZED` (21 rooms, no printed size) still lands in.
      *
      * So the only honest remaining limit is the editor's: the grid holds twenty-five rooms
-     * (`RoomsOffTheGridTest`), and past that the screen already names what will not fit rather than
-     * dropping it silently. Corpus effect of 20 → 25, measured: **none** — every plan lands exactly
-     * where it did. It is headroom for a large real home, not a new behaviour.
+     * (`RoomsOffTheGridTest` asserts `unplacedStripCapacity(10, 10) == 25`), and past that the screen
+     * already names what will not fit rather than dropping it silently.
+     *
+     * **Corpus effect of 20 → 25, measured both ways on 16 Aug 2026: none.** 27 placed · 6 assisted ·
+     * 11 refused of 44 under either value, orientation agreement 205/211 under either. It is headroom
+     * for a large real home, not a new behaviour — and the owner's own sheet, which one telling of
+     * this raise leaned on, in fact reads **15** rooms, not the 20 that was claimed. That claim was
+     * never load-bearing for the constant, and it is retired here.
      */
     const val MAX_ROOMS_EVER = 25
 

@@ -53,16 +53,45 @@ object RecordedScans {
     const val PHOTO = "plan-01-photo"
 
     /**
-     * ⭐ A **real** reply, from a mirrored two-flat floor plate with 24 named spaces. Its room names
-     * are read perfectly — `BEDROOM 6750X4350`, `ATT. TOILET 1350X2250`, `LIFT 1850X1850 (8 PERSON)`
-     * — and its rectangles are scattered nowhere near the rooms they name, which was verified by
-     * drawing them back over the plan and looking (`tools/scan-eval/out/overlay/plan-002.png`).
+     * ⭐ A **real** reply from a sheet with 24 named spaces, every one of them SIZED —
+     * `BEDROOM 6750X4350`, `ATT. TOILET 1350X2250`, `LIFT 1850X1850 (8 PERSON)`.
      *
-     * This is the Assisted path's evidence rather than an invented example, and it is what the
-     * Assisted render golden is driven from. Only the model's reply is stored here; the plan image
-     * itself stays out of the repo.
+     * ⚠ Two claims lived on this fixture for a year and BOTH were false. They are corrected here
+     * rather than quietly deleted, because each one cost a real read:
+     *
+     *   · "a mirrored two-flat floor plate" — it is not. `Documents/Sample Floor plans/plan-002.webp`
+     *     has ONE kitchen, ONE living room, ONE dining room, one utility and one entrance lobby with
+     *     four bedrooms around them. It is a single 4-bedroom flat taking a whole floor, and the
+     *     lift, staircase and lobby down its middle are the tower's core, not part of the home.
+     *   · "its rectangles are scattered nowhere near the rooms they name" — that was measured on the
+     *     RAW reader output, before the building-box composition, the home framing, the wall-line
+     *     snap and the printed-size re-shape existed. Through today's mapper all nineteen land in
+     *     the right quarter of the home.
+     *
+     * So it **PLACES**, and has since the lift rule went (16 Aug 2026). It is no longer the Assisted
+     * fixture — see [UNSIZED] for that. What it proves now is that a flat in a tower is one home:
+     * the lift caption is dropped as not habitable, so no lift is ever scored, and the core comes
+     * out as an empty middle, which is the honest drawing of a space we did not read.
+     *
+     * Only the model's reply is stored here; the plan image itself stays out of the repo.
      */
     const val DENSE = "real-dense"
+
+    /**
+     * ⭐ **The Assisted path's evidence** — a real reply (`plan-004.jpg`) from a large apartment
+     * whose sheet prints **no room size anywhere**, naming twenty-one habitable spaces.
+     *
+     * That pair is exactly what [ScanMapper.SIZED_SHARE_TO_TRUST] refuses to trust. With no printed
+     * measurement to anchor anything, a twenty-one room layout is the reader's template rather than
+     * the home, so the names are kept and the geometry is thrown away.
+     *
+     * ⚠ It exists because [DENSE] stopped being Assisted. When the lift rule went, `real-dense`
+     * placed — and with it EVERY bundled fixture placed, so nothing drove the Assisted screen at
+     * all. The golden that names itself "assisted" was quietly rendering a Placed screen. A fixture
+     * that no longer produces the state it is named for is worse than a missing one, because the
+     * suite stays green while the state goes uncovered.
+     */
+    const val UNSIZED = "real-unsized"
 
     /**
      * ⭐⭐ **THE OWNER'S OWN FLAT, and the first recorded reply for one of his plans.**
@@ -130,7 +159,7 @@ object RecordedScans {
 
     val ids: List<String> = listOf(
         CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020, GREENCOURT,
-        GREENCOURT_336_CLEAN, GREENCOURT_336_BRANDED,
+        GREENCOURT_336_CLEAN, GREENCOURT_336_BRANDED, UNSIZED,
     )
 
     /** Load a bundled reply, or null if the id is unknown. */

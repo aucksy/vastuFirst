@@ -115,8 +115,12 @@ class GroqWireTest {
     }
 
     @Test
-    fun `a dense real reply still lands in Assisted through the wire`() {
-        val recorded = assertNotNull(RecordedScans.load(RecordedScans.DENSE))
+    fun `an unsized real reply still lands in Assisted through the wire`() {
+        // ⚠ This used to ride on real-dense, which was Assisted only because the old lift rule
+        // condemned any sheet naming a lift. That rule is gone and real-dense places, so the
+        // Assisted path is proved here with real-unsized instead — a real sheet that prints no
+        // room size anywhere and names twenty-one spaces.
+        val recorded = assertNotNull(RecordedScans.load(RecordedScans.UNSIZED))
         val read = assertIs<ScanResult.Read>(
             GroqWire.readOutcome(envelope(json.encodeToString(recorded.reply)), 0.8),
         )

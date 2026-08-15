@@ -294,7 +294,9 @@ class EditorScreenshotTest {
 
     @Composable
     private fun ScannedButUnplaced() {
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        // ⚠ real-unsized, not real-dense: real-dense PLACES since the lift rule went, so an
+        // "unplaced" golden was being driven from a plan that is never unplaced.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
@@ -400,7 +402,9 @@ class EditorScreenshotTest {
 
     @Composable
     private fun RestoredUnplacedScan() {
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        // ⚠ real-unsized, not real-dense: real-dense PLACES since the lift rule went, so an
+        // "unplaced" golden was being driven from a plan that is never unplaced.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),

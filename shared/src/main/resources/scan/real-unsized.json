@@ -1,0 +1,236 @@
+{
+  "fixture": "real-unsized",
+  "_note": [
+    "A REAL reply, plan-004.jpg, captured by tools/scan-eval on the same reader as every other",
+    "fixture here and pasted in unedited. It is a large apartment whose sheet prints NO room",
+    "sizes at all, and it names twenty-one habitable spaces.",
+    "That pair is exactly what ScanMapper.SIZED_SHARE_TO_TRUST refuses to trust: with no printed",
+    "measurement anywhere, a twenty-one room layout is the readers template rather than the home,",
+    "so the names are kept and the geometry is thrown away. It lands in Assisted.",
+    "It replaced real-dense as the Assisted fixture on 16 Aug 2026. real-dense was a lift-naming",
+    "flat that the old lift rule condemned; once that rule went (commit e2903e2) real-dense",
+    "PLACED, and every bundled fixture placed, so nothing drove the Assisted screen any more."
+  ],
+  "model": "qwen/qwen3.6-27b",
+  "imageSize": [
+    1400,
+    766
+  ],
+  "usage": {
+    "queue_time": 0.121353619,
+    "prompt_tokens": 1119,
+    "prompt_time": 0.077580039,
+    "completion_tokens": 1831,
+    "completion_time": 3.523702164,
+    "total_tokens": 2950,
+    "total_time": 3.6012822030000002
+  },
+  "reply": {
+    "planType": "2D_PLAN",
+    "hasRoomLabels": true,
+    "northMarked": false,
+    "rooms": [
+      {
+        "label": "LIFT LOBBY",
+        "x": 0.55,
+        "y": 0.15,
+        "w": 0.15,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "AV ROOM/OFFICE",
+        "x": 0.55,
+        "y": 0.45,
+        "w": 0.15,
+        "h": 0.25,
+        "confidence": 0.95
+      },
+      {
+        "label": "LIVING ROOM",
+        "x": 0.35,
+        "y": 0.25,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "DINING ROOM",
+        "x": 0.35,
+        "y": 0.5,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "KITCHEN",
+        "x": 0.45,
+        "y": 0.55,
+        "w": 0.1,
+        "h": 0.15,
+        "confidence": 0.95
+      },
+      {
+        "label": "BED ROOM 1",
+        "x": 0.2,
+        "y": 0.55,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "BED ROOM 2",
+        "x": 0.2,
+        "y": 0.25,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "BED ROOM 3",
+        "x": 0.65,
+        "y": 0.25,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "BED ROOM 4",
+        "x": 0.85,
+        "y": 0.25,
+        "w": 0.15,
+        "h": 0.2,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 1",
+        "x": 0.15,
+        "y": 0.25,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 2",
+        "x": 0.15,
+        "y": 0.55,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 3",
+        "x": 0.65,
+        "y": 0.55,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 4",
+        "x": 0.65,
+        "y": 0.25,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 5",
+        "x": 0.85,
+        "y": 0.55,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "TOILET 6",
+        "x": 0.85,
+        "y": 0.25,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "DRESS AREA",
+        "x": 0.15,
+        "y": 0.35,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "DRESS AREA",
+        "x": 0.65,
+        "y": 0.35,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "DRESS AREA",
+        "x": 0.85,
+        "y": 0.35,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "PUJA",
+        "x": 0.25,
+        "y": 0.45,
+        "w": 0.05,
+        "h": 0.05,
+        "confidence": 0.95
+      },
+      {
+        "label": "SER ROOM",
+        "x": 0.5,
+        "y": 0.55,
+        "w": 0.05,
+        "h": 0.1,
+        "confidence": 0.95
+      },
+      {
+        "label": "5'-0\" WIDE BALCONY",
+        "x": 0.2,
+        "y": 0.75,
+        "w": 0.15,
+        "h": 0.05,
+        "confidence": 0.95
+      },
+      {
+        "label": "5'-0\" WIDE BALCONY",
+        "x": 0.2,
+        "y": 0.1,
+        "w": 0.15,
+        "h": 0.05,
+        "confidence": 0.95
+      },
+      {
+        "label": "5'-0\" WIDE BALCONY",
+        "x": 0.45,
+        "y": 0.75,
+        "w": 0.1,
+        "h": 0.05,
+        "confidence": 0.95
+      },
+      {
+        "label": "5'-0\" WIDE BALCONY",
+        "x": 0.65,
+        "y": 0.1,
+        "w": 0.15,
+        "h": 0.05,
+        "confidence": 0.95
+      },
+      {
+        "label": "5'-0\" WIDE BALCONY",
+        "x": 0.85,
+        "y": 0.1,
+        "w": 0.15,
+        "h": 0.05,
+        "confidence": 0.95
+      }
+    ],
+    "planConfidence": 0.95
+  }
+}

@@ -96,7 +96,9 @@ class AccessibilityTest {
                 // Choosing a reader lives in Settings, which this pass checks under "settings".
                 ScanScreen(
                     ScanUiState.Done(
-                        ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply),
+                        // ⚠ real-unsized, not real-dense: real-dense PLACES since the lift rule
+                        // went, so this row was drawing the Placed screen under an Assisted name.
+                        ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply),
                         readBy = "openai/gpt-5.6-luna",
                     ),
                     {}, {}, {}, {}, { _, _ -> }, {}, {},
