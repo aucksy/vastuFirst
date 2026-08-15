@@ -106,10 +106,62 @@ developer account.
 
 ## Week of 10–16 August 2026
 
+### Sunday 16 August — your front door is on the plan, and tall plans can be made bigger
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.17.0/vastufirst-v0.17.0.apk
+**This is the one to install.**
+
+**Your front door is now drawn on your own plan.** It is the single most important thing the app
+looks at — no other part of a home moves the score as much — and about half the time the app works
+it out for you, by reading the word your builder printed on the drawing: ENTRY, FOYER, PORCH. Until
+now it never showed you where it had decided that was. It said so in a line of small grey writing
+below the room list, and nothing was marked on the picture at all. You could not see what the app
+believed about the most important thing in your home.
+
+There is now a clear mark on the plan, big enough to find at arm's length. Tap it and the app tells
+you, right there under the picture, that this is your main entrance and which wall it is on. Drag it
+and you move it, on that same screen, without going anywhere else. And once you have moved it the
+app stops saying it read the door from your plan — it says you put it there, which is the truth.
+
+**A tall plan can now be made bigger.** Builders' plans come in two shapes. A wide one fills the
+screen. A tall one — a portrait page — has always been squeezed into whatever width its shape
+allowed, sometimes barely a third of the screen, with no way to enlarge it. Checking what the app
+had read off it was guesswork. You can now pinch to zoom in, drag to move around, and double-tap to
+jump in and back out.
+
+We chose zooming rather than turning the picture sideways on purpose. Turning it would have filled
+the screen, but this app is about direction: you tell it which way your home faces on the screen
+before this one, every room is labelled with its direction, and the front door is described by which
+wall of the drawing it sits on. A picture quietly rotated a quarter turn would have made all of that
+wrong, with nothing on screen to warn you.
+
+**Tapping a room in the list no longer moves the list.** Tapping a room to check it made the whole
+list jump, and the room you had just tapped was thrown off the top of the screen. It now stays
+exactly where your finger left it. Tapping a room on the picture still scrolls its row into view —
+that is the one case where it is needed, because the room you touched may be off the bottom of the
+list — and it now scrolls to the right place, which it had not been doing.
+
+**A flat in a tower is no longer thrown away for naming its own lift.** If a plan printed the word
+LIFT anywhere, the app decided the sheet showed a whole floor of several flats rather than one home,
+and refused to read it — it asked you to draw the home by hand instead. That is wrong for exactly
+the customers this app is for. Three of the four plans we hold that name a lift are single large
+apartments beside a tower's lift core. Those now read properly: three more plans out of every set we
+test are understood without anyone drawing anything. The lift itself is still never scored as a room.
+
+**And a guest toilet was being missed.** Plans often shorten "powder room" to PWD. The app did not
+know that word, so on those plans the toilet nearest the front door was skipped entirely and never
+scored — and where a toilet sits is one of the heaviest things in the whole reading.
+
+**The paid report was giving part of itself away.** The free report shows every room and its verdict,
+with the entrance, kitchen and toilets explained in full; the rest of the reasoning is what the ₹699
+buys. A card at the top of the report, "Start here", was showing the single most useful fix in the
+whole document without checking whether it had been paid for. On any home whose worst problem was in
+a bedroom, the living room or a staircase, that fix was being handed over free. It now shows the
+problem, as it always did, and keeps the fix for the paid report.
+
 ### Saturday 15 August, evening — the highlight now sits on the room you tapped
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.16.0/vastufirst-v0.16.0.apk
-**This is the one to install.**
 
 After you photograph a plan, the app shows you what it read and lets you tap any room to check it.
 Tap one and it lights up on your own drawing. On some rooms — nearly always the small ones, a toilet
