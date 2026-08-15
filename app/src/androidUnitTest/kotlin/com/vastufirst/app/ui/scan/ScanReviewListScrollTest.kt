@@ -75,8 +75,19 @@ class ScanReviewListScrollTest {
             .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
             .asImageBitmap()
 
+    /**
+     * ⚠ A REAL PHONE'S WINDOW, set explicitly. Robolectric's default window is small enough that the
+     * pinned picture plus the header could push the first row off the screen, and then this test
+     * would fail on a missing row rather than on the thing it is about. The same string the render
+     * matrix calls its baseline.
+     *
+     * ⚠ The leading "+" matters: it MERGES with the default qualifiers instead of replacing them.
+     */
+    private fun phoneSized() = org.robolectric.RuntimeEnvironment.setQualifiers("+w412dp-h915dp-port-xhdpi")
+
     @Test
     fun tapping_a_row_leaves_the_list_exactly_where_it_was() = runComposeUiTest {
+        phoneSized()
         val rooms = ownerRooms()
         setContent { VastuTheme { ScanReviewContent(image = photo(), rooms = rooms) } }
 
@@ -109,6 +120,7 @@ class ScanReviewListScrollTest {
      */
     @Test
     fun tapping_a_row_still_selects_it() = runComposeUiTest {
+        phoneSized()
         val rooms = ownerRooms()
         setContent { VastuTheme { ScanReviewContent(image = photo(), rooms = rooms) } }
         val label = uniqueLabel(rooms)

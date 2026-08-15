@@ -420,9 +420,22 @@ private fun RoomsBody(
     Spacer(Modifier.height(VastuTheme.spacing.s6))
 
     VastuCard {
+        // ⭐⭐ TELLING APART THE ROWS A PLAN CAPTIONS IDENTICALLY — for a screen reader only.
+        //
+        // A real builder's sheet in the corpus prints `5'-0" WIDE BALCONY` FIVE times and states no
+        // size for any of them, and captions three separate dressing areas `DRESS AREA`. Every one
+        // of those rows then spoke the identical sentence, so somebody using TalkBack heard the same
+        // words five times over and had no way to know which balcony they were about to re-type.
+        //
+        // ⚠ The VISIBLE caption is deliberately left alone. Writing "Balcony 2" onto a row is us
+        // putting words on somebody's plan, which [roomNamesById] refuses to do for the same reason.
+        // A position spoken aloud is not a caption — it is where you are in a list, which is exactly
+        // what a sighted reader already gets for free by looking.
+        val spokenOrdinals = ordinalsForDuplicateLabels(rooms)
         rooms.forEachIndexed { index, room ->
             ReadRoomRow(
                 room = room,
+                ordinal = spokenOrdinals[index],
                 expanded = openRow == index,
                 onExpandedChange = { open -> openRow = if (open) index else -1 },
                 onPick = { type -> onCorrectRoom(index, type) },
@@ -497,6 +510,30 @@ private fun RoomsBody(
 }
 
 /**
+ * ⭐ Where each room sits among the ones this plan captions IDENTICALLY — "2 of 5" — or null when
+ * its caption already stands alone.
+ *
+ * ⚠ Two rooms count as the same only when the plan's own caption AND the size it printed are both
+ * identical. A sheet that prints `BEDROOM 3300X3650` and `BEDROOM 3000X3650` has already told the
+ * rooms apart, and numbering those would be noise read aloud on every row.
+ *
+ * Pure, so every case is testable without rendering: no duplicates, a run of them, and the
+ * blank-caption case where the row falls back to its room type.
+ */
+internal fun ordinalsForDuplicateLabels(rooms: List<ScannedRoom>): List<String?> {
+    val key = { r: ScannedRoom -> r.label.trim().uppercase() + "|" + r.printedSize.trim().uppercase() }
+    val total = rooms.groupingBy(key).eachCount()
+    val seen = mutableMapOf<String, Int>()
+    return rooms.map { r ->
+        val k = key(r)
+        val n = (seen[k] ?: 0) + 1
+        seen[k] = n
+        val t = total[k] ?: 0
+        if (t > 1) "$n of $t" else null
+    }
+}
+
+/**
  * One room we read, and the way to tell us we read it wrong.
  *
  * The whole row is the control rather than a separate button at its end: it is one node to a screen
@@ -507,6 +544,11 @@ private fun RoomsBody(
 @Composable
 private fun ReadRoomRow(
     room: ScannedRoom,
+    /**
+     * "2 of 5" when this plan captions several rooms the same, null when the caption is already
+     * unique. Spoken only — never drawn. See [ordinalsForDuplicateLabels].
+     */
+    ordinal: String?,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onPick: (RoomType) -> Unit,
@@ -533,6 +575,7 @@ private fun ReadRoomRow(
                 .semantics(mergeDescendants = true) {
                     this.contentDescription =
                         "We read \"${room.label}\" as ${room.type.label()}" +
+                            (if (ordinal != null) " ($ordinal)" else "") +
                             (if (room.printedSize.isNotBlank()) ", ${room.printedSize}" else "") +
                             (if (needsCheck) ". Please check this one." else "")
                 },

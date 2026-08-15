@@ -2,6 +2,7 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.addhome.AddHomeScreen
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanScreen
@@ -118,6 +119,33 @@ class AccessibilityTest {
                     rooms = RenderFixtures.scannedScanRooms,
                     readings = RenderFixtures.scannedReadings,
                     startSelected = 1,
+                )
+            },
+            /**
+             * ⭐⭐ THE REVIEW SCREEN WITH THE DOOR MARK TAPPED — and it carries a real PICTURE, which
+             * is the point.
+             *
+             * ⚠ Every other entry for this screen passes `image = null`, so the plan component is
+             * never composed at all in this pass. That was fine while the plan drew only a photo and
+             * some outlines. It stopped being fine on 16 Aug 2026, when the plan gained a front-door
+             * mark, a description that names it, and a sentence in the list that appears when it is
+             * tapped — none of which any contrast or label check could see. The first draft of that
+             * sentence used the accent colour and measured 2.77 : 1 against the paper; nothing in the
+             * build would have said so.
+             */
+            "scan-review-door-tapped" to {
+                val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.PLAN_020)!!.reply, imageAspect = 1399.0 / 1389.0)
+                    as com.vastufirst.shared.scan.ScanOutcome.Placed
+                com.vastufirst.app.ui.scan.ScanReviewContent(
+                    image = android.graphics.Bitmap
+                        .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+                        .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+                        .asImageBitmap(),
+                    rooms = outcome.rooms,
+                    door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+                        com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+                    ),
+                    startDoorSelected = true,
                 )
             },
             // ⭐ Marking the front door on the photo — a described image that is also the screen's
