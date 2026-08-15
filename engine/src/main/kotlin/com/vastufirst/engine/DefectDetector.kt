@@ -67,7 +67,19 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
 
         // 3. Cut/extension anomalies → X-04 (NE cut), X-05 (SW extension), else X-GEN.
         anomalies.cuts.forEach { a -> defects += anomalyDefect(a, "X-04") }
-        anomalies.extensions.forEach { a -> defects += anomalyDefect(a, "X-05") }
+        // ⭐ …EXCEPT where the tradition WELCOMES the part that sticks out (§6 · L-05). Before this,
+        // only the South-West extension had a rule of its own and every other one fell through to
+        // the catch-all as a fault — so a North-East extension, the most auspicious plot feature
+        // there is, cost the reader points. X-04's own explanation says "the same tradition welcomes
+        // a North-East extension" one line above where the engine was penalising it.
+        //
+        // ⚠ The zones live in the rule data, not here, so a reviewer can move them without a code
+        // change and the ruleset stamp moves with them — which is what tells a saved home its score
+        // was re-read. See RulesetConfig.benignExtensionZones.
+        anomalies.extensions.forEach { a ->
+            if (a.zone in ruleSet.config.benignExtensionZones) return@forEach
+            defects += anomalyDefect(a, "X-05")
+        }
 
         // 4. Fixture defects (Tier C) — evaluated only when the relevant fixture is present.
         detectFixtureDefects(rotatedFixtures, defects)

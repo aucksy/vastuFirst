@@ -27,5 +27,6 @@
   "padaPoints": { "AUSPICIOUS": 100, "MODERATE": 60, "MIXED": 50, "INAUSPICIOUS": 15 },
   "unruledRoomTypes": ["BATHROOM", "COURTYARD", "UTILITY", "CORRIDOR"],
   "aspectSoftFlag": 1.5,
-  "aspectHardFlag": 2.0
+  "aspectHardFlag": 2.0,
+  "benignExtensionZones": ["NE", "N", "E"]
 }

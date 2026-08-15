@@ -43,6 +43,26 @@ data class RulesetConfig(
      *  a MINOR defect beyond the hard flag. Measured on the footprint's OWN axes (rotation-free). */
     val aspectSoftFlag: Double = 1.5,
     val aspectHardFlag: Double = 2.0,
+    /**
+     * ⭐ Zones where a part of the plan STICKING OUT is not a fault (§6 · L-05).
+     *
+     * ⚠ THIS EXISTS BECAUSE THE APP USED TO MARK PEOPLE DOWN FOR THE BEST SHAPE IN VASTU. Only a
+     * South-West extension had a rule of its own; every other one fell through to the catch-all and
+     * was scored as a fault. So a North-East extension — the most auspicious plot feature the
+     * tradition recognises, and the one the app's OWN defect text calls "welcomed" in as many words
+     * while penalising it — cost the reader points, under a heading saying it sat somewhere its rule
+     * prohibits. The North and East are here too: the sources that call the North-East auspicious
+     * call these beneficial in the same breath.
+     *
+     * ⚠ Extensions elsewhere are untouched. The South-West keeps its own serious fault, and the
+     * South-East, North-West, South and West keep the catch-all — those are the ones the tradition
+     * warns about, so silencing them would be the opposite mistake.
+     *
+     * ⚠ CUTS ARE NOT AFFECTED, and must not be. A missing corner is a missing deity's square
+     * wherever it falls; only the North-East cut has a rule of its own, and the rest belong on the
+     * catch-all exactly as they are.
+     */
+    val benignExtensionZones: Set<Zone> = emptySet(),
 )
 
 @Serializable

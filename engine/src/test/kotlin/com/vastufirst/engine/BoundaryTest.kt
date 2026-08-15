@@ -56,6 +56,47 @@ class BoundaryTest {
         assertTrue(a.defects.any { it.id == "X-05" }, "a SW extension raises X-05")
     }
 
+    /**
+     * ⭐⭐ THE MOST AUSPICIOUS SHAPE IN VASTU MUST NOT COST THE READER POINTS.
+     *
+     * Until this was fixed the engine gave only the South-West extension a rule of its own and sent
+     * every other one to the catch-all fault — so a North-East extension was scored as a defect and
+     * reported under a heading saying it sat somewhere its rule prohibits. X-04's own explanation,
+     * printed in the same report, reads "The same tradition welcomes a North-East extension."
+     *
+     * ⚠ The bump must still be SEEN. Not scoring it is the fix; hiding it would be a different
+     * defect of the same family — the reader is told the shape of their own home either way.
+     */
+    @Test
+    fun `a North-East extension is seen but never counted as a fault`() {
+        // Body [0,100]² plus a bump east of it and to the north: x[100,140] y[70,100].
+        val outline = listOf(
+            Point(0.0, 0.0), Point(100.0, 0.0), Point(100.0, 70.0),
+            Point(140.0, 70.0), Point(140.0, 100.0), Point(0.0, 100.0),
+        )
+        val a = engine.analyze(plan(outline, listOf(Room("m", RoomType.MASTER_BEDROOM, Fixtures.rect(5.0, 5.0, 28.0, 25.0)))))
+        assertFalse(a.shapeIrregular)
+        assertTrue(a.extensions.any { it.zone == Zone.NE }, "the bump must still be reported to the reader")
+        assertFalse(a.defects.any { it.zone == Zone.NE }, "…but a NE extension must raise no fault at all")
+    }
+
+    /**
+     * …and the other half of the same fix: the extensions the tradition genuinely warns about are
+     * untouched. Silencing every bump would have been the opposite mistake, and a bigger one.
+     */
+    @Test
+    fun `a South-East extension is still a fault`() {
+        // Same bump, moved to the south side: x[100,140] y[0,30].
+        val outline = listOf(
+            Point(0.0, 0.0), Point(140.0, 0.0), Point(140.0, 30.0),
+            Point(100.0, 30.0), Point(100.0, 100.0), Point(0.0, 100.0),
+        )
+        val a = engine.analyze(plan(outline, listOf(Room("m", RoomType.MASTER_BEDROOM, Fixtures.rect(5.0, 5.0, 28.0, 25.0)))))
+        assertFalse(a.shapeIrregular)
+        assertTrue(a.extensions.any { it.zone == Zone.SE }, "the bump must register as a SE extension")
+        assertTrue(a.defects.any { it.zone == Zone.SE }, "a SE extension is one the tradition warns about")
+    }
+
     @Test
     fun `a genuinely irregular polygon skips cut and extension analysis honestly`() {
         val triangle = listOf(Point(0.0, 0.0), Point(100.0, 0.0), Point(50.0, 100.0))
