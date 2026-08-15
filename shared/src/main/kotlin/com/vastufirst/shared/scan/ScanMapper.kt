@@ -74,6 +74,13 @@ object ScanMapper {
     const val MIN_PRINTED_TO_FIT = 3
 
     /**
+     * What share of a reply's rooms must carry a size the SHEET PRINTED before we will believe a
+     * layout the reader called a 3D render. See [sheetPrintsItsOwnSizes] for the measurement — the
+     * two classes it separates sit at 0 % and 100 %, so this is a wide-margin cut, not a tuned dial.
+     */
+    const val MIN_SIZED_SHARE = 0.7
+
+    /**
      * How far a room's printed size may disagree with the reader's own rectangle, in area, before
      * [tightenToPrinted] concludes the CAPTION was mis-read and leaves that room alone.
      *
@@ -1128,10 +1135,51 @@ object ScanMapper {
             // the aerial lands only 4 of the 14 rooms it read. We keep what the reader is good at
             // (the names) and hand the placing back to the person who knows the answer.
             // `rect = null` IS unplaced — the same shape every other Assisted outcome hands over.
-            is ScanOutcome.Placed -> ScanOutcome.Assisted(
-                retry.rooms.map { it.copy(rect = null) }, AssistReason.ANGLED_VIEW, retry.notes,
-            )
+            // ⭐ …UNLESS THE SHEET PRINTS ITS OWN DIMENSIONS (15 Aug 2026). A marketing render is
+            // drawn to look nice, never to be built from, so it never prints "10'0" X 12'0"" on a
+            // room. A plan sheet always does. That is evidence off the SHEET, not the reader's
+            // opinion of the camera — which is the one thing the 2D gate was already documented as
+            // not trusting.
+            //
+            // Measured on freshly recorded reads of the corpus, and the separation is total:
+            //   plan-030 — the genuinely tilted street aerial, roof off, cars and neighbours:
+            //              14 rooms read, 0 carry a printed size   →   0 %  → still stripped
+            //   plan-031 — flat sheet the reader mislabelled 3D:    9 of 9 sized  → 100 %
+            //   plan-018 — flat sheet the reader mislabelled 3D:   15 of 15 sized → 100 %
+            // Placement share does NOT separate them (the aerial places 11 of its 14 rooms when
+            // forced, 79 %) — which is why the obvious "trust it if most rooms placed" rule was
+            // measured and rejected. Printed sizes do separate them, absolutely.
+            //
+            // ⚠ The refusal itself is UNCHANGED: the user is still told and still chooses. All that
+            // changes is what the "read it anyway" button hands over — a real layout instead of a
+            // bare room list. An unplaced hand-over routes to the guided grid, and a scanned home
+            // must never land there (owner, 15 Aug 2026).
+            is ScanOutcome.Placed ->
+                if (sheetPrintsItsOwnSizes(draft.rooms)) retry
+                else ScanOutcome.Assisted(
+                    retry.rooms.map { it.copy(rect = null) }, AssistReason.ANGLED_VIEW, retry.notes,
+                )
         }
+    }
+
+    /**
+     * Does this sheet print its own room dimensions? The test that tells a PLAN apart from a
+     * PICTURE OF A HOUSE when the reader cannot.
+     *
+     * Deliberately blunt — a share, not a score, and set with a wide margin on both sides. The
+     * measured cases sit at 0 % (tilted aerial) and 100 % (two mislabelled plan sheets), so
+     * anything between roughly a third and nine tenths would separate them equally well; [MIN_SIZED_SHARE]
+     * is placed where a sheet has to be MOSTLY dimensioned to qualify. The floor of
+     * [MIN_PRINTED_TO_FIT] stops a two-room reply scoring 100 % on one caption.
+     *
+     * ⚠ Only ever used to decide whether a LAYOUT survives the 2D gate. It must never become a
+     * refusal of its own: plenty of honest plan sheets print no sizes at all, and they are read
+     * today exactly as they always were.
+     */
+    internal fun sheetPrintsItsOwnSizes(rooms: List<ScanBox>): Boolean {
+        if (rooms.size < MIN_PRINTED_TO_FIT) return false
+        val sized = rooms.count { RoomDimensions.of(it) != null }
+        return sized >= MIN_PRINTED_TO_FIT && sized.toDouble() / rooms.size >= MIN_SIZED_SHARE
     }
 
     /** The three refusals, in the order a user would want to hear them. */

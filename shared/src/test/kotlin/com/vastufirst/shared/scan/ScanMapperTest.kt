@@ -93,6 +93,49 @@ class ScanMapperTest {
     }
 
     @Test
+    fun `a sheet that prints its own sizes keeps its layout through the 3D gate`() {
+        // ⭐ THE OWNER'S 15 AUG 2026 REPORT. A flat, fully-dimensioned builder sheet that happens to
+        // be furnished and coloured gets called a 3D render by the reader. Before this, the offer
+        // behind the refusal handed over room names with NO positions — and unplaced rooms route
+        // straight to the guided grid, which is the journey he reported as the worst in the app.
+        //
+        // A marketing render never prints "10'0" X 12'0"" on a room; a plan sheet always does.
+        // Measured: the corpus's genuinely tilted street aerial reads 14 rooms with 0 sizes, while
+        // the two mislabelled flat sheets read 9/9 and 15/15 sized. See `sheetPrintsItsOwnSizes`.
+        val sized = draft(
+            box("LIVING ROOM", 0.0, 0.0, 0.6, 0.5).copy(printedSize = "19'0\" X 12'1\""),
+            box("KITCHEN", 0.6, 0.0, 0.4, 0.3).copy(printedSize = "11'0\" X 7'0\""),
+            box("MASTER BEDROOM", 0.0, 0.5, 0.5, 0.5).copy(printedSize = "11'0\" X 12'3\""),
+            box("TOILET", 0.5, 0.5, 0.5, 0.5).copy(printedSize = "8'0\" X 5'5\""),
+            type = PlanImageType.THREE_D_RENDER,
+        )
+        val out = assertIs<ScanOutcome.Refused>(ScanMapper.map(sized))
+        assertEquals(RefusalReason.NOT_2D, out.reason)
+        // The refusal itself is unchanged — the person is still told, and still chooses.
+        val alternative = assertIs<ScanOutcome.Placed>(out.ifRead)
+        assertTrue(
+            alternative.rooms.any { it.rect != null },
+            "a dimensioned sheet must keep its layout, or the offer still dumps the user on the grid",
+        )
+        // …and the guard still holds for a render that prints nothing: same rooms, sizes removed.
+        val unsized = draft(
+            box("LIVING ROOM", 0.0, 0.0, 0.6, 0.5),
+            box("KITCHEN", 0.6, 0.0, 0.4, 0.3),
+            box("MASTER BEDROOM", 0.0, 0.5, 0.5, 0.5),
+            box("TOILET", 0.5, 0.5, 0.5, 0.5),
+            type = PlanImageType.THREE_D_RENDER,
+        )
+        val stripped = assertIs<ScanOutcome.Assisted>(
+            assertIs<ScanOutcome.Refused>(ScanMapper.map(unsized)).ifRead,
+        )
+        assertEquals(AssistReason.ANGLED_VIEW, stripped.reason)
+        assertTrue(
+            stripped.rooms.all { it.rect == null },
+            "an undimensioned render must still hand the placing back to the person",
+        )
+    }
+
+    @Test
     fun `only the 3D gate can be argued with — every other refusal is our own arithmetic`() {
         val notAPlan = ScanMapper.map(goodDraft().copy(planType = PlanImageType.NOT_A_PLAN))
         val noLabels = ScanMapper.map(goodDraft().copy(hasRoomLabels = false))
