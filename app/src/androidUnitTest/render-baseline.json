@@ -19,6 +19,7 @@
   "home-empty": 0,
   "home-remove": 0,
   "home-rename": 0,
+  "home-rename-taken": 0,
   "home-scorechange": 4,
   "home-unfinished": 4,
   "home-unfinished-only": 0,

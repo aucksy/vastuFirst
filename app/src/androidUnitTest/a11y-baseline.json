@@ -8,6 +8,7 @@
   "home-empty": 0,
   "home-remove": 0,
   "home-rename": 2,
+  "home-rename-taken": 3,
   "home-unfinished": 2,
   "home-unreadable": 1,
   "legal": 4,
