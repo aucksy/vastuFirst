@@ -294,13 +294,19 @@ class EditorScreenshotTest {
 
     @Composable
     private fun ScannedButUnplaced() {
-        // ⭐ real-dense, deliberately, and NOT the Assisted fixture. This golden photographs the
-        // editor's unplaced STRIP, which is switched on by `roomsUnplaced` just below rather than
-        // by the outcome kind — so any reply with enough rooms drives it, and real-dense's
-        // nineteen is what the accepted baseline was measured on. Moving it to real-unsized's
-        // twenty-one adds two more sub-48 dp chips at 320 dp and raises the ratchet for no gain
-        // in coverage. Screens that genuinely need an Assisted outcome use RecordedScans.UNSIZED.
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        // ⭐⭐ real-unsized, and it MUST be an Assisted outcome — proved the expensive way.
+        //
+        // This golden photographs the editor's unplaced STRIP. The strip holds rooms that have no
+        // rectangle; `roomsUnplaced` below only tells the screen to SAY so. So the fixture's
+        // outcome kind is load-bearing after all: real-dense used to be Assisted (rooms with no
+        // geometry, drawn as strip chips), and once the lift rule went it PLACES — its rooms now
+        // carry rectangles and land on the grid as 28.5 dp cells instead. Pointing this back at
+        // real-dense to keep the ratchet quiet took the findings from 24 to 109: a different
+        // screen entirely, photographed under the old name.
+        //
+        // real-unsized keeps the strip and adds two rooms (21 vs 19), which is the whole of the
+        // +2 in this screen's raised baseline. Same finding, two more chips.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),
@@ -406,13 +412,19 @@ class EditorScreenshotTest {
 
     @Composable
     private fun RestoredUnplacedScan() {
-        // ⭐ real-dense, deliberately, and NOT the Assisted fixture. This golden photographs the
-        // editor's unplaced STRIP, which is switched on by `roomsUnplaced` just below rather than
-        // by the outcome kind — so any reply with enough rooms drives it, and real-dense's
-        // nineteen is what the accepted baseline was measured on. Moving it to real-unsized's
-        // twenty-one adds two more sub-48 dp chips at 320 dp and raises the ratchet for no gain
-        // in coverage. Screens that genuinely need an Assisted outcome use RecordedScans.UNSIZED.
-        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+        // ⭐⭐ real-unsized, and it MUST be an Assisted outcome — proved the expensive way.
+        //
+        // This golden photographs the editor's unplaced STRIP. The strip holds rooms that have no
+        // rectangle; `roomsUnplaced` below only tells the screen to SAY so. So the fixture's
+        // outcome kind is load-bearing after all: real-dense used to be Assisted (rooms with no
+        // geometry, drawn as strip chips), and once the lift rule went it PLACES — its rooms now
+        // carry rectangles and land on the grid as 28.5 dp cells instead. Pointing this back at
+        // real-dense to keep the ratchet quiet took the findings from 24 to 109: a different
+        // screen entirely, photographed under the old name.
+        //
+        // real-unsized keeps the strip and adds two rooms (21 vs 19), which is the whole of the
+        // +2 in this screen's raised baseline. Same finding, two more chips.
+        val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.UNSIZED)!!.reply)
         val (cols, rows) = gridForOutcome(outcome)
         GuidedGridContent(
             rooms = toGridRooms(outcome.scannedRooms(), cols, rows),

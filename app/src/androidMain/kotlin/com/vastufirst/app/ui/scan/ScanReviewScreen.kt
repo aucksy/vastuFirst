@@ -9,8 +9,13 @@
 //
 // ⭐⭐ REBUILT 10 AUG 2026, to three instructions from the owner:
 //   1. *"Tapping a room on the floor plan should also highlight it the same way it highlights when
-//      tapping the room on the list… Build a common UI/UX for this room highlight."* Both ends now
-//      call one handler, and the drawing lives in one component shared with the report.
+//      tapping the room on the list… Build a common UI/UX for this room highlight."* Both ends
+//      select the same room the same way, and the drawing lives in one component shared with the
+//      report.
+//      ⚠ AMENDED 16 AUG 2026, and read this before "restoring" one handler. Selection is shared and
+//      must stay shared. SCROLLING is not: it belongs to the plan end only, because only the plan
+//      can select a row that is below the fold. Sharing it meant tapping a row scrolled the row you
+//      were touching — the owner's complaint, *"tapping a room in the list makes the list jump"*.
 //   2. *"The floor plan on this screen should not scroll upwards, only the list of rooms should be
 //      scrollable."* The plan is pinned; the list scrolls under it.
 //   3. *"try to fit more rooms in visible below."* The rows lost a line each and the plan gained a
@@ -58,6 +63,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -68,7 +74,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
@@ -266,25 +271,48 @@ fun ScanReviewContent(
     // first time this went in. The mapper refuses a plan over twenty rooms, so the longest list this
     // can ever draw is twenty rows — laziness buys nothing here and costs the checks their eyes.
     val listScroll = rememberScrollState()
-    // ⚠ Declared out here, not inside the constraints block below: [tapRoom] closes over it and is
-    // defined above that block.
-    val rowTopMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
     val rowY = remember { mutableStateMapOf<String, Int>() }
+    /**
+     * Where the scrolling list's own top sits in the window. Recorded on the list itself below.
+     *
+     * ⚠ This is the whole of the jump fix. Row positions come back in ROOT coordinates, so a row at
+     * offset `c` inside the list reports `listTop + c - scroll`. Subtracting only a 24 dp margin —
+     * which is what this screen did until 16 Aug 2026 — leaves the entire pinned header in the
+     * target: back arrow, subtitle, the picture itself, the "N rooms read" label. That is roughly
+     * 400 dp on a normal phone, so every tap scrolled about five rows too far and threw the room the
+     * user had just tapped clean off the top of the list.
+     */
+    var listTopInRoot by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
     /**
-     * ⭐⭐ THE ONE HANDLER BOTH ENDS CALL. Tapping a room on the picture and tapping it in the list
-     * do the identical thing — select it, and bring its row into view — because they are the same
-     * function. The owner asked for exactly this ("works the same way if user taps the room in list
-     * or room on floor plan"), and two handlers is how that promise quietly breaks.
+     * ⭐⭐ BOTH ENDS STILL SELECT THE SAME ROOM THE SAME WAY. Tapping a room on the picture and
+     * tapping its row do the identical thing to the identical state — that is the owner's rule
+     * ("works the same way if user taps the room in list or room on floor plan") and it holds.
+     *
+     * ⚠ ONLY THE SCROLL DIFFERS, AND IT MUST. This function used to be one handler that always
+     * scrolled, and the owner reported the result on 16 Aug 2026: "tapping a room in the list makes
+     * the list jump". Scrolling is not part of "select a room" — it is how the PICTURE reaches a row
+     * the user cannot see, because the picture is pinned above the list and can select a room whose
+     * row is below the fold. A row you tapped with your own finger is already under it. Scrolling
+     * that is not consistency, it is moving the thing the user is touching.
+     *
+     * So: do not merge these two back into one. The promise is that both ends select identically,
+     * and they do.
      */
-    fun tapRoom(id: String) {
+    fun selectRoom(id: String) {
+        selected = if (selected == id) null else id
+    }
+
+    /** Tapping a room ON THE PINNED PICTURE — its row may be below the fold, so reveal it. */
+    fun tapRoomOnPlan(id: String) {
         val opening = selected != id
-        selected = if (opening) id else null
-        // Row positions are held in root coordinates and combined with the live scroll offset, so
-        // this works however deeply the row is nested — the same arithmetic the report uses.
+        selectRoom(id)
         if (opening) rowY[id]?.let { y ->
-            scope.launch { listScroll.animateScrollTo((listScroll.value + y - rowTopMarginPx).coerceAtLeast(0)) }
+            scope.launch {
+                // Against the LIST's own top, not the window's — see [listTopInRoot].
+                listScroll.animateScrollTo((listScroll.value + y - listTopInRoot).coerceAtLeast(0))
+            }
         }
     }
 
@@ -332,7 +360,7 @@ fun ScanReviewContent(
                 image = image,
                 rooms = planRooms,
                 selectedId = selected,
-                onTapRoom = ::tapRoom,
+                onTapRoom = ::tapRoomOnPlan,
                 maxPlanHeight = planCap,
             )
         } else {
@@ -383,6 +411,10 @@ fun ScanReviewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                // ⚠ BEFORE .verticalScroll, deliberately: here it reports the VIEWPORT's position in
+                // the window, which is what a scroll target must be measured against. Chained after
+                // the scroll it would report the moving CONTENT instead and the jump would return.
+                .onGloballyPositioned { listTopInRoot = it.positionInRoot().y.toInt() }
                 .verticalScroll(listScroll),
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
@@ -406,7 +438,8 @@ fun ScanReviewContent(
                     // was tried, photographed, and found breaking words in half at 320 dp.
                     note = room.type.label() + " · " + sizeNote(room),
                     selected = selected == pr.id,
-                    onTap = { tapRoom(pr.id) },
+                    // Select only. The row is already under the finger — see [selectRoom].
+                    onTap = { selectRoom(pr.id) },
                     modifier = Modifier.onGloballyPositioned { rowY[pr.id] = it.positionInRoot().y.toInt() },
                 )
             }

@@ -505,10 +505,17 @@ fun ReportContent(
 
             // ⭐ START HERE — the one thing to do first. The old report ranked its problems but never
             // said "begin with this", so a reader facing eight cards had to work out the entry point
-            // themselves. Always free: it is the single most useful sentence on the screen.
+            // themselves.
+            //
+            // ⚠ The comment here used to read "Always free: it is the single most useful sentence on
+            // the screen", and the code matched it — no lock check anywhere. That was the revenue
+            // leak: this card prints the top problem's layout change or first remedy, which is the
+            // one thing the ₹699 sells. Free readers whose worst problem sat on a paid room got that
+            // room's fix handed to them here, above the pay bar. The card is still always SHOWN and
+            // still always names the problem; only the fix now honours the lock.
             defects.firstOrNull()?.let { top ->
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
-                StartHere(top, a.roomResults, remediesOnly, roomNames)
+                StartHere(top, a.roomResults, remediesOnly, roomNames, unlocked = unlocked)
             }
 
             // ---- one list, not three chapters ------------------------------------------------
@@ -818,8 +825,30 @@ private fun StartHere(
     rooms: List<RoomResult>,
     remediesOnly: Boolean,
     names: Map<String, String> = emptyMap(),
+    /**
+     * ⭐⭐ THE PAYWALL, and the reason this parameter has no default.
+     *
+     * This card prints the top defect's **layout change or first remedy** — which is precisely the
+     * reasoning [FreeTier] sells. It rendered that with no lock check at all until 16 Aug 2026, so
+     * whenever a home's worst problem sat on a room outside the free three (a bedroom, the living
+     * room, a staircase, the pooja room…) the free reader was handed that room's fix, above the
+     * fold, before ever reaching the pay bar.
+     *
+     * It was invisible for two reasons, and both are worth keeping in mind before trusting a golden
+     * here. The bundled demo home's worst defect is a toilet in the North-East, and a toilet is
+     * free — so no screenshot ever photographed the leak. And the one test that guarded the locked
+     * report asserted only that a paid room's `explanation` was absent, while this card never
+     * prints `explanation`; it prints `layoutFix` and `remedyLine`.
+     *
+     * The NAME and the VERDICT stay free, exactly as they do on every locked room row — the heading,
+     * "this moves your score most", and the problem's own title are all still shown. Only the fix is
+     * withheld, and it says so rather than vanishing, because a card that silently loses a line is
+     * the "hidden wall" Product PRD §6.4 forbids.
+     */
+    unlocked: Boolean,
 ) {
     val colors = VastuTheme.colors
+    val free = unlocked || d.isFreeToRead(rooms)
     VastuCard(accent = colors.verdictDefect, background = colors.surfaceRaised) {
         SectionLabel("Start here", color = colors.verdictDefect)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -848,7 +877,11 @@ private fun StartHere(
                 verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
             ) {
                 SectionLabel("Do this first", color = colors.secondaryText)
-                VText(first, style = VastuTheme.type.bodySm, color = colors.textPrimary)
+                if (free) {
+                    VText(first, style = VastuTheme.type.bodySm, color = colors.textPrimary)
+                } else {
+                    VText(LOCKED_REASONING, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+                }
             }
         }
     }

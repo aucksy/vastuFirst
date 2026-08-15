@@ -106,7 +106,13 @@ fun RoomStatusPill(status: VastuRoomStatus, modifier: Modifier = Modifier) =
  * which works the same way if user taps the room in list or room on floor plan"*. This row is the
  * list half of it. Tapping it does BOTH things at once — it marks the room on the plan above and it
  * opens the room's reasoning — so there is exactly one target, one outcome, and nothing to learn.
- * Tapping the same room on the plan calls the identical handler, so the two ends cannot drift apart.
+ * Tapping the same room on the plan selects the identical room, so the two ends cannot drift apart.
+ *
+ * ⚠ AMENDED 16 AUG 2026, on the scan review screen only. The plan's handler there additionally
+ * scrolls the list; this row's does not. Both still SELECT identically, which is the promise. Only
+ * the plan can select a row that is off the screen, and a row the user has just touched needs no
+ * revealing — scrolling it moved the thing under their finger, which the owner reported as the list
+ * jumping. Do not "restore consistency" by making a row tap scroll again.
  *
  * ⚠ ONE tap target, deliberately, not two. A separate chevron control would be a second ≥48 dp
  * target inside a row that is already carrying a circle, a name, two pills and an arrow — at 320 dp

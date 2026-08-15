@@ -5,9 +5,15 @@
 // a common UI/UX for this room highlight in the list which works the same way if user taps the room
 // in list or room on floor plan"*.
 //
-// The list half of that behaviour is `VastuRoomRow`; this is the plan half. Both call the SAME
-// handler with the SAME room, so "tap it here" and "tap it there" cannot drift apart — which is the
-// whole of what he asked for, and the thing two separate implementations would quietly lose.
+// The list half of that behaviour is `VastuRoomRow`; this is the plan half. Both SELECT the same
+// room the same way, so "tap it here" and "tap it there" cannot drift apart — which is the whole of
+// what he asked for, and the thing two separate implementations would quietly lose.
+//
+// ⚠ AMENDED 16 AUG 2026. The review screen gives this component a handler that ALSO scrolls its
+// list, while the row gets one that only selects. That is not drift — it is the difference between
+// the two ends. This plan is pinned above the list, so it can select a room whose row is off the
+// screen and something has to reveal it; a row the user tapped is already under their finger.
+// Scrolling that was the owner's *"tapping a room in the list makes the list jump"*.
 package com.vastufirst.app.ui.common
 
 import androidx.compose.foundation.Canvas

@@ -108,6 +108,81 @@ class ReportIntentTest {
     }
 
     /**
+     * ⭐⭐ THE "START HERE" CARD MUST NOT GIVE AWAY A PAID ROOM'S FIX — the revenue leak, pinned.
+     *
+     * Until 16 Aug 2026 this card printed the top defect's layout change (or its first remedy) with
+     * no lock check at all. Whenever a home's worst problem sat on a room outside the free three,
+     * the free reader was handed that room's fix above the fold, before the pay bar.
+     *
+     * ⚠ TWO REASONS NOTHING CAUGHT IT, both of which this test is shaped to defeat:
+     *
+     *   · The bundled sample's worst defect is a TOILET, and toilets are free — so the leak was
+     *     invisible on the only home any test or golden has ever drawn. This test therefore builds a
+     *     home whose worst defect sits on a PAID room, rather than trusting the sample's ordering.
+     *   · [an_unpaid_report_does_not_carry_the_locked_reasoning] above asserts on `explanation`.
+     *     This card never prints `explanation` — it prints `layoutFix` and the remedy line. Guarding
+     *     one field said nothing about the other.
+     *
+     * Both directions are asserted. A test that only checks the text is absent when locked would
+     * pass just as happily if the card stopped rendering, or if the fixture carried no fix at all.
+     */
+    @Test
+    fun the_start_here_card_hides_a_paid_room_s_fix_until_it_is_paid_for() = runComposeUiTest {
+        val paidTop = analysis.defects.firstOrNull {
+            !it.isFreeToRead(analysis.roomResults) && !it.layoutFix.isNullOrBlank()
+        }
+        assertTrue(
+            "the sample must carry a paid-room defect that has a layout fix, or this proves nothing",
+            paidTop != null,
+        )
+        // Worst-problem-first is what the card reads, so put the paid one there deliberately rather
+        // than hoping the engine's ranking happens to.
+        val worstIsPaid = analysis.copy(
+            defects = listOf(paidTop!!) + analysis.defects.filter { it !== paidTop },
+        )
+        val fix = paidTop.layoutFix!!.take(40)
+
+        setContent {
+            VastuTheme {
+                ReportContent(
+                    analysis = worstIsPaid, intent = Intent.BUILDING, unlocked = false, expandAll = true,
+                )
+            }
+        }
+        assertTrue(
+            "\"Start here\" must not print a paid room's fix while the report is locked: \"$fix…\"",
+            onAllNodesWithText(fix, substring = true).fetchSemanticsNodes().isEmpty(),
+        )
+        // …and the card is still there, still naming the problem. Hiding the row entirely would be
+        // the "hidden wall" the free tier forbids.
+        onNodeWithText("Start here", substring = true, ignoreCase = true).assertExists()
+    }
+
+    /** The other half: once paid, that same sentence must actually appear. */
+    @Test
+    fun the_start_here_card_shows_the_fix_once_the_report_is_unlocked() = runComposeUiTest {
+        val paidTop = analysis.defects.first {
+            !it.isFreeToRead(analysis.roomResults) && !it.layoutFix.isNullOrBlank()
+        }
+        val worstIsPaid = analysis.copy(
+            defects = listOf(paidTop) + analysis.defects.filter { it !== paidTop },
+        )
+        val fix = paidTop.layoutFix!!.take(40)
+        setContent {
+            VastuTheme {
+                ReportContent(
+                    analysis = worstIsPaid, intent = Intent.BUILDING, unlocked = true, expandAll = true,
+                )
+            }
+        }
+        assertTrue(
+            "a PAID report must still show the fix — otherwise the locked assertion above could " +
+                "pass because the card renders nothing at all: \"$fix…\"",
+            onAllNodesWithText(fix, substring = true).fetchSemanticsNodes().isNotEmpty(),
+        )
+    }
+
+    /**
      * Neither the layout block, nor the "if you ever renovate" demotion it used to become — nor the
      * MOVE_IT remedy.
      *
