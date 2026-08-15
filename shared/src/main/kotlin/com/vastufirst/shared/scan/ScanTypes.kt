@@ -213,6 +213,28 @@ data class ScannedRoom(
      * wall, not of the page, so on a sheet with wide margins the tint sits offset. The screen says
      * "roughly" in as many words. Appended LAST with a default — fixture code builds ScannedRoom
      * positionally (see the note on [ScanBox]).
+     *
+     * ⭐⭐ **THIS RECTANGLE IS NOT RE-SHAPED FROM THE PRINTED CAPTION, AND THAT IS THE RULING**
+     * (15 Aug 2026). Between 10 and 15 August it was: each box was redrawn at the size its own
+     * caption states, at the sheet's fitted scale, about the reader's centre. The reasoning was
+     * sound — the reader transcribes printed text at ~95 % and guesses rectangles at 40–70 % — and
+     * it is still exactly right for the GRID, which is a statement about the HOME.
+     *
+     * It is wrong here, because this box is a statement about the PICTURE, and **a builder's sheet
+     * is not always drawn to its own captions.** Both of the owner's plans prove it:
+     *
+     *   · his Gurgaon sheet prints its second toilet 8'0" x 5'5" and DRAWS it taller than wide;
+     *   · his Green Court sheet prints its kitchen 2920 x 2100 and draws it neither.
+     *
+     * Marked by hand against the two sheets (`tools/scan-eval/truth-rooms.json`) and scored room by
+     * room, the caption-shaped box covered its own room 56 % on that toilet and 51 % on that
+     * kitchen; the reader's own rectangle covers them 75 % and 95 %. Across every recorded read
+     * from the reader we ship, the caption turned **one room in three** ninety degrees away from
+     * the way its sheet draws it. A box turned across the room it names is the exact thing the
+     * owner photographed and said "does not match the room".
+     *
+     * The captions keep the job they are good at: `ScanMapper.reshapeToPrinted` shapes the grid,
+     * and therefore the score, from them. Nothing about that changed.
      */
     val source: ScanBox? = null,
     /**
@@ -230,33 +252,6 @@ data class ScannedRoom(
      * positionally (see the note on [ScanBox]).
      */
     val readInParts: List<String> = emptyList(),
-    /**
-     * ⭐⭐ THE BOX TO DRAW ON THE PHOTOGRAPH — this room at the size its own caption PRINTS, rather
-     * than the size the reader guessed. Null when the caption printed no size, when the sheet had
-     * too few sized rooms to fit a scale, or when the printed size disagreed with the reader so
-     * wildly it must be a misread (see `ScanMapper.tightenToPrinted`). Drawing falls back to
-     * [source], which is what every screen did before this existed.
-     *
-     * ⚠⚠ **WHY THIS IS A SECOND FIELD AND NOT A BETTER [source].** It was one field first, and the
-     * measurement said no. [source] has quietly had TWO jobs since 6 Aug 2026: it tints the review
-     * screen, and — through the UNION of every room's box — it is the frame a tap on the photo is
-     * converted through to place the FRONT DOOR, the highest-weighted element the engine scores.
-     * The two jobs want different rectangles. The tint wants each room's true extent. The frame
-     * wants the home's outline, and it has been tuned against that behaviour through several
-     * releases.
-     *
-     * Correcting [source] in place did fix the tint — every sized plan's rooms went from disagreeing
-     * about their sheet's scale by 33–129 % to agreeing exactly — but it also moved the front door
-     * on **182 of 2888 sampled taps across eight recorded plans**, which is a score change nobody
-     * asked for. Measured, not predicted; the owner's instruction was "I cant have you messing up
-     * what is already working". So the corrected box is carried alongside, the picture uses it, and
-     * the door maths keeps the exact rectangle it has always had.
-     *
-     * Whether the DOOR should also move to these boxes is a real open question — the frame they
-     * describe is measured rather than padded, so it is probably better — but it is a separate
-     * change with its own before-and-after, not a side effect of fixing a picture.
-     */
-    val printedBox: ScanBox? = null,
 )
 
 /** Why the geometry was thrown away and the rooms handed over unplaced. */

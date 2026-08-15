@@ -1964,6 +1964,11 @@ function scanMap(draft, imageAspect, opts = {}) {
   // empty region BETWEEN rooms is honest (an unread corridor), an empty region outside them is
   // not. Never below the editor's MIN_GRID.
   // FAULT INJECTION 'no-edge-collapse' keeps the dead strips (the v0.6.4 state).
+  // `offC/offR` and `preCols/preRows` are recorded ONLY so a caller can undo this map and read a
+  // cell back as a position on the original sheet — the grid is built over `frame`, and after the
+  // collapse a cell number no longer means the same place. Nothing in the mapper reads them.
+  let offC = 0, offR = 0;
+  const preCols = cols, preRows = rows;
   if (inject !== 'no-edge-collapse') {
     const minC = Math.min(...placed.map((p) => p.rect.col));
     const minR = Math.min(...placed.map((p) => p.rect.row));
@@ -1975,13 +1980,21 @@ function scanMap(draft, imageAspect, opts = {}) {
           if (p[k]) p[k] = { ...p[k], col: p[k].col - minC, row: p[k].row - minR };
         }
       }
+      offC = minC;
+      offR = minR;
       cols = Math.max(maxC - minC, MIN_GRID);
       rows = Math.max(maxR - minR, MIN_GRID);
     }
   }
   const out = placed.slice().sort((a, b) => a.rect.row - b.rect.row || a.rect.col - b.rect.col)
-    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped, strip: p.strip }));
-  return { kind: 'placed', cols, rows, rooms: out, notes: notes(), sanitised: clean, roundedAway, lostWithFreeCorner };
+    // ⚠ `box` is the reader's own rectangle, carried through UNCHANGED for tooling that has to
+    // relate a placed cell back to the sheet it was read from. It is debug data: the app takes the
+    // reader's rectangle from ScannedRoom.source, never from here.
+    .map((p) => ({ type: p.c.type, label: p.c.box.label, rect: p.rect, asRead: p.asRead, printed: p.printed, shaped: p.shaped, strip: p.strip, box: p.c.box }));
+  return {
+    kind: 'placed', cols, rows, rooms: out, notes: notes(), sanitised: clean, roundedAway,
+    lostWithFreeCorner, frame, preCols, preRows, offC, offR,
+  };
 }
 
 /** Every invariant the editor guarantees, asserted on what the mapper emits. */

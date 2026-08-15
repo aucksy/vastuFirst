@@ -1,0 +1,35 @@
+{
+  "_README": [
+    "WHERE EACH ROOM ACTUALLY IS, in fractions of the whole sheet, read off the plan by eye against",
+    "a 5 % grid (exp-truth-boxes.py grid <stem>). This is the only ground truth in the scan tooling:",
+    "everything else scores the review boxes against each other, which cannot answer 'does the box",
+    "sit on the room'. Worth about a percent either way — enough to separate 'on the room' from",
+    "'half on the neighbour', not enough to rank two drawings a point apart.",
+    "Labels are the reader's own captions, so a drawing can be matched to a room. Where a sheet",
+    "repeats a caption (three balconies), the match is made on the READER's rectangle, which is the",
+    "same for every drawing being compared, so no drawing can win by claiming a different room.",
+    "ADD A SHEET ONLY BY LOOKING AT IT. Never copy these from a model reply — that is the thing",
+    "being judged."
+  ],
+  "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)": [
+    { "label": "MASTER BEDROOM", "x": 0.154, "y": 0.232, "w": 0.226, "h": 0.208 },
+    { "label": "BEDROOM", "x": 0.386, "y": 0.1525, "w": 0.211, "h": 0.22 },
+    { "label": "BALCONY", "x": 0.420, "y": 0.054, "w": 0.145, "h": 0.091 },
+    { "label": "BALCONY", "x": 0.184, "y": 0.126, "w": 0.168, "h": 0.094 },
+    { "label": "BALCONY", "x": 0.645, "y": 0.280, "w": 0.167, "h": 0.094 },
+    { "label": "MASTER TOILET", "x": 0.160, "y": 0.453, "w": 0.174, "h": 0.099 },
+    { "label": "TOILET", "x": 0.347, "y": 0.453, "w": 0.113, "h": 0.146 },
+    { "label": "LIVING/DINING", "x": 0.406, "y": 0.373, "w": 0.458, "h": 0.227 },
+    { "label": "KITCHEN", "x": 0.539, "y": 0.6125, "w": 0.209, "h": 0.100 },
+    { "label": "SERVICE BALCONY", "x": 0.414, "y": 0.6125, "w": 0.125, "h": 0.100 }
+  ],
+  "greencourt-336-branded": [
+    { "label": "BALCONY", "x": 0.409, "y": 0.156, "w": 0.310, "h": 0.115 },
+    { "label": "BED ROOM", "x": 0.519, "y": 0.273, "w": 0.200, "h": 0.216 },
+    { "label": "WC", "x": 0.410, "y": 0.327, "w": 0.104, "h": 0.065 },
+    { "label": "BATH", "x": 0.410, "y": 0.394, "w": 0.104, "h": 0.075 },
+    { "label": "KITCHEN", "x": 0.410, "y": 0.472, "w": 0.103, "h": 0.143 },
+    { "label": "LOBBY", "x": 0.513, "y": 0.488, "w": 0.204, "h": 0.264 },
+    { "label": "PASSAGE", "x": 0.649, "y": 0.752, "w": 0.068, "h": 0.173 }
+  ]
+}

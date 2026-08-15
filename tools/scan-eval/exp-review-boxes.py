@@ -7,19 +7,24 @@ highlight box was plainly bigger than the room it named. That screen is the one 
 asked to confirm we understood their home, so a box that does not sit on its room is the difference
 between trust and "this thing is broken".
 
-Reading the code alone cannot settle it: the drawn box is the end of a three-step chain, and each
-step is defended by its own comment.
+⚠ THIS TOOL DRAWS A BEHAVIOUR THE APP NO LONGER HAS. On 15 Aug 2026 the "tighten" step below was
+REMOVED: it was the fault, not the fix (see `exp-truth-boxes.py`, and the note on
+`ScannedRoom.source`). The app now draws step 1 and stops. This is kept because it reproduces the
+old drawing beside the new one, which is how the removal was justified — but nothing here describes
+what ships. For anything about the CURRENT drawing use `exp-truth-boxes.py`.
+
+The chain it reproduces:
 
   1. page box   = building.xy + room.xy * building.wh   (prompt v4: room fractions are measured
-                  inside the BUILDING, not the sheet, so drawing them on the sheet is wrong)
+                  inside the BUILDING, not the sheet, so drawing them on the sheet is wrong).
+                  ⭐ THIS, ALONE, IS WHAT THE APP DRAWS TODAY.
   2. tighten    = resize to the PRINTED proportions about the box's own centre, using a single
-                  median scale fitted long-against-long over every dimensioned room
-  3. draw       = printedBox if the tighten changed it, else the reader's own rectangle
-                  (ScanReviewScreen.planRoomsOf)
+                  median scale fitted long-against-long over every dimensioned room. REMOVED.
+  3. draw       = the tightened box where step 2 changed it. REMOVED.
 
-This renders step 1 and step 3 side by side so the correction can be SEEN, not argued about.
-  RED    = what the reader returned, composed onto the page (step 1)
-  GREEN  = what the review screen actually draws (step 3)
+It renders step 1 and step 3 side by side so the difference can be SEEN, not argued about.
+  RED    = what the reader returned, composed onto the page (step 1) — today's drawing
+  GREEN  = what the review screen drew between 10 and 15 August (step 3)
 
     python tools/scan-eval/exp-review-boxes.py "<stem in out/live>"
 

@@ -135,9 +135,11 @@ fun planRoomsOf(rooms: List<ScannedRoom>): List<PlanRoom> {
             id = scanRoomId(i),
             type = r.type,
             name = r.label.ifBlank { names[i] },
-            // The printed-size box when the plan stated one, else the reader's own rectangle. Only
-            // the PICTURE uses the corrected box — the front-door frame keeps `source`, deliberately.
-            box = r.printedBox ?: r.source,
+            // ⭐ The reader's own rectangle, drawn as read. It is deliberately NOT re-shaped from
+            // the size the caption prints: this box is drawn ON THE PHOTOGRAPH, and a builder's
+            // sheet is not always drawn to its own captions. See the note on [ScannedRoom.source]
+            // for the room-by-room measurement against both of the owner's plans.
+            box = r.source,
         )
     }
 }

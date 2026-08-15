@@ -13,7 +13,7 @@
 // Output: tools/scan-eval/out/render/<id>.svg + index.html (open in a browser).
 //
 // ⚠ --only=X is REQUIRED in argv — importing sim.mjs without it runs the fuzz suites.
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename, resolve } from 'node:path';
 import { scanMap, parsePrinted, printedTextOf } from '../grid-prototype/sim.mjs';
@@ -94,6 +94,21 @@ function svgFor(id, out) {
 }
 
 const jobs = [];
+// --live adds EVERY recorded reply in out/live, not just the three the audit corpus pins. Those
+// three are the ones with frozen fixtures; the rest are still real paid reads of real sheets, and a
+// change to the drawing has to be judged against all of them before it is believed.
+if (process.argv.includes('--live')) {
+  const dir = join(HERE, 'out', 'live');
+  for (const f of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
+    const raw = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+    const reply = typeof raw.reply === 'string' ? JSON.parse(raw.reply) : (raw.reply || raw);
+    if (!reply || !Array.isArray(reply.rooms)) continue;
+    jobs.push({
+      id: f.replace(/\.json$/, ''), reply, image: null,
+      aspect: raw.imageSize ? raw.imageSize[0] / raw.imageSize[1] : 1,
+    });
+  }
+}
 if (REPLY_PATH) {
   const raw = JSON.parse(readFileSync(resolve(REPLY_PATH), 'utf8'));
   const reply = raw.reply || raw;
@@ -117,10 +132,21 @@ for (const job of jobs) {
   writeFileSync(join(OUT, `${job.id}.geom.json`), JSON.stringify({
     id: job.id, kind: out.kind, reason: out.reason || null,
     cols: out.cols || 0, rows: out.rows || 0,
+    // Enough to undo the grid: the grid is laid over `frame` (the rooms' own bounding box on the
+    // sheet) at preCols x preRows, and the edge collapse then subtracted offC/offR. exp-grid-boxes
+    // reverses that to read a cell back as a place on the photo.
+    frame: out.frame || null, preCols: out.preCols || 0, preRows: out.preRows || 0,
+    offC: out.offC || 0, offR: out.offR || 0,
+    building: job.reply.building || null,
     rooms: (out.rooms || []).map((r) => ({
       type: r.type, label: r.label, rect: r.rect || null,
+      // `shaped` is the room before the overlap trim cut it; `asRead` is the rectangle the placement
+      // was derived from. A trimmed rect's centre is not the room's centre, so anything reading a
+      // position back off the grid needs the untrimmed one to compare against.
+      shaped: r.shaped || null, asRead: r.asRead || null,
       printed: r.printed ? { w: r.printed.w, h: r.printed.h } : null,
       strip: r.strip || null,
+      read: r.box ? { x: r.box.x, y: r.box.y, w: r.box.w, h: r.box.h, size: r.box.size || null } : null,
     })),
   }, null, 1));
   const caption = out.kind === 'placed'
