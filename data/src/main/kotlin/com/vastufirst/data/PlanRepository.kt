@@ -30,9 +30,51 @@ data class SavedPlan(
 )
 
 /**
+ * ⭐ HOW TWO HOME NAMES ARE COMPARED FOR "THE SAME NAME" — the one definition, used everywhere.
+ *
+ * Trimmed, runs of blanks squeezed to one, and lower-cased. The test is not "are these the same
+ * string" but "would a person scanning the saved-homes list be able to tell these two rows apart",
+ * and "Dwarka flat", "dwarka flat" and "Dwarka  flat" fail that test identically.
+ *
+ * ⚠ NO REGULAR EXPRESSION, on purpose. This module is unit-tested on the JVM but runs on Android,
+ * whose regex engine treats character classes differently — a difference that has already cost this
+ * project five releases. Splitting on the two blank characters by hand cannot behave differently on
+ * the two platforms. `lowercase()` with no argument is locale-invariant for the same reason.
+ */
+fun homeNameKey(name: String): String =
+    name.trim().split(' ', '\t').filter { it.isNotEmpty() }.joinToString(" ").lowercase()
+
+/**
+ * ⭐ The next auto name no existing home already answers to.
+ *
+ * ⚠ [nextHomeNumber] alone is NOT enough, and the hole is easy to fall into: its pattern is exact
+ * and case-sensitive, so a user who renames a home to "home 4" is invisible to it — it hands the
+ * next new home the name "Home 4", and the list then carries two rows nobody can tell apart. This
+ * keeps stepping until the name is genuinely free under [homeNameKey].
+ */
+fun freshHomeName(existingNames: List<String>): String {
+    val taken = existingNames.map(::homeNameKey).toSet()
+    var n = nextHomeNumber(existingNames)
+    while (homeNameKey("Home $n") in taken) n++
+    return "Home $n"
+}
+
+/**
+ * True when [candidate] is already the name of some other home. [otherNames] must NOT contain the
+ * name of the home being renamed, so keeping its own name — or only fixing its capitals — is always
+ * allowed. Pure, so it is unit-tested.
+ */
+fun homeNameAlreadyTaken(candidate: String, otherNames: List<String>): Boolean {
+    val key = homeNameKey(candidate)
+    return key.isNotEmpty() && otherNames.any { homeNameKey(it) == key }
+}
+
+/**
  * The next free "Home N" number, given the existing home names: one past the highest number that
  * already appears as "Home <n>", or 1 when there are none. Using max+1 (not count+1) means deleting
  * a home never makes the next new one collide with a surviving name. Pure, so it is unit-tested.
+ *
+ * ⚠ Callers naming a NEW home want [freshHomeName], not this — see the hole described there.
  */
 fun nextHomeNumber(existingNames: List<String>): Int {
     val highest = existingNames
@@ -172,6 +214,14 @@ class PlanRepository(
      *  delete never causes a duplicate. Reads only the names (cheap). */
     suspend fun nextHomeNumber(): Int = withContext(io) {
         nextHomeNumber(queries.selectNames().executeAsList())
+    }
+
+    /**
+     * The name to give a brand-new home: the next "Home N" that no saved home already answers to,
+     * however it is capitalised or spaced. See [freshHomeName] for the hole this closes.
+     */
+    suspend fun nextHomeName(): String = withContext(io) {
+        freshHomeName(queries.selectNames().executeAsList())
     }
 
     suspend fun delete(id: String): Unit = withContext(io) { queries.deleteById(id) }

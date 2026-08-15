@@ -94,12 +94,61 @@ fun toGridRooms(rooms: List<ScannedRoom>, cols: Int, rows: Int): List<GridRoom> 
     var col = 0
     var row = 0
     return rooms.mapIndexedNotNull { i, r ->
-        if (row + h > rows) return@mapIndexedNotNull null   // out of canvas; the rest stay unplaced
+        if (row + h > rows) return@mapIndexedNotNull null   // out of canvas; see [roomsOffTheGrid]
         val cell = CellRect(col, row, w, h)
         col += w
         if (col + w > cols) { col = 0; row += h }
         r.toGridRoom(i, cell)
     }
+}
+
+/**
+ * How many rooms the provisional strip above can actually hold on a [cols] × [rows] grid.
+ *
+ * ⚠ The SAME arithmetic the packing loop runs, written once. On the 10 × 10 grid an unplaced read
+ * always draws on, two-by-two tiles give five across and five down — twenty-five rooms, and the
+ * whole grid used up.
+ */
+fun unplacedStripCapacity(cols: Int, rows: Int): Int {
+    val w = if (cols >= 2) 2 else 1
+    val h = if (rows >= 2) 2 else 1
+    return (cols / w) * (rows / h)
+}
+
+/**
+ * ⭐ The rooms that will NOT reach the grid — so the screen can say so instead of losing them.
+ *
+ * ⚠ THIS IS A SILENCE BEING FIXED, NOT A LIMIT BEING RAISED. The packing loop above returns null
+ * for every room past the grid's capacity, and nobody was told: the reader's own list said "we found
+ * 26 rooms", the user tapped through, and 25 arrived. The missing one was not in the "we also saw,
+ * but didn't add" list either, because that list is built by the plan reader and this loss happens
+ * two screens later. A room that vanishes between one screen and the next is the exact failure this
+ * whole flow is built to prevent.
+ *
+ * It is reachable. A plan over twenty rooms is not refused — it is downgraded to an ASSISTED read,
+ * which still carries every room it named, and an assisted read is precisely the one that goes
+ * through the packing loop.
+ *
+ * Empty for a placed read: those rooms carry their own rectangles from the plan and never pack.
+ */
+fun roomsOffTheGrid(rooms: List<ScannedRoom>, cols: Int, rows: Int): List<ScannedRoom> {
+    if (rooms.isEmpty() || rooms.all { it.rect != null }) return emptyList()
+    return rooms.drop(unplacedStripCapacity(cols, rows))
+}
+
+/**
+ * The same two questions asked about a whole reading, so a screen never has to work out for itself
+ * which grid this outcome's rooms are going onto — [gridForOutcome] is asked once, here.
+ */
+fun roomsOffTheGrid(outcome: ScanOutcome): List<ScannedRoom> {
+    val (cols, rows) = gridForOutcome(outcome)
+    return roomsOffTheGrid(outcome.scannedRooms(), cols, rows)
+}
+
+/** How many rooms the grid this outcome will be drawn on can hold. */
+fun gridCapacityFor(outcome: ScanOutcome): Int {
+    val (cols, rows) = gridForOutcome(outcome)
+    return unplacedStripCapacity(cols, rows)
 }
 
 private fun ScannedRoom.toGridRoom(index: Int, rect: CellRect) = GridRoom(

@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.data.SavedDraft
 import com.vastufirst.data.SavedPlan
 import com.vastufirst.data.UnreadableHome
+import com.vastufirst.data.homeNameAlreadyTaken
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.EmptyState
 import com.vastufirst.designsystem.components.IconTapButton
@@ -49,6 +50,7 @@ import com.vastufirst.designsystem.components.scoreOutOfTen
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.relativeUpdated
+import com.vastufirst.app.ui.common.rememberDayClock
 import com.vastufirst.app.ui.common.screenRoot
 import org.koin.androidx.compose.koinViewModel
 
@@ -71,8 +73,16 @@ fun HomeScreen(
     val saved by viewModel.plans.collectAsStateWithLifecycle()
     val scoreChanges by viewModel.scoreChanges.collectAsStateWithLifecycle()
     val drafts by viewModel.drafts.collectAsStateWithLifecycle()
+    // ⭐ THE DATES FOLLOW THE CALENDAR, NOT THE MOMENT THE SCREEN OPENED. Every row's "today" used to
+    // be measured against a clock read once, when this screen was first drawn — so an app left open
+    // across midnight went on calling yesterday "today" until something rebuilt the screen.
+    //
+    // ⚠ It is supplied HERE and never inside [HomeContent], whose own default stays a plain one-shot
+    // reading. HomeContent is what the screenshot harness draws, and a clock that waits forever
+    // would stop that harness ever seeing the screen as finished. See [rememberDayClock].
     HomeContent(
         plans = saved.plans,
+        now = rememberDayClock(),
         unreadable = saved.unreadable,
         onAddHome = onAddHome,
         onOpenPlan = onOpenPlan,
@@ -234,6 +244,13 @@ fun HomeContent(
                 currentName = plan.name,
                 onCancel = { renaming = null },
                 onSave = { newName -> onRename(plan.id, newName); renaming = null },
+                // ⭐ EVERY name on this screen, not only the finished homes. A home this build cannot
+                // open is listed by name in the card above, and an unfinished one is listed by name
+                // in "Still to finish" — so a name matching either of those makes two rows on THIS
+                // screen read identically, which is the whole defect.
+                otherNames = plans.filter { it.id != plan.id }.map { it.name } +
+                    unreadable.map { it.name } +
+                    drafts.mapNotNull { it.draft.name },
             )
         }
     }
@@ -464,15 +481,33 @@ private fun PlanRow(plan: SavedPlan, now: Long, onOpen: (String) -> Unit, onRena
 /**
  * The rename box (its own composable so the screenshot harness can render it without a live Dialog
  * window / Activity). Pre-filled with the current name; Save is disabled until the name is non-blank.
+ *
+ * ⭐ AND UNTIL THE NAME IS NOT ALREADY IN USE. Two homes could be given the same name, and the list
+ * above then showed two rows a person cannot tell apart — so opening one, or deleting one, was a
+ * coin flip on somebody's own saved work. The name is the ONLY thing distinguishing two rows, which
+ * is why this is refused at the point of typing rather than patched up afterwards with a number the
+ * user did not choose.
+ *
+ * ⚠ Refused OUT LOUD. A greyed-out button with no sentence next to it is the same silence, dressed
+ * differently: the user retypes the same name and gets the same nothing.
  */
 @Composable
 fun RenameDialogContent(
     currentName: String,
     onCancel: () -> Unit,
     onSave: (String) -> Unit,
+    /**
+     * Every OTHER name already on the saved-homes screen — finished homes, homes this build cannot
+     * open, and unfinished ones. The home being renamed is not in here, so keeping its own name
+     * (or only changing its capitals) is always allowed.
+     */
+    otherNames: List<String> = emptyList(),
 ) {
     val colors = VastuTheme.colors
     var text by remember(currentName) { mutableStateOf(currentName) }
+    // ⚠ The SAME comparison the auto-namer uses, imported rather than re-written. Two definitions of
+    // "the same name" is how the box refuses a name the app itself would go on to mint.
+    val taken = homeNameAlreadyTaken(text, otherNames)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -482,11 +517,16 @@ fun RenameDialogContent(
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
     ) {
         VText("Rename this home", style = VastuTheme.type.h3, color = colors.textPrimary)
+        // ⚠ The field's OWN error slot, not a line of red text underneath it. The design system
+        // already owns this state: it reddens the border and the label as well as printing the
+        // sentence, all from tokens whose contrast is already declared — so the message cannot be
+        // missed by someone who is looking at the box they are typing in rather than below it.
         VastuTextField(
             value = text,
             onValueChange = { text = it },
             label = "Home name",
             placeholder = "e.g. Dwarka flat",
+            error = if (taken) "You already have a home called this. Please pick a different name." else null,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             VastuButton(
@@ -499,7 +539,7 @@ fun RenameDialogContent(
             VastuButton(
                 "Save",
                 onClick = { onSave(text) },
-                enabled = text.isNotBlank(),
+                enabled = text.isNotBlank() && !taken,
                 large = false,
                 modifier = Modifier.weight(1f),
             )

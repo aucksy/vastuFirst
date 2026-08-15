@@ -253,6 +253,9 @@ private fun DoneBody(
                 "Mark North, then check each one — nothing is scored until you say it's right.",
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },
+            // A placed read carries its own rectangles and never packs, so nothing can fall off.
+            offGrid = emptyList(),
+            gridCapacity = gridCapacityFor(outcome),
             // The button names the screen it opens, and that is the North dial now.
             cta = "Next — which way is North?",
             onUseRooms = { onUseRooms(outcome) },
@@ -298,6 +301,12 @@ private fun DoneBody(
             },
             rooms = outcome.rooms,
             dropped = outcome.notes.dropped.map { it.label to it.reason },
+            // ⭐ An assisted read is the ONE path that packs rooms onto the grid, so it is the one
+            // path where a room can fall off the end of it.
+            // ⚠ The plan's own caption, falling back to the room type — a ScannedRoom's label is
+            // verbatim sheet text and CAN be blank, and "Not on it: , ." names nothing.
+            offGrid = roomsOffTheGrid(outcome).map { it.label.ifBlank { it.type.label() } },
+            gridCapacity = gridCapacityFor(outcome),
             cta = "Place them on the grid",
             onUseRooms = { onUseRooms(outcome) },
             onCorrectRoom = onCorrectRoom,
@@ -379,6 +388,13 @@ private fun RoomsBody(
     body: String,
     rooms: List<ScannedRoom>,
     dropped: List<Pair<String, DropReason>>,
+    /**
+     * ⭐ The names of the rooms that will not fit on the drawing grid — see [roomsOffTheGrid].
+     * Empty on every ordinary read, and empty for a placed read by construction.
+     */
+    offGrid: List<String>,
+    /** How many rooms the grid can hold, so the sentence states the real number, not a guess. */
+    gridCapacity: Int,
     cta: String,
     onUseRooms: () -> Unit,
     onCorrectRoom: (Int, RoomType) -> Unit,
@@ -417,6 +433,39 @@ private fun RoomsBody(
                 expanded = openRow == index,
                 onExpandedChange = { open -> openRow = if (open) index else -1 },
                 onPick = { type -> onCorrectRoom(index, type) },
+            )
+        }
+    }
+
+    // ⭐ THE ROOMS THE GRID ITSELF CANNOT HOLD, said out loud. Different from the list below it and
+    // shown first, because this loss happens LATER than that one and for a reason that is ours, not
+    // the plan's: the reader read these rooms perfectly well, and the drawing grid ran out of room.
+    // Until this build they simply were not on the next screen, and nothing anywhere said so.
+    if (offGrid.isNotEmpty()) {
+        val one = offGrid.size == 1
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        VastuCard(background = colors.surface) {
+            VText(
+                if (one) "1 room won't fit on the grid" else "${offGrid.size} rooms won't fit on the grid",
+                style = VastuTheme.type.bodyLg, color = colors.textPrimary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            // ⚠ THREE LINES, and the names run INTO the sentence rather than down a bullet list.
+            // This screen is the tallest in the app and its copy has twice been cut because the
+            // geometry gate measured controls pushed off the bottom at 320 dp and 200 % font. A
+            // bullet per room would grow this card with the very plans that reach it.
+            VText(
+                "The grid holds $gridCapacity rooms and your plan has ${rooms.size}. " +
+                    "Not on it: ${offGrid.joinToString(", ")}.",
+                style = VastuTheme.type.bodySm, color = colors.textSecondary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            VText(
+                // ⚠ The price and the way out, in that order. A room that is not on the grid is not
+                // scored, and saying only the first half is a warning with no answer in it.
+                if (one) "A room that is not on the grid is not scored. Make space on the next screen and add it yourself."
+                else "A room that is not on the grid is not scored. Make space on the next screen and add them yourself.",
+                style = VastuTheme.type.bodySm, color = colors.textTertiary,
             )
         }
     }

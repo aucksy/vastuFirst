@@ -1,6 +1,14 @@
 package com.vastufirst.app.ui.common
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -44,3 +52,61 @@ fun relativeUpdated(
         }
     }
 }
+
+/** The local calendar day [millis] falls on, in [zone]. Pure — the one place the conversion lives. */
+fun localDayOf(millis: Long, zone: ZoneId): LocalDate =
+    Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+
+/**
+ * How long from [now] until the next local midnight in [zone]. Pure, so it is unit-tested.
+ *
+ * ⚠ Floored at one second. A clock sitting exactly on midnight would otherwise answer 0 and spin
+ * the caller's wait loop as fast as the phone allows — a flat battery instead of a stale date.
+ */
+fun millisUntilNextDay(now: Long, zone: ZoneId = ZoneId.systemDefault()): Long {
+    val nextMidnight = localDayOf(now, zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+    return (nextMidnight - now).coerceAtLeast(1_000L)
+}
+
+/**
+ * ⚠⚠ NEVER CALL THIS FROM A STATELESS "…Content" COMPOSABLE. It waits forever, on purpose, and the
+ * screenshot harness waits for the screen to go idle before it takes the picture — so a golden that
+ * composed this would hang the whole render run with no error and no timeout. It belongs in the
+ * stateful screen wrapper ONLY, which no golden ever composes. (docs/UI-POLISH.md §6.7a.)
+ *
+ * ⭐ WHY IT EXISTS. The saved-homes list dates ("today", "yesterday") were sampled once, when the
+ * screen was first drawn, from a default argument. Leave the app open across midnight and every home
+ * still claimed it was touched "today" — a day stale until something rebuilt the screen. Nothing was
+ * lost, but the list quietly said the wrong thing about the user's own data, which is the one thing
+ * this list exists to say.
+ *
+ * It wakes at most every [DAY_CLOCK_CHECK_MS] and **only publishes a new time when the local
+ * calendar day has actually changed**, so the list recomposes once a day rather than all day. The
+ * cap is what makes it survive a phone that slept through midnight: Android's timers do not advance
+ * in deep sleep, so a single wait aimed at midnight can land late. It self-corrects within the cap.
+ */
+@Composable
+fun rememberDayClock(zone: ZoneId = ZoneId.systemDefault()): Long {
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(zone) {
+        while (true) {
+            delay(millisUntilNextDay(System.currentTimeMillis(), zone).coerceAtMost(DAY_CLOCK_CHECK_MS))
+            val t = System.currentTimeMillis()
+            if (localDayOf(t, zone) != localDayOf(now, zone)) now = t
+        }
+    }
+    return now
+}
+
+/**
+ * The longest this clock ever sleeps: one minute. It is a CEILING on how late a date can be, not a
+ * polling rate — the ordinary wait is "until midnight", and the ceiling only bites on a phone that
+ * was asleep when midnight passed.
+ *
+ * ⚠ It is the whole reason a dozing phone is covered. Android's timers do not advance in deep
+ * sleep, so a single wait aimed at midnight lands late on a phone that slept through it; a short
+ * ceiling closes that gap without any lifecycle plumbing. It is NOT a recomposition every minute —
+ * waking costs one clock read and one date comparison, and the screen is only told about a new time
+ * on the one wake a day where the calendar day has actually turned over.
+ */
+const val DAY_CLOCK_CHECK_MS: Long = 60 * 1000L

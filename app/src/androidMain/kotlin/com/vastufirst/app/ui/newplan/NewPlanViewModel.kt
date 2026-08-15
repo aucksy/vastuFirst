@@ -225,7 +225,7 @@ class NewPlanViewModel(
                 // drawn by hand, an unplaced scan and the bundled sample still save at North.
                 // Naming one screen here is how a later session comes to believe the wrong one.
                 planId?.let { id ->
-                    if (name == null) name = "Home ${repo.nextHomeNumber()}"
+                    if (name == null) name = repo.nextHomeName()
                     val saved = SavedPlan(
                         id = id, name = name ?: FALLBACK_NAME, intent = plan.intent, propertyType = plan.propertyType,
                         plan = plan, score = result.score, ruleSetVersion = engine.ruleSetVersion(),
@@ -409,7 +409,7 @@ class NewPlanViewModel(
                 // First save of a new draft: give it the next free "Home N" so no two homes share a
                 // name (defeats the compare feature — E2E-ASSESSMENT B12). A reopened home already
                 // has its name from load(), so this only fires once, at creation.
-                if (name == null) name = "Home ${repo.nextHomeNumber()}"
+                if (name == null) name = repo.nextHomeName()
                 // Score the EXACT plan being persisted (not the debounced cache, which can lag or be
                 // null): guarantees the stored list-view score equals what a reopen recomputes.
                 val a = withContext(compute) { engine.analyze(plan) }

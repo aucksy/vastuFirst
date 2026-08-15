@@ -207,6 +207,33 @@ class ViewModelScreensScreenshotTest {
         writeManifestAcrossMatrix("home-rename", content)
     }
 
+    /**
+     * ⭐ THE RENAME BOX REFUSING A NAME THAT IS ALREADY IN USE.
+     *
+     * Two homes could be given the same name, and the list then carried two rows a person cannot
+     * tell apart — so opening or deleting the right one was a coin flip on their own saved work.
+     * The box now refuses it, out loud, with Save switched off.
+     *
+     * ⚠ This state can only ever be SEEN in a picture like this one. It is inside a dialog, it needs
+     * a name collision to exist at all, and the golden above it deliberately shows the ordinary
+     * state — so without this test the refusal message would ship having been rendered nowhere.
+     * The message runs long by design, which is exactly why it is worth photographing at 320 dp and
+     * at 200 % font before it goes out.
+     */
+    @Test
+    fun home_rename_name_taken() {
+        val content: @Composable () -> Unit = {
+            RenameDialogContent(
+                currentName = "Dwarka flat",
+                onCancel = {},
+                onSave = {},
+                otherNames = listOf("Home 1", "Dwarka flat"),
+            )
+        }
+        captureAcrossMatrix("home-rename-taken", content)
+        writeManifestAcrossMatrix("home-rename-taken", content)
+    }
+
     @Test
     fun settings() {
         val content: @Composable () -> Unit = {

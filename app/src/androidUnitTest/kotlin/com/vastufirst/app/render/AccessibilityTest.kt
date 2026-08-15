@@ -59,6 +59,15 @@ class AccessibilityTest {
                 )
             },
             "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },
+            // ⭐ The same box refusing a name another home already has. Its own entry because the
+            // refusal reddens the label AND adds a sentence — new text, new colour, and a Save
+            // button that is now switched off, none of which the ordinary state above can show.
+            "home-rename-taken" to {
+                RenameDialogContent(
+                    currentName = "Dwarka flat", onCancel = {}, onSave = {},
+                    otherNames = listOf("Home 1", "Dwarka flat"),
+                )
+            },
             "home-discard" to { DiscardDraftDialogContent(roomCount = 5, onCancel = {}, onDiscard = {}) },
             // ⭐ The unreadable-home card's per-home remove (audit B7): a ✕ tap target beside a
             // passive "Remove" hint — the same two-targets shape as the rows above, on a card

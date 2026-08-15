@@ -345,4 +345,58 @@ class LongScreenBottomScreenshotTest {
             ),
         )
     }
+
+    /**
+     * ⭐⭐ THE SCAN RESULT SCREEN SAYING A ROOM WILL NOT FIT ON THE DRAWING GRID.
+     *
+     * The holding layout an unplaced reading is drawn with fits twenty-five rooms, and every room
+     * after that used to be returned as nothing at all: the screen said "we found 28 rooms", the
+     * next screen drew twenty-five, and no sentence anywhere joined the two.
+     *
+     * ⚠⚠ THIS IS THE ONLY PICTURE THAT CAN EVER SHOW IT, which is why it is here and not in the
+     * ordinary matrix. A golden is a viewport: every matrix capture starts at the top, and with
+     * twenty-eight room rows stacked above it this card is below the fold at every size. A card that
+     * ships to a real customer and is drawn in no picture is the exact failure this file exists for.
+     *
+     * ⚠ The reading is a real recorded reply PADDED to exactly [OVERFLOW_ROOMS] rooms — pinned,
+     * because the anchor below is a sentence that COUNTS the rooms that did not fit. A fixture whose
+     * size drifted with the recorded reply would rewrite its own anchor and then fail for a reason
+     * that has nothing to do with the screen.
+     */
+    @Test
+    fun scan_assisted_overflow_bottom() = captureBottomPair(
+        "scan-assisted-overflow",
+        anchor = hasText("$OVERFLOW_OFF_GRID rooms won't fit on the grid"),
+    ) {
+        com.vastufirst.app.ui.scan.ScanScreen(
+            state = com.vastufirst.app.ui.scan.ScanUiState.Done(assistedOverflow(), readBy = null),
+            onPickImage = {}, onTakePhoto = {}, onRetry = {},
+            onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
+        )
+    }
+
+    private fun assistedOverflow(): com.vastufirst.shared.scan.ScanOutcome.Assisted {
+        val real = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
+            as com.vastufirst.shared.scan.ScanOutcome.Assisted
+        val padding = (1..OVERFLOW_ROOMS).map {
+            com.vastufirst.shared.scan.ScannedRoom(
+                type = com.vastufirst.shared.RoomType.STORE, label = "STORE $it", rect = null,
+            )
+        }
+        val rooms = (real.rooms + padding).take(OVERFLOW_ROOMS)
+        check(rooms.size == OVERFLOW_ROOMS) {
+            "The overflow fixture is ${rooms.size} rooms, not $OVERFLOW_ROOMS, so the anchor below " +
+                "would name the wrong number and this picture would never be taken."
+        }
+        return real.copy(rooms = rooms)
+    }
+
+    private companion object {
+        /** Rooms in the overflow fixture — comfortably past the twenty-five the grid holds. */
+        const val OVERFLOW_ROOMS = 28
+
+        /** …and therefore how many the screen must say will not fit. Kept in step by hand on purpose:
+         *  if the grid's capacity ever changes, this test fails and makes somebody look at the copy. */
+        const val OVERFLOW_OFF_GRID = 3
+    }
 }
