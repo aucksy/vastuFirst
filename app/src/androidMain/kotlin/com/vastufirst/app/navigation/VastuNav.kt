@@ -274,6 +274,16 @@ fun VastuNavHost() {
                     // there.
                     doorFromCaption = com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)
                         ?.takeIf { it.door == planVm.door }?.fromCaption,
+                    // ⭐⭐ IS THIS DOOR STILL OURS, OR DID THE USER PUT IT THERE?
+                    //
+                    // ⚠ Derived from the plan on every recomposition, deliberately, and NOT held as
+                    // a flag on the screen. A flag would be right until the reader walked forward to
+                    // their report and came back — a path this flow supports — at which point the
+                    // screen would have forgotten and gone back to telling them "we read it from
+                    // your plan's own entrance" about a door they had placed with their own finger.
+                    // Comparing against what we WOULD have read cannot forget.
+                    doorIsOurs = planVm.door != null &&
+                        com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)?.door == planVm.door,
                     // ⭐ WHERE THIS SCREEN LEADS, and it is now the END of the flow whenever the plan
                     // named its own entrance: North is already marked, so the only thing that can
                     // still be missing is the front door. When the plan answered that (13 of the 24
@@ -301,6 +311,9 @@ fun VastuNavHost() {
                         }
                     },
                     onChangeDoor = { nav.go(Routes.SCAN_DOOR) },
+                    // ⭐ The door dragged on the plan itself. Same slot the separate door screen
+                    // writes to, so the two ways of setting it cannot disagree.
+                    onDoorChange = planVm::updateDoor,
                     onBack = { nav.popBackStack() },
                 )
             }

@@ -238,6 +238,80 @@ class ScanScreenshotTest {
     }
 
     /**
+     * ⭐⭐ THE DOOR MARK, TAPPED — the state that answers "where does the app think my door is?".
+     *
+     * The owner, 16 Aug 2026: *"Today I cannot tell where the app thinks my door is."* He was right;
+     * until now nothing drew it. The picture had no door parameter at all and its canvas drew three
+     * things — the photo, the quiet room outlines and the selected room's tint. The only trace of
+     * the front door on this screen was a line of small grey text below a list he was scrolling.
+     *
+     * This golden holds the tapped state: the mark drawn at touch size, and the sentence naming it
+     * pinned directly under the picture rather than filed into the list. Both are the answer to
+     * "tapping it should say this is your main entrance", and neither can be checked any other way.
+     */
+    @Test
+    fun scanReviewWithTheDoorMarkTapped() {
+        val outcome = ownersPlan()
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        )
+        // ⚠ The guard on the picture. `frontDoorFromEntrance` refuses more often than it answers —
+        // it is null for eleven of the twenty-four recorded plans that place their rooms. If this
+        // fixture ever stopped producing a door, the golden would quietly photograph a screen with
+        // NO door mark and no sentence, under a name that says it has both, and go green forever.
+        kotlin.test.assertNotNull(door, "this fixture must yield a door, or the golden proves nothing")
+        // …and the marker must actually be placeable on the picture, which is a separate question.
+        kotlin.test.assertNotNull(
+            com.vastufirst.app.ui.scan.doorMarkerOnPage(door, outcome.rooms),
+            "the door must have a point on the page, or nothing is drawn",
+        )
+        val readings = readingsFor(outcome)
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = planPhoto(),
+                rooms = outcome.rooms,
+                door = door,
+                readings = readings,
+                startDoorSelected = true,
+            )
+        }
+        captureAcrossMatrix("scan-review-door-tapped", content)
+        writeManifestAcrossMatrix("scan-review-door-tapped", content)
+    }
+
+    /**
+     * ⭐⭐ A PORTRAIT SHEET ON THE CHECK SCREEN — the shape the whole harness was blind to.
+     *
+     * The owner, 16 Aug 2026: *"vertical plans come out too small… a tall plan is shrunk to fit a
+     * wide box and I cannot see anything."*
+     *
+     * ⚠ EVERY photographed plan in this file was landscape or square — 1400 × 990 and 1399 × 1389 —
+     * and the two states that pass no image at all draw no plan. So the one shape the complaint is
+     * about had never appeared in a single picture, on any screen, at any configuration. A defect
+     * that no golden can contain is a defect no golden can catch, which is why this shipped.
+     *
+     * The size here is a real sheet's: 1256 × 2760, the proportions of a builder's portrait page.
+     */
+    @Test
+    fun scanReviewWithATallPlan() {
+        val placedOutcome = placed() as com.vastufirst.shared.scan.ScanOutcome.Placed
+        val tall = android.graphics.Bitmap.createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+            .asImageBitmap()
+        val readings = readingsFor(placedOutcome)
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = tall,
+                rooms = placedOutcome.rooms,
+                readings = readings,
+                startSelected = 2,
+            )
+        }
+        captureAcrossMatrix("scan-review-tall", content)
+        writeManifestAcrossMatrix("scan-review-tall", content)
+    }
+
+    /**
      * ⭐ Marking the front door ON THE PHOTO — the screen that replaced the hop into the grid editor.
      * Rendered with the door already placed, because the marker over the plan and the outline it
      * sits on are the two things a screenshot can check and a tap test cannot.

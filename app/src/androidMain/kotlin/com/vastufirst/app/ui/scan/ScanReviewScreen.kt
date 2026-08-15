@@ -183,6 +183,8 @@ fun ScanReviewScreen(
     door: GridDoor?,
     /** The caption the door's wall was read off, when it came from one — see [ScanReviewContent]. */
     doorFromCaption: String? = null,
+    /** True while the door is still the one WE read off the plan — see [ScanReviewContent]. */
+    doorIsOurs: Boolean = true,
     /**
      * ⭐ The live reading of the home, which by this point in the flow exists: North was marked on
      * the previous screen. Null only if the engine has not answered yet, and then the rows show no
@@ -191,6 +193,8 @@ fun ScanReviewScreen(
     analysis: Analysis? = null,
     onContinue: () -> Unit,
     onChangeDoor: () -> Unit,
+    /** The user moved the door on the plan itself — see [ScanReviewContent]'s own note. */
+    onDoorChange: (GridDoor) -> Unit = {},
     onBack: () -> Unit,
 ) {
     val data = handover.data
@@ -200,9 +204,11 @@ fun ScanReviewScreen(
         rooms = data?.rooms.orEmpty(),
         door = door,
         doorFromCaption = doorFromCaption,
+        doorIsOurs = doorIsOurs,
         readings = remember(analysis) { roomReadings(analysis) },
         onContinue = onContinue,
         onChangeDoor = onChangeDoor,
+        onDoorChange = onDoorChange,
         onBack = onBack,
     )
 }
@@ -250,6 +256,16 @@ fun ScanReviewContent(
      */
     doorFromCaption: String? = null,
     /**
+     * ⭐⭐ TRUE WHILE THE DOOR IS STILL THE ONE **WE** READ off the plan; false once the user has put
+     * it somewhere themselves — by dragging its mark here, or on the separate door screen.
+     *
+     * ⚠ It decides which of three sentences this screen prints, and the third one only exists
+     * because the door can now be moved here. Left at two, the screen told a reader who had just
+     * corrected the door with their own finger that "we read it from your plan's own entrance" —
+     * taking the credit for their correction, and hiding that it had landed at all.
+     */
+    doorIsOurs: Boolean = true,
+    /**
      * ⭐ The one-word result and the direction for each room, keyed by [scanRoomId] — see
      * [roomReadings]. Empty means North is not known yet, and then the rows carry the plan's own
      * name and printed size only, exactly as they did before 11 Aug 2026.
@@ -257,9 +273,20 @@ fun ScanReviewContent(
     readings: Map<String, RoomReading> = emptyMap(),
     onContinue: () -> Unit = {},
     onChangeDoor: () -> Unit = {},
+    /**
+     * ⭐⭐ THE DOOR WAS MOVED ON THIS SCREEN, by dragging its mark on the plan.
+     *
+     * The owner, 16 Aug 2026: *"I should be able to move it right there, on that screen, without
+     * going anywhere else."* The button that opens the separate door screen stays — it is the way to
+     * do this carefully, and the way in for anyone who cannot drag — but the common case is now a
+     * finger on the mark.
+     */
+    onDoorChange: (GridDoor) -> Unit = {},
     onBack: () -> Unit = {},
     /** For the harness: pre-select a room so the golden shows the tint. -1 = nothing selected. */
     startSelected: Int = -1,
+    /** For the harness: draw the screen with the door mark selected, so the golden shows that state. */
+    startDoorSelected: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
@@ -286,6 +313,30 @@ fun ScanReviewContent(
     val scope = rememberCoroutineScope()
 
     /**
+     * ⭐⭐ THE FRONT DOOR IS ON THE PICTURE NOW (owner, 16 Aug 2026).
+     *
+     * **What he said:** *"The front door is not visible on the plan. If the app is auto-marking my
+     * front door, it must be DRAWN on the floor plan, big enough to see at arm's length… Today I
+     * cannot tell where the app thinks my door is."* He also said he was not sure the app marks it
+     * at all.
+     *
+     * **It does, and he should stop doubting it.** `frontDoorFromEntrance` runs the moment a scan
+     * places its rooms, before any screen is shown, and it reads the plan's own printed ENTRY /
+     * FOYER / PORCH caption. Measured over the recorded corpus it answers for thirteen of the
+     * twenty-four plans that place — a little over half — and asks on the rest. So half the time the
+     * app HAD silently decided the heaviest single input in the whole score, and said so only in a
+     * line of small grey text below a list the user was scrolling. Nothing was drawn on the plan at
+     * all: the picture had no door parameter and its canvas drew three things, none of them a door.
+     *
+     * Three states now, and the sentence under the list names which one it is: read from a typed
+     * entrance, read from a printed caption, or put there by the user's own finger. That last one
+     * matters — before this, moving the door left the screen still claiming *"we read it from your
+     * plan's own entrance"* about a door the user had just placed themselves.
+     */
+    val doorAtPage = remember(door, rooms) { door?.let { doorMarkerOnPage(it, rooms) } }
+    var doorSelected by remember { mutableStateOf(startDoorSelected) }
+
+    /**
      * ⭐⭐ BOTH ENDS STILL SELECT THE SAME ROOM THE SAME WAY. Tapping a room on the picture and
      * tapping its row do the identical thing to the identical state — that is the owner's rule
      * ("works the same way if user taps the room in list or room on floor plan") and it holds.
@@ -302,6 +353,8 @@ fun ScanReviewContent(
      */
     fun selectRoom(id: String) {
         selected = if (selected == id) null else id
+        // One thing is explained at a time. Picking a room puts the door's own line away.
+        doorSelected = false
     }
 
     /** Tapping a room ON THE PINNED PICTURE — its row may be below the fold, so reveal it. */
@@ -362,6 +415,21 @@ fun ScanReviewContent(
                 selectedId = selected,
                 onTapRoom = ::tapRoomOnPlan,
                 maxPlanHeight = planCap,
+                // ⭐ Only HERE. On the report the same picture sits inside a scrolling column, and a
+                // plan that claimed single-finger drags there would eat the page's own scroll.
+                zoomable = true,
+                doorAtPage = doorAtPage,
+                doorSelected = doorSelected,
+                onTapDoor = {
+                    doorSelected = true
+                    selected = null
+                },
+                onMoveDoorToPage = { fx, fy ->
+                    doorForPhotoTap(fx, fy, rooms)?.let {
+                        doorSelected = true
+                        onDoorChange(it)
+                    }
+                },
             )
         } else {
             // ⚠⚠ CAPPED, NOT SHAPED — found by the geometry gate the moment this state was first
@@ -418,6 +486,29 @@ fun ScanReviewContent(
                 .verticalScroll(listScroll),
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
+            // ⭐⭐ WHAT THE DOOR MARK IS, SAID THE MOMENT IT IS TAPPED.
+            //
+            // ⚠ THE FIRST THING IN THE SCROLLING LIST, NOT PINNED ABOVE IT — and the difference is a
+            // screen that works at 200 % font. Everything above this point is fixed height, and this
+            // screen has already lost its last child to zero height twice for exactly that reason:
+            // at large font in landscape the fixed parts are together taller than the window before
+            // the picture is even drawn. Adding one more pinned line would have taken the room list
+            // itself down with it — and the geometry gate cannot see it, because the layout box stays
+            // the right size while the content is squeezed out.
+            //
+            // Inside the list it costs nothing and is still the first thing under the picture, which
+            // is where the finger just was. That is the whole of "tapping it should say this is your
+            // main entrance".
+            if (doorSelected && door != null) {
+                VText(
+                    "This is your main entrance, on ${doorSideWords(door.side)}. Drag the mark to move it.",
+                    style = VastuTheme.type.bodySm,
+                    // ⚠ Not the accent colour. Measured at 2.77:1 against this screen's paper, which
+                    // is under every contrast floor the a11y gate holds — and this is the one
+                    // sentence on the screen a reader has deliberately asked for.
+                    color = colors.textPrimary,
+                )
+            }
             planRooms.forEachIndexed { index, pr ->
                 val room = rooms[index]
                 // ⭐ The report's own words for this room, when North is known. Null before that,
@@ -459,10 +550,18 @@ fun ScanReviewContent(
                 // engine weighs, so what we read is stated in one line, with the way to change it.
                 if (door != null) {
                     VText(
-                        if (doorFromCaption != null) {
-                            "Front door: your plan prints \"$doorFromCaption\" on ${doorSideWords(door.side)}, so we put it there."
-                        } else {
-                            "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}."
+                        // ⚠ THREE states, not two, since 16 Aug 2026. The door can now be moved on
+                        // this screen by dragging its mark, and the first two sentences both claim
+                        // WE worked it out. Left at two, the screen told a user who had just placed
+                        // the door with their own finger that "we read it from your plan's own
+                        // entrance" — taking credit for their correction and hiding that it landed.
+                        when {
+                            !doorIsOurs ->
+                                "Front door: you put it on ${doorSideWords(door.side)}. Drag the mark on the plan to move it again."
+                            doorFromCaption != null ->
+                                "Front door: your plan prints \"$doorFromCaption\" on ${doorSideWords(door.side)}, so we put it there. Drag the mark on the plan to move it."
+                            else ->
+                                "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}. Drag the mark on the plan to move it."
                         },
                         style = VastuTheme.type.bodySm,
                         color = colors.textSecondary,

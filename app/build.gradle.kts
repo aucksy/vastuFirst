@@ -228,6 +228,21 @@ android {
 // cost that guarantees fresh goldens + manifests on every CI run.
 tasks.withType<Test>().configureEach {
     outputs.upToDateWhen { false }
+
+    // ⚠⚠ MEMORY, AND IT IS NOT A TUNING KNOB — the build died without it (16 Aug 2026).
+    //
+    // A full golden re-record renders every screen at eight configurations, and each capture holds a
+    // full-size bitmap. Run in one JVM with the default heap, that walked the hosted runner into the
+    // ground: the job did not fail a test, it "lost communication with the server" after 49 minutes
+    // with the record step still marked running — the runner process itself was starved and killed.
+    // Nothing in the log says "out of memory", which is what makes this expensive to diagnose twice.
+    //
+    // ONE fork at a time, an explicit ceiling that leaves the runner room to breathe alongside the
+    // Gradle and Kotlin daemons, and a fresh JVM every 40 classes so the bitmaps a finished class was
+    // holding are actually given back rather than merely eligible.
+    maxParallelForks = 1
+    maxHeapSize = "2g"
+    forkEvery = 40
 }
 
 dependencies {
