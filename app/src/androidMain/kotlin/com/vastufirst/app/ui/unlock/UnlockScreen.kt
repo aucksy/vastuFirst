@@ -197,7 +197,13 @@ fun UnlockContent(
                 "The whole reason behind every problem — not only the entrance, kitchen and toilets, which are free",
                 "Remedies for that problem in that direction — and where none exists, we say so",
                 "Why each of your other rooms reads the way it does, not just its verdict",
-                "The classical source behind every rule we apply to your home",
+                // ⚠ This promised "The classical source behind every rule" until 15 Aug 2026, and
+                // the app has never shown a source: not one rule in the rule data carries a
+                // citation, and the report draws a four-word CATEGORY tag, not a book. Whether to
+                // build real citations is still open with the owner; until it is built the words
+                // must describe the tag that actually appears. Change this and the anchor in
+                // LongScreenBottomScreenshotTest together — it is the card's last line.
+                "Whether each rule is classical, traditional or modern — marked on every finding, with both sides where the schools disagree",
             ).forEach { Feature(it) }
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))

@@ -196,7 +196,7 @@ class LongScreenBottomScreenshotTest {
     @Test
     fun unlock_paid_bottom() = captureBottomPair(
         "unlock-paid",
-        anchor = hasText("The classical source behind every rule we apply to your home"),
+        anchor = hasText("Whether each rule is classical, traditional or modern — marked on every finding, with both sides where the schools disagree"),
     ) {
         UnlockContent(state = BillingState(mode = BillingMode.READY, price = "₹699.00"))
     }

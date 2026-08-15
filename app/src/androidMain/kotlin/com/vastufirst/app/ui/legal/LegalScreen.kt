@@ -54,7 +54,9 @@ fun LegalScreen(onBack: () -> Unit) {
         SectionLabel("How we tag every rule")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            TagRow(VastuProvenance.TEXT, "Traceable to a named source, with citation.")
+            // ⚠ Said "with citation" until 15 Aug 2026. No rule in the rule data carries one, so the
+            // promise had nothing behind it. Restore the citation wording only once citations exist.
+            TagRow(VastuProvenance.TEXT, "Traceable to a classical text.")
             TagRow(VastuProvenance.DERIV, "Reasoned from the mandala; widely taught.")
             TagRow(VastuProvenance.MOD, "20th-century. Honesty about age, not a warning.")
             TagRow(VastuProvenance.DISP, "Two readings shown, neither chosen for you.")

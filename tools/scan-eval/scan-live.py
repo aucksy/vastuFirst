@@ -69,9 +69,18 @@ def main():
     cfg = json.load(open(os.path.join(RES, "reader-config.json"), encoding="utf-8"))
     # promptResource is a classpath path ("/scan/plan-read-prompt.txt"); RES is that folder on disk.
     prompt = open(os.path.join(RES, os.path.basename(cfg["promptResource"])), encoding="utf-8").read()
-    key = load_env().get("GROQ_API_KEY")
+    # ⚠ The key follows the ENDPOINT, never a hard-coded name. This line read GROQ_API_KEY until
+    # 15 Aug 2026, months after the app's reader moved to OpenRouter — so every run sent a Groq key
+    # to OpenRouter and died on HTTP 401. The whole "reproduce the owner's bad grid yourself" loop
+    # was silently unusable, and nothing failed loudly enough for anyone to notice.
+    env = load_env()
+    host = cfg["endpoint"].split("/")[2].lower()
+    name_for_host = ("OPENROUTER_API_KEY" if "openrouter" in host
+                     else "GEMINI_API_KEY" if "googleapis" in host or "google" in host
+                     else "GROQ_API_KEY")
+    key = env.get(name_for_host)
     if not key:
-        print("no GROQ_API_KEY in .env")
+        print("no %s in .env (endpoint is %s)" % (name_for_host, host))
         return 1
 
     raw, name = fetch(src)
