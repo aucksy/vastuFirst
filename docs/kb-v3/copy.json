@@ -1,0 +1,4649 @@
+[
+ {
+  "screen": "Welcome (the first screen a new user ever sees)",
+  "whenSeen": "On a fresh install, and any time the user has no saved homes and no half-finished homes — the app skips the saved-homes list and opens straight here. Also reached by tapping \"Add a home\" on the saved-homes screen.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/welcome/WelcomeScreen.kt",
+  "strings": [
+   {
+    "text": "NO SIGN-UP · NO PHONE NUMBER",
+    "role": "label",
+    "condition": "Always. Written in the code as \"No sign-up · No phone number\"; the section-label component forces it to capitals on screen.",
+    "concern": "Fine, but the same promise is repeated almost word for word on the Privacy screen (\"There is no account, no sign-up and no phone number\") and again in Settings (\"No account, no phone number\"). Three different wordings of one idea."
+   },
+   {
+    "text": "See your home's Vastu — and exactly what to do about it.",
+    "role": "heading",
+    "condition": "Always — the biggest text on the first screen.",
+    "concern": "A promise the app does not keep for two of the three people it is speaking to. This headline sits ABOVE the question that asks whether you are buying, building or living somewhere — and only the \"building\" answer is offered layout changes in the report. A buyer or an existing resident is told \"exactly what to do about it\" before the app knows it will not be telling them that. \"Exactly\" is also the strongest word on the screen and is the one that would be read as a guaranteed outcome."
+   },
+   {
+    "text": "Upload or draw your plan. Mark North. See your score and what to do.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "\"Mark North\" is the app's own internal name for a step; a home buyer reading this does not yet know that marking north is something they will be asked to do, or why. It repeats the headline's \"what to do\" promise a second time in three lines."
+   },
+   {
+    "text": "WHAT BRINGS YOU HERE?",
+    "role": "label",
+    "condition": "Always. Written as \"What brings you here?\"; rendered in capitals.",
+    "concern": "None."
+   },
+   {
+    "text": "I am buying a home",
+    "role": "heading",
+    "condition": "Always — first of three choice cards.",
+    "concern": "None."
+   },
+   {
+    "text": "Deciding between options",
+    "role": "body",
+    "condition": "Always — subtitle of the first choice card.",
+    "concern": "None."
+   },
+   {
+    "text": "I am building a home",
+    "role": "heading",
+    "condition": "Always — second choice card.",
+    "concern": "None."
+   },
+   {
+    "text": "The plan is not final yet",
+    "role": "body",
+    "condition": "Always — subtitle of the second choice card.",
+    "concern": "None."
+   },
+   {
+    "text": "I already live here",
+    "role": "heading",
+    "condition": "Always — third choice card.",
+    "concern": "None."
+   },
+   {
+    "text": "Looking for remedies",
+    "role": "body",
+    "condition": "Always — subtitle of the third choice card.",
+    "concern": "\"Remedies\" is the only place on this screen the word appears, and it quietly tells the reader that this answer gets a different kind of report from the other two. It is also the one word here that could be read as a health or fortune promise."
+   },
+   {
+    "text": "✓",
+    "role": "accessibility",
+    "condition": "Appears inside a small circle on whichever of the three cards has been tapped.",
+    "concern": "The tick is a bare character with no spoken label, and the card itself is not marked as \"selected\" for a screen reader — it is only marked as a button. Someone using a screen reader cannot tell which of the three answers they have chosen, and cannot tell why Continue is refusing to work."
+   },
+   {
+    "text": "Continue",
+    "role": "button",
+    "condition": "Always visible. Greyed out and unresponsive until one of the three cards has been tapped.",
+    "concern": "The button is dead on arrival with nothing on screen saying why. A reader who taps it and gets no response has no sentence to read."
+   },
+   {
+    "text": "Privacy",
+    "role": "button",
+    "condition": "Always — a quiet text link under Continue. This is the only way a brand-new user can reach the privacy policy, because the gear that leads to Settings only exists on the saved-homes screen.",
+    "concern": "Ambiguous about what a tap will do: it reads like a settings heading rather than \"read our privacy policy\", and it sits directly under the main button where a stray tap is likely."
+   }
+  ]
+ },
+ {
+  "screen": "Your plans (the saved-homes list)",
+  "whenSeen": "On opening the app when at least one home is saved, half-finished, or could not be read. Also returned to after Back from Settings.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/home/HomeScreen.kt",
+  "strings": [
+   {
+    "text": "Your plans",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "The screen calls the items \"plans\" in its title, \"homes\" in the button below it (\"Add a home\"), \"floor plan\" in its empty state, and \"homes\" again in every dialog. Four names for one thing on one screen."
+   },
+   {
+    "text": "Settings",
+    "role": "accessibility",
+    "condition": "Always — the spoken label of the gear button in the top right. Sighted users see only the character ⚙.",
+    "concern": "None."
+   },
+   {
+    "text": "1 home can't be opened",
+    "role": "heading",
+    "condition": "When exactly one saved home cannot be read by this version of the app.",
+    "concern": "None."
+   },
+   {
+    "text": "2 homes can't be opened",
+    "role": "heading",
+    "condition": "When two or more saved homes cannot be read. The number is the real count — \"3 homes can't be opened\", and so on.",
+    "concern": "None."
+   },
+   {
+    "text": "It's still on your phone — nothing has been deleted. An app update may open it again.",
+    "role": "body",
+    "condition": "Assembled sentence, shown when exactly one home cannot be read.",
+    "concern": "\"An app update may open it again\" is a promise nobody can keep — no update is planned or guaranteed, and this sits directly above a Remove button whose own warning says an update will NOT be able to bring it back. The two sentences pull in opposite directions on the same card."
+   },
+   {
+    "text": "They're still on your phone — nothing has been deleted. An app update may open them again.",
+    "role": "body",
+    "condition": "Assembled sentence, shown when two or more homes cannot be read.",
+    "concern": "Same as above."
+   },
+   {
+    "text": "Home 2 · 3 days ago",
+    "role": "label",
+    "condition": "One line per unreadable home, inside that card. The first part is the home's own name (auto-named \"Home 1\", \"Home 2\"… unless renamed); the second is the date wording listed under \"Date wording\" below.",
+    "concern": "None."
+   },
+   {
+    "text": "Remove Home 2",
+    "role": "accessibility",
+    "condition": "Spoken label of the ✕ next to each unreadable home. The name is the real home name.",
+    "concern": "None."
+   },
+   {
+    "text": "Remove",
+    "role": "label",
+    "condition": "Printed next to the ✕ on each unreadable home's line.",
+    "concern": "It looks exactly like a button and is not one — it is plain text, and the tappable thing is the small ✕ beside it. Tapping the word \"Remove\" does nothing at all. This is the clearest \"ambiguous about what a tap will do\" case in the whole set."
+   },
+   {
+    "text": "No plans yet",
+    "role": "empty-state",
+    "condition": "Only when there are no finished homes AND no half-finished ones AND no unreadable ones. In practice a first-time user never sees it, because the app opens on Welcome instead; it appears after deleting everything from Settings.",
+    "concern": "None."
+   },
+   {
+    "text": "Add your first floor plan to see its Vastu score.",
+    "role": "empty-state",
+    "condition": "Same as above.",
+    "concern": "Says \"floor plan\" where the button underneath says \"home\" and the title says \"plans\"."
+   },
+   {
+    "text": "We changed a rule — your score is unchanged",
+    "role": "heading",
+    "condition": "On the notice card at the top of the list, when the Vastu rules have been updated since these homes were scored and not one home's number moved.",
+    "concern": "None."
+   },
+   {
+    "text": "Your score has changed",
+    "role": "heading",
+    "condition": "On the notice card, when there is exactly one affected home and its number did move.",
+    "concern": "Unlike the other two variants it does not say WHY on the heading line, and it reads as though the home changed rather than the rules. The reason is further down the card."
+   },
+   {
+    "text": "We changed a rule — some scores moved",
+    "role": "heading",
+    "condition": "On the notice card, in every other case (several homes, some moved).",
+    "concern": "None."
+   },
+   {
+    "text": "Home 1: 6.8 → 7.1",
+    "role": "body",
+    "condition": "One line per affected home on the notice card, when that home's number moved. The numbers are the old and new scores out of ten.",
+    "concern": "None."
+   },
+   {
+    "text": "Home 1: 7.1 — unchanged",
+    "role": "body",
+    "condition": "One line per affected home on the notice card, when that home's number did not move.",
+    "concern": "None."
+   },
+   {
+    "text": "Your score has not moved, and nothing has been taken out of your report. We corrected two lines in it. Three of the things we say we could not check pointed you at a screen the app no longer has; they now point at the button on your report that actually asks. The fourth — a mirror facing a bed, or a beam running over one — used to promise we would check it if you answered a few more questions, and there has never been a question for it. It now says plainly that we do not check that one, and why.",
+    "role": "body",
+    "condition": "The explanation paragraph on the notice card. It is not written in the screen's code — it comes from the rule data, so it changes with every rule release. This is exactly what it says today.",
+    "concern": "Far longer than it needs to be, and written in the team's voice, not the reader's — \"we corrected two lines in it\", \"pointed you at a screen the app no longer has\" is release-note language about our own past mistakes, on the first card an older reader meets in daylight. At large font it fills the whole screen."
+   },
+   {
+    "text": "Got it",
+    "role": "button",
+    "condition": "On the score-change notice card. Tapping it accepts the new numbers and the card never returns.",
+    "concern": "Does not say that the new numbers are being saved over the old ones. \"Got it\" reads as \"dismiss\", not \"accept\"."
+   },
+   {
+    "text": "STILL TO FINISH",
+    "role": "label",
+    "condition": "Above the half-finished homes, when there is at least one. Written as \"Still to finish\".",
+    "concern": "None."
+   },
+   {
+    "text": "FINISHED",
+    "role": "label",
+    "condition": "Above the completed homes, but only when there is also at least one half-finished home. Written as \"Finished\".",
+    "concern": "None."
+   },
+   {
+    "text": "Unfinished home",
+    "role": "heading",
+    "condition": "The title of a half-finished home's row when the user never gave it a name.",
+    "concern": "Identical text on every unnamed unfinished home, so two of them are indistinguishable — the very problem the rename box exists to prevent."
+   },
+   {
+    "text": "5 rooms so far · yesterday",
+    "role": "body",
+    "condition": "Subtitle of a half-finished home. \"5\" is the real count of rooms placed; the date wording is listed under \"Date wording\" below.",
+    "concern": "None."
+   },
+   {
+    "text": "1 room so far · today",
+    "role": "body",
+    "condition": "Same line when exactly one room has been placed.",
+    "concern": "None."
+   },
+   {
+    "text": "carry on with this home",
+    "role": "accessibility",
+    "condition": "What a screen reader announces the tap will do on a half-finished home's row.",
+    "concern": "None."
+   },
+   {
+    "text": "Throw away this unfinished home",
+    "role": "accessibility",
+    "condition": "Spoken label of the ✕ at the right of a half-finished home's row.",
+    "concern": "None."
+   },
+   {
+    "text": "Carry on",
+    "role": "label",
+    "condition": "Printed at the right of every half-finished home's row, after the ✕.",
+    "concern": "Looks like a button, is plain text. It happens to work because the whole row is tappable — but it sits immediately to the RIGHT of the ✕ that throws the home away, so the word and the destructive control read as one control. A shaky tap aimed at \"Carry on\" lands on delete."
+   },
+   {
+    "text": "Buying · today",
+    "role": "body",
+    "condition": "Subtitle of a finished home. The first word comes from the answer given on the Welcome screen — the three possible values are \"Buying\", \"Building\" and \"Living\".",
+    "concern": "\"Living\" on its own is not a sentence and not what the user chose — they chose \"I already live here\". The word is machine-generated from an internal code rather than written, which is why it reads oddly."
+   },
+   {
+    "text": "Rename Home 1",
+    "role": "accessibility",
+    "condition": "Spoken label of the pencil at the right of a finished home's row. The name is the real home name.",
+    "concern": "None."
+   },
+   {
+    "text": "4.7",
+    "role": "label",
+    "condition": "The score at the right of every finished home's row, always with one decimal (so 5 shows as \"5.0\"). On a phone set to a comma-decimal language it reads \"4,7\".",
+    "concern": "None."
+   },
+   {
+    "text": "/10",
+    "role": "label",
+    "condition": "Printed under the score on every finished home's row.",
+    "concern": "A screen reader reads the whole row as one sentence and announces this as a stray slash — \"Home 1, Buying, today, four point seven, slash ten\". The app already has a properly spoken version of the score (\"Score 4.7 out of 10\") and it is not used here."
+   },
+   {
+    "text": "Add a home",
+    "role": "button",
+    "condition": "Always, at the bottom of the screen.",
+    "concern": "None."
+   },
+   {
+    "text": "Rename this home",
+    "role": "heading",
+    "condition": "After tapping the pencil on a finished home.",
+    "concern": "None."
+   },
+   {
+    "text": "Home name",
+    "role": "label",
+    "condition": "The field label in the rename box.",
+    "concern": "None."
+   },
+   {
+    "text": "e.g. Dwarka flat",
+    "role": "placeholder",
+    "condition": "Greyed text inside the rename field, shown only while the field is empty.",
+    "concern": "None."
+   },
+   {
+    "text": "You already have a home called this. Please pick a different name.",
+    "role": "error",
+    "condition": "Appears live, as the user types, when the typed name matches any other home on the screen — including a half-finished one or one that cannot be opened. Save is greyed out while it shows.",
+    "concern": "None."
+   },
+   {
+    "text": "Cancel",
+    "role": "button",
+    "condition": "In the rename box.",
+    "concern": "Every other dialog in the app uses a plain-English cancel (\"Keep it\", \"Keep my data\"). This one uses \"Cancel\". Inconsistent."
+   },
+   {
+    "text": "Save",
+    "role": "button",
+    "condition": "In the rename box. Greyed out while the field is empty or the name is already taken.",
+    "concern": "None."
+   },
+   {
+    "text": "Throw away this unfinished home?",
+    "role": "heading",
+    "condition": "After tapping the ✕ on a half-finished home.",
+    "concern": "None."
+   },
+   {
+    "text": "The 5 rooms you placed will be gone, and we can't bring them back. Your finished homes aren't affected.",
+    "role": "body",
+    "condition": "Assembled sentence in that dialog. \"5\" is the real count.",
+    "concern": "None."
+   },
+   {
+    "text": "The 1 room you placed will be gone, and we can't bring them back. Your finished homes aren't affected.",
+    "role": "body",
+    "condition": "The same sentence when exactly one room was placed.",
+    "concern": "Broken grammar in the one-room case: \"The 1 room… we can't bring them back\". Should read \"The one room you placed will be gone, and we can't bring it back.\""
+   },
+   {
+    "text": "Keep it",
+    "role": "button",
+    "condition": "The safe choice in the throw-away dialog.",
+    "concern": "None."
+   },
+   {
+    "text": "Throw it away",
+    "role": "button",
+    "condition": "The destructive choice in the throw-away dialog. Cannot be undone.",
+    "concern": "The destructive button is styled as the quieter, outlined one and the safe button as the solid one — so the visually louder button is the one that does nothing. Same pattern in the other two destructive dialogs."
+   },
+   {
+    "text": "Remove Home 2 for good?",
+    "role": "heading",
+    "condition": "After tapping the ✕ next to a home that cannot be opened. The name is the real home name.",
+    "concern": "None."
+   },
+   {
+    "text": "This home can't be opened, so we can't show you what's in it. Removing it deletes it from your phone — a future app update won't be able to bring it back. Your other homes aren't affected.",
+    "role": "body",
+    "condition": "In that dialog.",
+    "concern": "Directly contradicts the card the user tapped from, which said \"An app update may open it again.\""
+   },
+   {
+    "text": "Keep it",
+    "role": "button",
+    "condition": "The safe choice in the remove dialog.",
+    "concern": "None."
+   },
+   {
+    "text": "Remove it",
+    "role": "button",
+    "condition": "The destructive choice in the remove dialog.",
+    "concern": "See the styling note above — the destructive button is the quieter-looking one."
+   }
+  ]
+ },
+ {
+  "screen": "Add your home (choosing how to enter a plan)",
+  "whenSeen": "Immediately after tapping Continue on the Welcome screen, and after tapping \"Add a home\" on the saved-homes list (which walks through Welcome first).",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/addhome/AddHomeScreen.kt",
+  "strings": [
+   {
+    "text": "Add your home",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "Place your rooms on a simple grid — or try a sample to see the whole flow first.",
+    "role": "body",
+    "condition": "Always — the sentence directly under the heading.",
+    "concern": "Describes only two of the three choices, and skips the one listed FIRST. A reader is told about the grid and the sample, then handed \"Upload a plan\" at the top of the list with no mention of it in the intro."
+   },
+   {
+    "text": "Upload a plan",
+    "role": "heading",
+    "condition": "Always — first of three cards. Tapping it goes to the consent explanation the first time, and straight to the camera/file picker afterwards.",
+    "concern": "The card gives no hint that the first tap leads to a permission/consent screen rather than to the camera."
+   },
+   {
+    "text": "Photo or PDF · we read it, you check every room",
+    "role": "body",
+    "condition": "Subtitle of the first card.",
+    "concern": "None."
+   },
+   {
+    "text": "Draw it on a grid",
+    "role": "heading",
+    "condition": "Always — second card.",
+    "concern": "None."
+   },
+   {
+    "text": "Place room blocks by hand · stays on your phone",
+    "role": "body",
+    "condition": "Subtitle of the second card.",
+    "concern": "\"Stays on your phone\" is only said on this card, which by contrast implies the upload card does not — true, but the reader is left to infer the most important privacy fact on the screen from an absence."
+   },
+   {
+    "text": "Try a sample plan",
+    "role": "heading",
+    "condition": "Always — third card.",
+    "concern": "None."
+   },
+   {
+    "text": "See the whole flow in ten seconds",
+    "role": "body",
+    "condition": "Subtitle of the third card.",
+    "concern": "A specific time promise the app has no way to keep — the sample still walks the user through marking north and reaching a report."
+   },
+   {
+    "text": "You confirm every room yourself — nothing is scored until you say it's right.",
+    "role": "body",
+    "condition": "Always — the grey note at the bottom of the screen.",
+    "concern": "None."
+   },
+   {
+    "text": "SOON",
+    "role": "label",
+    "condition": "Never, in the shipped app. The pill exists in the code and no card is set to use it, so this is copy that can no longer appear.",
+    "concern": "Dead copy. Harmless on screen, but it is the leftover of a \"coming soon\" pattern that the project has ruled out, and the file's own description still says upload is shown as \"coming soon\", which is no longer true."
+   },
+   {
+    "text": "⤒ / ▦ / ◉",
+    "role": "accessibility",
+    "condition": "The three symbols in the coloured tiles on the three cards.",
+    "concern": "None of the three has a spoken label, so a screen reader either says nothing or reads a meaningless symbol before the card title."
+   }
+  ]
+ },
+ {
+  "screen": "Settings",
+  "whenSeen": "After tapping the gear in the top right of the saved-homes list. Not reachable at all until the user has at least one saved, unfinished or unreadable home.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/settings/SettingsScreen.kt",
+  "strings": [
+   {
+    "text": "Back",
+    "role": "accessibility",
+    "condition": "Spoken label of the ‹ chevron at the top left. Sighted users see only the chevron.",
+    "concern": "None."
+   },
+   {
+    "text": "Settings",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "PREFERENCES",
+    "role": "label",
+    "condition": "Always. Written as \"Preferences\"; rendered in capitals.",
+    "concern": "There is exactly one row under it and it cannot be tapped or changed, so the heading promises a section of choices that does not exist."
+   },
+   {
+    "text": "Vastu reading",
+    "role": "label",
+    "condition": "Always — the only row under Preferences.",
+    "concern": "Means nothing on its own. It is not a preference, cannot be tapped, and does not say what it is telling you."
+   },
+   {
+    "text": "8 directions + centre",
+    "role": "label",
+    "condition": "The value shown at the right of the \"Vastu reading\" row. Fixed — it never changes.",
+    "concern": "A fact with no question attached. The reader is shown a value in a settings list, cannot change it, and is not told what it affects."
+   },
+   {
+    "text": "WHICH AI READS A PLAN · TESTING",
+    "role": "label",
+    "condition": "Only on a build that has a working plan-reading key. On a build without one, this heading, the buttons under it and the paragraph under those are all hidden completely. Written as \"Which AI reads a plan · testing\".",
+    "concern": "Straight developer language on a screen a paying customer opens. The word \"testing\" tells a buyer this part of the product is unfinished, and nothing explains what it means for them."
+   },
+   {
+    "text": "Auto",
+    "role": "button",
+    "condition": "First of the choice buttons in that section. Selected by default.",
+    "concern": "None on its own — but see the model names below."
+   },
+   {
+    "text": "GPT 5.6 Luna",
+    "role": "button",
+    "condition": "A choice button in that section. The name is derived from the reading service's own product code, currently \"openai/gpt-5.6-luna\".",
+    "concern": "A product name from another company, meaningless to an Indian home buyer, shown as a choice they are invited to make with nothing telling them which is better or what changes."
+   },
+   {
+    "text": "Gemini 3.1 Pro",
+    "role": "button",
+    "condition": "A choice button in that section, from the code \"google/gemini-3.1-pro-preview\".",
+    "concern": "Same as above."
+   },
+   {
+    "text": "Auto is the normal choice — it asks GPT 5.6 Luna and gets a second opinion when needed. A named pick reads with that one only, and now stays chosen if you try a plan again.",
+    "role": "body",
+    "condition": "Assembled sentence under those buttons. The model name in the middle is filled in from the app's reader settings.",
+    "concern": "\"and now stays chosen\" is release-note language — \"now\" only means something to someone who used an earlier version. \"Gets a second opinion\" also quietly tells the reader the plan may be sent to a second outside service, which the privacy screen does not mention."
+   },
+   {
+    "text": "DATA & PRIVACY",
+    "role": "label",
+    "condition": "Always. Written as \"Data & privacy\".",
+    "concern": "None."
+   },
+   {
+    "text": "Your plans stay on this device",
+    "role": "label",
+    "condition": "Always — first row of the data section. Cannot be tapped.",
+    "concern": "None."
+   },
+   {
+    "text": "On",
+    "role": "label",
+    "condition": "The green value at the right of that row. Never changes.",
+    "concern": "\"On\" makes an unchangeable fact look like a switch the user could turn off. It sits directly above a row that DOES flip when tapped and looks identical."
+   },
+   {
+    "text": "Reading uploaded plans online",
+    "role": "label",
+    "condition": "Always — second row of the data section. Tapping the row flips the setting immediately, with no confirmation.",
+    "concern": "Nothing on the row says a tap will change it, and it looks the same as the row above it that does nothing. Turning it off silently changes what happens next time the user uploads a plan, and there is no undo prompt."
+   },
+   {
+    "text": "Allowed",
+    "role": "label",
+    "condition": "The value at the right of that row once the user has agreed to online plan reading.",
+    "concern": "The consent screen, the privacy screen and this row use three different words for the same state. Here it is \"Allowed\"; the privacy text calls it \"choose to have a floor plan read for you\"."
+   },
+   {
+    "text": "Off",
+    "role": "label",
+    "condition": "The value at the right of that row when the user has never agreed, or has switched it back off.",
+    "concern": "None."
+   },
+   {
+    "text": "Privacy",
+    "role": "label",
+    "condition": "Always — opens the privacy policy inside the app.",
+    "concern": "None."
+   },
+   {
+    "text": "Honesty & sources",
+    "role": "label",
+    "condition": "Always — opens the page explaining how each Vastu rule is tagged.",
+    "concern": "Gives no clue what is behind it. A reader looking for the disclaimer, or for where the rules come from, has no reason to guess this row."
+   },
+   {
+    "text": "Delete all my data",
+    "role": "label",
+    "condition": "Always — shown in red. Opens a confirmation box.",
+    "concern": "None."
+   },
+   {
+    "text": "›",
+    "role": "label",
+    "condition": "Shown at the right of the Privacy, Honesty & sources and Delete all my data rows.",
+    "concern": "A bare character with no spoken label. On the Delete row it is red and sits where the other rows show a value, so it reads as a value rather than \"opens something\"."
+   },
+   {
+    "text": "No account, no phone number. Only a plan you upload ever leaves your phone.",
+    "role": "body",
+    "condition": "Always — the grey line under the data section.",
+    "concern": "Not true on this very screen. When the app has recorded a crash, the section immediately below offers to email a crash report — which also leaves the phone. The sentence says \"only\", and the button underneath breaks it."
+   },
+   {
+    "text": "SOMETHING WENT WRONG",
+    "role": "label",
+    "condition": "Only when the app crashed the last time it was used. Written as \"Something went wrong\".",
+    "concern": "None."
+   },
+   {
+    "text": "The app crashed last time. Emailing us what happened helps us fix it. You read it first, and it says nothing about you or your homes.",
+    "role": "body",
+    "condition": "Same condition — only after a crash.",
+    "concern": "None."
+   },
+   {
+    "text": "Send what went wrong",
+    "role": "button",
+    "condition": "Only after a crash. Opens the phone's email app with the report already written.",
+    "concern": "On a phone with no email app set up, tapping this does nothing at all and says nothing — no message, no error, the card just stays. The reader is left tapping a button that appears broken."
+   },
+   {
+    "text": "No thanks",
+    "role": "button",
+    "condition": "Only after a crash. Deletes the report and the section never comes back for that crash.",
+    "concern": "Does not say the report is thrown away for good. \"No thanks\" reads as \"not now\"."
+   },
+   {
+    "text": "VastuFirst — something went wrong",
+    "role": "body",
+    "condition": "The subject line of the crash email, already filled in when the user's email app opens.",
+    "concern": "None."
+   },
+   {
+    "text": "Anything you were doing when it happened (optional):",
+    "role": "body",
+    "condition": "The first line of the crash email body, above two blank lines and then the technical detail.",
+    "concern": "None."
+   },
+   {
+    "text": "--- technical detail, nothing personal ---",
+    "role": "body",
+    "condition": "The separator line in the crash email, above the technical text.",
+    "concern": "None."
+   },
+   {
+    "text": "Delete all your data?",
+    "role": "heading",
+    "condition": "After tapping \"Delete all my data\".",
+    "concern": "The row says \"my data\" and the box says \"your data\" — one of them is written from the user's side, the other from ours."
+   },
+   {
+    "text": "This permanently removes every saved home from this device, and any plan you photographed. It can't be undone.",
+    "role": "body",
+    "condition": "In that confirmation box.",
+    "concern": "The privacy screen describes the same button and does NOT mention the photographs. Two screens, two different promises about what the same button deletes."
+   },
+   {
+    "text": "Keep my data",
+    "role": "button",
+    "condition": "The safe choice in the delete box.",
+    "concern": "The two other destructive boxes in the app say \"Keep it\". Three dialogs, two different cancel words."
+   },
+   {
+    "text": "Delete everything",
+    "role": "button",
+    "condition": "The destructive choice. Wipes every saved home, every half-finished home and every photographed plan, with no undo.",
+    "concern": "Styled as the quieter, outlined button while the safe choice is the solid one — the loudest button on the most dangerous box is the one that does nothing."
+   }
+  ]
+ },
+ {
+  "screen": "Honesty & sources",
+  "whenSeen": "After tapping \"Honesty & sources\" in Settings. Not reachable any other way, so a user who has not yet saved a home can never see the disclaimer.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/legal/LegalScreen.kt",
+  "strings": [
+   {
+    "text": "Back",
+    "role": "accessibility",
+    "condition": "Spoken label of the ‹ chevron.",
+    "concern": "None."
+   },
+   {
+    "text": "Honesty & sources",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "Vastu is a traditional practice. This is guidance for your own decisions — not a guaranteed outcome.",
+    "role": "body",
+    "condition": "Always — the boxed disclaimer at the top.",
+    "concern": "This is the legal safety net, and it lives behind a gear icon that only appears once a home has been saved — so a first-time reader can buy into the Welcome screen's \"exactly what to do about it\" without ever seeing this sentence."
+   },
+   {
+    "text": "HOW WE TAG EVERY RULE",
+    "role": "label",
+    "condition": "Always. Written as \"How we tag every rule\".",
+    "concern": "None."
+   },
+   {
+    "text": "From classical text",
+    "role": "label",
+    "condition": "Always — the first coloured tag.",
+    "concern": "None."
+   },
+   {
+    "text": "Traceable to a named source, with citation.",
+    "role": "body",
+    "condition": "Always — under the first tag.",
+    "concern": "\"With citation\" is bookish; and the screen never shows the reader where to see one."
+   },
+   {
+    "text": "Traditional practice",
+    "role": "label",
+    "condition": "Always — the second coloured tag.",
+    "concern": "The exact phrase \"traditional practice\" is also used four lines above in \"Vastu is a traditional practice\", where it means something completely different. One page, one phrase, two meanings."
+   },
+   {
+    "text": "Reasoned from the mandala; widely taught.",
+    "role": "body",
+    "condition": "Always — under the second tag.",
+    "concern": "\"Mandala\" is used with no explanation here, on the one screen whose whole job is to explain where rules come from. The word belongs in the product; a half-line saying what it is would not cost the vocabulary anything."
+   },
+   {
+    "text": "Modern practice",
+    "role": "label",
+    "condition": "Always — the third coloured tag.",
+    "concern": "None."
+   },
+   {
+    "text": "20th-century. Honesty about age, not a warning.",
+    "role": "body",
+    "condition": "Always — under the third tag.",
+    "concern": "Reads like a note the team wrote to itself. The second half answers a question the reader has not asked yet, and the first half is a fragment rather than a sentence."
+   },
+   {
+    "text": "Schools disagree",
+    "role": "label",
+    "condition": "Always — the fourth coloured tag.",
+    "concern": "None."
+   },
+   {
+    "text": "Two readings shown, neither chosen for you.",
+    "role": "body",
+    "condition": "Always — under the fourth tag.",
+    "concern": "None."
+   },
+   {
+    "text": "We never use fear, urgency, or promises of wealth, health or fortune. Where the tradition contradicts itself, we show you both sides.",
+    "role": "body",
+    "condition": "Always — the closing paragraph.",
+    "concern": "This is the product's stated position and it is contradicted by the first thing a new user reads: the Welcome screen promises \"exactly what to do about it\", which is an outcome promise. This page is also where that clash is most visible if anyone ever compares the two."
+   }
+  ]
+ },
+ {
+  "screen": "Privacy (the policy, inside the app)",
+  "whenSeen": "Two ways in: the quiet \"Privacy\" link under Continue on the very first screen, and the \"Privacy\" row in Settings.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/legal/PrivacyScreen.kt",
+  "strings": [
+   {
+    "text": "Back",
+    "role": "accessibility",
+    "condition": "Spoken label of the ‹ chevron.",
+    "concern": "None."
+   },
+   {
+    "text": "Privacy",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "Your homes never leave your phone.",
+    "role": "heading",
+    "condition": "Always — the boldest line on the page, in a green-accented card at the top.",
+    "concern": "The strongest claim on the page, and the page's own third section is titled \"The one thing that leaves your phone\" and explains that an uploaded floor plan is sent to an outside AI service. A reader who stops at the headline — which is what a headline is for — is left with the wrong understanding of the one thing that matters here."
+   },
+   {
+    "text": "Everything you draw, every score and every report is worked out on this device and saved only on this device. There is no account, no sign-up and no phone number.",
+    "role": "body",
+    "condition": "Always — under that headline.",
+    "concern": "\"Everything you draw\" is doing quiet work: it is true of drawn homes and silent about uploaded ones. The exception is three sections further down."
+   },
+   {
+    "text": "WHAT WE COLLECT",
+    "role": "label",
+    "condition": "Always. Written as \"What we collect\".",
+    "concern": "None."
+   },
+   {
+    "text": "Nothing about you. We do not ask for your name, email, phone number or location, and the app has no account to sign in to. The homes you draw, their scores and their reports are stored only in the app's own private storage on your phone, where no other app can read them.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "THE ONE THING THAT LEAVES YOUR PHONE",
+    "role": "label",
+    "condition": "Always. Written as \"The one thing that leaves your phone\".",
+    "concern": "None."
+   },
+   {
+    "text": "If you choose to have a floor plan read for you, that one picture is sent to an AI service to be turned into rooms, and the rooms come back. The app asks you before it does this, every first time, and you can turn it off again in Settings. The picture is not stored by us and is not linked to you — there is nothing to link it to. Drawing your home by hand needs no internet at all and gives the same score.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "Says \"that one picture is sent to an AI service\", singular — but Settings tells the reader the app \"gets a second opinion when needed\", meaning the same picture can go to a second service. The policy and the Settings screen do not agree. \"The picture is not stored by us\" is also a promise about someone else's servers that we are not in a position to make."
+   },
+   {
+    "text": "WHEN THE APP CRASHES",
+    "role": "label",
+    "condition": "Always. Written as \"When the app crashes\".",
+    "concern": "None."
+   },
+   {
+    "text": "If the app closes unexpectedly, it writes what went wrong into its own private storage and offers to email it to us the next time you open it. Nothing is sent unless you press send, and you can read the whole message first. It contains only technical detail, your phone model and the app version — never your homes, your scores or anything about you.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "This is a second thing that can leave the phone, on a page whose headline says nothing does and whose previous section is titled \"the ONE thing\"."
+   },
+   {
+    "text": "IF YOU BUY THE FULL REPORT",
+    "role": "label",
+    "condition": "Always. Written as \"If you buy the full report\".",
+    "concern": "None."
+   },
+   {
+    "text": "Payment is handled entirely by Google Play. We never see or store your card, and the app does not receive your payment details at any point. Google tells us only that this device has bought the report.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "None — this matches how the app actually takes payment."
+   },
+   {
+    "text": "DELETING EVERYTHING",
+    "role": "label",
+    "condition": "Always. Written as \"Deleting everything\".",
+    "concern": "None."
+   },
+   {
+    "text": "Settings → Delete all my data removes every saved home from this device immediately and permanently. Uninstalling the app removes everything too. Because nothing is stored on our side, there is nothing left for us to delete and nothing you need to ask us for.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "Two problems. It leaves out the photographed plans that the Settings confirmation box explicitly promises to delete — so the policy under-promises what the button does. And \"Settings →\" is an arrow-and-menu convention borrowed from desktop software, on a phone screen, for an older reader."
+   },
+   {
+    "text": "CHILDREN",
+    "role": "label",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "VastuFirst is not aimed at children and collects nothing from anyone, of any age.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "CONTACT",
+    "role": "label",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "Questions about privacy, or anything else: contact@vastufirst.com.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "The address is printed as plain text — it cannot be tapped to open an email, which is what every reader will try."
+   },
+   {
+    "text": "Last updated 1 August 2026.",
+    "role": "body",
+    "condition": "Always — the last line on the page.",
+    "concern": "Stale relative to the product: the Vastu rules, the Settings copy and the delete behaviour have all changed since that date, and this page's own delete section is now out of step with the app. A policy date that lags what the policy says is the kind of thing a regulator reads first."
+   }
+  ]
+ },
+ {
+  "screen": "A few more things (the optional extra questions)",
+  "whenSeen": "Only by tapping the button on the report that offers to check more — it is never forced, and a user who never opens their report never sees it.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/details/MoreDetailsScreen.kt",
+  "strings": [
+   {
+    "text": "OPTIONAL",
+    "role": "label",
+    "condition": "Always — the first thing on the screen, above the title. Written as \"Optional\".",
+    "concern": "None."
+   },
+   {
+    "text": "Back",
+    "role": "accessibility",
+    "condition": "Spoken label of the ‹ chevron next to the title.",
+    "concern": "None."
+   },
+   {
+    "text": "A few more things",
+    "role": "heading",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "So far we scored your rooms, front door and shape. Answer these to check more. Skip what you don't know — we say so, we don't guess.",
+    "role": "body",
+    "condition": "Always.",
+    "concern": "None."
+   },
+   {
+    "text": "Water tank on the roof",
+    "role": "heading",
+    "condition": "Always — first question.",
+    "concern": "None."
+   },
+   {
+    "text": "The overhead tank. Best in the south-west or west; the north-east is the one to avoid.",
+    "role": "body",
+    "condition": "Always — help text under the first question.",
+    "concern": "Tells the reader the right answer before asking them the question. Someone who is unsure, or who wants a better score, now knows exactly which button to press — which quietly corrupts the input the score is built from. This is the same defect on all four questions."
+   },
+   {
+    "text": "Underground tank, sump or borewell",
+    "role": "heading",
+    "condition": "Always — second question.",
+    "concern": "None."
+   },
+   {
+    "text": "Water kept below ground. Best in the north-east; the south-west is the one to avoid.",
+    "role": "body",
+    "condition": "Always — help text under the second question.",
+    "concern": "Same as above — it gives away the answer."
+   },
+   {
+    "text": "A big, heavy tree",
+    "role": "heading",
+    "condition": "Always — third question.",
+    "concern": "None."
+   },
+   {
+    "text": "A large tree close to the home. The north-east and the centre are the places it weighs on.",
+    "role": "body",
+    "condition": "Always — help text under the third question.",
+    "concern": "Names \"the centre\" as one of the two places that matter, and \"the centre\" is not one of the buttons offered — the eight compass directions are the only choices. A reader whose tree is in the middle of the plot has been told it matters and given nowhere to say so."
+   },
+   {
+    "text": "A road pointing straight at your home",
+    "role": "heading",
+    "condition": "Always — fourth question.",
+    "concern": "None."
+   },
+   {
+    "text": "A road that ends at your home rather than passing it — a T-junction or a dead end.",
+    "role": "body",
+    "condition": "Always — help text under the fourth question.",
+    "concern": "None."
+   },
+   {
+    "text": "Which direction is it in?",
+    "role": "body",
+    "condition": "Under each question, before it has been answered.",
+    "concern": "For the road question this is genuinely ambiguous: is it the direction the road lies in, or the direction it comes at the house from? The two are opposites, and getting it backwards silently changes the score."
+   },
+   {
+    "text": "It's in the north-east.",
+    "role": "body",
+    "condition": "Replaces the line above once a direction is chosen. The direction is whichever button was tapped, in lower case — \"It's in the north.\", \"It's in the south-west.\", and so on for all eight.",
+    "concern": "None."
+   },
+   {
+    "text": "There isn't one.",
+    "role": "body",
+    "condition": "Replaces the line above when the user taps the \"There isn't one\" button.",
+    "concern": "None."
+   },
+   {
+    "text": "North / North-East / East / South-East / South / South-West / West / North-West",
+    "role": "button",
+    "condition": "The eight direction buttons under every question, in compass order.",
+    "concern": "None."
+   },
+   {
+    "text": "There isn't one",
+    "role": "button",
+    "condition": "The ninth button under every question.",
+    "concern": "None."
+   },
+   {
+    "text": "Done — back to my report",
+    "role": "button",
+    "condition": "Always, at the bottom. Returns to the report the user came from.",
+    "concern": "None."
+   },
+   {
+    "text": "Every answer is saved as you tap it.",
+    "role": "body",
+    "condition": "Always — the grey line under the button.",
+    "concern": "A promise the app does not fully keep. A \"There isn't one\" answer for the tank, the underground water or the tree is NOT kept — reopening the home shows those questions blank again, as though they were never answered. The app's own notes call this a known limit; the screen tells the user the opposite."
+   }
+  ]
+ },
+ {
+  "screen": "Report — \"What this covers\" section",
+  "whenSeen": "On the report screen for every home, near the bottom. The wording changes with how many of the four extra questions have been answered.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/details/MoreDetailsScreen.kt",
+  "strings": [
+   {
+    "text": "WHAT THIS COVERS",
+    "role": "label",
+    "condition": "Always on the report. Written as \"What this covers\".",
+    "concern": "None."
+   },
+   {
+    "text": "Your rooms, your front door and your home's shape. We haven't looked at your water tank, trees or the road outside.",
+    "role": "body",
+    "condition": "When none of the four extra questions has been answered — which is every home until the user goes looking.",
+    "concern": "None. This is the honest default and it works."
+   },
+   {
+    "text": "Your rooms, your front door, your home's shape, and 2 of 4 extra things you told us about.",
+    "role": "body",
+    "condition": "When some but not all of the four extra questions have been answered. The numbers are real.",
+    "concern": "\"2 of 4 extra things\" no longer names WHICH ones are missing, so the reader loses the useful half of the first version — they know something is uncovered but not what."
+   },
+   {
+    "text": "Your rooms, your front door, your home's shape — and the 4 extra things you told us about.",
+    "role": "body",
+    "condition": "When all four extra questions have been answered.",
+    "concern": "Counts \"there isn't one\" answers as things the user \"told us about\", which is defensible — but because those answers are silently lost when a home is reopened, this line can flip back to a lower number with no explanation."
+   }
+  ]
+ },
+ {
+  "screen": "Date wording (used on every row of the saved-homes list)",
+  "whenSeen": "After the \"·\" on every finished home, every half-finished home, and every home that cannot be opened. It follows the calendar day, so an app left open past midnight updates itself.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/common/RelativeTime.kt",
+  "strings": [
+   {
+    "text": "today",
+    "role": "body",
+    "condition": "When the home was last touched on the same calendar day. Also shown if the phone's clock is set ahead and the saved time looks like the future.",
+    "concern": "None."
+   },
+   {
+    "text": "yesterday",
+    "role": "body",
+    "condition": "When the home was last touched on the previous calendar day.",
+    "concern": "None."
+   },
+   {
+    "text": "3 days ago",
+    "role": "body",
+    "condition": "Two to six calendar days ago — \"2 days ago\" through \"6 days ago\".",
+    "concern": "None."
+   },
+   {
+    "text": "3 Jul",
+    "role": "body",
+    "condition": "Seven or more days ago, within the current year.",
+    "concern": "Jumps straight from \"6 days ago\" to a bare date with no year, so a home touched last week and a home touched eight months ago look equally specific and equally undated. \"Jul\" is also an abbreviation where the rest of the app spells words out."
+   },
+   {
+    "text": "3 Jul 2025",
+    "role": "body",
+    "condition": "Seven or more days ago, in a different year from today.",
+    "concern": "None."
+   }
+  ]
+ },
+ {
+  "screen": "Before we start — consent to send your plan",
+  "whenSeen": "The gate immediately before the upload screen. Shown the first time the user chooses to have a plan read, and again any time the permission has been switched off in Settings or the consent version was bumped. Nothing can reach the internet until this screen is answered.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanConsentScreen.kt",
+  "strings": [
+   {
+    "text": "Before we start",
+    "role": "label"
+   },
+   {
+    "text": "Your plan leaves this phone",
+    "role": "heading"
+   },
+   {
+    "text": "Everything else happens on your phone. Reading a plan does not — so here is exactly what happens.",
+    "role": "body"
+   },
+   {
+    "text": "What we send",
+    "role": "label"
+   },
+   {
+    "text": "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.",
+    "role": "body"
+   },
+   {
+    "text": "Who reads it",
+    "role": "label"
+   },
+   {
+    "text": "A relay called OpenRouter passes it to an AI model from OpenAI — and sometimes a second one from Google for a second opinion. Their computers are abroad.",
+    "role": "body",
+    "concern": "Two problems. (1) \"A relay called OpenRouter\" is company jargon for a reader who will not know what a relay is, and naming three foreign companies on a consent screen is the sentence most likely to make an older buyer back out. (2) It can be untrue: Settings lets the user pin one named reader, and if they pin the Google one the plan goes ONLY to Google — never to OpenAI, never as \"a second opinion\". The consent text does not change to match, so the person has agreed to something different from what happens."
+   },
+   {
+    "text": "What we ask it",
+    "role": "label"
+   },
+   {
+    "text": "Only to read what is printed on your plan — the room names and sizes, and where each room sits. It is never asked anything about Vastu.",
+    "role": "body",
+    "concern": "\"and where each room sits\" sets up an expectation the very next screen contradicts: on most real plans the result screen says \"we can't trust where each one sits — and we don't guess\". The consent says we ask for placement; the app then quietly throws it away. Truthful in isolation, misleading read alongside the screen after it."
+   },
+   {
+    "text": "What we keep",
+    "role": "label"
+   },
+   {
+    "text": "Nothing. Your plan is not stored by us, and it stays in your phone's own storage.",
+    "role": "body",
+    "concern": "\"Nothing\" overstates it. When the plan is photographed inside the app, the picture is written to the app's own storage and stays there until the next scan or until the user runs \"Delete all my data\". A reader hears \"we keep nothing\" and would not expect a picture of their home still sitting on the phone."
+   },
+   {
+    "text": "Who works out your score",
+    "role": "label"
+   },
+   {
+    "text": "Your phone does, on its own, exactly as it does for a home you draw by hand.",
+    "role": "body"
+   },
+   {
+    "text": "You can turn this off again at any time in Settings.",
+    "role": "body"
+   },
+   {
+    "text": "I agree — read my plan",
+    "role": "button"
+   },
+   {
+    "text": "Rather not?",
+    "role": "heading"
+   },
+   {
+    "text": "Draw your home on the grid instead. It takes a few minutes, nothing leaves your phone, and the score is exactly the same.",
+    "role": "body",
+    "concern": "\"the score is exactly the same\" is a promise the app cannot keep. Drawing by hand and reading a plan produce different room shapes and sizes, and the score is computed from those shapes. The same home done both ways can score differently. The same claim is repeated on five other screens in this flow."
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   },
+   {
+    "text": "Back",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Upload your plan (the starting state)",
+  "whenSeen": "After the consent screen is agreed to. This is the first scan screen — nothing chosen yet.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "Upload your plan",
+    "role": "heading"
+   },
+   {
+    "text": "We read the room names so you don't type them. You place and check every room before anything is scored.",
+    "role": "body",
+    "concern": "\"You place ... every room\" is only true on the reading where the app could not work out placement. On a good reading the next screen says \"We've put them roughly where they appear on your plan\" and the user never places anything. The promise on the front door of the feature does not match the commonest good outcome."
+   },
+   {
+    "text": "Choose a PDF or picture",
+    "role": "button"
+   },
+   {
+    "text": "Take a photo of it now",
+    "role": "button",
+    "condition": "Greyed out and unusable once the phone has shown it has no camera app"
+   },
+   {
+    "text": "No camera app on this phone. Choose a picture or PDF above — it reads better anyway.",
+    "role": "body",
+    "condition": "Only after the user has tapped \"Take a photo of it now\" on a phone with no camera app (an emulator, a stripped ROM)",
+    "concern": "\"it reads better anyway\" quietly admits the camera button is the worse of the two options — yet the app offers it as a main button to everyone else with no such warning. Either the camera is a good route or it is not; the app says both."
+   },
+   {
+    "text": "What works best",
+    "role": "heading"
+   },
+   {
+    "text": "• The PDF your architect or builder sent, or a clear screenshot of it.",
+    "role": "body"
+   },
+   {
+    "text": "• A flat, top-down plan — not a 3D picture of the finished home.",
+    "role": "body"
+   },
+   {
+    "text": "• Room names printed on the plan, like KITCHEN or BEDROOM.",
+    "role": "body"
+   },
+   {
+    "text": "• One home per picture. If the sheet shows several flats, crop to yours.",
+    "role": "body",
+    "concern": "Tells the user to crop, but the app has no cropping tool and does not say where to do it. On a phone that means leaving the app, finding the photo gallery and working it out alone."
+   },
+   {
+    "text": "If you photograph a printed plan, hold the phone flat above it. A picture taken at an angle is the one thing we struggle with.",
+    "role": "body"
+   },
+   {
+    "text": "Rather not upload anything?",
+    "role": "heading"
+   },
+   {
+    "text": "Drawing on the grid takes a few minutes, stays on your phone, and gives exactly the same score.",
+    "role": "body",
+    "concern": "Same unsupportable claim as on the consent screen — a hand-drawn home and a read plan do not produce identical shapes, so they do not reliably produce the same score. Also \"the grid\" is never explained anywhere the user has been so far."
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   },
+   {
+    "text": "Back",
+    "role": "button",
+    "condition": "Sits at the foot of this screen in every one of its states — idle, reading, results, refusal, busy, offline, bad file, and the no-reader build"
+   }
+  ]
+ },
+ {
+  "screen": "Reading your plan (the wait)",
+  "whenSeen": "From the moment a file or photo is handed over until an answer comes back. Nothing on this screen moves — there is no spinner — so the words are the only sign the app is alive.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "Reading your plan…",
+    "role": "heading"
+   },
+   {
+    "text": "This usually takes a few seconds.",
+    "role": "body",
+    "condition": "For the first 8 seconds of the wait"
+   },
+   {
+    "text": "Still reading — a detailed plan can take up to a minute.",
+    "role": "body",
+    "condition": "Once the wait passes 8 seconds",
+    "concern": "\"up to a minute\" is a promise the app cannot keep. The reader is allowed 20 seconds to connect plus 120 seconds to answer, and a second reader may be asked afterwards — so the honest ceiling is well over two minutes. A person told \"up to a minute\" who is still waiting at ninety seconds concludes the app has frozen, which is exactly the outcome this line was written to prevent."
+   },
+   {
+    "text": "Taking a second look at your plan.",
+    "role": "body",
+    "condition": "Once the wait passes 35 seconds",
+    "concern": "Stated as fact, but the app does not actually know a second reader was called — 35 seconds is only a guess that it probably was. A slow first reader produces the same wait and the same sentence, so the app is telling the user something that may not have happened."
+   }
+  ]
+ },
+ {
+  "screen": "We read N rooms (the app worked out where the rooms are)",
+  "whenSeen": "A reading came back that the app trusts enough to place the rooms itself — the good outcome. The user checks the list, then goes to the North dial.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "We read <number> rooms",
+    "role": "heading",
+    "condition": "<number> is filled in with the count of rooms read",
+    "concern": "One word apart from the heading on the other reading outcome (\"We found N rooms\"). Two different headings for what a reader will experience as the same event, with nothing to tell them the difference means anything — and the difference is large: one places their rooms, the other does not."
+   },
+   {
+    "text": "We've put them roughly where they appear on your plan. Mark North, then check each one — nothing is scored until you say it's right.",
+    "role": "body"
+   },
+   {
+    "text": "Tap any room to change what kind of room it is.",
+    "role": "body"
+   },
+   {
+    "text": "Next — which way is North?",
+    "role": "button"
+   },
+   {
+    "text": "Try a different picture",
+    "role": "button",
+    "concern": "Does not say that tapping it throws away the reading just produced and sends the plan to be read again. Next to a list the user has just been asked to check, \"try a different picture\" reads like a side option rather than a discard."
+   }
+  ]
+ },
+ {
+  "screen": "We found N rooms (the app could not place them — the user must)",
+  "whenSeen": "A reading came back with good room names but placement the app does not trust. This is the outcome most real Indian plans land in. The user checks the list, then drags each room onto a grid.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "We found <number> rooms",
+    "role": "heading",
+    "condition": "<number> is filled in with the count of rooms read"
+   },
+   {
+    "text": "We read every room name, but we can't trust where each one sits — and we don't guess. Drag each one to its real place.",
+    "role": "body",
+    "condition": "Reason: too many rooms for the reader to keep track of"
+   },
+   {
+    "text": "This sheet shows a whole floor, not one home. Drag the rooms that are yours to where they belong.",
+    "role": "body",
+    "condition": "Reason: the sheet names a lift, so it is a whole building floor rather than one home",
+    "concern": "It says some of the rooms listed are not the user's, but every room in the list above is shown identically and there is no way on this screen to say \"that one isn't mine\". The instruction cannot be followed here."
+   },
+   {
+    "text": "We read the room names but not where they sit — and we don't guess. Drag each one to its real place.",
+    "role": "body",
+    "condition": "Reason: too few rooms survived to be worth placing"
+   },
+   {
+    "text": "We read the room names, but the shapes came back identical — not really measured. Drag each one to its real place.",
+    "role": "body",
+    "condition": "Reason: every rectangle came back the same size, so the shapes were invented rather than measured",
+    "concern": "\"the shapes came back identical — not really measured\" explains our internal reasoning rather than the user's situation. The reader does not know what \"came back\" or \"shapes\" refers to; they only sent a picture."
+   },
+   {
+    "text": "The picture looked angled, so we kept the room names and threw the shapes away. Drag each one to its real place.",
+    "role": "body",
+    "condition": "Reason: the reader judged the photo to be taken at an angle, and the user tapped \"Show me what you read\" on the refusal screen"
+   },
+   {
+    "text": "Tap any room to change what kind of room it is.",
+    "role": "body"
+   },
+   {
+    "text": "Place them on the grid",
+    "role": "button",
+    "concern": "Ambiguous next to the \"Draw it on a grid instead\" button lower down the same screen. Two buttons, both about \"the grid\", one continuing this reading and one abandoning it. Nothing distinguishes them for someone skimming."
+   },
+   {
+    "text": "Try a different picture",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Card: N rooms won't fit on the grid",
+  "whenSeen": "Added today. Appears on the found-rooms screen only when the reading has more rooms than the drawing grid can physically hold (the grid holds 25). Until this card existed those rooms simply vanished between one screen and the next.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "1 room won't fit on the grid",
+    "role": "heading",
+    "condition": "Exactly one room is over the limit"
+   },
+   {
+    "text": "<number> rooms won't fit on the grid",
+    "role": "heading",
+    "condition": "More than one room is over the limit; <number> is filled in",
+    "concern": "\"the grid\" is named as though the reader already knows it. At this point they have never seen a grid — they uploaded a picture. The heading announces a loss in a word that means nothing to them yet."
+   },
+   {
+    "text": "The grid holds <capacity> rooms and your plan has <total>. Not on it: <room names, comma separated>.",
+    "role": "body",
+    "condition": "<capacity>, <total> and the list of names are filled in from the reading",
+    "concern": "States a hard limit as an unexplained fact of the product, with no reason and no way to raise it. Reads as an arbitrary refusal, and it lands on exactly the largest, most expensive plans."
+   },
+   {
+    "text": "A room that is not on the grid is not scored. Make space on the next screen and add it yourself.",
+    "role": "body",
+    "condition": "Exactly one room is over the limit",
+    "concern": "\"Make space\" does not say how — the reader has no idea what making space involves or what they would have to remove to do it. It also asks them to do the app's arithmetic: to fit the missing room they must first delete a different one, which loses that one from the score instead. The card names a price and hands back a puzzle."
+   },
+   {
+    "text": "A room that is not on the grid is not scored. Make space on the next screen and add them yourself.",
+    "role": "body",
+    "condition": "More than one room is over the limit",
+    "concern": "Same as the one-room version, and worse at scale: a plan four rooms over the limit is being told to hand-place four rooms it must first make room for, with no guidance."
+   }
+  ]
+ },
+ {
+  "screen": "Card: We also saw, but didn't add",
+  "whenSeen": "On either reading-result screen, whenever the reader saw a space it could not carry through — an unrecognised name, something too small, a shape it could not make sense of, or a room overlapping another. Spaces the app deliberately never scores (ducts, shafts, lifts, dressing areas) are filtered out and never shown here.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "We also saw, but didn't add",
+    "role": "heading"
+   },
+   {
+    "text": "• <name printed on the plan> — we didn't recognise the name",
+    "role": "body",
+    "condition": "The printed caption matched none of the room names the app knows"
+   },
+   {
+    "text": "• <name printed on the plan> — it was too small to place on the grid",
+    "role": "body",
+    "condition": "The space rounded down to nothing on the grid"
+   },
+   {
+    "text": "• <name printed on the plan> — we couldn't make sense of its shape",
+    "role": "body",
+    "condition": "The shape came back broken or outside the plan"
+   },
+   {
+    "text": "• <name printed on the plan> — it overlapped another room",
+    "role": "body",
+    "condition": "The space sat on top of a room the reader was more sure about"
+   },
+   {
+    "text": "it isn't a room we score",
+    "role": "body",
+    "condition": "Written in the app for spaces like ducts and lifts, but filtered out before display — no user ever sees this line"
+   },
+   {
+    "text": "If any of these is a real room, add it yourself on the next screen.",
+    "role": "body",
+    "condition": "Only when the next screen is the drawing grid, i.e. on the found-rooms outcome"
+   },
+   {
+    "text": "If any of these is a real room, draw your home on a grid instead — this reading cannot add it.",
+    "role": "body",
+    "condition": "Only on the outcome where the app placed the rooms itself, because that path never opens the grid",
+    "concern": "This tells a user whose reading just succeeded that their only way to include a missing room is to throw the whole reading away and redraw the home by hand — a job the app itself calls \"a few minutes\" and which in practice is far longer. That cost is buried in a grey caption at the bottom of a card, phrased as a casual aside, on the screen where the user has been promised \"nothing is scored until you say it's right\"."
+   }
+  ]
+ },
+ {
+  "screen": "One room in the list, and changing what kind it is",
+  "whenSeen": "Every row of either reading-result screen. Tapping a row opens the full list of room kinds so the user can overrule what the app decided a room is.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "CHECK",
+    "role": "label",
+    "condition": "On a room whose shape was cut back because it overlapped another, or whose printed name only loosely matched a name the app knows",
+    "concern": "A shouted one-word warning with nothing anywhere on the screen explaining what to check or why this room and not the others. The reader is left to guess whether it means the name, the size, the kind, or the position — and the two things that trigger it are two completely different problems shown identically."
+   },
+   {
+    "text": "Change",
+    "role": "label",
+    "concern": "Sits at the end of a row that is itself the tap target. It looks like a button but is not one, so a user aiming carefully at the word gets the same result as tapping anywhere on the row — harmless, but it teaches a false model of the screen."
+   },
+   {
+    "text": "We read \"<name printed on the plan>\" as <room kind>, <printed size>. Please check this one.",
+    "role": "accessibility",
+    "condition": "Spoken by a screen reader for each room row; the size is dropped when the plan printed none, and \"Please check this one.\" only appears on a flagged room"
+   },
+   {
+    "text": "change the room type",
+    "role": "accessibility",
+    "condition": "The action a screen reader announces for the row"
+   },
+   {
+    "text": "Change room type",
+    "role": "button",
+    "condition": "The closed state of the room-kind picker — on this screen the picker is always opened by the row, so this label is only reached elsewhere in the app"
+   },
+   {
+    "text": "Change room type. Currently <room kind>.",
+    "role": "accessibility"
+   },
+   {
+    "text": "<room kind>, the current room type",
+    "role": "accessibility",
+    "condition": "Spoken for the chip of the kind the room already is"
+   },
+   {
+    "text": "Change to <room kind>",
+    "role": "accessibility",
+    "condition": "Spoken for every other chip"
+   }
+  ]
+ },
+ {
+  "screen": "We couldn't read your plan (refusal)",
+  "whenSeen": "The reader came back and said the picture cannot be used at all. Five different reasons, each with its own wording, and one of them has a second version when a usable room list came back anyway.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "This looks like a tilted 3D view",
+    "role": "heading",
+    "condition": "Reason: the reader judged the picture to be taken at an angle rather than straight down",
+    "concern": "\"3D view\" is builder-and-software language. An older home buyer holding an ordinary photograph of their plan will not know whether their picture is a \"3D view\"."
+   },
+   {
+    "text": "We read it as an angled picture rather than a flat plan — but we did get room names off it. Have a look.",
+    "role": "body",
+    "condition": "Angled-picture refusal, and the same reply did come back with room names on it"
+   },
+   {
+    "text": "Rooms seen at an angle can't be measured. Please send the flat, top-down plan — a colourful, furnished one is fine.",
+    "role": "body",
+    "condition": "Angled-picture refusal with no usable room names behind it"
+   },
+   {
+    "text": "That doesn't look like a floor plan",
+    "role": "heading",
+    "condition": "Reason: the picture is not a floor plan at all"
+   },
+   {
+    "text": "We couldn't find a floor plan in that picture. It might be an elevation, a brochure page or a site map. Please upload the flat, top-down plan.",
+    "role": "body",
+    "condition": "Reason: the picture is not a floor plan at all",
+    "concern": "\"an elevation\" is architect's trade language. A home buyer knows \"the front view of the building\", not \"an elevation\", and this sentence is the one that has to tell them what went wrong."
+   },
+   {
+    "text": "We can't see the room names",
+    "role": "heading",
+    "condition": "Reason: the rooms on the plan are not named, or the names are too small to read"
+   },
+   {
+    "text": "The rooms on this plan aren't named, or the names are too small to read. Please upload a plan with the rooms named — or draw your home instead, which takes a few minutes.",
+    "role": "body",
+    "condition": "Reason: no readable room names"
+   },
+   {
+    "text": "There's more than one home on this sheet",
+    "role": "heading",
+    "condition": "Reason: the sheet shows several flats"
+   },
+   {
+    "text": "This sheet shows several flats. Please crop the picture to just your own home and try again.",
+    "role": "body",
+    "condition": "Reason: several homes on one sheet",
+    "concern": "Asks for a crop the app cannot do and does not explain how to do elsewhere. This is a dead end for anyone who does not already know how to crop a photo on their phone."
+   },
+   {
+    "text": "We couldn't pick out any rooms",
+    "role": "heading",
+    "condition": "Reason: it is a proper labelled plan, but nothing on it came through as a room the app recognises"
+   },
+   {
+    "text": "The plan looks right, but nothing on it came through as a room we recognise. A clearer picture often fixes it.",
+    "role": "body",
+    "condition": "Reason: no rooms recognised",
+    "concern": "\"often fixes it\" is a claim with nothing behind it — the app has no way of knowing whether a clearer picture would help this particular sheet, and it may well have been clear already. It invites a second upload that may fail identically."
+   },
+   {
+    "text": "Show me what you read",
+    "role": "button",
+    "condition": "Only on the angled-picture refusal, and only when a usable room list came back with it",
+    "concern": "Does not say what happens on the tap. The reader cannot tell whether this costs another read, whether it will be scored, or whether they are agreeing to a reading the app has just called unreliable. It is the leading button on the screen."
+   },
+   {
+    "text": "Try a different picture",
+    "role": "button"
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "We're busy right now (too many people scanning)",
+  "whenSeen": "The reading service refused because too many plans are being read at once across everyone using the app. Expected and temporary, not a fault of the user's plan.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "We're reading a lot of plans right now",
+    "role": "heading"
+   },
+   {
+    "text": "Your plan is fine — we're just busy. Please try again in a minute. Or draw your home on the grid — it works now, no internet needed.",
+    "role": "body",
+    "condition": "The service gave no wait time",
+    "concern": "\"Your plan is fine\" is a claim the app cannot support — the plan was never looked at, so nobody knows whether it is fine. If the user tries again and gets a refusal, the app has contradicted itself in two consecutive screens."
+   },
+   {
+    "text": "Your plan is fine — we're just busy. Please try again in about <number> seconds. Or draw your home on the grid — it works now, no internet needed.",
+    "role": "body",
+    "condition": "The service gave a wait time of 60 seconds or less"
+   },
+   {
+    "text": "Your plan is fine — we're just busy. Please try again in about <number> minutes. Or draw your home on the grid — it works now, no internet needed.",
+    "role": "body",
+    "condition": "The service gave a wait time over 60 seconds"
+   },
+   {
+    "text": "Try again",
+    "role": "button"
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Our reader didn't answer (service down, timed out, or the phone is offline)",
+  "whenSeen": "Every failure that is not a rate limit lands here — the reading service timing out, being down, or a bad key — and so does a phone with no internet. The app cannot tell these apart.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "Our reader didn't answer in time",
+    "role": "heading",
+    "concern": "\"Our reader\" is our internal name for the AI service. The user has never been told there is a thing called a reader, so the heading names a character they have not met."
+   },
+   {
+    "text": "That is usually us, not you — try again in a moment. If your phone is offline, reading a plan needs a connection, but drawing your home on the grid does not.",
+    "role": "body"
+   },
+   {
+    "text": "Try again",
+    "role": "button"
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "We couldn't open that file",
+  "whenSeen": "The chosen file could not be turned into a picture at all — a corrupt file, or a password-protected PDF. Nothing was ever sent.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "We couldn't open that file",
+    "role": "heading"
+   },
+   {
+    "text": "The picture or PDF wouldn't open. If it's a PDF, check it isn't password-protected, or take a screenshot of the page and upload that instead.",
+    "role": "body"
+   },
+   {
+    "text": "Choose another file",
+    "role": "button"
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "This copy of the app can't read plans",
+  "whenSeen": "A build shipped without the key that lets it call the reading service. The screen deliberately refuses to look like a working one — there is no file chooser on it at all.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanScreen.kt",
+  "strings": [
+   {
+    "text": "This copy of the app can't read plans",
+    "role": "heading"
+   },
+   {
+    "text": "Plan reading is switched off in this version, so there's nothing behind the upload button. It isn't your plan or your phone. Drawing your home on the grid works normally and gives exactly the same score.",
+    "role": "body",
+    "concern": "Two problems. \"there's nothing behind the upload button\" points at a button that this screen deliberately does not show — the user looks for it and cannot find it. And \"exactly the same score\" repeats the claim the app cannot support: a hand-drawn home does not produce the same shapes as a read plan, so it does not reliably produce the same score."
+   },
+   {
+    "text": "Draw it on a grid instead",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Which way is North?",
+  "whenSeen": "Straight after a successful reading, before the checking screen. On the scan path the user's own plan photo sits inside the dial. There is no phone-compass option — North is always set by hand.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/marknorth/MarkNorthScreen.kt",
+  "strings": [
+   {
+    "text": "Which way is North?",
+    "role": "heading"
+   },
+   {
+    "text": "Drag the N dial, or use the slider. Everything else follows from this.",
+    "role": "body"
+   },
+   {
+    "text": "Floor plan compass. North at <number> degrees. Drag to set North.",
+    "role": "accessibility"
+   },
+   {
+    "text": "Ideal",
+    "role": "label",
+    "concern": "The colour key here uses Ideal / Fine / Not ideal / Defect, but the room rows on the very next screen use Already right / Not ideal / Needs fixing / Not rated for the same four results. Two vocabularies for the same four things, one tap apart, with only one word (\"Not ideal\") in common — so a reader cannot match the colours they just learned to the words they then see."
+   },
+   {
+    "text": "Fine",
+    "role": "label"
+   },
+   {
+    "text": "Not ideal",
+    "role": "label"
+   },
+   {
+    "text": "Defect",
+    "role": "label",
+    "concern": "\"Defect\" is the harshest word in the product and it appears here as a bare colour key, with no room attached and nothing explaining it, on a screen about compass direction."
+   },
+   {
+    "text": "North bearing, <number> degrees",
+    "role": "accessibility"
+   },
+   {
+    "text": "North is at",
+    "role": "label"
+   },
+   {
+    "text": "<number>°",
+    "role": "label"
+   },
+   {
+    "text": "N",
+    "role": "button",
+    "concern": "Four one-letter buttons on a screen whose own accessibility wording spells directions out in full, and in an app that has already logged a bare compass letter reaching a user as a defect."
+   },
+   {
+    "text": "E",
+    "role": "button"
+   },
+   {
+    "text": "S",
+    "role": "button"
+   },
+   {
+    "text": "W",
+    "role": "button"
+   },
+   {
+    "text": "Turn North one degree anticlockwise",
+    "role": "accessibility"
+   },
+   {
+    "text": "Turn North one degree clockwise",
+    "role": "accessibility"
+   },
+   {
+    "text": "Check this before we score",
+    "role": "heading",
+    "condition": "Only when the engine has produced at least one claim worth quoting back"
+   },
+   {
+    "text": "With North where you have put it, <one to three claims>.",
+    "role": "body",
+    "condition": "The claims are built from the reading — see the two claim wordings below"
+   },
+   {
+    "text": "your front door is on the <direction> side",
+    "role": "body",
+    "condition": "First claim, whenever a front door is known"
+   },
+   {
+    "text": "your <room kind> is in the <direction>",
+    "role": "body",
+    "condition": "Up to two more claims, taken from kitchen, pooja, master bedroom, toilet, living room or stairs — whichever the home has"
+   },
+   {
+    "text": "Not right? Turn the dial until it is. Every direction in your report depends on this.",
+    "role": "body"
+   },
+   {
+    "text": "Back",
+    "role": "button"
+   },
+   {
+    "text": "Yes — check what we read",
+    "role": "button",
+    "condition": "On the scan path, when the double-check card is showing"
+   },
+   {
+    "text": "Check what we read",
+    "role": "button",
+    "condition": "On the scan path, when there was nothing worth quoting back in the double-check card"
+   },
+   {
+    "text": "Yes — read my home",
+    "role": "button",
+    "condition": "Off the scan path, when the double-check card is showing"
+   },
+   {
+    "text": "Read my home",
+    "role": "button",
+    "condition": "Off the scan path, with no double-check card"
+   }
+  ]
+ },
+ {
+  "screen": "Check what we read",
+  "whenSeen": "After North is marked. The user's own plan photo is pinned at the top and every room read off it is a scrolling row underneath, now carrying a result and a direction. This is the last stop before the report when the plan named its own entrance.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanReviewScreen.kt",
+  "strings": [
+   {
+    "text": "Back",
+    "role": "accessibility"
+   },
+   {
+    "text": "Check what we read",
+    "role": "heading"
+   },
+   {
+    "text": "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
+    "role": "body",
+    "condition": "Only when at least one room was read"
+   },
+   {
+    "text": "Your scanned plan. Tap a room to see roughly where we read it.",
+    "role": "accessibility",
+    "condition": "Spoken for the plan picture when no room is selected"
+   },
+   {
+    "text": "Your plan, showing roughly where <room name> was read",
+    "role": "accessibility",
+    "condition": "Spoken for the plan picture once a room is selected"
+   },
+   {
+    "text": "<number> rooms read from your plan",
+    "role": "label",
+    "condition": "Only when at least one room was read",
+    "concern": "Always says \"rooms\", so a single-room reading reads \"1 rooms read from your plan\"."
+   },
+   {
+    "text": "Already right",
+    "role": "label",
+    "condition": "Result pill on a room the tradition places well",
+    "concern": "This word and the three below do not match the four words used on the colour key one screen earlier (Ideal / Fine / Not ideal / Defect). The same four engine results are given two different sets of names on consecutive screens."
+   },
+   {
+    "text": "Not ideal",
+    "role": "label",
+    "condition": "Result pill on a middling room"
+   },
+   {
+    "text": "Needs fixing",
+    "role": "label",
+    "condition": "Result pill on a room the tradition counts as a defect"
+   },
+   {
+    "text": "Not rated",
+    "role": "label",
+    "condition": "Result pill on a room the tradition does not place — roughly one room in eight"
+   },
+   {
+    "text": "✓",
+    "role": "label",
+    "condition": "Sits inside the \"Already right\" pill"
+   },
+   {
+    "text": "△",
+    "role": "label",
+    "condition": "Sits inside BOTH the \"Not ideal\" and the \"Needs fixing\" pills",
+    "concern": "The same symbol is used for a middling room and for a real defect, so anyone reading by shape rather than by colour cannot tell a warning from a problem."
+   },
+   {
+    "text": "–",
+    "role": "label",
+    "condition": "Sits inside the \"Not rated\" pill"
+   },
+   {
+    "text": "<direction>",
+    "role": "label",
+    "condition": "Direction pill, omitted entirely when North is not yet known; reads Centre for a room in the middle of the home",
+    "concern": "\"Centre\" is not a direction, but it appears in the same pill, in the same place, as North-East and South-West. A reader running an eye down the column sees one row that answers a different question."
+   },
+   {
+    "text": "<room kind> · <size printed on the plan>",
+    "role": "body",
+    "condition": "The line under a room's name when the plan printed a size"
+   },
+   {
+    "text": "<room kind> · one space: <size> + <size> + <size>",
+    "role": "body",
+    "condition": "When several printed sizes on the sheet were fused into one room"
+   },
+   {
+    "text": "<room kind> · no size printed",
+    "role": "body",
+    "condition": "When the plan printed no size for that room"
+   },
+   {
+    "text": "show this room on the plan",
+    "role": "accessibility",
+    "condition": "The action a screen reader announces for each room row on this screen"
+   },
+   {
+    "text": "Front door: your plan prints \"<the caption on the plan>\" on <the top / bottom / left / right wall of your plan>, so we put it there.",
+    "role": "body",
+    "condition": "When the door was worked out from a printed way-in name such as PORCH or VERANDAH",
+    "concern": "Describes the door by where it sits on the picture (\"the top wall of your plan\") while every room row directly above it describes position by compass direction. Two ways of saying where something is, in the same list, about the most heavily weighted thing the app scores. Elsewhere in the app the same door is announced as \"on the north wall\", which is a third wording and can be plainly wrong once North has been turned."
+   },
+   {
+    "text": "Front door: we read it from your plan's own entrance, on <the top / bottom / left / right wall of your plan>.",
+    "role": "body",
+    "condition": "When the door came from a room the reader typed as an entrance"
+   },
+   {
+    "text": "These are my rooms — read my home",
+    "role": "button",
+    "condition": "When the front door is already known, so this is the last step before the report"
+   },
+   {
+    "text": "These are my rooms — set the front door",
+    "role": "button",
+    "condition": "When the plan did not name its entrance, so the door screen comes next"
+   },
+   {
+    "text": "Put the front door somewhere else",
+    "role": "button",
+    "condition": "Only when a door is already known and at least one room was read"
+   }
+  ]
+ },
+ {
+  "screen": "Check what we read — when the picture or the whole reading is gone",
+  "whenSeen": "Two different failures on the same screen. Either the photo could not be decoded but the rooms survived, or the phone reclaimed the app's memory while it was working and the entire reading — photo and rooms — is gone.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanReviewScreen.kt",
+  "strings": [
+   {
+    "text": "The photo could not be shown",
+    "role": "heading",
+    "condition": "The picture failed but the room list survived"
+   },
+   {
+    "text": "Every room we read is still listed below, and your score still works.",
+    "role": "body",
+    "condition": "The picture failed but the room list survived",
+    "concern": "\"your score still works\" reassures without saying what was lost: without the picture, the user can no longer check our reading against their own plan, which is this screen's entire purpose. It presents a degraded state as a fully working one."
+   },
+   {
+    "text": "Your reading was lost",
+    "role": "heading",
+    "condition": "The phone reclaimed the app's memory mid-flow — the user comes back to nothing"
+   },
+   {
+    "text": "Your phone needed the memory back while we were working. Nothing was saved, so please read your plan again.",
+    "role": "body",
+    "condition": "The phone reclaimed the app's memory mid-flow",
+    "concern": "Blames the user's phone for what will feel like the app losing their work, and \"needed the memory back\" is developer reasoning dressed in plain words. It also does not say the obvious thing the user will want to know: whether reading the plan again is free."
+   },
+   {
+    "text": "Scan your plan again",
+    "role": "button",
+    "condition": "Shown instead of the confirm button when the reading was lost, so nobody can confirm a home with no rooms in it"
+   }
+  ]
+ },
+ {
+  "screen": "Where is your front door?",
+  "whenSeen": "Only when the plan did NOT name its own entrance, or when the user tapped \"Put the front door somewhere else\". A ring travels around the outline of the home until a door is marked. On the scan path this is the last screen before the report.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/scan/ScanDoorScreen.kt",
+  "strings": [
+   {
+    "text": "Back",
+    "role": "accessibility"
+   },
+   {
+    "text": "Where is your front door?",
+    "role": "heading"
+   },
+   {
+    "text": "Tap the wall you walk in through. Of everything we read, this changes your score the most.",
+    "role": "body",
+    "concern": "Ambiguous about what a tap does. A tap outside the picture, or one the app cannot match to a wall, is silently ignored — nothing moves and nothing is said — so a user who taps and sees no change has no way to tell whether they missed, whether it worked, or whether the screen is broken. This is the single highest-weighted input in the whole score."
+   },
+   {
+    "text": "Your plan. Tap the wall your front door is on.",
+    "role": "accessibility",
+    "condition": "Spoken for the plan picture before a door is marked"
+   },
+   {
+    "text": "Your plan. Your front door is marked on <the top / bottom / left / right wall of your plan>.",
+    "role": "accessibility",
+    "condition": "Spoken for the plan picture once a door is marked"
+   },
+   {
+    "text": "The photo could not be shown",
+    "role": "heading",
+    "condition": "The plan picture could not be decoded"
+   },
+   {
+    "text": "You can carry on without marking the door — we will say so on your score.",
+    "role": "body",
+    "condition": "The plan picture could not be decoded",
+    "concern": "\"we will say so on your score\" does not tell the reader what it costs them. The front door is described two lines earlier as the thing that changes the score most, so skipping it is a large decision presented as a small one."
+   },
+   {
+    "text": "Your front door",
+    "role": "label"
+   },
+   {
+    "text": "Not marked yet. Tap your plan where you come in.",
+    "role": "body",
+    "condition": "No door marked"
+   },
+   {
+    "text": "Marked on <the top / bottom / left / right wall of your plan>. Tap somewhere else to move it.",
+    "role": "body",
+    "condition": "A door is marked"
+   },
+   {
+    "text": "Read my home",
+    "role": "button",
+    "condition": "In the normal flow, with a door marked"
+   },
+   {
+    "text": "Skip the door — read my home",
+    "role": "button",
+    "condition": "In the normal flow, with no door marked",
+    "concern": "Does not repeat the cost. The screen has already said the door changes the score more than anything else, but the button that walks past it says only \"skip\" — the reader is one tap from a weaker report with no warning at the moment of the tap."
+   },
+   {
+    "text": "Done — back to my report",
+    "role": "button",
+    "condition": "Reached from a finished report, with a door marked"
+   },
+   {
+    "text": "Leave the door out — back to my report",
+    "role": "button",
+    "condition": "Reached from a finished report, with no door marked"
+   }
+  ]
+ },
+ {
+  "screen": "The words the app uses for directions, rooms and walls throughout this flow",
+  "whenSeen": "Not a screen — the shared vocabulary that fills the blanks on every screen above: direction pills, room names, room-kind chips, the code inside each room's circle, and the front door's wall.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/common/UiMappers.kt",
+  "strings": [
+   {
+    "text": "North",
+    "role": "label"
+   },
+   {
+    "text": "North-East",
+    "role": "label"
+   },
+   {
+    "text": "East",
+    "role": "label"
+   },
+   {
+    "text": "South-East",
+    "role": "label"
+   },
+   {
+    "text": "South",
+    "role": "label"
+   },
+   {
+    "text": "South-West",
+    "role": "label"
+   },
+   {
+    "text": "West",
+    "role": "label"
+   },
+   {
+    "text": "North-West",
+    "role": "label"
+   },
+   {
+    "text": "centre",
+    "role": "label",
+    "condition": "Used where the other eight directions are used, for a room in the middle of the home",
+    "concern": "The only one of the nine that is not a direction and the only one written in lower case. Where the app capitalises it for a pill it becomes \"Centre\", sitting in the same column as \"South-West\" and answering a different question."
+   },
+   {
+    "text": "north",
+    "role": "label",
+    "condition": "The front door's wall as spoken elsewhere in the app (the drawing grid), NOT on the scan screens",
+    "concern": "The same door has three different wordings across the app: \"the top wall of your plan\" on the scan screens, \"north\" in the drawing grid, and the compass directions used for every room. Worse, the grid version can be wrong — it calls the top wall \"north\" regardless of where the user actually put North on the dial, so a home with North turned 90° is told its door is north when it is east."
+   },
+   {
+    "text": "east",
+    "role": "label",
+    "condition": "Drawing grid only"
+   },
+   {
+    "text": "south",
+    "role": "label",
+    "condition": "Drawing grid only"
+   },
+   {
+    "text": "west",
+    "role": "label",
+    "condition": "Drawing grid only"
+   },
+   {
+    "text": "the top wall of your plan",
+    "role": "body",
+    "condition": "The front door's wall on the scan screens"
+   },
+   {
+    "text": "the bottom wall of your plan",
+    "role": "body",
+    "condition": "The front door's wall on the scan screens"
+   },
+   {
+    "text": "the left wall of your plan",
+    "role": "body",
+    "condition": "The front door's wall on the scan screens"
+   },
+   {
+    "text": "the right wall of your plan",
+    "role": "body",
+    "condition": "The front door's wall on the scan screens"
+   },
+   {
+    "text": "Entrance",
+    "role": "label"
+   },
+   {
+    "text": "Kitchen",
+    "role": "label"
+   },
+   {
+    "text": "Master",
+    "role": "label",
+    "concern": "Truncated to the point of ambiguity. \"Master\" alone is not a room; every reader will have to work out that it means the master bedroom, and it sits in the same chip list as \"Bedroom\" and \"Guest\", which makes the shortening actively confusing."
+   },
+   {
+    "text": "Bedroom",
+    "role": "label"
+   },
+   {
+    "text": "Pooja",
+    "role": "label"
+   },
+   {
+    "text": "Toilet",
+    "role": "label"
+   },
+   {
+    "text": "Bathroom",
+    "role": "label"
+   },
+   {
+    "text": "Living",
+    "role": "label"
+   },
+   {
+    "text": "Dining",
+    "role": "label"
+   },
+   {
+    "text": "Stairs",
+    "role": "label"
+   },
+   {
+    "text": "Study",
+    "role": "label"
+   },
+   {
+    "text": "Store",
+    "role": "label"
+   },
+   {
+    "text": "Guest",
+    "role": "label",
+    "concern": "Same problem as \"Master\" — \"Guest\" is not a room name. It means guest bedroom, and next to \"Bedroom\" in the same list of chips it reads as something else entirely."
+   },
+   {
+    "text": "Garage",
+    "role": "label"
+   },
+   {
+    "text": "Balcony",
+    "role": "label"
+   },
+   {
+    "text": "Basement",
+    "role": "label"
+   },
+   {
+    "text": "Courtyard",
+    "role": "label"
+   },
+   {
+    "text": "Utility",
+    "role": "label"
+   },
+   {
+    "text": "Corridor",
+    "role": "label"
+   },
+   {
+    "text": "<room kind> <number>",
+    "role": "label",
+    "condition": "The fallback name when the plan printed no caption for a room and the home has more than one of that kind — for example \"Bedroom 2\""
+   },
+   {
+    "text": "EN / K / MB / BR / GB / PJ / T / B / L / D / ST / SD / SR / G / BL / BM / CY / U",
+    "role": "label",
+    "condition": "The short code inside each room's coloured circle on the checking screen, one per room kind",
+    "concern": "Two-letter codes in circles on a screen whose audience is explicitly older buyers reading in daylight. Nothing on the screen decodes them, and several are near-identical pairs (ST for stairs and SR for store, B for bathroom and BL for balcony, SD for study)."
+   }
+  ]
+ },
+ {
+  "screen": "The engine's own notes strip",
+  "whenSeen": "A quiet coloured strip that can appear alongside a reading, carrying plain-language notes produced by the scoring engine itself — an unusual shape, an off-compass tilt, a long-and-narrow home. The app writes none of these words; it prints whatever the engine hands it, word for word.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/common/AnalysisFeedback.kt",
+  "strings": [
+   {
+    "text": "<the engine's own note, printed exactly as the engine produced it>",
+    "role": "body",
+    "condition": "Whenever the engine attaches a note to a reading; the strip disappears entirely when there are none",
+    "concern": "This is the one place in the flow where text reaches the user with no wording of its own and no check on it. Every other sentence in this flow has been written, cut and measured; these arrive from the engine and are shown verbatim on trust, so a change made in the scoring code lands on the user's screen without ever passing through the copy that surrounds it."
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — the heading and the line under it",
+  "whenSeen": "Every time someone lays out their home on the grid — by hand, or after a plan scan. Both lines swap depending on what the person is doing at that moment.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Mark your front door",
+    "role": "heading",
+    "condition": "The front-door step is open"
+   },
+   {
+    "text": "These rooms aren't placed yet",
+    "role": "heading",
+    "condition": "The rooms came off a plan scan that could not work out where they go, so they sit in a parking row"
+   },
+   {
+    "text": "Place your rooms",
+    "role": "heading",
+    "condition": "Ordinary drawing"
+   },
+   {
+    "text": "Your home is outlined below. Tap the wall where your front door is.",
+    "role": "body",
+    "condition": "Front-door step"
+   },
+   {
+    "text": "Drag the room to move it, or pull a corner to resize.",
+    "role": "body",
+    "condition": "A room is selected",
+    "concern": "Says \"Drag\", while the default line on the same screen says \"Press a room and slide to move it\" for the identical gesture. The file's own comment claims the three verbs were unified; two survive."
+   },
+   {
+    "text": "Press the plan where this room goes. Slide to adjust, lift to place.",
+    "role": "body",
+    "condition": "A room kind has been armed from the palette"
+   },
+   {
+    "text": "Pick a room below, then press the plan to place it.",
+    "role": "body",
+    "condition": "No rooms placed yet"
+   },
+   {
+    "text": "We read these rooms but not where they go. Drag each one to its real place.",
+    "role": "body",
+    "condition": "Rooms parked after a scan"
+   },
+   {
+    "text": "Press a room and slide to move it, or add another below.",
+    "role": "body",
+    "condition": "Rooms placed, nothing selected"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — carrying on an unfinished home",
+  "whenSeen": "Someone picks an unfinished home off the saved-homes list and lands back in the editor.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Carrying on with your unfinished home",
+    "role": "heading",
+    "condition": "Restored from a draft and at least one room exists"
+   },
+   {
+    "text": "Your home, exactly as you left it. Carry on, or start it again.",
+    "role": "body"
+   },
+   {
+    "text": "Start this home again",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — the plan itself and its compass",
+  "whenSeen": "Always on screen while drawing. The four compass words sit outside the grid; the rest is what a screen reader hears.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "NORTH",
+    "role": "label"
+   },
+   {
+    "text": "WEST",
+    "role": "label"
+   },
+   {
+    "text": "SOUTH",
+    "role": "label"
+   },
+   {
+    "text": "EAST",
+    "role": "label"
+   },
+   {
+    "text": "Kitchen, 2 by 3 cells, South-East",
+    "role": "accessibility",
+    "condition": "Spoken for every placed room; the pattern is \"<kind>, <width> by <height> cells, <direction>\"",
+    "concern": "\"cells\" is drawing-tool language. A home buyer measuring a room does not think in cells, and nothing on the screen ever defines one."
+   },
+   {
+    "text": "Selected",
+    "role": "accessibility",
+    "condition": "Spoken state of the room a finger last touched"
+   },
+   {
+    "text": "Not selected",
+    "role": "accessibility"
+   },
+   {
+    "text": "Front door on the north wall",
+    "role": "accessibility",
+    "condition": "Spoken for the door marker; the wall word is north / east / south / west"
+   },
+   {
+    "text": "D",
+    "role": "label",
+    "condition": "The gold badge drawn on the front door marker",
+    "concern": "A bare letter as the only visible mark for the highest-weighted thing in the whole reading. It is explained only to a screen reader, never to a sighted reader."
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — while a room is being dragged or placed",
+  "whenSeen": "A finger is down and moving a room, resizing it, or dropping a brand-new one.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Rooms can’t overlap",
+    "role": "error",
+    "condition": "The dragged or ghosted room is sitting on top of another one",
+    "concern": "Uses a curly apostrophe where every other refusal and hint in this file uses a straight one (\"aren't\", \"can't\", \"we'll\"). Two different apostrophes render as two different shapes on some fonts."
+   },
+   {
+    "text": "Kitchen · 2×3 · South-East",
+    "role": "label",
+    "condition": "The floating readout while a room is moving; pattern is \"<kind> · <w>×<h> · <direction>\"",
+    "concern": "\"Kitchen\" here is the short palette word — the same room is called \"kitchen\" in the report's prose and possibly \"MASTER BEDROOM 1\" on a scanned plan. Three names for one room across the product."
+   },
+   {
+    "text": "Placing: Kitchen",
+    "role": "label",
+    "condition": "A room kind is armed and waiting to be pressed onto the plan"
+   },
+   {
+    "text": "Stop placing Kitchen",
+    "role": "accessibility",
+    "condition": "The ✕ on the placing bar"
+   },
+   {
+    "text": "✕",
+    "role": "button",
+    "condition": "Cancels placing"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — \"is this part of your home?\"",
+  "whenSeen": "Directly under the plan, once rooms are placed and nothing is selected. This is the question that decides whether the home is scored as an L-shape or as a full rectangle.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Once your rooms are where they belong, we'll ask about any missing corners.",
+    "role": "body",
+    "condition": "Rooms are still parked after a scan"
+   },
+   {
+    "text": "Is this part of your home?",
+    "role": "heading",
+    "condition": "An empty patch shaped like a missing corner has been found"
+   },
+   {
+    "text": "The 3 squares marked on the plan are in the north-east, with no room on them. If your home is cut off there — an L-shape, a missing corner — say so and we'll score the real shape.",
+    "role": "body",
+    "condition": "Same; \"1 square … is … it\" in the singular",
+    "concern": "\"squares\" is the app's own grid unit, never defined for the reader. Someone who has not worked out that the grid is the home divided into a mandala reads \"3 squares\" as a measurement."
+   },
+   {
+    "text": "Yes — it's part of my home",
+    "role": "button"
+   },
+   {
+    "text": "No — my home is cut off there",
+    "role": "button"
+   },
+   {
+    "text": "Your home is cut off in the north-east and south",
+    "role": "heading",
+    "condition": "After at least one patch has been cut away"
+   },
+   {
+    "text": "We're scoring your home's real shape.",
+    "role": "body"
+   },
+   {
+    "text": "Start the shape again",
+    "role": "button"
+   },
+   {
+    "text": "There's an empty space inside your home",
+    "role": "heading",
+    "condition": "An empty patch is completely surrounded by rooms"
+   },
+   {
+    "text": "It's surrounded by rooms, so it's part of your home. If it's open to the sky, add it as a Courtyard — the centre of a home matters in Vastu.",
+    "role": "body",
+    "concern": "\"the centre of a home matters in Vastu\" is the only place the Brahmasthan idea appears in the editor, and it is left unexplained — it matters how, and to what?"
+   },
+   {
+    "text": "Empty squares between rooms count as part of your home — most homes have passages there.",
+    "role": "body",
+    "condition": "Loose space wraps around the rooms and cannot be cut away"
+   },
+   {
+    "text": "We treat your home as a full rectangle. If a corner is missing, leave it empty — we'll ask.",
+    "role": "body",
+    "condition": "Nothing to ask about yet"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — plot size, the room palette and the door button",
+  "whenSeen": "The block of controls under the plan whenever no room is selected and no kind is armed.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Plot size",
+    "role": "label"
+   },
+   {
+    "text": "−",
+    "role": "button",
+    "condition": "Appears four times — narrower plot, shallower plot, narrower room, shorter room"
+   },
+   {
+    "text": "+",
+    "role": "button",
+    "condition": "Appears four times — wider plot, deeper plot, wider room, taller room"
+   },
+   {
+    "text": "Narrower plot",
+    "role": "accessibility"
+   },
+   {
+    "text": "Wider plot",
+    "role": "accessibility"
+   },
+   {
+    "text": "Shallower plot",
+    "role": "accessibility"
+   },
+   {
+    "text": "Deeper plot",
+    "role": "accessibility"
+   },
+   {
+    "text": "8 wide",
+    "role": "label",
+    "condition": "Pattern is \"<number> wide\"",
+    "concern": "Wide in what — feet, metres, rooms? The number is grid steps and the screen never says so, on the one control a builder is most likely to read as a real dimension."
+   },
+   {
+    "text": "8 deep",
+    "role": "label",
+    "condition": "Pattern is \"<number> deep\"",
+    "concern": "Same as above — an unnamed unit."
+   },
+   {
+    "text": "Add a room",
+    "role": "label"
+   },
+   {
+    "text": "Living",
+    "role": "button",
+    "condition": "First chip in the room palette"
+   },
+   {
+    "text": "Kitchen",
+    "role": "button"
+   },
+   {
+    "text": "Master",
+    "role": "button",
+    "concern": "\"Master\" alone. The report calls the same room \"master bedroom\". The short form reads as an adjective with its noun missing."
+   },
+   {
+    "text": "Bedroom",
+    "role": "button"
+   },
+   {
+    "text": "Pooja",
+    "role": "button",
+    "concern": "Sanskrit term with no plain-English gloss beside it anywhere in the editor. The report's prose calls the same room \"prayer room\", so the app uses the glossed word only where the term is already understood and the unglossed one where it is not."
+   },
+   {
+    "text": "Toilet",
+    "role": "button"
+   },
+   {
+    "text": "Stairs",
+    "role": "button"
+   },
+   {
+    "text": "Study",
+    "role": "button"
+   },
+   {
+    "text": "Dining",
+    "role": "button"
+   },
+   {
+    "text": "Store",
+    "role": "button"
+   },
+   {
+    "text": "Balcony",
+    "role": "button"
+   },
+   {
+    "text": "Entrance",
+    "role": "button",
+    "concern": "\"Entrance\" is a room kind here AND the word the report uses for the front door, which is placed by a completely different control on this same screen. The file's own comment records the confusion; the chip was never renamed."
+   },
+   {
+    "text": "Corridor",
+    "role": "button"
+   },
+   {
+    "text": "Utility",
+    "role": "button"
+   },
+   {
+    "text": "Bathroom",
+    "role": "button"
+   },
+   {
+    "text": "Guest",
+    "role": "button"
+   },
+   {
+    "text": "Courtyard",
+    "role": "button"
+   },
+   {
+    "text": "Garage",
+    "role": "button"
+   },
+   {
+    "text": "Basement",
+    "role": "button"
+   },
+   {
+    "text": "Set the front door",
+    "role": "button",
+    "condition": "No door placed yet"
+   },
+   {
+    "text": "Move the front door",
+    "role": "button",
+    "condition": "A door has already been placed"
+   },
+   {
+    "text": "Done placing door",
+    "role": "button",
+    "condition": "The front-door step is open"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — the panel for the room you tapped",
+  "whenSeen": "Replaces the whole control block the moment a room is selected. It is the tallest thing in the editor.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Kitchen",
+    "role": "heading",
+    "condition": "The selected room's kind, as its short palette word"
+   },
+   {
+    "text": "2 × 3 · South-East, close to South and East",
+    "role": "label",
+    "condition": "The \", close to …\" half appears only when the room sits near a zone boundary",
+    "concern": "\"close to South and East\" is the app admitting the room may be scored as a direction the reader did not intend, and it is buried in a size line in the smallest type on the panel. It changes the score and reads like a footnote."
+   },
+   {
+    "text": "Room type",
+    "role": "label"
+   },
+   {
+    "text": "Change room type",
+    "role": "button"
+   },
+   {
+    "text": "Change room type. Currently Kitchen.",
+    "role": "accessibility"
+   },
+   {
+    "text": "Kitchen, the current room type",
+    "role": "accessibility",
+    "condition": "On the chip for the kind the room already is"
+   },
+   {
+    "text": "Change to Toilet",
+    "role": "accessibility",
+    "condition": "On every other chip"
+   },
+   {
+    "text": "Remove",
+    "role": "button"
+   },
+   {
+    "text": "Done",
+    "role": "button"
+   },
+   {
+    "text": "Move",
+    "role": "label"
+   },
+   {
+    "text": "◀",
+    "role": "button"
+   },
+   {
+    "text": "▲",
+    "role": "button"
+   },
+   {
+    "text": "▼",
+    "role": "button"
+   },
+   {
+    "text": "▶",
+    "role": "button"
+   },
+   {
+    "text": "Move left",
+    "role": "accessibility"
+   },
+   {
+    "text": "Move up",
+    "role": "accessibility"
+   },
+   {
+    "text": "Move down",
+    "role": "accessibility"
+   },
+   {
+    "text": "Move right",
+    "role": "accessibility"
+   },
+   {
+    "text": "Size",
+    "role": "label"
+   },
+   {
+    "text": "Narrower",
+    "role": "accessibility"
+   },
+   {
+    "text": "Wider",
+    "role": "accessibility"
+   },
+   {
+    "text": "Shorter",
+    "role": "accessibility"
+   },
+   {
+    "text": "Taller",
+    "role": "accessibility"
+   },
+   {
+    "text": "W 2",
+    "role": "label",
+    "concern": "\"W\" and \"H\" are unexplained initials on a screen built for an older reader in daylight. The buttons beside them already say Narrower / Wider in full to a screen reader but never in print."
+   },
+   {
+    "text": "H 3",
+    "role": "label",
+    "concern": "Same as above."
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — leaving the screen",
+  "whenSeen": "The single button at the very bottom of the editor.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/GuidedGridScreen.kt",
+  "strings": [
+   {
+    "text": "Drag each room to its real place first — then we can read your home.",
+    "role": "body",
+    "condition": "Rooms are still parked after a scan, so the button is switched off"
+   },
+   {
+    "text": "Next — mark North",
+    "role": "button",
+    "condition": "Normal path"
+   },
+   {
+    "text": "Done — back to my report",
+    "role": "button",
+    "condition": "Opened from a finished report to move the front door"
+   }
+  ]
+ },
+ {
+  "screen": "Drawing editor — what a room tile prints when it is too small for its name",
+  "whenSeen": "Any room narrow enough that its full name will not fit, which on a real phone is most one-step-wide rooms, and nearly all of them at 200% font.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/grid/RoomTileLabel.kt",
+  "strings": [
+   {
+    "text": "WC",
+    "role": "label",
+    "condition": "Toilet, when \"Toilet\" will not fit"
+   },
+   {
+    "text": "Bath",
+    "role": "label",
+    "condition": "Bathroom, shortened"
+   },
+   {
+    "text": "Bed",
+    "role": "label",
+    "condition": "Bedroom, shortened"
+   },
+   {
+    "text": "Entry",
+    "role": "label",
+    "condition": "Entrance, shortened"
+   },
+   {
+    "text": "Court",
+    "role": "label",
+    "condition": "Courtyard, shortened"
+   },
+   {
+    "text": "EN",
+    "role": "label",
+    "condition": "Last-resort letter code, Entrance"
+   },
+   {
+    "text": "K",
+    "role": "label",
+    "condition": "Kitchen"
+   },
+   {
+    "text": "MB",
+    "role": "label",
+    "condition": "Master bedroom"
+   },
+   {
+    "text": "BR",
+    "role": "label",
+    "condition": "Bedroom",
+    "concern": "BR, B, BL and BM are bedroom, bathroom, balcony and basement. Four codes one letter apart, no key anywhere in the app, and the same codes are reused on the paid report's room list."
+   },
+   {
+    "text": "GB",
+    "role": "label",
+    "condition": "Guest bedroom"
+   },
+   {
+    "text": "PJ",
+    "role": "label",
+    "condition": "Prayer room",
+    "concern": "An abbreviation of a Sanskrit word that was never glossed in the first place."
+   },
+   {
+    "text": "T",
+    "role": "label",
+    "condition": "Toilet"
+   },
+   {
+    "text": "B",
+    "role": "label",
+    "condition": "Bathroom"
+   },
+   {
+    "text": "L",
+    "role": "label",
+    "condition": "Living room"
+   },
+   {
+    "text": "D",
+    "role": "label",
+    "condition": "Dining room",
+    "concern": "The same letter the front-door badge uses, on the same plan, at the same time."
+   },
+   {
+    "text": "ST",
+    "role": "label",
+    "condition": "Staircase"
+   },
+   {
+    "text": "SD",
+    "role": "label",
+    "condition": "Study"
+   },
+   {
+    "text": "SR",
+    "role": "label",
+    "condition": "Store"
+   },
+   {
+    "text": "G",
+    "role": "label",
+    "condition": "Garage"
+   },
+   {
+    "text": "BL",
+    "role": "label",
+    "condition": "Balcony"
+   },
+   {
+    "text": "BM",
+    "role": "label",
+    "condition": "Basement"
+   },
+   {
+    "text": "CY",
+    "role": "label",
+    "condition": "Courtyard"
+   },
+   {
+    "text": "U",
+    "role": "label",
+    "condition": "Utility"
+   },
+   {
+    "text": "C",
+    "role": "label",
+    "condition": "Corridor"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the wait before the report appears",
+  "whenSeen": "Roughly one and a half seconds after the North dial is set, every time a report is opened fresh.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Reading your home",
+    "role": "heading"
+   },
+   {
+    "text": "Every room on the traditional grid, weighed against the rules.",
+    "role": "body"
+   }
+  ]
+ },
+ {
+  "screen": "Report — when there is nothing to show",
+  "whenSeen": "The report is where the whole flow now lands, so these are the dead ends a reader can still reach — usually after the phone reclaimed the app in the background.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Reading your home…",
+    "role": "empty-state",
+    "condition": "Rooms and the first answer both present, engine still running (about 50 milliseconds)"
+   },
+   {
+    "text": "One answer went missing",
+    "role": "heading",
+    "condition": "Rooms survived but the \"what brings you to Vastu\" answer did not"
+   },
+   {
+    "text": "Your rooms are safe. Tell us again what brings you to Vastu.",
+    "role": "body"
+   },
+   {
+    "text": "Answer the first question",
+    "role": "button"
+   },
+   {
+    "text": "Pick up where you left off",
+    "role": "heading",
+    "condition": "Nothing on screen and nothing computed"
+   },
+   {
+    "text": "This plan may have closed in the background. Open it from your saved plans.",
+    "role": "body"
+   },
+   {
+    "text": "Go to my plans",
+    "role": "button"
+   },
+   {
+    "text": "Finish your plan",
+    "role": "heading",
+    "condition": "The engine judged the plan too incomplete to score"
+   },
+   {
+    "text": "Add rooms and your front door, and we'll read it.",
+    "role": "body",
+    "condition": "Fallback when the engine supplied no note of its own"
+   },
+   {
+    "text": "Change your plan",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the opening verdict",
+  "whenSeen": "The first thing on the report, above every finding, free and paid alike.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Full report",
+    "role": "label",
+    "condition": "Paid"
+   },
+   {
+    "text": "Your report",
+    "role": "label",
+    "condition": "Not yet paid"
+   },
+   {
+    "text": "BUILDING",
+    "role": "label",
+    "condition": "The reader said they are building"
+   },
+   {
+    "text": "BUYING",
+    "role": "label",
+    "condition": "The reader said they are buying"
+   },
+   {
+    "text": "ALREADY LIVING HERE",
+    "role": "label",
+    "condition": "The reader said they already live there"
+   },
+   {
+    "text": "6.4",
+    "role": "label",
+    "condition": "The score, always one decimal place, the decimal mark taken from the phone"
+   },
+   {
+    "text": "/ 10",
+    "role": "label"
+   },
+   {
+    "text": "Strong",
+    "role": "label",
+    "condition": "Score 75 or above out of 100"
+   },
+   {
+    "text": "Workable",
+    "role": "label",
+    "condition": "Score 50 to 74"
+   },
+   {
+    "text": "Needs work",
+    "role": "label",
+    "condition": "Score below 50"
+   },
+   {
+    "text": "Reads well throughout — no defect the tradition counts.",
+    "role": "body",
+    "condition": "Score 75+ and no defects"
+   },
+   {
+    "text": "Most of this home reads well.",
+    "role": "body",
+    "condition": "Score 75+ with defects"
+   },
+   {
+    "text": "Workable, with real problems to address.",
+    "role": "body",
+    "condition": "Score 50–74"
+   },
+   {
+    "text": "Several core placements work against this home.",
+    "role": "body",
+    "condition": "Score below 50",
+    "concern": "\"work against this home\" states a live harm as fact, at the top of the page, roughly twenty screens above the only sentence that says this is guidance and not a promise."
+   },
+   {
+    "text": " All fixable without moving a wall.",
+    "role": "body",
+    "condition": "Appended when the reader is buying or already living there and the home has at least one defect",
+    "concern": "A flat promise the rule data contradicts. Several problems carry a note saying no cure exists — a missing north-east corner says \"There is no classical remedy for a corner that is simply not there\", and a long narrow home says \"There is no classical remedy for a plot's shape\". On those homes the top of the report promises a fix that the body of the same report denies twice."
+   },
+   {
+    "text": " Nothing is built yet — every change below is free.",
+    "role": "body",
+    "condition": "Appended when the reader is building and the home has at least one defect",
+    "concern": "A cost promise the app cannot stand behind. One of the changes it covers is \"Extend the footprint to square off the North-East corner\", which on a real plot costs land and construction. \"Free\" is true of moving a rectangle on a drawing, not of the building work it stands for."
+   },
+   {
+    "text": " Entrance, kitchen and toilets are below in full, free.",
+    "role": "body",
+    "condition": "Appended for anyone who has not paid",
+    "concern": "Printed whether or not the home has a kitchen or a toilet. On a studio with neither, the free offer names two things that are not in the report."
+   }
+  ]
+ },
+ {
+  "screen": "Report — how your rooms read (the balance bar)",
+  "whenSeen": "Directly under the score, before any problem is named.",
+  "file": "designsystem/src/commonMain/kotlin/com/vastufirst/designsystem/components/Balance.kt",
+  "strings": [
+   {
+    "text": "How your rooms read",
+    "role": "label"
+   },
+   {
+    "text": "already right",
+    "role": "label"
+   },
+   {
+    "text": "not ideal",
+    "role": "label"
+   },
+   {
+    "text": "need fixing",
+    "role": "label"
+   },
+   {
+    "text": "Of the rooms the tradition rates: 7 already right, 2 not ideal, 1 need fixing.",
+    "role": "accessibility",
+    "condition": "Spoken as one sentence; the middle and last clauses drop out when their count is zero",
+    "concern": "\"1 need fixing\" — the verb never agrees with a count of one. Every screen reader user with a single problem hears a broken sentence."
+   }
+  ]
+ },
+ {
+  "screen": "Report — the picture of your home and the way back into it",
+  "whenSeen": "Under the balance bar, once at least one room exists or a scanned plan is attached.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Your home, as we read it",
+    "role": "label"
+   },
+   {
+    "text": "Your plan with Vastu zones, North at 0 degrees.",
+    "role": "accessibility",
+    "condition": "On the drawn zone dial, for a home laid out by hand"
+   },
+   {
+    "text": "Your scanned plan. Tap a room to see roughly where we read it.",
+    "role": "accessibility",
+    "condition": "On the photograph, for a home that arrived by scan"
+   },
+   {
+    "text": "Your plan, showing roughly where Kitchen was read",
+    "role": "accessibility",
+    "condition": "On each tappable room over the photograph"
+   },
+   {
+    "text": "Not right? Change it; your score follows.",
+    "role": "body"
+   },
+   {
+    "text": "Change which way North is",
+    "role": "button"
+   },
+   {
+    "text": "Change where the front door is",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Report — start here",
+  "whenSeen": "The single highest-ranked problem, lifted above the room list. Always free, even when the problem it names is one the pay bar counts as locked.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Start here",
+    "role": "label"
+   },
+   {
+    "text": "Kitchen — North-East",
+    "role": "heading",
+    "condition": "Pattern is \"<room name> — <direction>\"; a problem with no room behind it reads \"North-East — structure\"",
+    "concern": "\"— structure\" is a bare noun doing the work of a sentence. A reader sees \"South-West — structure\" as the whole headline of a paid finding."
+   },
+   {
+    "text": "Of those ranked below, this moves your score most.",
+    "role": "body"
+   },
+   {
+    "text": "Do this first",
+    "role": "label"
+   },
+   {
+    "text": "Move the kitchen to the South-East. If that corner is already taken, the North-West is the classical second choice.",
+    "role": "body",
+    "condition": "The reader is building — the layout change is shown"
+   },
+   {
+    "text": "Wherever the kitchen ends up, set the cooking platform against that room's South-East corner. Stand facing East to cook. The tradition fixes the hearth's own direction, not only the room's. (Traditional practice)",
+    "role": "body",
+    "condition": "The reader is buying or already living there — the first remedy is shown instead",
+    "concern": "This block shows the headline and the first fix of the top-ranked problem for free even when that problem is one the pay bar is counting as still locked. The money sentence therefore over-states what is behind the wall by one."
+   }
+  ]
+ },
+ {
+  "screen": "Report — your front door",
+  "whenSeen": "Its own block before the room list, always free, on every report that has a door.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportText.kt",
+  "strings": [
+   {
+    "text": "Your front door",
+    "role": "label"
+   },
+   {
+    "text": "Favourable",
+    "role": "label",
+    "condition": "Badge on the door card"
+   },
+   {
+    "text": "Middling",
+    "role": "label"
+   },
+   {
+    "text": "Read both ways",
+    "role": "label"
+   },
+   {
+    "text": "Unfavourable",
+    "role": "label"
+   },
+   {
+    "text": "Front door — north wall",
+    "role": "heading",
+    "condition": "Pattern is \"Front door — <wall> wall\""
+   },
+   {
+    "text": "Position 20 of 32 · Yama — Death, disease",
+    "role": "body",
+    "condition": "Pattern is \"Position <n> of 32 · <name> — <what it governs>\", taken straight from the 32-position table",
+    "concern": "THE SHARPEST ITEM IN THIS AUDIT. The right-hand half of this line is printed with no framing at all. Depending where the door lands the app tells a reader, as a bare statement of fact: \"Death, disease\", \"Disease\", \"Poverty\", \"Loss, theft\", \"Fire, accident\", or on the good side \"Wealth\", \"Prosperity\", \"Fame\", \"Growth\", \"Success\", \"Authority\", \"Ancestral gain\". Everywhere else in the product this kind of material is hedged with \"In the tradition:\". Here it is not, it is in ordinary body type, it is on the free tier, and it is the second line of the highest-weighted finding in the report."
+   },
+   {
+    "text": "Position 15 of 32 · Antariksha",
+    "role": "body",
+    "condition": "The position is named but the sources record nothing about what it governs",
+    "concern": "A Sanskrit name with no gloss beside it, as the whole of the line."
+   },
+   {
+    "text": "Position 14 of 32",
+    "role": "body",
+    "condition": "Two of the 32 positions have no recorded name"
+   },
+   {
+    "text": "The classical sources leave this position unnamed. We say so rather than invent a name; the reading is unaffected.",
+    "role": "body",
+    "condition": "Only on those two unnamed positions"
+   },
+   {
+    "text": "Purva, the quarter of Indra. In the tradition: Vitality, social standing.",
+    "role": "body",
+    "condition": "The meaning of the wall the door sits on; pattern varies by direction",
+    "concern": "Correctly hedged — worth contrasting with the position line above, which carries far stronger claims with no hedge at all."
+   },
+   {
+    "text": "The tradition lays 32 named positions around the plan's edge, eight per wall, and reads the entrance by the one it stands on. Yours is one the tradition counts favourable — and the front door outweighs any single room.",
+    "role": "body",
+    "condition": "The middle clause is one of: \"one the tradition counts favourable\" / \"one the tradition counts middling\" / \"one the sources read both ways\" / \"one the tradition counts unfavourable\""
+   },
+   {
+    "text": "Only two or three positions per wall count favourable, so a door moved a few feet along the same wall reads differently. Worth raising while it is still on paper.",
+    "role": "body",
+    "condition": "The door is not favourable and the reader is building"
+   },
+   {
+    "text": "Only two or three of the eight positions on any wall count favourable — the exact spot along the same wall matters.",
+    "role": "body",
+    "condition": "The door is not favourable and the reader is buying or already living there"
+   },
+   {
+    "text": "Your doorway spans two positions; it is read on the one it mostly sits on.",
+    "role": "body",
+    "condition": "The doorway straddles two of the 32"
+   }
+  ]
+ },
+ {
+  "screen": "Report — your rooms, worst first",
+  "whenSeen": "The main body of the report. One row per room, ranked; tapping a row opens its reasoning and marks it on the picture above.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Your rooms (11)",
+    "role": "label",
+    "condition": "The count is every room, including ones the tradition does not rate"
+   },
+   {
+    "text": "Worst first. Tap one for where and why.",
+    "role": "body"
+   },
+   {
+    "text": "Already right",
+    "role": "label",
+    "condition": "Row pill — the room is ideal or acceptable"
+   },
+   {
+    "text": "Not ideal",
+    "role": "label",
+    "condition": "Row pill"
+   },
+   {
+    "text": "Needs fixing",
+    "role": "label",
+    "condition": "Row pill",
+    "concern": "Every problem gets this same word. The rule data grades them MAJOR, MODERATE and MINOR, and none of that reaches the reader — a toilet in the north-east and a mirror facing a bed both read \"Needs fixing\" in the same red. The severity the engine computed is invisible on the paid product."
+   },
+   {
+    "text": "Not rated",
+    "role": "label",
+    "condition": "Row pill — the tradition does not place this kind of room"
+   },
+   {
+    "text": "South-East",
+    "role": "label",
+    "condition": "Direction pill on the row; the centre reads \"Centre\""
+   },
+   {
+    "text": "⌄",
+    "role": "label",
+    "condition": "Row is closed"
+   },
+   {
+    "text": "⌃",
+    "role": "label",
+    "condition": "Row is open"
+   },
+   {
+    "text": "show this room on the plan and read why",
+    "role": "accessibility",
+    "condition": "Spoken action on a closed row"
+   },
+   {
+    "text": "close this room",
+    "role": "accessibility",
+    "condition": "Spoken action on an open row"
+   },
+   {
+    "text": "Reasoning and remedies — in the full report",
+    "role": "body",
+    "condition": "The row belongs to a room that is not the entrance, the kitchen or a toilet, and the reader has not paid",
+    "concern": "THE BAIT THE PRODUCT WROTE A WHOLE FILE TO AVOID. Most locked rows are rooms the same report calls already right, and an already-right room has no remedy and never will. The free-tier file argues at length that promising remedies for such rooms is exactly what must not happen — and then every one of those rows says it."
+   },
+   {
+    "text": "The tradition does not place this kind of room, so we have not judged it — neither a problem nor an approval.",
+    "role": "body",
+    "condition": "A corridor, balcony, basement and so on"
+   },
+   {
+    "text": "Read in full under “Your front door” above, on the tradition's 32 named positions — finer than the eight directions a room gets. Not scored twice.",
+    "role": "body",
+    "condition": "The entrance room's own row"
+   },
+   {
+    "text": "This is exactly where the tradition puts a kitchen.",
+    "role": "body",
+    "condition": "An ideal room; the room word is the prose name"
+   },
+   {
+    "text": "This is a direction the rule accepts for a bedroom.",
+    "role": "body",
+    "condition": "An acceptable room whose rule names no first choice"
+   },
+   {
+    "text": "Not the first choice, but a direction the rule accepts for a kitchen — the first choice is the South-East.",
+    "role": "body",
+    "condition": "An acceptable room whose rule does name a first choice"
+   },
+   {
+    "text": "The South is not wrong for a study, and not right either — the tradition puts one in the West or the North-West.",
+    "role": "body",
+    "condition": "A room rated not ideal"
+   },
+   {
+    "text": "This rule names no preferred direction for a dining room, so the North is neither right nor wrong for it.",
+    "role": "body",
+    "condition": "A not-ideal room whose rule names nothing at all"
+   }
+  ]
+ },
+ {
+  "screen": "Report — an opened problem",
+  "whenSeen": "Any room row or structural card the reader taps open, once the reasoning is unlocked.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "From classical text",
+    "role": "label",
+    "condition": "Provenance tag on a rule traced to a named treatise"
+   },
+   {
+    "text": "Traditional practice",
+    "role": "label",
+    "condition": "Provenance tag on a rule reasoned from tradition rather than quoted from it"
+   },
+   {
+    "text": "Modern practice",
+    "role": "label",
+    "condition": "Provenance tag on a 20th-century rule"
+   },
+   {
+    "text": "Schools disagree",
+    "role": "label",
+    "condition": "Provenance tag on a contested rule"
+   },
+   {
+    "text": "Ishanya, the quarter of Ishana / Shiva, the element of water. In the tradition: Clarity, health. The Purusha's head — most sensitive and most auspicious.",
+    "role": "body",
+    "condition": "The direction's own meaning, shown above the reason on every opened finding",
+    "concern": "\"Purusha\" is never explained anywhere in the app. It appears here, and again inside several problem explanations, always assumed. Every other Sanskrit word on this line is glossed in the same breath — this one is not."
+   },
+   {
+    "text": "Brahmasthan, Brahma's own square, the element of space. In the tradition: Must stay open. Reserved for the family deity.",
+    "role": "body",
+    "condition": "When the finding sits on the centre"
+   },
+   {
+    "text": "Ishanya · Ishana / Shiva",
+    "role": "label",
+    "condition": "The one-line sub-heading under a structural finding's title",
+    "concern": "Two Sanskrit words and nothing else, as the entire sub-heading of a paid finding. The glossed version of the same material exists a few lines lower — this line just does not use it."
+   },
+   {
+    "text": "✦ Change the layout — free now",
+    "role": "label",
+    "condition": "Only ever shown to someone who said they are building",
+    "concern": "\"free now\" repeats the cost promise flagged on the opening verdict. On a change like squaring off a missing corner it is not free."
+   },
+   {
+    "text": "If it cannot move — remedies",
+    "role": "label",
+    "condition": "Heading over the remedy list on every opened finding",
+    "concern": "For a reader who is buying or already living there, the \"move it\" option is deliberately never shown. So the heading refers back to a choice they were never offered, which reads as though something has been withheld."
+   },
+   {
+    "text": "Close  ⌃",
+    "role": "label",
+    "condition": "An open structural finding"
+   },
+   {
+    "text": "The whole reason  ⌄",
+    "role": "label",
+    "condition": "A closed structural finding"
+   },
+   {
+    "text": "collapse this",
+    "role": "accessibility"
+   },
+   {
+    "text": "read the whole reason",
+    "role": "accessibility"
+   },
+   {
+    "text": "#1",
+    "role": "label",
+    "condition": "Rank marker on structural findings only",
+    "concern": "A second ranking, restarting at 1, printed below a room list that is already ranked worst-first. Two competing \"this is number one\" claims on one page, and \"#\" is developer shorthand."
+   },
+   {
+    "text": "Defect",
+    "role": "label",
+    "condition": "The pill on every structural finding",
+    "concern": "Hard-coded, so it reads \"Defect\" regardless of whether the rule data graded the problem MAJOR or MINOR. It also uses a different word from the room rows above, which say \"Needs fixing\" for the same thing."
+   },
+   {
+    "text": "Ideal",
+    "role": "label",
+    "condition": "Verdict pill vocabulary"
+   },
+   {
+    "text": "Fine",
+    "role": "label"
+   },
+   {
+    "text": "Not assessed",
+    "role": "label",
+    "concern": "The report now carries three overlapping vocabularies for the same four judgements: Ideal / Fine / Not ideal / Defect on the pills, Already right / Not ideal / Needs fixing / Not rated on the rows, and already right / not ideal / need fixing on the balance bar. A reader cannot tell whether \"Fine\" and \"Already right\" are the same thing."
+   }
+  ]
+ },
+ {
+  "screen": "Report — your home's shape and surroundings",
+  "whenSeen": "Below the room list, when a problem has no room behind it — a cut corner, an extension, a water tank, the road outside, the centre of the home.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Your home's shape and surroundings",
+    "role": "label"
+   },
+   {
+    "text": "North-East — structure",
+    "role": "heading",
+    "condition": "Every finding in this section",
+    "concern": "Same bare-noun headline flagged under Start here. Read cold, \"North-East — structure\" tells a home buyer nothing about what is wrong."
+   }
+  ]
+ },
+ {
+  "screen": "Report — where the schools disagree",
+  "whenSeen": "Near the bottom of the report, whenever the reader's home touches a question the traditions answer differently. This is the section that carries the product's whole promise of even-handedness.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "Where the schools disagree",
+    "role": "label"
+   },
+   {
+    "text": "Both readings, no winner, and which your score follows.",
+    "role": "body"
+   },
+   {
+    "text": "What your score uses",
+    "role": "label",
+    "condition": "Only on disputes the app has actually ruled on"
+   }
+  ]
+ },
+ {
+  "screen": "Report — we couldn't check these",
+  "whenSeen": "Below the disputes, listing rules the app could not run because it lacks a detail about the site.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "We couldn't check these",
+    "role": "label"
+   },
+   {
+    "text": "Neither passed nor failed — we lacked details.",
+    "role": "body"
+   },
+   {
+    "text": "· Where your water tank and borewell sit",
+    "role": "body"
+   },
+   {
+    "text": "· Whether a road points straight at your plot",
+    "role": "body"
+   },
+   {
+    "text": "· Where the large trees on your property stand",
+    "role": "body"
+   },
+   {
+    "text": "· Mirrors facing a bed, or a beam running over one",
+    "role": "body"
+   },
+   {
+    "text": "Tap “Answer a few more and check more” on your report and tell us, and we will check this.",
+    "role": "body",
+    "condition": "Printed once, covering the water, road and tree rules",
+    "concern": "Instructs the reader to tap a button that is only drawn while at least one of the four extra questions is unanswered. It also says \"on your report\" while already being on the report, which reads as though it means a different page."
+   },
+   {
+    "text": "We do not check this one. It needs a look inside the room, which a plan cannot show, so we would rather say so than guess.",
+    "role": "body",
+    "condition": "The mirror and beam rule only"
+   }
+  ]
+ },
+ {
+  "screen": "Report — what this covers, the disclaimer, and the way out",
+  "whenSeen": "The tail of the report, after every finding.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "What this covers",
+    "role": "label"
+   },
+   {
+    "text": "Your rooms, your front door and your home's shape. We haven't looked at your water tank, trees or the road outside.",
+    "role": "body",
+    "condition": "None of the four extra questions answered"
+   },
+   {
+    "text": "Your rooms, your front door, your home's shape, and 2 of 4 extra things you told us about.",
+    "role": "body",
+    "condition": "Some answered"
+   },
+   {
+    "text": "Your rooms, your front door, your home's shape — and the 4 extra things you told us about.",
+    "role": "body",
+    "condition": "All answered"
+   },
+   {
+    "text": "Answer a few more and check more",
+    "role": "button",
+    "condition": "Fewer than four extra questions answered"
+   },
+   {
+    "text": "Vastu is traditional practice; this is guidance, not a promise. The score is our summary, not the tradition's.",
+    "role": "body",
+    "concern": "The only line in the product that limits what the score means, and it sits at the very bottom of a twenty-screen document, below every finding and below the point at which a reader decides to spend ₹699. The pay bar floats over the page, so someone who pays from the bar can reach checkout without this sentence ever having been on screen."
+   },
+   {
+    "text": "Done — see all my plans",
+    "role": "button"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the money bar (reader has not paid)",
+  "whenSeen": "Floating over the bottom of the report the whole time it is being read, for anyone who has not unlocked it.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportScreen.kt",
+  "strings": [
+   {
+    "text": "3 more problems with their remedies, and 5 more rooms read in full",
+    "role": "body",
+    "condition": "Both counts above zero"
+   },
+   {
+    "text": "3 more problems, with the whole reason and the remedies",
+    "role": "body",
+    "condition": "Only problems locked"
+   },
+   {
+    "text": "5 more rooms, each read in full",
+    "role": "body",
+    "condition": "Only rooms locked"
+   },
+   {
+    "text": "1 more problem with its remedies, and 1 more room read in full",
+    "role": "body",
+    "condition": "Singular form of the first case"
+   },
+   {
+    "text": "The whole reading, and every verdict's reason",
+    "role": "body",
+    "condition": "Nothing counted as locked"
+   },
+   {
+    "text": "Unlock the full report",
+    "role": "button",
+    "concern": "No price anywhere on this bar. A reader taps the one money control in the product without being told what it costs — the figure only appears on the next screen. The screen's own comment says this is deliberate (\"names what is still locked rather than shouting a price\"), which is a defensible choice for the sentence above it but not for the button itself."
+   }
+  ]
+ },
+ {
+  "screen": "Paid unlock — the price, the button and the notice",
+  "whenSeen": "Reached only by tapping Unlock the full report. This is the money screen.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/unlock/UnlockScreen.kt",
+  "strings": [
+   {
+    "text": "Unlock the full report",
+    "role": "heading"
+   },
+   {
+    "text": "₹699",
+    "role": "label",
+    "condition": "Shown when Google Play has not supplied its own price string, including whenever payments are switched off"
+   },
+   {
+    "text": "₹699.00",
+    "role": "label",
+    "condition": "Google Play's own price string when the store answers, carrying the buyer's currency and local tax"
+   },
+   {
+    "text": "the planned price — not charged in this version",
+    "role": "body",
+    "condition": "Payments are switched off — which is how the app ships today"
+   },
+   {
+    "text": "one-time · this home, forever",
+    "role": "body",
+    "condition": "Payments are switched on",
+    "concern": "THE MOST MISLEADING SENTENCE ON THE MONEY SCREEN. It reads as per-home pricing, so a buyer with two flats expects to pay ₹1,398. What is actually sold is a single non-consumable Google Play product: once bought, Google can never charge for it again, and every later home unlocks free. The copy sells a narrower thing than the customer receives, and someone with more than one property could reasonably walk away over a price they would never have been charged."
+   },
+   {
+    "text": "Unlock on this device — free",
+    "role": "button",
+    "condition": "Payments switched off"
+   },
+   {
+    "text": "Pay ₹699 and unlock",
+    "role": "button",
+    "condition": "Payments on and the store reachable"
+   },
+   {
+    "text": "Try again",
+    "role": "button",
+    "condition": "Payments on but Google Play could not be reached"
+   },
+   {
+    "text": "See the full report",
+    "role": "button",
+    "condition": "This account already owns the report"
+   },
+   {
+    "text": "No payment is taken in this version — the report unlocks on this device, free. Paid checkout arrives in a later update.",
+    "role": "body",
+    "condition": "Payments switched off"
+   },
+   {
+    "text": "One payment through Google Play. No subscription, and nothing renews.",
+    "role": "body",
+    "condition": "Payments on and the store reachable"
+   },
+   {
+    "text": "We can't reach Google Play right now, so we can't take a payment. Check your connection and try again — nothing has been charged.",
+    "role": "body",
+    "condition": "Payments on, store unreachable"
+   },
+   {
+    "text": "You already have this report. Nothing further will be charged.",
+    "role": "body",
+    "condition": "This account already owns it",
+    "concern": "\"this report\" is singular and sits beside the \"this home, forever\" caption, so a returning buyer opening a second home reads it as \"you have already paid for the one you are looking at\" rather than \"you own the unlock outright\". The one sentence that could clear up the per-home question instead reinforces the wrong reading."
+   },
+   {
+    "text": "I already paid — restore it",
+    "role": "button",
+    "condition": "Only drawn when payments are switched on"
+   },
+   {
+    "text": "We couldn't find a purchase on this Google account.",
+    "role": "error",
+    "condition": "Restore ran, the store answered, and nothing was owned"
+   }
+  ]
+ },
+ {
+  "screen": "Paid unlock — what you get",
+  "whenSeen": "Below the button on the unlock screen. Four lines, deliberately capped at four.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/unlock/UnlockScreen.kt",
+  "strings": [
+   {
+    "text": "What you get",
+    "role": "label"
+   },
+   {
+    "text": "✓",
+    "role": "label",
+    "condition": "Leads each of the four lines"
+   },
+   {
+    "text": "The whole reason behind every problem — not only the entrance, kitchen and toilets, which are free",
+    "role": "body"
+   },
+   {
+    "text": "Remedies for that problem in that direction — and where none exists, we say so",
+    "role": "body"
+   },
+   {
+    "text": "Why each of your other rooms reads the way it does, not just its verdict",
+    "role": "body"
+   },
+   {
+    "text": "The classical source behind every rule we apply to your home",
+    "role": "body",
+    "concern": "A promise the product cannot keep, on the last screen before money changes hands. What the report actually shows is a provenance label — \"Traditional practice\" or \"Modern practice\" — not a named source. Most rules are tagged \"Traditional practice\", meaning reasoned from tradition rather than quoted from any text, and the modern ones say outright that no classical basis was found. Buying the report and then looking for the classical source behind, say, the mirror rule turns up the app's own admission that there isn't one."
+   }
+  ]
+ },
+ {
+  "screen": "Payment outcomes from Google Play",
+  "whenSeen": "Shown in red under the unlock button when a real purchase attempt fails. Not reachable today, because payments ship switched off.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/billing/PlayBilling.kt",
+  "strings": [
+   {
+    "text": "We couldn't reach Google Play to take a payment. Nothing has been charged — please try again.",
+    "role": "error",
+    "condition": "The store never returned the product"
+   },
+   {
+    "text": "We couldn't open the payment screen. Nothing has been charged.",
+    "role": "error",
+    "condition": "No live screen to launch the payment sheet from"
+   },
+   {
+    "text": "Google Play couldn't take a payment on this device. Nothing has been charged.",
+    "role": "error",
+    "condition": "Play reports billing unavailable"
+   },
+   {
+    "text": "This report isn't on sale yet. Nothing has been charged.",
+    "role": "error",
+    "condition": "Play reports the product is not for sale"
+   },
+   {
+    "text": "We couldn't reach Google Play. Check your connection and try again — nothing has been charged.",
+    "role": "error",
+    "condition": "Network or service failure"
+   },
+   {
+    "text": "The payment didn't go through, and nothing has been charged. Please try again.",
+    "role": "error",
+    "condition": "Everything else, including a declined card",
+    "concern": "A declined card and an app-side glitch produce the same sentence, and it tells the buyer to try again. Someone whose bank declined will retry, be declined again, and never learn it was their card. This is the one failure where the fix is on the buyer's side and the copy does not say so."
+   },
+   {
+    "text": "We can't reach Google Play right now, so we can't check your purchases.",
+    "role": "error",
+    "condition": "Restore could not connect"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the words of each problem (from the rule data)",
+  "whenSeen": "Whatever problems this home has. The headline is always visible; the explanation is behind the price for every room except the entrance, kitchen and toilets.",
+  "file": "rules/src/main/resources/ruleset/defects.json",
+  "strings": [
+   {
+    "text": "Toilet in the North-East",
+    "role": "heading"
+   },
+   {
+    "text": "A toilet stands in the North-East, the corner the tradition guards most closely. This is Ishanya — Shiva's quarter, the water element; in the mandala grid, the head of the Purusha. Every school examined calls waste here the single most serious placement. A toilet belongs in the North-West — Vayu's quarter, whose moving air carries waste out.",
+    "role": "body",
+    "concern": "\"the head of the Purusha\" — the term is used as though known. It recurs in four more explanations and is never once defined."
+   },
+   {
+    "text": "Kitchen in the North-East",
+    "role": "heading"
+   },
+   {
+    "text": "The kitchen's fire stands in the North-East, Ishanya, the water quarter. A kitchen belongs in the South-East — Agneya, Agni's quarter, fire's own element. Fire set against water opposes the zone's element, so every school warns against this.",
+    "role": "body"
+   },
+   {
+    "text": "Staircase or heavy weight in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "A staircase or heavy weight stands on the centre, which the texts say must stay open. The centre is the Brahmasthan — Brahma's own square, the element of space. The Manasara text says outright it must stay open and unweighted — a direct textual violation, not a matter of interpretation. That is why tradition keeps a courtyard at a home's middle.",
+    "role": "body",
+    "concern": "\"a direct textual violation\" is the app's own voice slipping into legal-sounding language. Everything around it is written for a home buyer."
+   },
+   {
+    "text": "Cut or missing North-East corner",
+    "role": "heading"
+   },
+   {
+    "text": "The plan is missing part of its North-East corner, the ground the tradition values most. That corner is Ishanya — the head of the mandala grid, its most auspicious square. The same tradition welcomes a North-East extension, yet calls a cut there a serious defect.",
+    "role": "body"
+   },
+   {
+    "text": "South-West extension",
+    "role": "heading"
+   },
+   {
+    "text": "The plan pushes out at the South-West, the corner meant to stay square and still. That corner is Nairritya — earth's element, the feet of the Purusha. The tradition wants it heaviest and most settled — the firm corner the home rests against. Pushing it outward unbalances exactly that.",
+    "role": "body"
+   },
+   {
+    "text": "Main entrance on the South-West corner",
+    "role": "heading",
+    "concern": "Says \"Main entrance\" where every other screen in the app says \"front door\". The editor was deliberately changed to say front door for exactly this reason; the rule data was not."
+   },
+   {
+    "text": "The main entrance stands on the South-West corner — the one door placement every school examined prohibits. The 32-position door table names these positions Yama and Gandharva; in the mandala grid this is the heaviest, most closed corner, meant to stay solid. The entrance is the reading's highest-weighted element, so its position outweighs any single room.",
+    "role": "body"
+   },
+   {
+    "text": "Master bedroom in the North-East or South-East",
+    "role": "heading"
+   },
+   {
+    "text": "The master bedroom sits in a light corner — the North-East or South-East — not the heavy South-West. The head of the household should rest in the South-West: Nairritya, earth's element, the most settled quarter. The North-East is the lightest square, kept open rather than slept in; the South-East is Agneya, Agni's fire quarter — no place for rest.",
+    "role": "body"
+   },
+   {
+    "text": "Toilet in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "A toilet stands in the South-West, the corner that anchors the whole home. The South-West is Nairritya — earth's element, meant to stay heavy and undisturbed. The toilet is the one room the tradition holds impure, where things leave the house. Setting it on the anchoring corner works directly against that.",
+    "role": "body"
+   },
+   {
+    "text": "Water stored against the mandala",
+    "role": "heading",
+    "concern": "\"against the mandala\" as a headline assumes the reader knows what a mandala is and that the home is laid on one. It is the only headline in the set built on a term rather than a room and a direction."
+   },
+   {
+    "text": "The water is stored the wrong way round — weight in the light corner, or water under the heavy one. The mandala grid draws water to the North-East — Ishanya, the water element — and sends weight to the South-West — Nairritya, earth. So underground water and the borewell belong North-East, North or East; the heavy overhead tank over the South-West or West.",
+    "role": "body"
+   },
+   {
+    "text": "Prayer room against a toilet, or a room tucked under the stairs",
+    "role": "heading"
+   },
+   {
+    "text": "The prayer space and the toilet share a wall, or a room is tucked under the stairs. The tradition separates pure from impure by adjacency, not direction: a prayer space on a toilet wall is wrong anywhere in the home, and the same logic bars a store or toilet beneath a staircase. What is walked over should not be prayed beside, or kept in.",
+    "role": "body",
+    "concern": "\"by adjacency, not direction\" — \"adjacency\" is the one properly technical word in the whole rule set, and the plain phrase (\"by what shares a wall\") is right there in the next clause."
+   },
+   {
+    "text": "A road pointing straight at the plot",
+    "role": "heading"
+   },
+   {
+    "text": "A road runs straight at the plot — Veedhi Shoola, the 'street spear'. Our reading treats a thrust from the South, South-West, South-East or North-West as harmful; from the North, North-East or East, benign. A stricter school calls every road-arrow harmful. The schools genuinely disagree, so this is shown but never counted in your score.",
+    "role": "body"
+   },
+   {
+    "text": "Heavy trees in the North-East or the centre",
+    "role": "heading"
+   },
+   {
+    "text": "A heavy tree stands in the North-East or the centre — ground meant to stay light. The North-East should be the property's lightest, most open part; the centre is Brahma's square, which the Manasara text wants unweighted. A big tree sets permanent weight and shade on that ground. The same reasoning bars heavy storage from both places.",
+    "role": "body"
+   },
+   {
+    "text": "A mirror facing the bed, or a beam over a bed or desk",
+    "role": "heading"
+   },
+   {
+    "text": "A mirror faces the bed, or a beam runs over it. Both rules are 20th-century additions to Vastu. We searched for a classical basis and found none — no text we examined rules on either. They are included because customers expect them, and labelled honestly as modern rather than ancient.",
+    "role": "body",
+    "concern": "Directly contradicts the unlock screen's promise of \"The classical source behind every rule we apply to your home\". A paying reader finds, inside the thing they bought, the app saying there is no source."
+   },
+   {
+    "text": "The home is long and narrow",
+    "role": "heading"
+   },
+   {
+    "text": "The home is more than twice as long as it is wide. The mandala grid behind the reading is a square; the tradition calls a square, or a rectangle within about one-to-two, balanced — only then do the nine zones come out roughly equal. This plan stretches its zones thin one way, so the reading is less even.",
+    "role": "body"
+   },
+   {
+    "text": "Kitchen in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "The kitchen's fire and bustle sit in the South-West, the corner meant to be stillest. The South-West is Nairritya — earth's element, the feet of the Purusha — kept heaviest and least disturbed; hence the master bedroom and heavy storage there. A kitchen, the busiest and hottest room, sets constant fire and movement there instead. Fire's own quarter is the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Kitchen in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "The kitchen stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan — Brahma's square, the element of space — which the Manasara text asks be left open and unbuilt. A kitchen is the opposite: heavily serviced, full of weight, heat and plumbing. Fire's own quarter is the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Master bedroom in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "The master bedroom stands on the centre, the square the texts ask to be left open. It is Brahma's square — traditionally the open courtyard — which the Manasara text asks stay open and unweighted. The master bedroom is the home's heaviest permanent room; its quarter is the South-West — Nairritya, earth, where weight should gather.",
+    "role": "body"
+   },
+   {
+    "text": "Bedroom in the South-East",
+    "role": "heading"
+   },
+   {
+    "text": "A bedroom sits in the South-East, the fire corner. The South-East is Agneya — Agni's quarter, the element of fire — given to the kitchen and whatever generates heat. Rest is the opposite, so the tradition keeps sleeping out of the fire corner. A bedroom's own quarters are the West, Paschima, and the North-West, Vayavya.",
+    "role": "body"
+   },
+   {
+    "text": "Bedroom in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "A bedroom stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan, which the Manasara text wants open and unweighted. A bedroom — permanent, enclosed, furnished — is the opposite of open ground. Its own quarters are the West and the North-West.",
+    "role": "body"
+   },
+   {
+    "text": "Toilet in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "The toilet stands on the centre, the square the texts ask to be left open. The centre is Brahma's own square, reserved for the family's own deity — the demand comes from the Manasara text. A toilet — the one room held impure — thus stands on the plan's most reserved square. Its own quarter is the North-West, where air carries waste out.",
+    "role": "body"
+   },
+   {
+    "text": "Living room in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "The living room — the home's busiest room — sits in the South-West, its most private corner. The South-West is Nairritya, the element of earth, kept heaviest and least disturbed — which is why the master bedroom and storage belong there. All-day coming and going works against that corner's purpose. A living room's own quarters are the North, East and North-East.",
+    "role": "body"
+   },
+   {
+    "text": "Living room in the centre",
+    "role": "heading"
+   },
+   {
+    "text": "The living room stands on the centre, the square the texts ask to be left open. The centre is the Brahmasthan, which the Manasara text wants open and unweighted — in traditional homes it is the courtyard, not a room. Living here is not automatically wrong, but it is built ground on a square meant to stay clear. The heavier the furniture, the further from the rule.",
+    "role": "body"
+   },
+   {
+    "text": "Staircase in the North-East",
+    "role": "heading"
+   },
+   {
+    "text": "The staircase — usually the home's heaviest structure — sits in the North-East, its lightest corner. The North-East is Ishanya, the head of the mandala grid, kept lightest and most open. A staircase is solid, permanent weight — it belongs opposite: the South, South-West and West.",
+    "role": "body"
+   },
+   {
+    "text": "Study in the South",
+    "role": "heading"
+   },
+   {
+    "text": "The study sits in the South, the half of the home the tradition gives to rest. The South is Dakshina, Yama's quarter — given to rest, discipline and weight, not study. Study belongs where the desk can face East or North: the West — Paschima, Varuna's quarter of learning — or the North-West.",
+    "role": "body"
+   },
+   {
+    "text": "Study in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "The study sits in the South-West, the corner given to rest and storage. The South-West is Nairritya, earth's element — the heaviest, most settled corner, given to sleeping and storage rather than work. A study belongs where the desk faces East or North: the West — Varuna's quarter of learning — or the North-West.",
+    "role": "body"
+   },
+   {
+    "text": "Store in the North-East",
+    "role": "heading"
+   },
+   {
+    "text": "A store's stacked weight sits in the North-East, the corner meant to stay lightest. The North-East is Ishanya, the head of the mandala grid, kept lightest, cleanest and most open — and a store is weight that rarely moves. Storage belongs opposite: the South-West, West or South.",
+    "role": "body"
+   },
+   {
+    "text": "Garage in the North-East",
+    "role": "heading"
+   },
+   {
+    "text": "The garage sits in the North-East, the corner meant to stay lightest and most open. A garage is heavy, closed and full of metal — everything Ishanya, the head of the mandala grid, should not hold. A vehicle belongs in Vayavya — the North-West, quarter of air and movement — or the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Garage in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "The garage — the one thing that moves every day — sits in the South-West, the corner meant to stay still. The South-West is Nairritya, the anchor corner, kept most settled and least disturbed — and a garage sends something large in and out daily. A vehicle belongs in the North-West, the quarter of movement, or the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Balcony in the South-West",
+    "role": "heading"
+   },
+   {
+    "text": "A balcony opens up the South-West, the corner meant to be most solid. A balcony takes weight out of a wall and lets the corner breathe — but the South-West is Nairritya, earth's element, kept heaviest and most closed. Balconies belong on the light side: the North, East and North-East.",
+    "role": "body"
+   },
+   {
+    "text": "Room in a prohibited zone",
+    "role": "heading",
+    "condition": "The catch-all, used when no named rule matched",
+    "concern": "\"prohibited zone\" is the engine's own vocabulary reaching the page. Every other headline in the set names a room and a direction; this one names neither, and a reader who gets it learns nothing about their home."
+   },
+   {
+    "text": "This element sits in a part of the plan its own rule prohibits. We hold a specific, sourced reason for every placement the app rules on. This fallback catches anything outside that list. So it stays deliberately general, claiming no detail we do not have.",
+    "role": "body",
+    "concern": "\"This fallback catches anything outside that list\" is a sentence about the software, printed inside a paid report. It also calls the reader's room \"this element\"."
+   }
+  ]
+ },
+ {
+  "screen": "Report — what to change (from the rule data)",
+  "whenSeen": "Inside an opened problem, but ONLY for a reader who said they are building. Buyers and residents never see any of these.",
+  "file": "rules/src/main/resources/ruleset/defects.json",
+  "strings": [
+   {
+    "text": "Move the toilet to the North-West, or to the West. Leave the North-East for something light — a window, a prayer space, or nothing built at all.",
+    "role": "body"
+   },
+   {
+    "text": "Move the kitchen to the South-East. If that corner is already taken, the North-West is the classical second choice.",
+    "role": "body"
+   },
+   {
+    "text": "Relocate the staircase to the South, the South-West or the West, and leave the middle of the plan open.",
+    "role": "body"
+   },
+   {
+    "text": "Extend the footprint to square off the North-East corner while the plan is still on paper.",
+    "role": "body",
+    "concern": "\"footprint\" is a builder's word, and this is the change the report elsewhere calls free. Extending a footprint costs land and construction."
+   },
+   {
+    "text": "Trim the South-West projection back so the footprint is square at that corner.",
+    "role": "body",
+    "concern": "\"projection\" and \"footprint\" in one sentence — the most jargon-dense line in the rule set."
+   },
+   {
+    "text": "Move the main entrance onto a favourable position on the North or the East wall.",
+    "role": "body"
+   },
+   {
+    "text": "Move the master bedroom to the South-West. The South or the West are the accepted alternatives.",
+    "role": "body"
+   },
+   {
+    "text": "Put the overhead tank over the South-West or West, and the sump or borewell towards the North-East, North or East.",
+    "role": "body"
+   },
+   {
+    "text": "Separate the prayer space from the toilet wall, and leave the space beneath the stairs open.",
+    "role": "body"
+   },
+   {
+    "text": "Buffer the affected side with a boundary wall or a line of planting.",
+    "role": "body"
+   },
+   {
+    "text": "Keep the North-East and the centre free of heavy planting; the big canopy belongs to the South or West.",
+    "role": "body"
+   },
+   {
+    "text": "Reposition the mirror, or route the beam away from directly over the bed or the desk.",
+    "role": "body"
+   },
+   {
+    "text": "Where the plot allows, keep the built footprint closer to a one-to-one-and-a-half proportion.",
+    "role": "body"
+   },
+   {
+    "text": "Move the kitchen to the South-East. The North-West is the accepted second choice.",
+    "role": "body"
+   },
+   {
+    "text": "Move the kitchen to the South-East and leave the middle of the plan open.",
+    "role": "body"
+   },
+   {
+    "text": "Move the master bedroom to the South-West and leave the middle of the plan open.",
+    "role": "body"
+   },
+   {
+    "text": "Move the bedroom to the West or the North-West. The North, East and South are all acceptable too.",
+    "role": "body"
+   },
+   {
+    "text": "Move the bedroom to the West or the North-West and leave the middle of the plan open.",
+    "role": "body"
+   },
+   {
+    "text": "Move the toilet to the North-West or the West, and leave the middle of the plan open.",
+    "role": "body"
+   },
+   {
+    "text": "Move the living room to the North, East or North-East. The West and North-West are acceptable.",
+    "role": "body"
+   },
+   {
+    "text": "Move the living room towards the North, East or North-East, and keep the middle of the plan as open as the layout allows.",
+    "role": "body"
+   },
+   {
+    "text": "Move the staircase to the South, the South-West or the West. The North-West is acceptable.",
+    "role": "body"
+   },
+   {
+    "text": "Move the study to the West or the North-West. The North, East and North-East are acceptable.",
+    "role": "body"
+   },
+   {
+    "text": "Move the store to the South-West, the West or the South.",
+    "role": "body"
+   },
+   {
+    "text": "Move the garage to the North-West or the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Put the balcony on the North, East or North-East side, and keep the South-West corner solid.",
+    "role": "body"
+   },
+   {
+    "text": "Move the element out of the prohibited zone.",
+    "role": "body",
+    "concern": "Engine vocabulary again — \"the element\", \"the prohibited zone\". Nothing here tells the reader which room or which direction."
+   }
+  ]
+ },
+ {
+  "screen": "Report — where the texts record no cure (from the rule data)",
+  "whenSeen": "Printed above the remedy list on the problems where the tradition offers no fix. This is the honesty the paid product rests on — and it is also what the opening verdict contradicts.",
+  "file": "rules/src/main/resources/ruleset/defects.json",
+  "strings": [
+   {
+    "text": "The texts say where a toilet belongs; they record no cure for one built elsewhere. Vastu Shanti is a general pacification, not a fix for this in particular. Everything else below is 20th-century practice.",
+    "role": "body",
+    "concern": "On a home where this is the only problem, the top of the same report tells a buyer or resident \"All fixable without moving a wall.\""
+   },
+   {
+    "text": "The texts fix where the hearth belongs; they record no cure for a kitchen built wrongly. The two steps below are traditional hearth practice, not a fix for the room's position.",
+    "role": "body"
+   },
+   {
+    "text": "There is no classical remedy for a corner that is simply not there. What follows is how the tradition asks you to treat the ground instead.",
+    "role": "body"
+   },
+   {
+    "text": "The texts say where a door belongs; they are silent on correcting one built wrongly. The steps below are traditional entrance practice, not a recorded cure for this position.",
+    "role": "body"
+   },
+   {
+    "text": "No classical correction exists for a toilet in the wrong quarter. The containment steps below are 20th-century practice, labelled as such.",
+    "role": "body"
+   },
+   {
+    "text": "No classical text corrects this while the toilet stays where it is. The containment steps below are 20th-century practice.",
+    "role": "body"
+   },
+   {
+    "text": "The classical texts never had to place a garage. This rule is reasoned from the North-East's purpose. The practical step below is 20th-century practice.",
+    "role": "body"
+   },
+   {
+    "text": "The classical texts never had to place a garage. This rule is reasoned from the South-West's purpose. The practical step below is 20th-century practice.",
+    "role": "body"
+   },
+   {
+    "text": "There is no classical remedy for a plot's shape. This is a limitation of the reading, not something an object can correct.",
+    "role": "body",
+    "concern": "The clearest contradiction of \"All fixable without moving a wall.\" On a long, narrow flat this is the one thing the report can say, and the header has already promised the opposite."
+   },
+   {
+    "text": "This is the general case rather than a named one, so no specific remedy is offered. Moving it is the tradition's own answer.",
+    "role": "body",
+    "concern": "For a buyer or resident, moving it is exactly the advice the app has decided never to give them. So this note points at the one door that has been closed."
+   }
+  ]
+ },
+ {
+  "screen": "Report — the remedies (from the rule data)",
+  "whenSeen": "Inside an opened problem, under \"If it cannot move — remedies\". Each line carries where it comes from, in brackets.",
+  "file": "rules/src/main/resources/ruleset/remedies.json",
+  "strings": [
+   {
+    "text": "Move or resize the element on the drawing so it leaves the wrong zone — free while the plan is still on paper. (From classical text)",
+    "role": "body",
+    "condition": "Shown only to a reader who said they are building; stripped for buyers and residents",
+    "concern": "Two problems in one line. \"the element\" is engine vocabulary, and \"free\" is the same cost claim flagged twice above. It is also tagged \"From classical text\" while being an instruction about using this app's drawing tool."
+   },
+   {
+    "text": "Keep the centre of the home open and unweighted — no heavy furniture, no storage, nothing built on it. The Manasara, a classical text, states this directly. It is the texts' one explicit instruction about the centre. (From classical text)",
+    "role": "body"
+   },
+   {
+    "text": "Keep the North-East itself light: low furniture, no heavy storage, nothing piled up, and as much daylight as the room allows. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Put the household's heaviest things against the South and West walls — the tallest wardrobe, the stored trunks. Weight then still gathers where the mandala grid places it. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Wherever the kitchen ends up, set the cooking platform against that room's South-East corner. Stand facing East to cook. The tradition fixes the hearth's own direction, not only the room's. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep water and fire apart inside the kitchen — sink and filter towards the North-East side, stove and gas towards the South-East side, not side by side. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep the toilet door shut and the room dry and ventilated. Keep its floor a step higher than the rooms around it. This is 20th-century practice — no classical verse prescribes it. (Modern practice)",
+    "role": "body"
+   },
+   {
+    "text": "A rock-salt bowl in the affected corner. 20th-century practice; no textual basis. (Modern practice)",
+    "role": "body",
+    "concern": "Carries a product code in the data, so this line is a future shopfront sitting inside a report the customer already paid for. Nothing on screen discloses that."
+   },
+   {
+    "text": "Sleep with your head to the South or the East, never to the North. Of all the direction rules, this is the one every school states alike. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Move the bed into the South-West corner of whichever room you sleep in. The sleeper then still rests on the heaviest part of that room. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Have the stair turn clockwise as you climb. Keep the space beneath it open — not closed in as a store or a toilet. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Sit facing East or North at the desk. Which way the person faces is fixed as firmly in the tradition as where the room sits. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep only light, seldom-used things in it — no heavy metal, no water drums, nothing stacked high — and keep the floor visible. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep the seating towards the North and East half of the room. Keep the heavy pieces against its South and West walls. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Park nose-out and keep the rest of that corner clear rather than using it for storage. 20th-century practice; no classical basis. (Modern practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep a South-West balcony roofed and screened rather than left open. Put the heavier planters and furniture on it. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Give the prayer space its own wall. A full-height cupboard, a shelf run or a service duct between it and the toilet is enough separation. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Give the entrance a raised threshold. Keep the approach to it clear, lit and unobstructed. The threshold is a real element in the texts, not a modern addition. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "If there is another doorway on the North or East wall, make that the household's everyday door. Keep this one for service. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Leave the ground at the missing North-East corner open, clean and a little lower than the rest. Do not fill it in with a shed, a store or a parked vehicle. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "A Tulsi plant near the North-East. Genuinely traditional (unlike money plant or lucky bamboo). (Traditional practice)",
+    "role": "body",
+    "concern": "\"Tulsi\" is left unglossed — holy basil — on a paid screen, and the aside about money plant and lucky bamboo is the app arguing with rival practitioners in front of the customer."
+   },
+   {
+    "text": "Follow the mandala grid with water. Overhead storage towards the South-West or West; underground water and the borewell towards the North-East, North or East. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Keep heavy trees off the North-East and off the centre. Put light planting, grass or open ground there instead. Keep the big canopy to the South or West. (Traditional practice)",
+    "role": "body"
+   },
+   {
+    "text": "Screen the side the road points at with a boundary wall or a line of planting. The schools disagree on whether the direction of the thrust matters at all. (Schools disagree)",
+    "role": "body"
+   },
+   {
+    "text": "Turn the mirror so it does not face the bed, or box the beam in behind a false ceiling. Modern practice; no classical basis found for either. (Modern practice)",
+    "role": "body"
+   },
+   {
+    "text": "Vastu Shanti / Vastu Puja — the genuine traditional pacification, prescribed in the Mayamatam, a classical treatise. (From classical text)",
+    "role": "body",
+    "condition": "Attached to every single problem in the rule set",
+    "concern": "Because it is on every problem, it is the last remedy a buyer or resident sees on the problems where the app has just said nothing else can help. On a long narrow home in remedies-only mode it is the ONLY remedy left after the layout line is stripped — so \"All fixable without moving a wall\" resolves, in practice, to a ritual."
+   },
+   {
+    "text": "A Vastu pyramid on the wall. 20th-century 'pyramid power'; claims of antiquity are marketing. (Modern practice)",
+    "role": "body",
+    "concern": "Also carries a product code. The app prints a remedy and calls it marketing in the same sentence, while holding a SKU for it."
+   },
+   {
+    "text": "A copper strip along the zone boundary. Modern practice; efficacy not established. (Modern practice)",
+    "role": "body",
+    "condition": "Never — no problem in the rule set references it",
+    "concern": "Dead copy. It ships in the rule data with a product code attached and no defect points at it, so no reader ever sees it."
+   }
+  ]
+ },
+ {
+  "screen": "Report — where the schools disagree (from the rule data)",
+  "whenSeen": "Only the disputes that touch this home. Each shows two labelled readings and, where the app has ruled, which one the number follows.",
+  "file": "rules/src/main/resources/ruleset/disputes.json",
+  "strings": [
+   {
+    "text": "A toilet in the East",
+    "role": "heading"
+   },
+   {
+    "text": "A defect",
+    "role": "label"
+   },
+   {
+    "text": "Tradition holds a toilet spoils the East, the sun's quarter.",
+    "role": "body"
+   },
+   {
+    "text": "Acceptable in one strip",
+    "role": "label"
+   },
+   {
+    "text": "The 16-zone school divides the East more finely and allows a toilet in the strip nearest the South-East.",
+    "role": "body",
+    "concern": "\"The 16-zone school\" is named in four disputes and never explained. The reader has just been taught eight directions plus a centre; sixteen arrives with no introduction."
+   },
+   {
+    "text": "A kitchen in the North",
+    "role": "heading"
+   },
+   {
+    "text": "Not ideal",
+    "role": "label"
+   },
+   {
+    "text": "The North belongs to Kubera, lord of wealth. Tradition reads it as water, unsuited to the kitchen's fire.",
+    "role": "body"
+   },
+   {
+    "text": "Not ideal, not a fault",
+    "role": "label"
+   },
+   {
+    "text": "Modern practice calls a northern kitchen less than best, not a fault to correct.",
+    "role": "body"
+   },
+   {
+    "text": "The main bedroom in the West",
+    "role": "heading",
+    "concern": "\"main bedroom\" here; \"master bedroom\" everywhere else in the report. Same room, two names, one document."
+   },
+   {
+    "text": "Acceptable",
+    "role": "label"
+   },
+   {
+    "text": "Tradition accepts the West, the other settled, heavier quarter, instead of the South-West.",
+    "role": "body"
+   },
+   {
+    "text": "Advised against",
+    "role": "label"
+   },
+   {
+    "text": "The 16-zone school keeps the main bedroom out of the west-south-west, its quarter of study.",
+    "role": "body",
+    "concern": "\"west-south-west\" is a direction the app never draws, never scores and never names anywhere else."
+   },
+   {
+    "text": "A front door in the South-East",
+    "role": "heading"
+   },
+   {
+    "text": "Acceptable in the right position",
+    "role": "label"
+   },
+   {
+    "text": "The 32 named door positions sort good from bad within the South-East. Exact position, not direction, decides.",
+    "role": "body"
+   },
+   {
+    "text": "The Manasara, a classical Vastu treatise, says a home should never face the South-East.",
+    "role": "body"
+   },
+   {
+    "text": "Which way to sleep with your head",
+    "role": "heading"
+   },
+   {
+    "text": "Head to the South is best",
+    "role": "label"
+   },
+   {
+    "text": "Tradition ranks head-to-South first, East next, West neutral.",
+    "role": "body"
+   },
+   {
+    "text": "Avoid head to the North",
+    "role": "label"
+   },
+   {
+    "text": "The one point every school agrees on. We pass it on as tradition, claiming nothing about your health.",
+    "role": "body"
+   },
+   {
+    "text": "Which way the idols face",
+    "role": "heading"
+   },
+   {
+    "text": "Against the West or South-West wall",
+    "role": "label"
+   },
+   {
+    "text": "Classically, idols stand against the West or South-West wall, so the worshipper faces East.",
+    "role": "body"
+   },
+   {
+    "text": "Against the East wall",
+    "role": "label"
+   },
+   {
+    "text": "Modern practice often stands them against the East wall, facing West.",
+    "role": "body"
+   },
+   {
+    "text": "Where a septic tank belongs",
+    "role": "heading"
+   },
+   {
+    "text": "The sources contradict each other",
+    "role": "label"
+   },
+   {
+    "text": "The North, North-West and South-East are each insisted on by serious sources.",
+    "role": "body"
+   },
+   {
+    "text": "Too sharp to rule on",
+    "role": "label",
+    "concern": "\"Too sharp to rule on\" does not mean anything in ordinary English. The body underneath explains it; the label above it does not."
+   },
+   {
+    "text": "Choosing one would invent a tradition. We report it as not checked unless you say where yours is.",
+    "role": "body"
+   },
+   {
+    "text": "A road pointing straight at the plot",
+    "role": "heading"
+   },
+   {
+    "text": "It depends which direction",
+    "role": "label"
+   },
+   {
+    "text": "A road from the North-East, North or East is harmless. From the South, South-West, South-East or North-West comes the thrust tradition warns of.",
+    "role": "body"
+   },
+   {
+    "text": "Always harmful",
+    "role": "label"
+   },
+   {
+    "text": "The strict school treats any such road as a wound, from any direction.",
+    "role": "body"
+   },
+   {
+    "text": "A corner that sticks out",
+    "role": "heading"
+   },
+   {
+    "text": "A North-East extension is welcome",
+    "role": "label"
+   },
+   {
+    "text": "Tradition reads a North-East extension as a good sign, not a fault.",
+    "role": "body"
+   },
+   {
+    "text": "Every extension is a fault",
+    "role": "label"
+   },
+   {
+    "text": "The strict school treats anything that sticks out as a fault, the North-East included.",
+    "role": "body"
+   },
+   {
+    "text": "Where the prayer room belongs",
+    "role": "heading"
+   },
+   {
+    "text": "Classical — the centre",
+    "role": "label"
+   },
+   {
+    "text": "The family deity holds the centre of the home, as the Manasara sets out.",
+    "role": "body"
+   },
+   {
+    "text": "Modern — the North-East",
+    "role": "label"
+   },
+   {
+    "text": "Near-universal modern practice places the prayer room in the North-East.",
+    "role": "body"
+   },
+   {
+    "text": "Your score follows the modern reading: North-East ideal, North and East acceptable. No position counts as a defect, the classical centre included. The other school's advice never becomes a fault.",
+    "role": "body",
+    "condition": "The only dispute in the set that says where the number stands",
+    "concern": "Eleven of the twelve disputes carry no such line, so the section's own promise — \"Both readings, no winner, and which your score follows\" — is kept on one dispute in twelve. On the other eleven the reader is told the score follows something and never told what."
+   }
+  ]
+ },
+ {
+  "screen": "Report — what each direction means (from the rule data)",
+  "whenSeen": "Printed above the reason on every opened finding, and on the front door card. This is the Sanskrit and Vastu vocabulary the product is sold on.",
+  "file": "rules/src/main/resources/ruleset/zones.json",
+  "strings": [
+   {
+    "text": "Uttara, the quarter of Kubera. In the tradition: Wealth, career.",
+    "role": "body",
+    "condition": "North"
+   },
+   {
+    "text": "Ishanya, the quarter of Ishana / Shiva, the element of water. In the tradition: Clarity, health. The Purusha's head — most sensitive and most auspicious.",
+    "role": "body",
+    "condition": "North-East",
+    "concern": "\"Purusha\" unglossed, on a paid screen, in the direction the report treats as the most important corner in the home."
+   },
+   {
+    "text": "Purva, the quarter of Indra. In the tradition: Vitality, social standing.",
+    "role": "body",
+    "condition": "East"
+   },
+   {
+    "text": "Agneya, the quarter of Agni, the element of fire. In the tradition: Energy, transformation, finances.",
+    "role": "body",
+    "condition": "South-East"
+   },
+   {
+    "text": "Dakshina, the quarter of Yama. In the tradition: Rest, fame, discipline.",
+    "role": "body",
+    "condition": "South"
+   },
+   {
+    "text": "Nairritya, the quarter of Nirriti, the element of earth. In the tradition: Stability, bonds. The Purusha's feet — the heaviest zone.",
+    "role": "body",
+    "condition": "South-West"
+   },
+   {
+    "text": "Paschima, the quarter of Varuna. In the tradition: Gains, savings, learning.",
+    "role": "body",
+    "condition": "West"
+   },
+   {
+    "text": "Vayavya, the quarter of Vayu, the element of air. In the tradition: Movement, communication, transience.",
+    "role": "body",
+    "condition": "North-West"
+   },
+   {
+    "text": "Brahmasthan, Brahma's own square, the element of space. In the tradition: Must stay open. Reserved for the family deity.",
+    "role": "body",
+    "condition": "The centre"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the reason each kind of room wants its direction (from the rule data)",
+  "whenSeen": "Inside an opened room row, under the verdict. Free for the entrance, kitchen and toilets; behind the price for everything else.",
+  "file": "rules/src/main/resources/ruleset/rooms.json",
+  "strings": [
+   {
+    "text": "The main entrance is judged on a finer scale than the nine zones. It is read on the 32 named door positions along the mandala grid's edge. It is the highest-weighted single element in the whole reading.",
+    "role": "body",
+    "concern": "\"the highest-weighted single element\" — weighted is scoring vocabulary and \"element\" here means the front door. Both appear in the report's own prose too."
+   },
+   {
+    "text": "The kitchen is the household's fire. It belongs in the fire quarter: the South-East, Agneya, Agni's own corner. The North-West is the accepted second choice. It is Vayu's quarter of air, and air feeds fire. The tradition keeps the kitchen out of the water corner and the heavy corner.",
+    "role": "body"
+   },
+   {
+    "text": "The head of the household should rest on the heaviest, most settled ground. That is the South-West — Nairritya, the corner of earth. It holds the feet of the Purusha, the figure laid over the plan. The South and West are accepted: the same heavier half of the home.",
+    "role": "body",
+    "condition": "Master bedroom",
+    "concern": "This is the ONLY place in the whole product that hints at what Purusha means — \"the figure laid over the plan\" — and it is locked behind the paywall, while the term is used unglossed on free screens."
+   },
+   {
+    "text": "Ordinary bedrooms sit best in the West, Varuna's quarter, or the North-West, Vayu's. Varuna rules water; Vayu rules air. Both quarters are settled enough for rest. The South-West is kept for the head of the household. The tradition keeps sleeping out of the fire corner.",
+    "role": "body"
+   },
+   {
+    "text": "A prayer room belongs in the North-East — Ishanya, Ishana's quarter, the home's lightest, most sensitive part. The North and East, also kept open, are accepted next — Kubera's and Indra's quarters, from either of which a person at prayer still faces the rising sun. No direction is ruled out. The classical texts place the shrine at the very centre. We have chosen not to follow that reading, but we will not call it a defect.",
+    "role": "body"
+   },
+   {
+    "text": "What leaves the house belongs in the quarter of movement. That is the North-West — Vayavya, Vayu's own corner — or the West. The tradition keeps the toilet off the North-East, its most sensitive square. It keeps it off the South-West too — the home's anchor.",
+    "role": "body"
+   },
+   {
+    "text": "The living room is where the household gathers and guests are received. It belongs on the lighter, more open half: the North, the East and the North-East. These are the quarters of Kubera, Indra and Ishana. It is kept out of the heavy, private corner.",
+    "role": "body"
+   },
+   {
+    "text": "A staircase is the heaviest permanent structure in most homes. It goes where the tradition wants weight: the South, the South-West and the West. It is kept off the North-East, which should stay light. The Manasara, a classical text, asks that the centre be left open.",
+    "role": "body"
+   },
+   {
+    "text": "The study is placed so the person at the desk faces East or North while working. That points to the West — Varuna's quarter, which the tradition links with learning — or the North-West. The two heavy southern corners are kept for rest and storage, not work.",
+    "role": "body"
+   },
+   {
+    "text": "Dining sits best in the West, Paschima, close to the kitchen's fire corner without standing in it. The North and East are accepted. Nothing is outright prohibited for a dining room.",
+    "role": "body"
+   },
+   {
+    "text": "A store is stacked weight that seldom moves. It belongs in the heavy half: the South-West, the West or the South. Only the North-East is ruled out — the tradition wants that corner lightest and clearest.",
+    "role": "body"
+   },
+   {
+    "text": "The North-West is Vayavya, Vayu's quarter of movement. The tradition links it with things that come and go — exactly what a guest room is for. The West is accepted. Nothing is outright prohibited.",
+    "role": "body"
+   },
+   {
+    "text": "A vehicle comes and goes, so the North-West, the quarter of movement, suits it. The South-East is the other accepted place. It is kept off the North-East, which must stay light, and the South-West, which must stay undisturbed. The garage is a modern room the classical texts never placed. The rule is reasoned from what those two corners are for.",
+    "role": "body"
+   },
+   {
+    "text": "A balcony is an opening in a wall. It belongs on the light half: the North, East and North-East. The tradition wants the South-West solid and closed. So it is the one place a balcony is ruled out.",
+    "role": "body"
+   },
+   {
+    "text": "The tradition discourages a basement altogether, rather than placing it in a direction. The modern schools that do permit one disagree about where. We do not score a basement at all rather than pick a side.",
+    "role": "body"
+   }
+  ]
+ },
+ {
+  "screen": "Report — the engine's notes strip",
+  "whenSeen": "A coloured strip just under the balance bar, when the engine has something to say about the plan as a whole.",
+  "file": "engine/src/main/kotlin/com/vastufirst/engine/",
+  "strings": [
+   {
+    "text": "Add your home's layout to see its score.",
+    "role": "body",
+    "condition": "No layout at all"
+   },
+   {
+    "text": "Add your home's outline to see its score.",
+    "role": "body",
+    "condition": "No usable outline"
+   },
+   {
+    "text": "Skipped 2 rooms we couldn't read clearly.",
+    "role": "body",
+    "condition": "Some rooms were dropped; singular reads \"1 room\""
+   },
+   {
+    "text": "We estimated the home's outline from your rooms — add the real outline for accurate corner and shape checks.",
+    "role": "body"
+   },
+   {
+    "text": "The outline crossed itself, so we simplified it — please recheck it for accurate corner and shape checks.",
+    "role": "body"
+   },
+   {
+    "text": "Mark your main entrance to include it in the score.",
+    "role": "body",
+    "concern": "\"main entrance\" again, where the editor button says \"Set the front door\". The reader is told to do a thing under a name the button does not use."
+   },
+   {
+    "text": "More than one main entrance was marked — using the first.",
+    "role": "body"
+   },
+   {
+    "text": "Showing the classic 8-direction reading; other schools are coming soon.",
+    "role": "body",
+    "condition": "The plan asks for a school profile the engine does not run",
+    "concern": "A roadmap promise printed inside a paid report. \"Coming soon\" is a commitment nobody has made, on the one document a customer keeps."
+   },
+   {
+    "text": "We couldn't fully read this plan — add or adjust your layout to try again.",
+    "role": "body"
+   },
+   {
+    "text": "This home sits about 12° off the compass; the score accounts for that.",
+    "role": "body"
+   },
+   {
+    "text": "Your home isn't a regular rectangle. A squarer, more regular shape is traditionally preferred; we've scored the rooms and entrance, and the corner checks need a clearer outline.",
+    "role": "body"
+   },
+   {
+    "text": "This home is a bit long and narrow; a squarer shape is considered more balanced.",
+    "role": "body"
+   }
+  ]
+ },
+ {
+  "screen": "Report — copy that no longer reaches anyone",
+  "whenSeen": "Never. These sentences were written for the free score screen that was removed on 10 August, and nothing in the app draws them any more — but the test suite still checks their wording, so they read as live copy to anyone auditing the code.",
+  "file": "app/src/androidMain/kotlin/com/vastufirst/app/ui/report/ReportText.kt",
+  "strings": [
+   {
+    "text": "None of these is a defect, and none is prohibited — just not the direction the tradition prefers. They still count in your score, so we list them.",
+    "role": "body",
+    "concern": "Dead. No screen draws it, yet it is the only sentence ever written explaining what \"not ideal\" costs the reader — so the explanation was lost when the screen was, and nobody noticed because a test still passes on it."
+   },
+   {
+    "text": "All 8 problems — 5 new to you — each with its full reason and remedies",
+    "role": "body",
+    "concern": "Dead. Still checked by tests."
+   },
+   {
+    "text": "3 rooms rated not ideal — which, and why",
+    "role": "body",
+    "concern": "Dead. Still checked by tests."
+   },
+   {
+    "text": "The full reading, with the reasoning behind every placement",
+    "role": "body",
+    "concern": "Dead. Still checked by tests."
+   },
+   {
+    "text": "The full reason behind each problem, with remedies",
+    "role": "body",
+    "concern": "Dead. Still checked by tests."
+   },
+   {
+    "text": "5 more problems · 3 rooms rated not ideal · every reason and remedy in full",
+    "role": "body",
+    "concern": "Dead. Still checked by tests."
+   }
+  ]
+ }
+]

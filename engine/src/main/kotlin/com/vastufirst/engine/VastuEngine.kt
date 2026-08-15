@@ -50,9 +50,14 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             val level = san.level ?: return insufficient(plan, san.notes)
             val notes = san.notes.toMutableList()
             if (plan.schoolProfile != SchoolProfile.TRADITIONAL_8) {
+                // ⚠ NO "COMING SOON". The old wording promised other schools were on the way; there
+                // is no picker, no plan and no date, so it was a commitment to a customer that
+                // nobody had made. It also cannot appear today — nothing in the app can ask for
+                // another school — but the branch stays as the safety net it is, for a saved home
+                // written by some future build that can.
                 notes += AnalysisNote(
                     "school-default",
-                    "Showing the classic 8-direction reading; other schools are coming soon.",
+                    "Read under the classic 8-direction tradition, which is the reading this app scores.",
                     NoteLevel.INFO,
                 )
             }

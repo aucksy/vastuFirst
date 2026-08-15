@@ -1,0 +1,101 @@
+[
+ {"screen": "Welcome", "now": "See your home's Vastu — and exactly what to do about it.",
+  "why": "Promises layout advice to everyone. Only people who answer \"I am building\" are given it — the report strips every move-it suggestion for buyers and for people already living somewhere.",
+  "new": "See your home's Vastu, room by room, in plain words."},
+
+ {"screen": "Welcome", "now": "Upload or draw your plan. Mark North. See your score and what to do.",
+  "why": "\"Mark North\" is our name for a step, used before the reader knows there is such a step. Repeats the headline's promise a second time in three lines.",
+  "new": "Upload a plan, or draw your home. Say which way north is. Read your score."},
+
+ {"screen": "Your plans — a home this version cannot open", "now": "It's still on your phone — nothing has been deleted. An app update may open it again.",
+  "why": "Nobody can promise that update. Worse, the Remove box you reach from this same card says the opposite: that an update will NOT be able to bring it back.",
+  "new": "It is still on your phone and nothing has been deleted. This version of the app cannot open it."},
+
+ {"screen": "Your plans — removing a home this version cannot open", "now": "This home can't be opened, so we can't show you what's in it. Removing it deletes it from your phone — a future app update won't be able to bring it back. Your other homes aren't affected.",
+  "why": "Contradicts the card it is opened from. Once that card stops promising an update, this can state the real cost without arguing with it.",
+  "new": "We cannot open this home, so we cannot show you what is inside it. Removing it deletes it from your phone for good, and no later version will be able to bring it back. Your other homes are not affected."},
+
+ {"screen": "Consent, upload, and the no-key notice (three places)", "now": "…and the score is exactly the same.",
+  "why": "The app cannot keep this. A hand-drawn home and a read plan produce different room shapes, and the score is worked out from those shapes. The same home done both ways can score differently.",
+  "new": "…and the score is worked out exactly the same way."},
+
+ {"screen": "Reading your plan (the wait)", "now": "Still reading — a detailed plan can take up to a minute.",
+  "why": "The reader is allowed 20 seconds to connect and 120 to answer, and a second reader may be asked after that. Someone told \"up to a minute\" at 90 seconds thinks the app has frozen.",
+  "new": "Still reading. A detailed plan can take a couple of minutes."},
+
+ {"screen": "We're busy right now", "now": "Your plan is fine — we're just busy.",
+  "why": "The plan was never looked at, so nobody knows whether it is fine. If the next try is refused, the app has contradicted itself two screens apart.",
+  "new": "This is not about your plan — we are just busy right now."},
+
+ {"screen": "We couldn't read your plan", "now": "It might be an elevation, a brochure page or a site map.",
+  "why": "\"Elevation\" is an architect's word. This is the one sentence that has to tell a home buyer what went wrong.",
+  "new": "It might be a front view of the building, a brochure page or a site map."},
+
+ {"screen": "We couldn't read your plan", "now": "A clearer picture often fixes it.",
+  "why": "The app has no way of knowing whether a clearer picture would help this sheet, and it may already have been clear. It invites a second upload that fails the same way.",
+  "new": "A clearer picture sometimes helps."},
+
+ {"screen": "Report — the opening verdict", "now": "All fixable without moving a wall.",
+  "why": "The rule data contradicts it in the same report. A missing north-east corner says \"There is no classical remedy for a corner that is simply not there\"; a long narrow home says the same.",
+  "new": "Most of these are placement changes rather than building work."},
+
+ {"screen": "Report — the opening verdict", "now": "Nothing is built yet — every change below is free.",
+  "why": "One of the changes it covers is \"Extend the footprint to square off the North-East corner\", which on a real plot costs land and construction. Free is true of moving a rectangle on a drawing, not of the building work.",
+  "new": "Nothing is built yet, so these are still changes on paper."},
+
+ {"screen": "Report — the opening verdict", "now": "Several core placements work against this home.",
+  "why": "States a live harm as fact, at the very top of the page, about twenty screens above the only sentence saying this is guidance and not a promise.",
+  "new": "Several of the main rooms sit where the tradition would rather they did not."},
+
+ {"screen": "Privacy", "now": "Your homes never leave your phone.",
+  "why": "The page's own third section is headed \"The one thing that leaves your phone\" and explains that an uploaded plan is sent to an outside AI service. A reader who stops at the headline — which is what headlines are for — has been told the opposite of the truth.",
+  "new": "Your homes stay on this phone. One thing does leave it, and it is named below."},
+
+ {"screen": "Before we start — consent", "now": "A relay called OpenRouter passes it to an AI model from OpenAI — and sometimes a second one from Google for a second opinion.",
+  "why": "\"A relay\" is company jargon on the screen most likely to make an older buyer back out. The names should stay — consent needs them — but the plumbing should not.",
+  "new": "Your picture is sent to an outside reading service run by OpenAI, and sometimes to a second one run by Google to check the result."},
+
+ {"screen": "Before we start — consent", "now": "Only to read what is printed on your plan — the room names and sizes, and where each room sits.",
+  "why": "Sets up an expectation the very next screen usually contradicts: on most real plans the result screen says \"we can't trust where each one sits — and we don't guess\", and throws the placement away.",
+  "new": "Only to read what is printed on your plan — the room names, their sizes, and where they appear on the sheet. We often cannot trust the placement, and when we cannot, we ask you instead."},
+
+ {"screen": "A few more things", "now": "Every answer is saved as you tap it.",
+  "why": "Not fully true. Answering \"There isn't one\" for the tank, the underground water or the tree is not kept — reopen the home and those questions are blank again, as though never answered. This one needs the code fixed, not the sentence.",
+  "new": "Each answer is saved as you tap it. (Fix the saving of \"There isn't one\" rather than weaken this line.)"},
+
+ {"screen": "Report — what this covers", "now": "…and 2 of 4 extra things you told us about.",
+  "why": "No longer names which two are missing, so the reader knows something is uncovered but not what — the useful half of the sentence is gone.",
+  "new": "…and 2 of the 4 extra things you told us about. We could not check the overhead tank or the trees."},
+
+ {"screen": "Add your home", "now": "See the whole flow in ten seconds",
+  "why": "A specific time promise the app cannot keep — the sample still walks the user through marking north and reaching a report.",
+  "new": "Try it on a sample home first"},
+
+ {"screen": "Settings", "now": "PREFERENCES",
+  "why": "One row sits under it and it cannot be tapped or changed, so the heading promises a set of choices that does not exist.",
+  "new": "(Remove the heading, or give the row something to change.)"},
+
+ {"screen": "Settings", "now": "Honesty & sources",
+  "why": "Gives no clue what is behind it. Someone looking for the disclaimer, or for where the rules come from, has no reason to guess this row.",
+  "new": "Where our Vastu rules come from"},
+
+ {"screen": "Settings / Privacy — the delete button", "now": "This permanently removes every saved home from this device, and any plan you photographed.",
+  "why": "The privacy page describes the same button and does not mention the photographs. Two screens make two different promises about one button. The Settings wording is the correct one; the privacy page should match it.",
+  "new": "(Keep this wording. Correct the privacy page to name the photographs too.)"},
+
+ {"screen": "Check what we read", "now": "…on the top wall of your plan…",
+  "why": "Describes the front door by where it sits on the picture, while every room row directly above it uses compass directions. Two ways of saying where something is, in one list, about the heaviest-weighted thing in the whole reading.",
+  "new": "(Say it the same way the rooms are said: name the compass direction, and put the picture position in brackets after it.)"},
+
+ {"screen": "The card when the picture is lost", "now": "Every room we read is still listed below, and your score still works.",
+  "why": "Reassures without naming what was lost. Without the picture the user can no longer check our reading against their own plan, which is the entire purpose of that screen.",
+  "new": "Every room we read is still listed below and your score is unaffected. You just cannot compare it against the picture any more."},
+
+ {"screen": "The engine's note when a school other than the default is asked for", "now": "Showing the classic 8-direction reading; other schools are coming soon.",
+  "why": "A promise with nothing behind it, and it can never appear anyway — nothing in the app can request another school. Dead copy carrying a commitment.",
+  "new": "(Delete it. If a school picker is ever built, write the sentence then.)"},
+
+ {"screen": "The rule-change card on the saved-homes list", "now": "Your score has not moved, and nothing has been taken out of your report. We corrected two lines in it. Three of the things we say we could not check pointed you at a screen the app no longer has…",
+  "why": "Release-note language about our own past mistakes, in our voice not the reader's, on the first card an older reader meets. Four sentences where one would do.",
+  "new": "(Already rewritten in this session for the north-east change. Keep every future note to two sentences: which way the number moved, and why.)"}
+]

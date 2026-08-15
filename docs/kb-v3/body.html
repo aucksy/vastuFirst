@@ -1,0 +1,389 @@
+<title>Vastu Knowledge Base</title>
+<style>
+  /* Palette taken from the app's own Sage & Gold system, so the document and the product
+     it describes read as one thing. Neutrals carry a green bias rather than being grey. */
+  :root{
+    --paper:#F8F6F0; --surface:#F2EEE4; --raised:#FFFFFF;
+    --ink:#232A22; --ink2:#4B5347; --ink3:#686C61;
+    --rule:#DDDED3; --rule2:#B6BBA8;
+    --sage:#4C7355; --gold:#B0730F; --red:#B23129; --blue:#2F6FBF;
+    --flag:#FBF4E4;
+    --measure:68ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#171A16; --surface:#1F241E; --raised:#252B24;
+      --ink:#EDEBE2; --ink2:#C2C6B9; --ink3:#9AA093;
+      --rule:#333A31; --rule2:#4A5246;
+      --sage:#8FBE95; --gold:#E0A21E; --red:#E58279; --blue:#7FAEE8;
+      --flag:#2A2517;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#171A16; --surface:#1F241E; --raised:#252B24;
+    --ink:#EDEBE2; --ink2:#C2C6B9; --ink3:#9AA093;
+    --rule:#333A31; --rule2:#4A5246;
+    --sage:#8FBE95; --gold:#E0A21E; --red:#E58279; --blue:#7FAEE8;
+    --flag:#2A2517;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:400 16px/1.62 "Charter","Iowan Old Style","Georgia","Times New Roman",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 clamp(16px,4vw,44px) 96px}
+
+  /* ---- masthead ---- */
+  header.mast{border-bottom:2px solid var(--ink); padding:clamp(28px,6vw,56px) 0 22px; margin-bottom:34px}
+  .eyebrow{
+    font:600 11px/1 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin:0 0 18px;
+  }
+  h1{font-size:clamp(34px,6vw,58px); line-height:1.02; margin:0 0 6px; font-weight:600; letter-spacing:-.02em; text-wrap:balance}
+  .sub{font-size:clamp(20px,3.4vw,30px); color:var(--sage); margin:0 0 22px; font-weight:400; letter-spacing:-.01em}
+  .standfirst{max-width:var(--measure); color:var(--ink2); font-size:17px; margin:0}
+
+  .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:1px;
+    background:var(--rule); border:1px solid var(--rule); margin:30px 0 0}
+  .facts div{background:var(--paper); padding:13px 15px}
+  .facts dt{font:600 10px/1.3 ui-sans-serif,system-ui,sans-serif; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink3); margin:0 0 5px}
+  .facts dd{margin:0; font-size:15px; color:var(--ink)}
+  .facts .big{font-size:26px; line-height:1.1; font-variant-numeric:tabular-nums}
+
+  /* ---- sections ---- */
+  section{margin:0 0 clamp(40px,6vw,66px)}
+  h2{font-size:clamp(24px,3.6vw,34px); line-height:1.15; margin:0 0 4px; font-weight:600;
+    letter-spacing:-.015em; text-wrap:balance; padding-top:14px; border-top:1px solid var(--ink)}
+  h2 .n{font:600 12px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.12em;
+    color:var(--gold); display:block; margin-bottom:9px; text-transform:uppercase}
+  h3{font-size:19px; margin:30px 0 8px; font-weight:600; letter-spacing:-.01em; text-wrap:balance}
+  p{max-width:var(--measure)} p.wide{max-width:none}
+  .lede{color:var(--ink2); max-width:var(--measure); margin:10px 0 26px; font-size:17px}
+  a{color:var(--sage)} a:focus-visible,summary:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+
+  /* ---- finding cards ---- */
+  .find{border:1px solid var(--rule); border-left:4px solid var(--rule2);
+    background:var(--raised); padding:17px 19px; margin:0 0 14px}
+  .find.bug{border-left-color:var(--red)}
+  .find.stale{border-left-color:var(--gold)}
+  .find.dead{border-left-color:var(--blue)}
+  .find.ask{border-left-color:var(--sage)}
+  .find h4{margin:0 0 7px; font-size:17.5px; font-weight:600; letter-spacing:-.01em}
+  .find p{margin:0 0 8px; color:var(--ink2); font-size:15.5px}
+  .find p:last-child{margin-bottom:0}
+  .tag{display:inline-block; font:600 10px/1 ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:.1em; text-transform:uppercase; padding:5px 8px; border-radius:2px;
+    margin:0 0 9px; color:var(--paper); background:var(--ink3)}
+  .bug .tag{background:var(--red)} .stale .tag{background:var(--gold)}
+  .dead .tag{background:var(--blue)} .ask .tag{background:var(--sage)}
+  .find b{color:var(--ink)}
+
+  /* ---- tables ---- */
+  .scroll{overflow-x:auto; margin:16px 0; border:1px solid var(--rule); background:var(--raised)}
+  table{border-collapse:collapse; width:100%; font:400 14.5px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  th{text-align:left; vertical-align:bottom; padding:10px 13px; background:var(--surface);
+    border-bottom:1.5px solid var(--rule2); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink3); font-weight:600; white-space:nowrap}
+  td{padding:10px 13px; border-bottom:1px solid var(--rule); vertical-align:top; color:var(--ink2)}
+  tr:last-child td{border-bottom:none}
+  td.id{font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--ink); font-weight:600}
+  td.txt{color:var(--ink); max-width:40ch}
+  td.role,td.scr{color:var(--ink3); font-size:13px; white-space:nowrap}
+  td.cn{color:var(--ink2); max-width:44ch; font-size:13.5px}
+  td.rv{background:var(--surface); min-width:130px}
+  tr.flag td.txt{background:var(--flag)}
+  .cond{color:var(--ink3); font-size:11.5px; font-style:italic; white-space:normal}
+  .rw td.now{max-width:34ch; color:var(--ink)}
+  .rw td.why{max-width:42ch; font-size:13.5px}
+  .rw td.new{max-width:34ch; color:var(--sage); font-weight:600}
+
+  /* ---- copy inventory ---- */
+  .sc{margin:0 0 26px}
+  .sc h3{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:26px 0 4px;
+    padding-top:12px; border-top:1px solid var(--rule)}
+  .badge{font:600 10px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--paper); background:var(--gold); padding:4px 7px; border-radius:2px}
+  p.when{color:var(--ink3); font-size:14px; margin:0; max-width:var(--measure)}
+  p.when b{color:var(--ink2)}
+
+  details{border:1px solid var(--rule); background:var(--raised); padding:0; margin:16px 0}
+  summary{cursor:pointer; padding:14px 18px; font-weight:600; list-style:none; color:var(--ink)}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ "; color:var(--gold)}
+  details[open] summary::before{content:"▾ "}
+  details > *:not(summary){padding:0 18px}
+  details > .scroll{margin:0 18px 18px; padding:0}
+
+  .note{border-left:3px solid var(--gold); background:var(--surface); padding:13px 17px;
+    margin:18px 0; font-size:15px; color:var(--ink2); max-width:var(--measure)}
+  .note b{color:var(--ink)}
+  footer{border-top:2px solid var(--ink); padding-top:20px; color:var(--ink3); font-size:14px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">For review by practising Vastu consultants · Confidential</p>
+  <h1>Vastu Knowledge Base</h1>
+  <p class="sub">Draft 3.0 — checked against the app that shipped</p>
+  <p class="standfirst">Draft 2.0 described the rules we intended to build. This draft describes the
+  rules the app <em>actually applies</em> to a paying customer's home, checked line by line against
+  the shipped rule data. They were not the same. It also carries, for the first time, every word the
+  app says to a user — so the language can be reviewed alongside the rules.</p>
+  <dl class="facts">
+    <div><dt>Problem types shown in Draft 2.0</dt><dd class="big">14</dd></div>
+    <div><dt>Problem types the app applies</dt><dd class="big">30</dd></div>
+    <div><dt>Screens of copy, all included</dt><dd class="big">{{SCREENS}}</dd></div>
+    <div><dt>Lines of copy, all included</dt><dd class="big">{{STRINGS}}</dd></div>
+    <div><dt>Lines we have flagged</dt><dd class="big">{{FLAGGED}}</dd></div>
+  </dl>
+</header>
+
+<section>
+  <h2><span class="n">Read this first</span>What changed, and why this draft exists</h2>
+  <p class="lede">Draft 2.0 was written from our intentions. This draft was written from the code.
+  Every claim below was checked against the shipped rule files, and then a second reader was asked to
+  prove each one wrong. What survived is here.</p>
+
+  <div class="find stale">
+    <span class="tag">The document was behind</span>
+    <h4>Your expert was shown 14 problem types. The app applies 30.</h4>
+    <p>Draft 2.0's Section 10 listed fourteen. The shipped rule set holds thirty. Sixteen have never
+    been in front of a reviewer — among them a kitchen in the south-west, a bedroom in the centre, a
+    study in the south, a store in the north-east, a home that is long and narrow, and a general
+    catch-all that fires whenever a room sits in a zone its own rule forbids.</p>
+    <p><b>More than half of what a paying customer can be told about their home has never been
+    checked by anyone outside this project.</b> All sixteen are set out below and are the most
+    valuable part of this review.</p>
+  </div>
+
+  <div class="find bug">
+    <span class="tag">A rule that was wrong</span>
+    <h4>The engine was marking people down for the most auspicious shape in Vastu.</h4>
+    <p>Only a south-west extension had a rule of its own. Every other part of a plan that stuck out
+    — north-east included — fell through to the catch-all and was scored as a fault, under a heading
+    telling the reader it sat somewhere its rule prohibits.</p>
+    <p>The contradiction was printed on the same page: the app's own text about a missing north-east
+    corner reads <em>"The same tradition welcomes a North-East extension"</em>, one paragraph above a
+    number that had just docked them for exactly that. <b>Fixed in this release.</b> North-east,
+    north and east extensions now raise nothing. South-west keeps its serious fault; south-east,
+    north-west, south and west keep the catch-all. Cuts are untouched.</p>
+  </div>
+
+  <div class="find ask">
+    <span class="tag">Answered since Draft 2.0</span>
+    <h4>The prayer room is settled. The document was still asking.</h4>
+    <p>Draft 2.0 asked whether the app should teach the classical centre or the modern north-east.
+    That was ruled on 1 August 2026 and the app already follows it: <b>north-east is ideal, north and
+    east are acceptable, and no position is a fault — the classical centre included.</b> A prayer
+    room in the north-west reads as "not ideal", never as a defect, and the classical reading is
+    still shown to the reader rather than being deleted.</p>
+  </div>
+
+  <div class="find dead">
+    <span class="tag">Rules that cannot fire</span>
+    <h4>Four rules exist in the rule set and can never reach a customer.</h4>
+    <p>A mirror facing the bed and a beam over a bed or desk; a store or toilet tucked under the
+    stairs; and a heavy fixture standing on the centre. Nothing in the app lets anyone record any of
+    these, so the rules can never run. They make the rule set look larger than it is. <b>They should
+    either be given a question to answer or be struck out</b> — please say which.</p>
+  </div>
+
+  <div class="find stale">
+    <span class="tag">A promise the app does not keep</span>
+    <h4>There is no school picker.</h4>
+    <p>Draft 2.0's Section 13 says the app "shows both readings and lets the user pick a school
+    profile". There is no such setting — it was removed because it read as jargon to a customer. The
+    app shows both readings and scores by one of them. A leftover line in the engine still reads
+    <em>"other schools are coming soon"</em>; it can never appear, and it is being removed.</p>
+  </div>
+
+  <div class="find ask">
+    <span class="tag">Needs a Vastu ruling</span>
+    <h4>A room labelled "BATH" escapes every check a room labelled "TOILET" receives.</h4>
+    <p>The app treats <b>TOILET, WC, WASHROOM, COMMON TOILET</b> as a toilet — and a toilet in the
+    north-east is the gravest finding it has. It treats <b>BATH, BATHROOM, BATH ROOM</b> and even
+    <b>BATH TOILET</b> as a bathroom, and bathrooms carry no rule at all. They score nothing and
+    print "Not rated".</p>
+    <p>Indian plans print "BATH" constantly. <b>Two identical rooms therefore get either the app's
+    gravest warning or complete silence, decided only by the draughtsman's choice of word.</b>
+    Whether a washing room should be judged like a waste room is a Vastu question, not a coding one.
+    Please rule on it — see the open questions.</p>
+  </div>
+
+  <div class="find dead">
+    <span class="tag">A decision worth re-confirming</span>
+    <h4>Buyers and occupants are given no layout advice at all.</h4>
+    <p>The report strips every "move it" suggestion for anyone who did not answer "I am building".
+    That was a deliberate ruling in an earlier release, and it is defensible — a buyer cannot move a
+    wall. But the app's first screen promises <em>"exactly what to do about it"</em> to all three
+    audiences, so two of them are promised something the report then withholds.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">Section 10, rebuilt</span>The thirty problem types the app applies</h2>
+  <p class="lede">This is the list Draft 2.0 should have carried. Sixteen of these have never been
+  reviewed. Please strike anything that should not be here — a false alarm damages trust faster than
+  a missed fault, and we would rather flag fewer problems accurately.</p>
+
+  <div class="note"><b>Severity and how it is used.</b> Major, moderate and minor set how many points
+  a fault costs, capped so that no single home can be reduced to nothing. Anything marked
+  <b>disputed</b> is shown to the reader and deliberately <b>never counted in the score</b>.</div>
+
+  <div class="scroll"><table>
+    <thead><tr><th>ID</th><th>What the app calls it</th><th>Severity</th><th>Provenance</th><th>In Draft&nbsp;2.0?</th><th>Reviewer's ruling</th></tr></thead>
+    <tbody>
+      <tr><td class="id">X-01</td><td class="txt">Toilet in the North-East</td><td>Major</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-02</td><td class="txt">Kitchen in the North-East</td><td>Major</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-03</td><td class="txt">Staircase or heavy weight in the centre</td><td>Major</td><td>Textual</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-04</td><td class="txt">Cut or missing North-East corner</td><td>Major</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-05</td><td class="txt">South-West extension</td><td>Major</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-06</td><td class="txt">Main entrance on the South-West corner</td><td>Major</td><td>Derived</td><td>Partly — see below</td><td class="rv"></td></tr>
+      <tr><td class="id">X-07</td><td class="txt">Master bedroom in the North-East or South-East</td><td>Moderate</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-08</td><td class="txt">Toilet in the South-West</td><td>Moderate</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-09</td><td class="txt">Water stored against the mandala</td><td>Moderate</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-10</td><td class="txt">Prayer room against a toilet, or a room under the stairs</td><td>Moderate</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-11</td><td class="txt">A road pointing straight at the plot</td><td>Moderate</td><td>Disputed</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-12</td><td class="txt">Heavy trees in the North-East or the centre</td><td>Minor</td><td>Derived</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-13</td><td class="txt">A mirror facing the bed, or a beam over a bed or desk</td><td>Minor</td><td>Modern</td><td>Yes</td><td class="rv"></td></tr>
+      <tr><td class="id">X-15</td><td class="txt">The home is long and narrow</td><td>Minor</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-20</td><td class="txt">Kitchen in the South-West</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-21</td><td class="txt">Kitchen in the centre</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-22</td><td class="txt">Master bedroom in the centre</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-23</td><td class="txt">Bedroom in the South-East</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-24</td><td class="txt">Bedroom in the centre</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-25</td><td class="txt">Toilet in the centre</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-26</td><td class="txt">Living room in the South-West</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-27</td><td class="txt">Living room in the centre</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-28</td><td class="txt">Staircase in the North-East</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-29</td><td class="txt">Study in the South</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-30</td><td class="txt">Study in the South-West</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-31</td><td class="txt">Store in the North-East</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-32</td><td class="txt">Garage in the North-East</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-33</td><td class="txt">Garage in the South-West</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-34</td><td class="txt">Balcony in the South-West</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+      <tr><td class="id">X-GEN</td><td class="txt">Room in a prohibited zone (the catch-all)</td><td>Moderate</td><td>Derived</td><td><b>No</b></td><td class="rv"></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Two corrections to the entries you did see</h3>
+  <div class="find bug">
+    <span class="tag">Draft 2.0 was wrong</span>
+    <h4>X-06 does not flag the Pitra pada.</h4>
+    <p>Draft 2.0 said the app flags an entrance "on an inauspicious pada, particularly the SW corner
+    (Pitra)". It does not. The app flags a single arc from 213.75° to 236.25°, which contains
+    <b>Yama and Gandharva</b> on the south side. <b>Pitra sits at 258.75°, well outside it.</b> The
+    rule the document names as near-universal is not the rule the app runs. Please tell us which arc
+    you would use.</p>
+  </div>
+  <div class="find stale">
+    <span class="tag">Confirmed removed</span>
+    <h4>"South-facing house" really is gone.</h4>
+    <p>Draft 2.0 said it had been struck out. Confirmed: no such rule exists, the plan carries no
+    facing field, and a test now fails the build if anyone reintroduces one.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">A structural problem</span>Five Vastu values live in the program, not the rule file</h2>
+  <p class="lede">Everything in this document is supposed to live in a versioned rule file, so that a
+  reviewer's correction is a data change and every reader is told their score was re-read. Five are
+  not.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Rule</th><th>Value fixed in code</th><th>What that costs</th></tr></thead>
+    <tbody>
+      <tr><td class="txt">Overhead water tank</td><td>Flagged in the north-east</td><td rowspan="5">Your correction cannot be applied by editing a rule file. It needs a code change and a new release. Worse, the app's "we have changed a rule" notice is driven by the rule file's stamp — so a change made here would move somebody's score with <b>no explanation shown to them</b>.</td></tr>
+      <tr><td class="txt">Underground water and borewell</td><td>Flagged in the south-west</td></tr>
+      <tr><td class="txt">Heavy tree</td><td>Flagged in the north-east or centre</td></tr>
+      <tr><td class="txt">Road pointing at the plot</td><td>Harmful from S, SW, SE, NW</td></tr>
+      <tr><td class="txt">Prayer room beside a toilet</td><td>The two room kinds are named in code</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><b>The road rule is the worst of the five.</b> This document itself records it as
+  disputed and its citation as unverified — and a disputed rule fixed in code is exactly what the
+  project's own rules forbid. The north-east extension fix in this release was deliberately put in
+  the rule file instead, as the pattern the other five should follow.</div>
+</section>
+
+<section>
+  <h2><span class="n">Section 13, corrected</span>Where the schools disagree</h2>
+  <p class="lede">The app carries ten disagreements, not the twelve Draft 2.0 listed. The cash locker
+  is commercial and out of scope; the extent of the Brahmasthan has been settled at the central three
+  by three of the nine by nine grid, so it is no longer shown as open.</p>
+  <div class="find stale">
+    <span class="tag">A gap worth closing</span>
+    <h4>Only one of the ten tells the reader which side we scored by.</h4>
+    <p>The prayer-room entry ends with a plain sentence: <em>"Your score follows the modern reading…
+    The other school's advice never becomes a fault."</em> The other nine show two readings and stop.
+    A reader is left holding a disagreement with no idea which half moved their number.</p>
+    <p><b>We propose adding that sentence to all ten.</b> Please tell us if any of them should be
+    scored the other way round.</p>
+  </div>
+  <div class="find dead">
+    <span class="tag">Cannot reach the reader</span>
+    <h4>Five of the ten can never appear on screen.</h4>
+    <p>A disagreement is shown only when the home actually contains the thing it is about. Five of
+    them concern things the app never asks for — among them which way the bed faces, which way the
+    idols face, and where the septic tank sits. They are in the rule set and no customer will ever
+    see them.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">Open questions</span>What we still cannot decide ourselves</h2>
+  <p class="lede">Draft 2.0 asked eighteen. Three are answered. These are what remain, plus what this
+  audit added. Each is a guess sitting inside a product we are selling.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Question</th><th>Your answer</th></tr></thead>
+    <tbody>
+      <tr><td class="id">Q-01</td><td class="txt"><b>The big one, unchanged.</b> Can you source <em>any</em> of the room-placement rules to an actual verse? Kitchen in the south-east, bedroom in the south-west, prayer room in the north-east. If yes, which text and where? Every one of them is currently marked "derived".</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-02</td><td class="txt"><b>New.</b> Should a room a plan labels "BATH" or "BATHROOM" be judged like a toilet? Today it is judged not at all, while "TOILET" produces our gravest finding. If they differ, what is the bathroom's own rule?</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-03</td><td class="txt"><b>New.</b> Which arc of door positions should count as the condemned south-west corner entrance? We use 213.75°–236.25°, which holds Yama and Gandharva but not Pitra.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-04</td><td class="txt"><b>New.</b> Of the sixteen problem types no reviewer has seen, which should be struck out entirely? We would rather flag fewer faults accurately.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-05</td><td class="txt"><b>New.</b> Four rules can never fire because the app never asks the question — mirror over a bed, beam over a bed, a room under the stairs, a heavy fixture on the centre. Add the question, or strike the rule?</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-06</td><td class="txt">The hybrid method: a square grid for rooms, angular positions for the door. Defensible, or two incompatible systems in one reading?</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-07</td><td class="txt">A room spanning several padas — the room's centre, the largest overlap, or any encroachment? We use largest overlap for good placements and any encroachment for faults.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-08</td><td class="txt">Locating the door: a bearing from the plot centre, or a proportion along the wall? We use the bearing. These disagree on any plan that is not square.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-09</td><td class="txt">Septic tank: north, north-west or south-east? Our sources contradict each other outright, so the app declines to rule and reports it unchecked.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-10</td><td class="txt">Extension and cut thresholds. We treat anything under 5% of the area as nothing, 5–10% as minor, above 10% as major. These are consultant rules of thumb with no textual basis. What do you actually use?</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-11</td><td class="txt">Flats: does Vastu have anything meaningful for a buyer who cannot move a single wall? An honest no is more useful to us than a marketable yes.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-12</td><td class="txt">Remedies: keep the modern objects clearly labelled as modern, or drop them? We ship no crystals, wind chimes, yantras or directional colours at all — only rock salt, a copper strip and a pyramid, each labelled.</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-13</td><td class="txt">Sleeping direction. We state it as tradition and make no health claim. Do you agree with that framing, given the published sleep research points the other way?</td><td class="rv"></td></tr>
+      <tr><td class="id">Q-14</td><td class="txt">Should this ship at all in its current state? If your answer is no, we would rather hear it now.</td><td class="rv"></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">Language</span>Wording we propose changing before launch</h2>
+  <p class="lede">Every line below is on screen today. These are the ones that promise something the
+  app cannot deliver, contradict another screen, or use a word a home buyer would not use. Our
+  suggested wording is a starting point — please change it freely.</p>
+  <div class="scroll"><!--REWRITES--></div>
+</section>
+
+<section>
+  <h2><span class="n">Appendix</span>Every word the app says, by scenario</h2>
+  <p class="lede">All {{STRINGS}} lines of user-visible text across {{SCREENS}} screens, taken
+  directly from the source, with the exact situation that puts each on screen. Highlighted rows are
+  the {{FLAGGED}} we have a concern about. The last column is blank for your comments.</p>
+  <div class="note"><b>How to read this.</b> "Kind" says whether the line is a heading, a button, an
+  error, and so on. Lines marked <em>accessibility</em> are never seen — they are read aloud to
+  someone using a screen reader, so they are copy too. Where a line only appears in a particular
+  situation, that condition is printed under its kind.</div>
+  <!--INVENTORY-->
+</section>
+
+<footer>
+  <p class="wide">VastuFirst — Vastu Knowledge Base, Draft 3.0. Confidential, for expert review.<br>
+  Rule data checked against ruleset version 2026.08.15-1. Copy taken from the app at release
+  v0.15.0. Scoring weights and the 0–100 score remain out of scope: they are our invention, not
+  yours to endorse.</p>
+</footer>
+
+</div>
