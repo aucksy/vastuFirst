@@ -162,6 +162,20 @@ object RenderFixtures {
     val scannedCols: Int = scanned.cols
     val scannedRows: Int = scanned.rows
 
+    /**
+     * ⭐⭐ WHERE THE FRONT DOOR SITS ON THAT SHEET — the entrance mark, for the report's picture.
+     *
+     * ⚠ ADDED 18 AUG 2026 BECAUSE THE REPORT NEVER DREW ONE. The mark was on the checking screen and
+     * on the front-door screen, and absent from the document the reader pays for, while a whole
+     * section of that document explained what their door does to their score. No golden could report
+     * that, because the fixture never handed the report a door in the first place — a picture cannot
+     * show a thing that was never passed in. Read from the plan's own printed entrance, the same way
+     * the real screen reads it.
+     */
+    val scannedDoorAtPage: Pair<Float, Float>? =
+        com.vastufirst.app.ui.newplan.frontDoorFromEntrance(scannedRooms)
+            ?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, scanned.rooms) }
+
     val scannedAnalysis: Analysis =
         VastuEngine().analyze(
             buildEnginePlan(

@@ -213,26 +213,10 @@ private fun QuestionCard(answered: Boolean, content: @Composable ColumnScope.() 
     )
 }
 
-/** The one-line summary of what has and hasn't been answered, for the score screen. */
-/**
- * ⭐ THE ONE LABEL FOR THE OPTIONAL EXTRAS — written once, shown in two places (the report, and the
- * end of "Check what we read").
- *
- * ⚠ IT REPLACED "Answer a few more and check more" ON 17 AUG 2026 (owner: *"make its verbiage better
- * and simpler"*). That label asked the reader to do something ("answer a few more") without ever
- * saying what of, and then promised "check more" of nothing in particular. This one counts the real
- * questions still unanswered and says what happens: we check that many more things.
- *
- * ⚠ AND THE RULE DATA NO LONGER QUOTES ANY LABEL. Three rules used to print the old words verbatim,
- * so renaming the button turned their instruction into a hunt for a control that is not on screen.
- * The sentences now describe the offer instead of naming a control, which makes this the last time
- * that trap can be sprung.
- */
-fun addDetailsLabel(answers: SiteAnswers): String {
-    val left = SiteItem.entries.size - answers.answeredCount
-    return if (left == 1) "Check 1 more thing" else "Check $left more things"
-}
+// ⚠ `addDetailsLabel` MOVED to SiteExtrasOffer.kt on 18 Aug 2026, alongside the card it labels —
+// the label, the heading and the reason are one piece of copy and were being edited apart.
 
+/** The one-line summary of what has and hasn't been answered, for the report. */
 fun coverageLine(answers: SiteAnswers): String {
     val total = SiteItem.entries.size
     val done = answers.answeredCount

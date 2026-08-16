@@ -50,7 +50,6 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -135,27 +134,11 @@ internal fun clampPlanPan(pan: Offset, drawnW: Float, drawnH: Float, boxW: Float
 const val PLAN_MAX_ZOOM = 5f
 
 /**
- * The door mark's drawn size, as a share of the smaller side of the picture.
- *
- * ⚠ The DRAWN circle and the TOUCH target are two different sizes on purpose. The target is the
- * accessibility floor and never shrinks; the mark itself is proportional, because a fixed 48 dp disc
- * on a plan drawn 92 dp wide in landscape covers a third of the home. Bounded at both ends so it is
- * never a speck on a big sheet nor a blot on a small one.
- *
- * ⚠ Cut a fifth on 17 Aug 2026 (owner: *"Make it 20% smaller"*) — 0.09 → 0.072. The touch target it
- * sits inside is unchanged, so nothing got harder to hit.
+ * ⚠ THE DOOR MARK ITSELF NO LONGER LIVES HERE. Its size and its drawing moved to [DoorMark.kt] on
+ * 18 August 2026 so that this picture, the "Where is your front door?" screen, the report and the
+ * hand-drawn editor all show the reader the SAME mark. See that file for what four different marks
+ * cost, and for the crash the old font-driven sizing was four tenths of a dp away from.
  */
-const val PLAN_DOOR_MARK_SHARE = 0.072f
-
-/**
- * The largest the door mark may be drawn, as a share of the touch target it sits inside.
- *
- * ⚠ THIS IS THE HALF OF "20 % SMALLER" THAT ACTUALLY DID THE WORK. On an ordinary near-square sheet
- * the proportional size runs past this cap, so the cap — not the share — is what the reader sees.
- * Cutting only the share left the mark five per cent smaller and looking unchanged, which the
- * rendered picture showed and no measurement could.
- */
-const val PLAN_DOOR_MARK_CAP = 0.40f
 
 /**
  * ⭐⭐ ONE GESTURE READER FOR THE WHOLE PICTURE — taps, pinch, pan and the front door.
@@ -314,9 +297,11 @@ fun PlanWithRooms(
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
     val doorTouch = VastuTheme.sizes.minTouch
-    // One string is ever measured here ("E"), so the default cache is ample.
+    // One string is ever measured here (the door mark's letter), so the default cache is ample.
     val measurer = rememberTextMeasurer()
-    val doorLetterStyle = VastuTheme.type.caption.copy(color = colors.paper)
+    // ⚠ The SIZE on this style is ignored — [drawDoorMark] replaces it with one derived from the
+    // disc, so the letter cannot outgrow its own circle at a 200 % font. Only the family lands.
+    val doorLetterStyle = VastuTheme.type.caption
     // ⚠ Real shape when it can zoom. The clamp below exists to stop a freakish sheet taking the whole
     // screen, and it does that by making the BOX a different shape from the picture — which only ever
     // added dead margin either side of a tall plan. Once the user can magnify, the honest thing is to
@@ -328,8 +313,6 @@ fun PlanWithRooms(
     // ⚠ Resolved HERE, in composable scope. `editorColor()` reads the theme, and a draw lambda is not
     // a composable scope — asking for it inside the Canvas does not compile.
     val selectedTint = selected?.type?.editorColor() ?: colors.primary
-    val doorFill = colors.primary
-    val doorHalo = colors.paper
 
     var zoom by remember(image) { mutableFloatStateOf(1f) }
     var pan by remember(image) { mutableStateOf(Offset.Zero) }
@@ -453,29 +436,10 @@ fun PlanWithRooms(
                 }
 
                 // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it.
-                //
-                // ⚠ Sized off the a11y touch floor rather than off the line weight. The door marker on
-                // the other screen is built from the stroke width and comes out about 12 dp across —
-                // which the owner could not find on his own plan at arm's length. This one is drawn
-                // to the size of the target it actually is, so what he sees is what he can hit.
                 doorAtPage?.let { (dx, dy) ->
-                    // ⚠ The letter has to FIT, so the floor is measured from the glyph rather than
-                    // guessed from the line weight — the same rule the compass "N" marker follows.
-                    // Without it a small plan draws a disc narrower than its own letter.
-                    val glyph = measurer.measure("E", doorLetterStyle)
-                    val letterFloor = maxOf(glyph.size.width, glyph.size.height) / 2f + strokeDp.toPx() / 2f
-                    // Proportional, floored and capped — see [PLAN_DOOR_MARK_SHARE].
-                    //
-                    // ⚠ THE CAP CAME DOWN WITH THE SHARE, and it had to: on an ordinary square sheet
-                    // the OLD mark was already sitting ON the cap, so cutting the share alone made
-                    // it five per cent smaller instead of twenty. Found by looking at the rendered
-                    // picture, which is the only thing that could have said so — every number in the
-                    // geometry gate was green both before and after.
-                    //
-                    // Half the touch target, not all of it: the mark is what you SEE and the target
-                    // is what you HIT, and they were never meant to be the same size.
-                    val r = (minOf(drawn.width, drawn.height) * PLAN_DOOR_MARK_SHARE)
-                        .coerceIn(maxOf(strokeDp.toPx() * 2f, letterFloor), doorTouch.toPx() * PLAN_DOOR_MARK_CAP)
+                    // Proportional between two fixed bounds — see [doorMarkRadiusPx], which is the
+                    // one place the entrance mark's size is decided for the whole app.
+                    val r = doorMarkRadiusPx(drawn.width, drawn.height, doorTouch.toPx())
                     // ⭐⭐ IT SITS ON THE WALL NOW, HALF IN AND HALF OUT (owner, 17 Aug 2026: *"make
                     // it sit on the border of the map so its half out and half in"*).
                     //
@@ -497,30 +461,19 @@ fun PlanWithRooms(
                         x = raw.x.coerceIn(r, (size.width - r).coerceAtLeast(r)),
                         y = raw.y.coerceIn(r, (size.height - r).coerceAtLeast(r)),
                     )
-                    // A paper collar WIDER than the disc, so the mark lifts off a busy sheet; then
-                    // the filled disc; then the letter. "E" for entrance — a coloured dot on its own
-                    // said only "something is here", which is what the owner could not read.
-                    //
-                    // ⚠ The collar has to be bigger than the disc or it is drawn and then completely
-                    // painted over, which is exactly nothing.
-                    drawCircle(color = doorHalo, radius = r + strokeDp.toPx() / 2f, center = at)
-                    drawCircle(
-                        color = doorFill.copy(alpha = if (doorSelected) 1f else 0.9f),
-                        radius = r,
+                    // ⭐ ONE DRAWING, SHARED. Collar, disc, letter and the selected ring all come
+                    // from [drawDoorMark] so this picture cannot drift away from the front-door
+                    // screen, the report or the hand-drawn editor — which is exactly what happened
+                    // when each of the four drew its own.
+                    drawDoorMark(
                         center = at,
+                        radius = r,
+                        selected = doorSelected,
+                        colors = colors,
+                        strokePx = strokeDp.toPx(),
+                        measurer = measurer,
+                        letterStyle = doorLetterStyle,
                     )
-                    drawText(
-                        glyph,
-                        topLeft = Offset(at.x - glyph.size.width / 2f, at.y - glyph.size.height / 2f),
-                    )
-                    if (doorSelected) {
-                        drawCircle(
-                            color = doorFill,
-                            radius = r + strokeDp.toPx(),
-                            center = at,
-                            style = Stroke(width = strokeDp.toPx() / 2f),
-                        )
-                    }
                 }
             }
         }

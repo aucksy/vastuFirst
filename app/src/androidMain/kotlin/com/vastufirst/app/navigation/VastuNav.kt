@@ -581,6 +581,16 @@ fun VastuNavHost() {
                 val planRooms = remember(scanned) {
                     scanned?.rooms?.let { com.vastufirst.app.ui.scan.planRoomsOf(it) }.orEmpty()
                 }
+                // ⭐⭐ THE FRONT DOOR, ON THE REPORT'S OWN PICTURE (owner, 18 Aug 2026). Worked out
+                // by the same function the checking screen uses, so the mark lands in the identical
+                // place on both and cannot drift. Null for a home drawn by hand — that report shows
+                // the zone map, which has never carried a door and is not the place to start.
+                val reportDoorAtPage = remember(vm.door, scanned) {
+                    val marked = vm.door
+                    val rooms = scanned?.rooms
+                    if (marked == null || rooms.isNullOrEmpty()) null
+                    else com.vastufirst.app.ui.scan.doorMarkerOnPage(marked, rooms)
+                }
                 ReportScreen(
                     vm = vm,
                     onDone = { nav.goHome() },
@@ -605,6 +615,7 @@ fun VastuNavHost() {
                     onRestart = { nav.go(Routes.WELCOME) },
                     planImage = planImage,
                     planRooms = planRooms,
+                    doorAtPage = reportDoorAtPage,
                     // ⭐⭐ NO "READING YOUR HOME" WHEN THE READING IS ALREADY DONE (owner, 17 Aug
                     // 2026: *"If I am opening a saved home which has already generated its report,
                     // why is there 'Reading your home' animation"*). He is right, and the honest

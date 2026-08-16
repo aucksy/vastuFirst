@@ -49,9 +49,9 @@ import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.details.SiteAnswers
-import com.vastufirst.app.ui.details.SiteItem
-import com.vastufirst.app.ui.details.addDetailsLabel
+import com.vastufirst.app.ui.details.SiteExtrasOffer
 import com.vastufirst.app.ui.details.coverageLine
+import com.vastufirst.app.ui.details.siteItemsLeft
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.common.readingOrder
@@ -142,6 +142,8 @@ fun ReportScreen(
     /** The scanned photograph and its room rectangles, when this home arrived by scan. */
     planImage: ImageBitmap? = null,
     planRooms: List<PlanRoom> = emptyList(),
+    /** Where the front door sits on that photograph — see the same parameter on [ReportContent]. */
+    doorAtPage: Pair<Float, Float>? = null,
     /**
      * ⭐ How long the "reading your home" bar runs before the report appears — see the same
      * parameter on [ReportContent].
@@ -174,6 +176,7 @@ fun ReportScreen(
         onRestart = onRestart,
         planImage = planImage,
         planRooms = planRooms,
+        doorAtPage = doorAtPage,
         introMillis = introMillis,
     )
 }
@@ -252,6 +255,14 @@ fun ReportContent(
      */
     planImage: ImageBitmap? = null,
     planRooms: List<PlanRoom> = emptyList(),
+    /**
+     * ⭐⭐ WHERE THE FRONT DOOR SITS ON THAT PHOTOGRAPH, in page fractions — so this document draws
+     * the same entrance mark every other screen draws. Null for a home with no scanned plan.
+     *
+     * Worked out by the caller with `doorMarkerOnPage`, the same function the checking screen uses,
+     * so the mark lands in the identical spot on both.
+     */
+    doorAtPage: Pair<Float, Float>? = null,
     /**
      * ⭐ How long the "reading your home" animation runs before the report appears, and whether the
      * score counts up when it does (owner, 10 Aug 2026: "let there be some animation with progress
@@ -421,6 +432,23 @@ fun ReportContent(
         tapRoom(id)
         revealRoomId = if (opening) id else null
     }
+
+    /**
+     * ⭐⭐ AND TAPPING THE ENTRANCE MARK JUMPS TO WHAT WE SAID ABOUT IT (18 Aug 2026).
+     *
+     * The front door is now drawn on this picture like every other screen, and a mark that does
+     * nothing when a reader touches it is worse than no mark: every OTHER thing on this picture
+     * takes them to its own reading. So the E takes them to "Your front door", which is where its
+     * reading is. One frame later, from the section's settled position, for the reason above.
+     */
+    var doorY by remember { mutableIntStateOf(0) }
+    var revealDoor by remember { mutableStateOf(false) }
+    LaunchedEffect(revealDoor) {
+        if (!revealDoor) return@LaunchedEffect
+        withFrameNanos { }
+        scroll.animateScrollTo((scroll.value + doorY - rowMarginPx).coerceAtLeast(0))
+        revealDoor = false
+    }
     LaunchedEffect(revealRoomId) {
         val id = revealRoomId ?: return@LaunchedEffect
         // ⚠ Wait for a frame to be drawn. onGloballyPositioned reports after LAYOUT, and a
@@ -520,6 +548,23 @@ fun ReportContent(
                         // The picture is the end that scrolls — see [tapRoomOnPlan].
                         onTapRoom = { id -> tapRoomOnPlan(id) },
                         maxPlanHeight = VastuTheme.sizes.planPane,
+                        // ⭐⭐ THE FRONT DOOR IS ON THE REPORT'S PICTURE NOW (owner, 18 Aug 2026:
+                        // *"the entrance circle is not consistent across all possible screens"*).
+                        //
+                        // ⚠ It was on NEITHER — not inconsistent here, simply absent. The reader
+                        // marked their door on the photo two screens back, saw it drawn there, paid,
+                        // and then the document they paid for showed the same photograph with no
+                        // door on it at all — while a whole section of that document explained what
+                        // that door does to their score. The heaviest single input the engine weighs
+                        // was the one thing the picture would not show.
+                        //
+                        // ⚠ NOT DRAGGABLE HERE, deliberately. This picture sits inside a scrolling
+                        // page, so a mark that followed the finger would fight the page's own
+                        // scroll; and this document is the finished reading, not the place to
+                        // re-answer it. "Change where the front door is" is the button for that,
+                        // and it is a few lines below.
+                        doorAtPage = doorAtPage,
+                        onTapDoor = { revealDoor = true },
                     )
                 } else {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -579,7 +624,15 @@ fun ReportContent(
             // One list of every room, worst first, each carrying its direction and a single word.
             // The ranking the "fix first" chapter existed for is still here: it is the sort order.
             Spacer(Modifier.height(VastuTheme.spacing.s6))
-            a.doorResult?.let { DoorSection(it, zones, remediesOnly) }
+            // ⚠ Its position is recorded in ROOT coordinates and combined with the live scroll, the
+            // same way every room row is — so tapping the entrance mark on the picture above lands
+            // here whatever else on the page has opened or closed in the meantime.
+            a.doorResult?.let {
+                DoorSection(
+                    it, zones, remediesOnly,
+                    modifier = Modifier.onGloballyPositioned { c -> doorY = c.positionInRoot().y.toInt() },
+                )
+            }
 
             RoomsSection(
                 rooms = a.roomResults,
@@ -628,24 +681,23 @@ fun ReportContent(
             SectionLabel("What this covers")
             Spacer(Modifier.height(VastuTheme.spacing.s2))
             VText(coverageLine(siteAnswers), style = VastuTheme.type.body, color = colors.textSecondary)
-            if (siteAnswers.answeredCount < SiteItem.entries.size) {
+            // ⭐ SECOND HOME, NOT ONLY HOME (owner, 17 Aug 2026: *"This 'Answer a few more and
+            // check more' does not belong on Report screen… we should nudge them to do this as
+            // optional below the 'These are my rooms' button — if they choose to skip then we
+            // continue to show it here also"*). The offer is made at the end of "Check what we
+            // read", where the reader is still describing their home; this stays for everyone who
+            // skipped it there, and for every home drawn by hand, which never passes that screen.
+            //
+            // ⚠ THE WHOLE OFFER IS [SiteExtrasOffer] NOW, not just its label. This end and the
+            // checking screen's end had already drifted into two different shapes around one
+            // decision; sharing the component is what stops that happening a third time.
+            //
+            // ⚠ The gap is guarded too, not only the card. The card draws nothing once every
+            // question is answered, so an unguarded spacer would leave a hole on exactly the
+            // report of the reader who did everything we asked.
+            if (siteItemsLeft(siteAnswers) > 0) {
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
-                // ⭐ SECOND HOME, NOT ONLY HOME (owner, 17 Aug 2026: *"This 'Answer a few more and
-                // check more' does not belong on Report screen… we should nudge them to do this as
-                // optional below the 'These are my rooms' button — if they choose to skip then we
-                // continue to show it here also"*). The offer is now made at the end of "Check what
-                // we read", where the reader is still describing their home; this stays for
-                // everyone who skipped it there, and for every home drawn by hand, which never
-                // passes that screen at all.
-                //
-                // ⚠ The label is [addDetailsLabel] and nothing else. It used to be a literal here
-                // that three rules quoted word for word; both ends now read the one function.
-                VastuButton(
-                    addDetailsLabel(siteAnswers),
-                    onClick = onAddDetails,
-                    style = VastuButtonStyle.SECONDARY,
-                    large = false,
-                )
+                SiteExtrasOffer(answers = siteAnswers, onAddDetails = onAddDetails)
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -955,11 +1007,21 @@ private fun StartHere(
  * right" — a problem the chapters created and their removal takes away with them.
  */
 @Composable
-private fun DoorSection(door: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean) {
-    SectionLabel("Your front door")
-    Spacer(Modifier.height(VastuTheme.spacing.s3))
-    DoorCard(door, zones, remediesOnly)
-    Spacer(Modifier.height(VastuTheme.spacing.s6))
+private fun DoorSection(
+    door: DoorResult,
+    zones: List<ZoneInfo>,
+    remediesOnly: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    // ⚠ A Column purely so the section has ONE node to report its position from — the entrance mark
+    // on the picture above scrolls here. It emitted its children straight into the page before, so
+    // there was nothing to measure. The children are unchanged and so is what they measure to.
+    Column(modifier.fillMaxWidth()) {
+        SectionLabel("Your front door")
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        DoorCard(door, zones, remediesOnly)
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+    }
 }
 
 /**

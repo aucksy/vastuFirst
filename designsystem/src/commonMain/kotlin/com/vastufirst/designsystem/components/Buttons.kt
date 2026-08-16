@@ -29,6 +29,20 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * Button variants (design system §06 button table). All are pill-shaped (radius-full), the
  * a11y touch floor tall, and read every colour/size from tokens. Pressed and disabled states
  * are both realised (review gate: "renders its correct pressed / disabled state").
+ *
+ * ⭐⭐ WHICH COMPONENT TO USE — one rule, and it is not a matter of taste (owner, 18 Aug 2026:
+ * *"why the size of button/pills is not consistent"*).
+ *
+ *   · Buttons STACKED down a column → [VastuButton], every time, whatever the style.
+ *     They are full width, so they all end level with each other and with the page's margins.
+ *   · Buttons sitting SIDE BY SIDE in a `Row` → [VastuButtonInline], which hugs its own text so
+ *     two of them fit on one line.
+ *
+ * ⚠ THE FAILURE THAT PRODUCED THE RULE. "Check what we read" stacked a full-width green button
+ * with two hugging outline pills underneath it, so three controls in one column ended at three
+ * different places — one at the page margin, one two-thirds across, one half way. It reads as
+ * unfinished, and it is the first thing the owner photographed. Nothing about the two components
+ * says which is which at the call site, so the rule lives here, above both of them.
  */
 enum class VastuButtonStyle { PRIMARY, SECONDARY }
 
@@ -77,7 +91,14 @@ fun VastuButton(
     }
 }
 
-/** A pill that is not full-width — used inside button rows (Back / Continue). */
+/**
+ * A pill that hugs its own text instead of filling the width.
+ *
+ * ⚠⚠ FOR A `Row` OF BUTTONS ONLY — "Back" beside "Continue", and nothing else. Stacked under a
+ * full-width button it ends short of the page margin while its neighbour reaches it, which is the
+ * ragged column described on [VastuButtonStyle]. If it is the only button on its line, it is the
+ * wrong component: use [VastuButton] with `large = false`.
+ */
 @Composable
 fun VastuButtonInline(
     text: String,

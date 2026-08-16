@@ -31,26 +31,40 @@ enum class SiteItem(
     val question: String,
     val help: String,
     val fixture: FixtureType?,
+    /**
+     * ⭐ The item as it is NAMED IN A SENTENCE, mid-flow, rather than asked as a question.
+     *
+     * ⚠ Added 18 Aug 2026 for the offer card, and it earns its place rather than duplicating
+     * [question]. The offer names only the items still unanswered — "your plan cannot show your
+     * water tank or the road outside" — and the questions do not read as a list: *"Water tank on
+     * the roof, A road pointing straight at your home"* is two headings jammed into one sentence.
+     * These are lower case and start with an article on purpose, so any subset of them joins up.
+     */
+    val inSentence: String,
 ) {
     OVERHEAD_TANK(
         question = "Water tank on the roof",
         help = "The overhead tank. Best in the south-west or west; the north-east is the one to avoid.",
         fixture = FixtureType.OVERHEAD_TANK,
+        inSentence = "your water tank",
     ),
     UNDERGROUND_WATER(
         question = "Underground tank, sump or borewell",
         help = "Water kept below ground. Best in the north-east; the south-west is the one to avoid.",
         fixture = FixtureType.UNDERGROUND_WATER,
+        inSentence = "your borewell or sump",
     ),
     HEAVY_TREE(
         question = "A big, heavy tree",
         help = "A large tree close to the home. The north-east and the centre are the places it weighs on.",
         fixture = FixtureType.HEAVY_TREE,
+        inSentence = "a big tree",
     ),
     ROAD(
         question = "A road pointing straight at your home",
         help = "A road that ends at your home rather than passing it — a T-junction or a dead end.",
         fixture = null,
+        inSentence = "the road outside",
     ),
 }
 

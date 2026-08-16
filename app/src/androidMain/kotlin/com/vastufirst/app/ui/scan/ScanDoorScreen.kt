@@ -51,8 +51,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.vastufirst.app.ui.common.doorMarkRadiusPx
+import com.vastufirst.app.ui.common.drawDoorMark
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.designsystem.components.GuidanceState
@@ -145,6 +148,11 @@ fun ScanDoorContent(
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
     val strokeDp = VastuTheme.spacing.s1
     val aspect = doorPlanAspect(image)
+    // The shared entrance mark's ingredients — see [drawDoorMark]. The size on this style is
+    // ignored; the mark derives its own from the disc so the letter cannot outgrow it.
+    val doorTouch = VastuTheme.sizes.minTouch
+    val measurer = rememberTextMeasurer()
+    val doorLetterStyle = VastuTheme.type.caption
 
     Column(
         Modifier
@@ -255,22 +263,43 @@ fun ScanDoorContent(
                             else -> fx to (fy + fh * (1f - (p - 0.75f) / 0.25f))
                         }
                         val at = Offset(fit.originX + hx * fit.width, fit.originY + hy * fit.height)
-                        drawCircle(color = colors.primary.copy(alpha = 0.30f), radius = strokeDp.toPx() * 2.5f, center = at)
-                        drawCircle(color = colors.primary, radius = strokeDp.toPx() * 1.2f, center = at)
+                        // ⭐ THE HINT IS A GHOST OF THE MARK ITSELF, at the mark's own size (18 Aug
+                        // 2026). It used to be a dot a third that size, so the travelling nudge and
+                        // the thing it was inviting you to place looked nothing like each other —
+                        // the hint said "tap along here" without ever showing what would appear.
+                        val ghost = doorMarkRadiusPx(fit.width, fit.height, doorTouch.toPx())
+                        drawCircle(color = colors.primary.copy(alpha = 0.22f), radius = ghost, center = at)
+                        drawCircle(
+                            color = colors.primary.copy(alpha = 0.55f),
+                            radius = ghost,
+                            center = at,
+                            style = Stroke(width = strokeDp.toPx() / 2f),
+                        )
                     }
                     if (marker != null) {
                         val at = Offset(
                             fit.originX + marker.first * fit.width,
                             fit.originY + marker.second * fit.height,
                         )
-                        // A filled disc with a ring around it: big enough to find on a busy sheet,
-                        // open enough not to hide the wall it is sitting on.
-                        drawCircle(color = colors.primary, radius = strokeDp.toPx() * 1.5f, center = at)
-                        drawCircle(
-                            color = colors.paper,
-                            radius = strokeDp.toPx() * 2.5f,
+                        // ⭐⭐ THE SAME MARK THE NEXT SCREEN SHOWS (owner, 18 Aug 2026: *"if its not
+                        // auto-detected then it falls back to older circle"*).
+                        //
+                        // ⚠ This screen used to draw its own: a 12 dp dot inside a 20 dp ring, with
+                        // no letter at all. So a reader who could not be auto-detected marked their
+                        // door here, saw a speck, tapped on — and met a disc four times the size,
+                        // lettered E, on the very next screen. Two drawings of one answer, one
+                        // screen apart. There is one drawing now and it lives in [drawDoorMark].
+                        drawDoorMark(
                             center = at,
-                            style = Stroke(width = strokeDp.toPx() / 2f),
+                            radius = doorMarkRadiusPx(fit.width, fit.height, doorTouch.toPx()),
+                            // Nothing is "selected" here — this screen has one mark and no list to
+                            // pick it out of. Marking it selected would draw a ring that means
+                            // something on the next screen and nothing on this one.
+                            selected = false,
+                            colors = colors,
+                            strokePx = strokeDp.toPx(),
+                            measurer = measurer,
+                            letterStyle = doorLetterStyle,
                         )
                     }
                 }

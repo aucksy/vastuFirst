@@ -145,6 +145,16 @@ inside a *file* is fine — only commit messages are scanned.
 The mechanism itself is now a job-level `if:` in `ci.yml` that names the bot's own goldens commit,
 which skips that one workflow and leaves the release path alone. Do not reintroduce the marker there.
 
+## 2g. ⭐ HARD RULE — sweep before you fix (owner rule, 18 Aug 2026)
+
+**No fix is done until every place that does the same job is fixed with it, in the same commit.**
+Name the thing in plain words, find every screen that does it — *including the ones that do it
+differently and the ones missing it entirely* — fix them all, and prove each one with its own
+rendered picture. Prefer deleting the duplication to updating it: one shared piece cannot drift.
+
+The full rule, with the four steps and the failure that produced it, is in `D:\Apps\CLAUDE.md`,
+which loads automatically alongside this file. It binds here.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."

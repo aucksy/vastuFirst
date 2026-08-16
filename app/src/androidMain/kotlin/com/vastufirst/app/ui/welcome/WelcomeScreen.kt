@@ -28,7 +28,6 @@ import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
-import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -129,10 +128,17 @@ fun WelcomeContent(
         VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         // Quiet, and under the button on purpose — it must be findable, not sold. See [onPrivacy].
-        VastuButtonInline(
+        //
+        // ⚠ FULL WIDTH SINCE 18 AUG 2026, and it is still quiet. It was a hugging pill under a
+        // full-width green button, so the two ended at different places and the column read as
+        // unfinished — the same defect the owner photographed on "Check what we read", here too.
+        // An outline on paper is what makes this control quiet; its WIDTH never was, and matching
+        // the button above it costs nothing of "findable, not sold".
+        VastuButton(
             text = "Privacy",
             onClick = onPrivacy,
             style = VastuButtonStyle.SECONDARY,
+            large = false,
             modifier = Modifier.testTag("welcome.privacy"),
         )
     }

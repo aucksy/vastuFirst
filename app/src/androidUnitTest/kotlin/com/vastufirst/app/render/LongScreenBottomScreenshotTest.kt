@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.addDetailsLabel
 import com.vastufirst.app.ui.grid.GuidedGridContent
 import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.ReportContent
@@ -316,10 +318,18 @@ class LongScreenBottomScreenshotTest {
      * last rows, the line stating the door we read, and a button that says "read my home" rather
      * than promising a North step that has already happened.
      */
+    /**
+     * ⚠⚠ THE ANCHOR MOVED DOWN ON 18 AUG 2026, AND THAT IS THE POINT OF THE CHANGE, NOT A DETAIL.
+     * It used to be "Put the front door somewhere else" — which stopped being this screen's last
+     * control the day the optional-extras offer was added below it, so the offer appeared in NO
+     * picture at any configuration while three sessions edited its wording. That is UI-POLISH §6.4
+     * ("a golden is a viewport, not a document") for the fourth time in this repo. The anchor is now
+     * the offer's own button, read from the same function that labels it, so it follows the copy.
+     */
     @Test
     fun scan_review_bottom() = captureBottomPair(
         "scan-review-door",
-        anchor = hasText("Put the front door somewhere else"),
+        anchor = hasText(addDetailsLabel(SiteAnswers())),
     ) {
         val outcome = ScanMapper.map(
             RecordedScans.load(RecordedScans.PLAN_020)!!.reply,

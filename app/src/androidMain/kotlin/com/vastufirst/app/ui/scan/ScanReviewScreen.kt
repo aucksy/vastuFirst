@@ -79,8 +79,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
 import com.vastufirst.app.ui.details.SiteAnswers
-import com.vastufirst.app.ui.details.SiteItem
-import com.vastufirst.app.ui.details.addDetailsLabel
+import com.vastufirst.app.ui.details.SiteExtrasOffer
+import com.vastufirst.app.ui.details.siteItemsLeft
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.roomDisplayNames
@@ -92,7 +92,6 @@ import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
-import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuRoomRow
@@ -553,10 +552,14 @@ fun ScanReviewContent(
                         color = colors.textSecondary,
                     )
                     Spacer(Modifier.height(VastuTheme.spacing.s3))
-                    VastuButtonInline(
+                    // Full width inside its card, like every other stacked button in the app — and
+                    // a bigger target for a reader who is being asked to put a card away rather
+                    // than to aim at it. See the rule on VastuButtonStyle.
+                    VastuButton(
                         "Got it",
                         onClick = { doorHintDismissed = true },
                         style = VastuButtonStyle.SECONDARY,
+                        large = false,
                     )
                 }
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -652,12 +655,19 @@ fun ScanReviewContent(
                     )
                 }
                 // Nothing to move a door on when the reading is gone — see the empty case above.
+                //
+                // ⚠ FULL WIDTH SINCE 18 AUG 2026 (owner: *"why the size of button/pills is not
+                // consistent"*). It was a hugging pill directly under the full-width green button,
+                // so two controls in the same column ended in two different places. The rule now
+                // lives on VastuButtonStyle: stacked buttons are full width, and the hugging one is
+                // for a Row of two.
                 if (door != null && rooms.isNotEmpty()) {
                     Spacer(Modifier.height(VastuTheme.spacing.s2))
-                    VastuButtonInline(
+                    VastuButton(
                         "Put the front door somewhere else",
                         onClick = onChangeDoor,
                         style = VastuButtonStyle.SECONDARY,
+                        large = false,
                     )
                 }
                 // ⭐⭐ THE OPTIONAL EXTRAS ARE OFFERED HERE NOW (owner, 17 Aug 2026: *"we should
@@ -671,20 +681,20 @@ fun ScanReviewContent(
                 //
                 // ⚠ It is hidden once every question is answered, so it can never invite somebody
                 // into a screen with nothing left on it.
-                if (rooms.isNotEmpty() && siteAnswers.answeredCount < SiteItem.entries.size) {
+                //
+                // ⭐⭐ AND IT IS A CARD NOW, NOT A FOOTNOTE (owner, 18 Aug 2026: *"the question
+                // about 4 more questions seems after thought now. no one will ever choose it.
+                // optimize it"*). It was a grey line in the smallest type on the page plus a small
+                // outline pill, last on a screen that ends with a big green button — built exactly
+                // like something nobody was meant to take. [SiteExtrasOffer] is the same offer with
+                // the stake named, and the report shows the identical card.
+                //
+                // ⚠ The gap is inside the same guard as the card. The card draws nothing once every
+                // question is answered, and a spacer left outside would leave a hole on the screen
+                // of the one reader who did everything we asked.
+                if (rooms.isNotEmpty() && siteItemsLeft(siteAnswers) > 0) {
                     Spacer(Modifier.height(VastuTheme.spacing.s4))
-                    VText(
-                        "Optional: we have not looked at your water tank, a big tree, " +
-                            "or the road outside. Tell us and we will check those too.",
-                        style = VastuTheme.type.bodySm,
-                        color = colors.textSecondary,
-                    )
-                    Spacer(Modifier.height(VastuTheme.spacing.s2))
-                    VastuButtonInline(
-                        addDetailsLabel(siteAnswers),
-                        onClick = onAddDetails,
-                        style = VastuButtonStyle.SECONDARY,
-                    )
+                    SiteExtrasOffer(answers = siteAnswers, onAddDetails = onAddDetails)
                 }
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
             }

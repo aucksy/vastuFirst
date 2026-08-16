@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
+import com.vastufirst.app.ui.common.DOOR_MARK_LETTER
 import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
@@ -1374,19 +1375,25 @@ private fun BoxScope.DoorMarker(door: GridDoor, rooms: List<GridRoom>, cell: and
             .semantics { contentDescription = "Front door on the ${door.side.spoken()} wall" },
         contentAlignment = Alignment.Center,
     ) {
+        // ⭐⭐ THE SAME MARK AS EVERY OTHER SCREEN (owner, 18 Aug 2026: *"keep the entrance door
+        // experience consistent"*). It used to be a GOLD badge lettered "D" while the three
+        // photograph screens drew a GREEN disc lettered "E" — one door, two colours, two letters,
+        // depending only on whether the reader had drawn their home or photographed it. The letter
+        // and the colour now come from the one shared mark; only the size still answers to the grid
+        // cell it has to live inside.
         Box(
-            Modifier.size(VastuTheme.sizes.iconSm).clip(CircleShape).background(colors.secondary),
+            Modifier.size(VastuTheme.sizes.iconSm).clip(CircleShape).background(colors.primary),
             contentAlignment = Alignment.Center,
         ) {
-            // ⭐ The glyph is pinned to the CIRCLE, not to the font (audit C7). The "D" is sp-typed
-            // and doubled at 200 % font while its gold circle stayed 20 dp, so the letter sheared
-            // out of the badge and read as a broken shape. The circle cannot grow instead — it sits
-            // inside one grid cell and a font-scaled badge would blanket the neighbouring rooms.
-            // The exception is honest: this is a map symbol, and its meaning is already spoken in
-            // full by the marker's contentDescription above, not carried by the letter.
+            // ⭐ The glyph is pinned to the CIRCLE, not to the font (audit C7). The letter is
+            // sp-typed and doubled at 200 % font while its circle stayed 20 dp, so it sheared out of
+            // the badge and read as a broken shape. The circle cannot grow instead — it sits inside
+            // one grid cell and a font-scaled badge would blanket the neighbouring rooms. The
+            // exception is honest: this is a map symbol, and its meaning is already spoken in full
+            // by the marker's contentDescription above, not carried by the letter.
             val badgeGlyph = with(LocalDensity.current) { (VastuTheme.sizes.iconSm / 2).toSp() }
             VText(
-                "D",
+                DOOR_MARK_LETTER,
                 style = VastuTheme.type.caption.copy(fontSize = badgeGlyph, lineHeight = badgeGlyph),
                 color = colors.onPrimary,
             )

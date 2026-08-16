@@ -218,6 +218,11 @@ class ScoreDrivenScreensScreenshotTest {
             rows = RenderFixtures.scannedRows,
             planImage = planSheet(),
             planRooms = RenderFixtures.scannedPlanRooms,
+            // ⭐⭐ THE ENTRANCE MARK, ON THE REPORT'S PICTURE — and this golden is the ONLY proof it
+            // is there. The report drew no door at all until 18 Aug 2026; the reason it went
+            // unnoticed through every render matrix is that the fixture never passed one, so there
+            // was nothing missing from the picture, only from the screen.
+            doorAtPage = RenderFixtures.scannedDoorAtPage,
         )
     }
 
