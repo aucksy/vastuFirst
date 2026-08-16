@@ -106,6 +106,35 @@ developer account.
 
 ## Week of 17–23 August 2026
 
+### Tuesday 18 August — one entrance mark, one button width
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.19.0/vastufirst-v0.19.0.apk
+**This is the one to install.**
+
+**Your front door is now marked the same way everywhere — including on your report, where it was
+not marked at all.** The same door was being drawn four different ways depending on which screen you
+were looking at: a tiny unlabelled dot when you placed it yourself, a large green circle with an E on
+the checking screen, a gold circle with a D on a home you had drawn by hand, and nothing whatsoever
+on the finished report. So the one thing that moves your score most was invisible on the very page
+you pay for. There is one mark now, on every screen: a green circle with an **E** in it, the same
+size each time. It is also about a third smaller than the largest of the old ones, which crowded a
+detailed plan.
+
+**Buttons that sit one above the other are now the same width.** On "check what we read" the green
+button ran the full width while the two under it stopped short, so the page ended in three different
+places and looked unfinished. The same thing was happening on the opening screen. Every stacked
+button now lines up.
+
+**The optional extra questions are a real offer instead of a footnote.** They were one line of the
+smallest grey text on the page and a small button, sitting last, underneath the big green button
+that ends the screen. Now they are a card that says what they are worth — "4 more things could
+change your score" — which four things they are, that each takes one tap, and a button the width of
+every other button. The same card appears on your report, so the two cannot say different things.
+
+**And a crash that had never happened yet.** On a phone with large text turned on, the size of that
+entrance circle was worked out in a way that could fail outright and close the checking screen. It
+was a hair away from doing so. It cannot now.
+
 ### Monday 17 August — fifteen things you asked for, all in
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.18.0/vastufirst-v0.18.0.apk

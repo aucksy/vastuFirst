@@ -446,7 +446,13 @@ fun ReportContent(
     LaunchedEffect(revealDoor) {
         if (!revealDoor) return@LaunchedEffect
         withFrameNanos { }
-        scroll.animateScrollTo((scroll.value + doorY - rowMarginPx).coerceAtLeast(0))
+        // ⚠ Only when the section has actually reported a position. A report with no door reading
+        // never lays the section out, so `doorY` is still nothing — and scrolling to nothing means
+        // scrolling to the very top of the page, which is the reader losing their place rather than
+        // finding it. Doing nothing is the honest answer when there is nothing to jump to.
+        if (doorY > 0) {
+            scroll.animateScrollTo((scroll.value + doorY - rowMarginPx).coerceAtLeast(0))
+        }
         revealDoor = false
     }
     LaunchedEffect(revealRoomId) {
