@@ -86,6 +86,31 @@ class ScoreDrivenScreensScreenshotTest {
         )
     }
 
+    /**
+     * ⭐⭐ THE SAME SCREEN WITH A **PORTRAIT** SHEET — the shape the owner was actually complaining
+     * about, and the one no picture has ever shown.
+     *
+     * ⚠ The golden above uses a 1399 × 1389 sheet, which is square to within a per cent. So the whole
+     * reason this screen changed on 17 Aug 2026 — that a TALL plan was fitted into a square control
+     * and came out about as wide as a thumb — has been invisible to the gate. A square sheet
+     * exercises none of it: the control stays square, and only the picture inside it grows.
+     *
+     * 1256 × 2760 is the real portrait sheet this repo already holds, quoted in the plan component's
+     * own notes. In this picture the control itself is taller than it is wide, and the plan runs the
+     * full width of the column with the compass drawn over it.
+     */
+    @Test
+    fun markNorth_onTallPhoto() = render("marknorth-photo-tall") {
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            nextIsCheck = true,
+            planImage = android.graphics.Bitmap
+                .createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
+                .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+                .asImageBitmap(),
+        )
+    }
+
 
     /**
      * ⭐ The optional "a few more things" step, in both the states that matter: nothing answered (the
@@ -237,6 +262,26 @@ class ScoreDrivenScreensScreenshotTest {
     @Test
     fun report_rooms_all_open() = render("report-open") {
         ReportContent(analysis = analysis, intent = Intent.BUILDING, expandAll = true)
+    }
+
+    /**
+     * ⭐⭐ THE SAME LIST, OPEN, BUT **NOT PAID FOR** — the picture that was missing until 17 Aug 2026.
+     *
+     * ⚠ `report-open` is drawn UNLOCKED, so every row in it reads in full and the locked state of a
+     * row has never appeared in any golden at all. That mattered the moment a locked row grew a
+     * control of its own (owner: *"expanding them should show them same Unlock full report button
+     * but smaller and well aligned inside the pill"*): a button that is too wide for its card, or
+     * that shatters its own label at 320 dp and a 200 % font, is precisely the class of defect only
+     * a picture catches — every box measures correctly while the ink runs outside it.
+     *
+     * It is also the honest proof of the free tier: in this one image the entrance, kitchen and
+     * toilets read in full and every other room says what is behind the price and offers the way to
+     * it, with the room's own name and verdict still on show. That is Product PRD §6.4 — no hidden
+     * wall, no bait — as a photograph rather than a promise.
+     */
+    @Test
+    fun report_free_rooms_all_open() = render("report-free-open") {
+        ReportContent(analysis = analysis, intent = Intent.BUYING, unlocked = false, expandAll = true)
     }
 
     /**

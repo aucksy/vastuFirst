@@ -148,6 +148,16 @@ const val PLAN_MAX_ZOOM = 5f
 const val PLAN_DOOR_MARK_SHARE = 0.072f
 
 /**
+ * The largest the door mark may be drawn, as a share of the touch target it sits inside.
+ *
+ * ⚠ THIS IS THE HALF OF "20 % SMALLER" THAT ACTUALLY DID THE WORK. On an ordinary near-square sheet
+ * the proportional size runs past this cap, so the cap — not the share — is what the reader sees.
+ * Cutting only the share left the mark five per cent smaller and looking unchanged, which the
+ * rendered picture showed and no measurement could.
+ */
+const val PLAN_DOOR_MARK_CAP = 0.40f
+
+/**
  * ⭐⭐ ONE GESTURE READER FOR THE WHOLE PICTURE — taps, pinch, pan and the front door.
  *
  * ⚠ EXACTLY ONE `pointerInput` ON THIS CANVAS, and it must stay that way. Two detectors on one node
@@ -455,8 +465,17 @@ fun PlanWithRooms(
                     val glyph = measurer.measure("E", doorLetterStyle)
                     val letterFloor = maxOf(glyph.size.width, glyph.size.height) / 2f + strokeDp.toPx() / 2f
                     // Proportional, floored and capped — see [PLAN_DOOR_MARK_SHARE].
+                    //
+                    // ⚠ THE CAP CAME DOWN WITH THE SHARE, and it had to: on an ordinary square sheet
+                    // the OLD mark was already sitting ON the cap, so cutting the share alone made
+                    // it five per cent smaller instead of twenty. Found by looking at the rendered
+                    // picture, which is the only thing that could have said so — every number in the
+                    // geometry gate was green both before and after.
+                    //
+                    // Half the touch target, not all of it: the mark is what you SEE and the target
+                    // is what you HIT, and they were never meant to be the same size.
                     val r = (minOf(drawn.width, drawn.height) * PLAN_DOOR_MARK_SHARE)
-                        .coerceIn(maxOf(strokeDp.toPx() * 2f, letterFloor), doorTouch.toPx() / 2f)
+                        .coerceIn(maxOf(strokeDp.toPx() * 2f, letterFloor), doorTouch.toPx() * PLAN_DOOR_MARK_CAP)
                     // ⭐⭐ IT SITS ON THE WALL NOW, HALF IN AND HALF OUT (owner, 17 Aug 2026: *"make
                     // it sit on the border of the map so its half out and half in"*).
                     //
