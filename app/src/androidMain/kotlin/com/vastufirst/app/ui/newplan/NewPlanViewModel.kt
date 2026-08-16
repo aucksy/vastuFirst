@@ -15,8 +15,13 @@ import com.vastufirst.shared.Plan
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
+import com.vastufirst.app.ui.scan.gridForOutcome
+import com.vastufirst.app.ui.scan.scannedRooms
+import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Zone
+import com.vastufirst.shared.scan.ScanOutcome
+import com.vastufirst.shared.scan.ScannedRoom
 import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.DraftDoor
 import com.vastufirst.shared.editor.DraftRoom
@@ -178,8 +183,15 @@ class NewPlanViewModel(
      * leave no row behind and must not adopt anybody else's. And because each session owns its own
      * id, starting a second home can no longer overwrite the first one's only copy, which the single
      * 'current' row did silently.
+     *
+     * ⚠ READABLE, AND OBSERVABLE, since 16 Aug 2026 — because [resumeDraft] is asynchronous. A
+     * screen that wants to draw the resumed home's photograph has to know that the home on screen is
+     * the home it asked for; without this it would publish whatever picture the ViewModel happened to
+     * be holding a frame earlier, which is the PREVIOUS plan. One property, one comparison, and the
+     * "somebody else's flat under this home's heading" defect cannot come back through this door.
      */
-    private var draftId: String? = null
+    var draftId by mutableStateOf<String?>(null)
+        private set
 
     /**
      * ⭐ True when the rooms on the grid came off a scan that could not work out WHERE they go, so
@@ -206,10 +218,44 @@ class NewPlanViewModel(
      *
      * ⚠ "Carry on" used to open the grid editor for every unfinished home, including scanned ones —
      * the one screen the owner removed from the scan flow. See [DraftSnapshot.fromScan] for the
-     * whole reasoning and for why the photograph cannot come back with it.
+     * whole reasoning.
      */
     var fromScan by mutableStateOf(false)
         private set
+
+    /**
+     * ⭐⭐ THE PHOTOGRAPH THIS HOME WAS READ OFF, and the rooms as the reader saw them ON IT.
+     *
+     * ⚠ WHAT THESE FIX (owner, 16 Aug 2026). "Carry on" was routing a photographed home to the North
+     * dial correctly — and the dial had nothing to draw, because the picture was thrown away the
+     * moment the reader walked off the screen. So the compass came up over our redrawn coloured
+     * squares: visually the builder's canvas the owner had asked to be kept out of the photo flow,
+     * arriving by the back door on the very screen built to replace it. He reported it as the routing
+     * bug still being present, and from where he sat it was.
+     *
+     * ⚠ [scanRooms] is NOT [rooms] and they must not be merged — see [DraftSnapshot.scanRooms]. One
+     * is the home the engine scores; these are statements about the picture, and they are what lets
+     * the outlines and the front-door mark be drawn back on it.
+     *
+     * ⚠ The bytes are held here rather than fetched by the screens because THIS is what knows which
+     * unfinished home is open. They are written to disk beside the draft row, once per home, by
+     * [persistDraft]; every screen that draws them reads them through the one handover slot.
+     */
+    var scanPhoto by mutableStateOf<ByteArray?>(null)
+        private set
+
+    /** The rooms as the reader saw them on the page — see [scanPhoto]. */
+    var scanRooms by mutableStateOf<List<ScannedRoom>>(emptyList())
+        private set
+
+    /**
+     * Which home's photograph is already on disk, so an autosave does not rewrite one to three
+     * megabytes of JPEG on every nudge of the North dial. Cleared whenever the home changes.
+     */
+    private var photoWrittenFor: String? = null
+
+    /** The read already taken into this home — see the guard at the top of [acceptScan]. */
+    private var acceptedRead: ScanOutcome? = null
 
     /**
      * Set by the scan flow as it hands its rooms over. Cleared by [startAgain].
@@ -222,6 +268,54 @@ class NewPlanViewModel(
 
     /** Same contract as [markRoomsUnplaced]: set by the scan flow AFTER the rooms, and it saves. */
     fun markFromScan(scanned: Boolean) { fromScan = scanned; markDirty() }
+
+    /**
+     * ⭐⭐ TAKE A FINISHED READ AND MAKE IT THIS HOME — the whole scan hand-over, in one place.
+     *
+     * ⚠ IT IS ONE FUNCTION BECAUSE IT IS CALLED TWICE (16 Aug 2026), and the second caller is the
+     * reason this exists. Until now the hand-over was six calls written inline on the scan screen's
+     * "use these rooms", which meant a reader who backed out one screen EARLIER — at the list of
+     * rooms we had just read — kept nothing at all: the home had no rooms on it, so there was
+     * nothing for the app to save, and the read and the photograph lived only in the scan screen's
+     * own memory, which Android discards on the way out. A finished, already-paid-for read, thrown
+     * away by pressing Back. The read is now accepted the moment it succeeds, and tapping "use these
+     * rooms" only moves the reader forward; both paths run this, so they cannot drift apart.
+     *
+     * ⚠ THE ORDER IS LOAD-BEARING and matches what the inline version did. The rooms are cleared
+     * before the plot is resized (a resize refuses a size the existing rooms will not fit, and an
+     * empty plot always resizes); [markRoomsUnplaced] and [markFromScan] come AFTER the rooms,
+     * because [updateRooms] clears the parked flag whenever the geometry moves.
+     */
+    fun acceptScan(outcome: ScanOutcome, photo: ByteArray?) {
+        // ⚠ IDEMPOTENT, and it has to be. This is called the moment a read succeeds AND again when
+        // the reader taps "use these rooms", and the scan screen is disposed and recomposed every
+        // time they walk forward and press Back — so without this guard, returning to the scanner
+        // would silently rebuild the rooms and re-read the front door over a door the reader had
+        // placed with their own finger two screens later.
+        if (outcome == acceptedRead && photo.contentEquals(scanPhoto)) return
+        acceptedRead = outcome
+        val (cols, rows) = gridForOutcome(outcome)
+        val read = outcome.scannedRooms()
+        updateRooms(emptyList())
+        updateGrid(cols, rows)
+        updateRooms(toGridRooms(read, cols, rows))
+        val placed = outcome is ScanOutcome.Placed
+        markRoomsUnplaced(!placed)
+        markFromScan(placed)
+        // The picture and the boxes read off it. Kept for every read, placed or not: what makes an
+        // unfinished home worth offering back is that it is EXACTLY as it was left.
+        scanRooms = read
+        if (!photo.contentEquals(scanPhoto)) {
+            scanPhoto = photo
+            // A different picture for this home — the one on disk is no longer this home's.
+            photoWrittenFor = null
+        }
+        // ⭐⭐ The front door read off the plan's own entrance, for a PLACED read only — an assisted
+        // one parks its rooms in a provisional strip, so "which wall is the foyer on" would be a
+        // question about a holding pattern rather than about a home. Null is what makes the next
+        // screen ask instead of tell.
+        updateDoor(if (placed) frontDoorFromEntrance(rooms) else null)
+    }
 
     init {
         // ⭐⭐ NOTHING IS RESTORED HERE, and that is the fix (v0.6.6). This used to load the leftover
@@ -405,6 +499,7 @@ class NewPlanViewModel(
             draftId?.let { repo.clearDraft(it) }
             draftId = null
             handle.remove<String>(KEY_DRAFT_ID)
+            photoWrittenFor = null
             return
         }
         val id = draftId ?: "draft-${now()}".also {
@@ -412,6 +507,15 @@ class NewPlanViewModel(
             handle[KEY_DRAFT_ID] = it
         }
         repo.saveDraft(id, snap, now())
+        // ⭐ The photograph, ONCE per home. Every nudge of the North dial comes through here, and a
+        // JPEG of one to three megabytes rewritten on each of them would make the dial stutter on
+        // exactly the phones this app is for. The id is only known here, which is why the write
+        // cannot happen where the picture arrives.
+        val photo = scanPhoto
+        if (photo != null && photoWrittenFor != id) {
+            repo.saveDraftPhoto(id, photo)
+            photoWrittenFor = id
+        }
     }
 
     /** True once the plan has enough to score (at least one room). */
@@ -464,6 +568,10 @@ class NewPlanViewModel(
                 draftId = null
                 handle.remove<String>(KEY_DRAFT_ID)
                 restoredFromDraft = false
+                // The stored photograph went with the row (clearDraft takes it). The bytes stay in
+                // memory so the report this save opens still draws the reader's own plan — the same
+                // picture they had a screen ago, and the last screen that will ever show it.
+                photoWrittenFor = null
             }
         }
     }
@@ -518,6 +626,14 @@ class NewPlanViewModel(
         roomsUnplaced = false
         fromScan = false
         restoredFromDraft = false
+        // ⭐ AND THE PREVIOUS HOME'S PHOTOGRAPH. This is a different home now, and a picture of
+        // somebody's flat left in the slot is how the last release drew one plan under another
+        // home's heading. The file on disk is not touched: it belongs to the row it was keyed by,
+        // and that row is cleared by whoever owns it.
+        scanPhoto = null
+        scanRooms = emptyList()
+        photoWrittenFor = null
+        acceptedRead = null
         // Not this session's row any more — the next real edit mints a new one.
         draftId = null
         handle.remove<String>(KEY_DRAFT_ID)
@@ -542,6 +658,7 @@ class NewPlanViewModel(
         siteDeclined = siteAnswers.declined.map { it.name },
         roomsUnplaced = roomsUnplaced,
         fromScan = fromScan,
+        scanRooms = scanRooms,
     )
 
     /**
@@ -575,6 +692,10 @@ class NewPlanViewModel(
         // an unplaced scan would come back pretending to be a finished plan.
         roomsUnplaced = d.roomsUnplaced
         fromScan = d.fromScan
+        // ⚠ The picture itself is NOT here — it is a file beside this row, and it is fetched by
+        // [resumeDraft], which is the only caller that knows the id it is keyed by. These are the
+        // boxes that get drawn ON it, which is why they travel with the draft and it does not.
+        scanRooms = d.scanRooms
     }
 
     /**
@@ -596,6 +717,11 @@ class NewPlanViewModel(
             draftId = id
             handle[KEY_DRAFT_ID] = id
             restoredFromDraft = true
+            // ⭐ And the home's own photograph back with it, so the North dial shows the reader THEIR
+            // plan rather than our redrawing of it — the whole point of keeping it (owner, 16 Aug
+            // 2026). Already on disk under this id, so it must not be written back out again.
+            scanPhoto = repo.loadDraftPhoto(id)
+            photoWrittenFor = if (scanPhoto != null) id else null
             markDirty()
         }
     }
@@ -624,6 +750,12 @@ class NewPlanViewModel(
         restoredFromDraft = false
         roomsUnplaced = false
         fromScan = false
+        // ⭐ The photograph goes too — "start this home again" means the reading is being thrown
+        // away, and the picture is the reading. The file is removed with the row, below.
+        scanPhoto = null
+        scanRooms = emptyList()
+        photoWrittenFor = null
+        acceptedRead = null
         // ⭐ AND THE UNLOCK GOES. "Start this home again" makes a DIFFERENT home, and a paid report
         // belongs to the home it was bought for — see [unlockedPlanId].
         unlockedPlanId = null
@@ -641,6 +773,15 @@ class NewPlanViewModel(
     fun load(saved: SavedPlan) {
         planId = saved.id
         handle[KEY_PLAN_ID] = saved.id
+        // ⭐ A FINISHED home never carries a photograph — the picture is kept only while a home is
+        // unfinished, and is deleted with its row the moment it becomes a saved home. So anything
+        // still in these two belongs to a DIFFERENT plan, and drawing it under this home's heading
+        // would be a lie about whose home is being read. Same rule the report route already applies
+        // to the handover slot; applied here so the two cannot disagree.
+        scanPhoto = null
+        scanRooms = emptyList()
+        photoWrittenFor = null
+        acceptedRead = null
         name = saved.name
         intent = saved.intent
         propertyType = saved.propertyType

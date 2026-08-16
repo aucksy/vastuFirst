@@ -5,6 +5,7 @@ import com.vastufirst.app.CurrentActivity
 import com.vastufirst.app.billing.Billing
 import com.vastufirst.app.billing.NoBilling
 import com.vastufirst.app.billing.PlayBilling
+import com.vastufirst.app.platform.AndroidPlanPhotoStore
 import com.vastufirst.app.platform.createAndroidSqlDriver
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
@@ -42,7 +43,9 @@ val appModule = module {
     // Persistence — one driver, one database, one repository.
     single { createAndroidSqlDriver(androidContext()) }
     single { VastuDatabaseFactory.create(get()) }
-    single { PlanRepository(db = get(), io = Dispatchers.IO) }
+    // ⭐ The repository owns the plan photographs as well as the rows, so a home and its picture can
+    // never be deleted separately — see PlanPhotoStore for why that guarantee lives down there.
+    single { PlanRepository(db = get(), io = Dispatchers.IO, photos = AndroidPlanPhotoStore(androidContext())) }
 
     // Scan — the REAL reader. One HTTP POST to the model named in `scan/reader-config.json`.
     //

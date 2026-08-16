@@ -149,6 +149,16 @@ class PlanRepository(
     // ignoreUnknownKeys so a plan written by a NEWER build still opens in an older one, rather than
     // the older build treating the whole home as corrupt.
     private val json: Json = Json { ignoreUnknownKeys = true },
+    /**
+     * ⭐ Where an unfinished home's plan photograph is kept — see [PlanPhotoStore].
+     *
+     * ⚠ It is threaded through the REPOSITORY rather than used directly by the screens, and that is
+     * the whole safety of it: the two places a home stops existing ([clearDraft] and [deleteAll])
+     * are the two places its picture must stop existing, and going through here means a caller
+     * cannot delete one and forget the other. A photograph of somebody's home left behind by a
+     * "delete everything" button is the failure this project has already shipped once.
+     */
+    private val photos: PlanPhotoStore = NoPlanPhotoStore,
 ) {
     private val queries get() = db.planQueries
     private val draftQueries get() = db.draftQueries
@@ -226,10 +236,15 @@ class PlanRepository(
 
     suspend fun delete(id: String): Unit = withContext(io) { queries.deleteById(id) }
 
-    /** Every home on the device — finished AND unfinished. "Delete all my data" promises both. */
+    /** Every home on the device — finished AND unfinished. "Delete all my data" promises both.
+     *
+     *  ⭐ AND EVERY PLAN PHOTOGRAPH WITH THEM. A picture of somebody's own floor plan is the most
+     *  personal thing this app holds; a wipe that leaves it on the phone is the defect this project
+     *  already shipped once, when the databases were emptied and the camera's folder was not. */
     suspend fun deleteAll(): Unit = withContext(io) {
         queries.deleteAll()
         draftQueries.deleteAllDrafts()
+        photos.deleteAll()
     }
 
     // --- the unfinished homes (one row each, keyed by the draft's own id) ---
@@ -277,10 +292,33 @@ class PlanRepository(
         runCatching { json.decodeFromString(DraftSnapshot.serializer(), row.draftJson) }.getOrNull()
     }
 
-    /** Drop one draft — the moment it becomes a real saved home, or the user throws it away. */
+    /** Drop one draft — the moment it becomes a real saved home, or the user throws it away.
+     *
+     *  ⭐ Its photograph goes with it, in the same call, for the same reason "delete all" takes them:
+     *  a picture whose home no longer exists can never again be shown to anybody, so keeping it is
+     *  storage spent on holding a photograph of somebody's home for no reason at all. */
     suspend fun clearDraft(id: String): Unit = withContext(io) {
         runCatching { draftQueries.deleteDraft(id) }
+        photos.delete(id)
         Unit
+    }
+
+    /**
+     * ⭐ Keep the photograph this unfinished home was read off, so "Carry on" can put the reader
+     * back on their own plan instead of on our redrawing of it.
+     *
+     * Total, like [saveDraft] beside it: a picture that cannot be written must not fail the save of
+     * the home it belongs to. The home is the product; the picture is how it is shown.
+     */
+    suspend fun saveDraftPhoto(id: String, jpeg: ByteArray): Unit = withContext(io) {
+        runCatching { photos.save(id, jpeg) }
+        Unit
+    }
+
+    /** The photograph of one unfinished home, or null — which every caller must treat as "show the
+     *  zone map instead", exactly as the app behaved before photographs were kept at all. */
+    suspend fun loadDraftPhoto(id: String): ByteArray? = withContext(io) {
+        runCatching { photos.load(id) }.getOrNull()
     }
 
     /**

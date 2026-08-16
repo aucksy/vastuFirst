@@ -11,6 +11,7 @@
 package com.vastufirst.shared.editor
 
 import com.vastufirst.shared.Zone
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -25,6 +26,7 @@ enum class Handle { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
  * [col]/[row] are the top-left cell; **row 0 is the NORTH edge** (rows grow southward), matching
  * both the drawn grid and the engine's pada grid.
  */
+@Serializable
 data class CellRect(val col: Int, val row: Int, val w: Int, val h: Int) {
     /** Exclusive right edge, in cell coordinates. */
     val right: Int get() = col + w

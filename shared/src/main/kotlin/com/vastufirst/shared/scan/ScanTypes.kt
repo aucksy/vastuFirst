@@ -187,6 +187,7 @@ enum class RoomFlag {
  * [label] is kept verbatim as printed on the plan so the confirmation screen can say
  * *"we read 'ATT. TOILET 1350X2250' as a Toilet"* — the user checks our reading, not just our answer.
  */
+@Serializable
 data class ScannedRoom(
     val type: RoomType,
     val label: String,

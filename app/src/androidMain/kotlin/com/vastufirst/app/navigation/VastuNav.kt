@@ -37,9 +37,6 @@ import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanRoute
 import com.vastufirst.app.ui.scan.ScanViewModel
-import com.vastufirst.app.ui.scan.gridForOutcome
-import com.vastufirst.app.ui.scan.scannedRooms
-import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
 import com.vastufirst.app.ui.welcome.WelcomeScreen
@@ -200,67 +197,49 @@ fun VastuNavHost() {
                 val planVm = sharedVm(nav, entry)
                 val scanVm: ScanViewModel = koinViewModel()
                 val reviewHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                // ⭐⭐ THE READ IS KEPT THE MOMENT IT SUCCEEDS (owner, 16 Aug 2026: *"I also tried a
+                // new home and left it on the screen right after scanning which shows the list of
+                // rooms scanned and this one isn't even stored"*).
+                //
+                // ⚠ WHAT THIS COSTS WHEN IT IS MISSING, and it is the whole reason for the change:
+                // the hand-over used to happen on "use these rooms" and nowhere else, so a reader
+                // who pressed Back one screen earlier kept NOTHING. The home had no rooms on it, so
+                // there was nothing for the app to write; the reading and the photograph lived only
+                // in this screen's own ViewModel, which goes when the screen does. A finished read —
+                // a real network call, really paid for — thrown away by pressing Back.
+                //
+                // A refusal is deliberately NOT accepted: there is nothing in it to keep, and
+                // writing an unfinished home for it would put a row on the saved-homes screen for a
+                // plan the app has just said it cannot read. "Show me what you read" replaces the
+                // state with the alternative reading, which arrives here as an ordinary outcome.
+                val scanState = scanVm.state
+                LaunchedEffect(scanState) {
+                    val outcome = (scanState as? com.vastufirst.app.ui.scan.ScanUiState.Done)?.outcome
+                        ?: return@LaunchedEffect
+                    if (outcome is com.vastufirst.shared.scan.ScanOutcome.Refused) return@LaunchedEffect
+                    planVm.acceptScan(outcome, scanVm.lastImage?.bytes)
+                }
                 ScanRoute(
                     vm = scanVm,
                     onUseRooms = { outcome ->
-                        // The scan's rooms land in the guided grid — the confirmation surface §6.2b
-                        // requires.
+                        // ⚠ The hand-over itself is NewPlanViewModel.acceptScan — one function, called
+                        // from here and from the effect above, so "what a read does to the home" cannot
+                        // come to mean two different things. It is idempotent, so this tap is a no-op
+                        // when the effect has already taken this very reading. Everything the six
+                        // inline calls that used to live here did — clear, resize, place, mark parked,
+                        // mark photographed, read the front door off the plan's own entrance — moved
+                        // there unchanged, in that order, for the reasons documented on it.
+                        planVm.acceptScan(outcome, scanVm.lastImage?.bytes)
+                        // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026), and North comes
+                        // FIRST (11 Aug 2026): a room has no direction and no verdict until North is
+                        // marked, and the checking screen's rows want both. The handover is written
+                        // first either way — North draws the same photograph the check screen does.
                         //
-                        // ⚠ CLEAR FIRST, then resize, then add. `updateGrid` re-packs whatever is
-                        // already placed and REFUSES a size the existing rooms cannot fit — so if the
-                        // user had drawn rooms earlier in this session (grid → back → upload), the
-                        // resize could silently decline while the scanned rooms, sized for the grid we
-                        // asked for, went in anyway and landed outside the plot. That is the v0.3.7
-                        // coordinate-space bug arriving by a new road. An empty plot always resizes.
-                        // Clearing is also correct on its own terms: a scan replaces the home, so the
-                        // previous rooms and their front door do not belong to it.
-                        val (cols, rows) = gridForOutcome(outcome)
-                        planVm.updateRooms(emptyList())
-                        planVm.updateGrid(cols, rows)
-                        planVm.updateRooms(toGridRooms(outcome.scannedRooms(), cols, rows))
-                        // ⭐ Tell the editor whether these rooms are a PLAN or a parking row. Without
-                        // it the grid says "Place your rooms" over a strip of identical squares and
-                        // then asks whether the leftovers of that strip are part of the home — which
-                        // is the screen the owner was handed for his own flat.
-                        planVm.markRoomsUnplaced(outcome !is com.vastufirst.shared.scan.ScanOutcome.Placed)
-                        // ⭐ And remember that these rooms came off a PHOTOGRAPH, so the unfinished
-                        // row this leaves behind reopens at North rather than in the grid editor —
-                        // the screen the scan flow does not use. See Routes.markNorthForDraft.
-                        planVm.markFromScan(outcome is com.vastufirst.shared.scan.ScanOutcome.Placed)
-                        // ⭐⭐ THE FRONT DOOR, READ OFF THE PLAN (owner, 6 Aug 2026: "cant we do it
-                        // ourselves when Entry is clearly marked? we ask only if its not"). Only for
-                        // a PLACED scan: an assisted one parks its rooms in a provisional strip, so
-                        // "which wall is the foyer on" would be asking about a holding pattern
-                        // rather than a home. Null when the plan named no entrance, or named one we
-                        // could not pin to a single wall — and null is what makes the next screen
-                        // ask instead of tell. See frontDoorFromEntrance for why it refuses often.
-                        planVm.updateDoor(
-                            if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
-                                com.vastufirst.app.ui.newplan.frontDoorFromEntrance(planVm.rooms)
-                            } else {
-                                null
-                            },
-                        )
-                        // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026). The grid
-                        // rooms above are still populated, because they are what the engine scores
-                        // and what the report draws — but the user never sees or touches them
-                        // on this path. They set North, check, and mark the door on their own photo.
-                        //
-                        // ⭐⭐ NORTH COMES FIRST NOW (owner, 11 Aug 2026). A placed scan goes
-                        // straight to the North dial, and the check screen follows it — because a
-                        // room has no direction and no verdict until North is marked, and the
-                        // owner's original list wants both of those ON the check screen's rows.
-                        // Ordering the flow the other way round is the only reason they were never
-                        // built. The handover is written FIRST either way: North draws the same
-                        // photograph the check screen does.
-                        //
-                        // ⚠ The `else` below is the one route left from a scan into the editor, and
-                        // it is not a preference: it is a scan whose rooms could NOT be placed, so
-                        // there is no geometry to score and somebody has to supply it. Measured on
-                        // the 44 recorded real plans: 24 place, 9 arrive unplaced, 11 are refused.
-                        // Removing this branch today would strand about one readable plan in six
-                        // with no route to a reading at all. It goes when placing rooms by tapping
-                        // the PHOTO exists to replace it — not before.
+                        // ⚠ The `else` is the one route left from a scan into the editor, and it is not
+                        // a preference: it is a read whose rooms could NOT be placed, so there is no
+                        // geometry to score and somebody has to supply it. Measured on the 44 recorded
+                        // real plans: 24 place, 9 arrive unplaced, 11 are refused. It goes when placing
+                        // rooms by tapping the PHOTO exists to replace it — not before.
                         if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
                             reviewHandover.data = com.vastufirst.app.ui.scan.ScanReviewData(
                                 imageBytes = scanVm.lastImage?.bytes,
@@ -409,12 +388,7 @@ fun VastuNavHost() {
                 // one v0.12.0 stated: a photograph belongs to the home it was taken for, and every
                 // door into a DIFFERENT home has to close it.
                 val draftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                LaunchedEffect(draftId) {
-                    if (draftId != null) {
-                        draftHandover.data = null
-                        vm.resumeDraft(draftId)
-                    }
-                }
+                ResumeDraft(vm = vm, id = draftId, handover = draftHandover)
                 GuidedGridScreen(
                     vm = vm,
                     // ⚠ Which way out depends on where this was entered from. In the flow it is
@@ -444,26 +418,29 @@ fun VastuNavHost() {
                 // no id and the draft already on screen.
                 val northDraftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
                 val northDraftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                LaunchedEffect(northDraftId) {
-                    if (northDraftId != null) {
-                        // ⚠ The same rule the editor's draft route learned in v0.12.0: a photograph
-                        // belongs to the home it was taken for, and every door into a DIFFERENT home
-                        // has to close it. This home's own picture was never stored, so whatever is
-                        // in the slot belongs to somebody else's plan.
-                        northDraftHandover.data = null
-                        vm.resumeDraft(northDraftId)
-                    }
-                }
-                // ⭐ North on the user's OWN plan, when they got here by scanning one. Decoded once
-                // and remembered: the dial's model is a data class and an ImageBitmap compares by
-                // identity, so a fresh decode per recomposition would invalidate the measure cache
-                // the drag's smoothness depends on. Gated on the route flag rather than "is there a
-                // photo lying around", so a picture from an earlier scan can never appear under a
-                // home that was drawn by hand or reopened from the saved list.
+                ResumeDraft(vm = vm, id = northDraftId, handover = northDraftHandover)
+                // ⭐ North on the user's OWN plan. Decoded once and remembered: the dial's model is a
+                // data class and an ImageBitmap compares by identity, so a fresh decode per
+                // recomposition would invalidate the measure cache the drag's smoothness depends on.
                 val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
                 val fromScan = entry.arguments?.getBoolean(Routes.ARG_FROM_SCAN) ?: false
-                val planImage = remember(fromScan, scanHandover.data) {
-                    if (fromScan) scanHandover.data?.decodeImage() else null
+                // ⭐⭐ AND A RESUMED HOME SHOWS ITS OWN PHOTOGRAPH TOO (owner, 16 Aug 2026: *"Do A"*).
+                //
+                // ⚠ THIS IS THE BUG HE ACTUALLY REPORTED. "Carry on" was already routing a
+                // photographed home here rather than to the grid editor — that part worked — but the
+                // picture had been thrown away, so the dial came up over our redrawn coloured squares.
+                // Visually that IS the builder's canvas he asked to be kept out of the photo flow,
+                // arriving on the very screen built to replace it, and he reported it as the routing
+                // fix having failed. It had not; there was simply nothing left to draw.
+                //
+                // ⚠ The gate is still a gate, and it still means the same thing: draw a photograph
+                // only when it is THIS home's. Arriving by scan the slot was filled by the scan;
+                // arriving with a draft id it is filled by ResumeDraft, which publishes only after
+                // the ViewModel confirms it holds that same home. What it must never become is "draw
+                // whatever picture is lying around", which is how one plan ended up under another
+                // home's heading in v0.12.0.
+                val planImage = remember(fromScan, northDraftId, scanHandover.data) {
+                    if (fromScan || northDraftId != null) scanHandover.data?.decodeImage() else null
                 }
                 // ⚠ Which way out, and there are now three answers.
                 //
@@ -639,6 +616,51 @@ private fun NavHostController.go(route: String) = navigate(route) { launchSingle
 private fun NavHostController.goHome() = navigate(Routes.HOME) {
     popUpTo(Routes.NEWPLAN_GRAPH) { inclusive = true }
     launchSingleTop = true
+}
+
+/**
+ * ⭐⭐ BRING ONE UNFINISHED HOME BACK — the one piece both doors into a resumed home use.
+ *
+ * There are exactly two: the North dial (a home read off a photograph) and the grid editor
+ * (a home drawn by hand, or a read whose rooms could not be placed). They used to hold a copy each
+ * of "empty the picture slot, then resume", and a copy each is how the two came to disagree about
+ * what a resumed home is allowed to show. One function cannot drift.
+ *
+ * It does two things, in this order, and the order is the safety:
+ *
+ *  1. **Empty the slot, then ask for the home.** Whatever picture is in there belongs to the last
+ *     plan that was read, and every door into a DIFFERENT home has to close it (the rule v0.12.0
+ *     established after one property's photograph appeared under another's heading, with "change
+ *     where the front door is" inviting a tap on somebody else's flat).
+ *  2. **Publish this home's own picture when it arrives.** [NewPlanViewModel.resumeDraft] reads from
+ *     disk, so it lands a few frames later. Publishing is gated on the ViewModel confirming it now
+ *     holds THIS id — not merely on "a resume was asked for" — so the window in which the previous
+ *     home's photograph could be published under this one's name does not exist.
+ *
+ * A home with no stored photograph (every hand-drawn one) publishes nothing, and every screen falls
+ * back to the zone map exactly as it did before photographs were kept at all.
+ */
+@Composable
+private fun ResumeDraft(
+    vm: NewPlanViewModel,
+    id: String?,
+    handover: com.vastufirst.app.ui.scan.ScanReviewHandover,
+) {
+    LaunchedEffect(id) {
+        if (id == null) return@LaunchedEffect
+        handover.data = null
+        vm.resumeDraft(id)
+    }
+    LaunchedEffect(id, vm.draftId, vm.scanPhoto, vm.scanRooms) {
+        if (id == null || vm.draftId != id) return@LaunchedEffect
+        val photo = vm.scanPhoto
+        val rooms = vm.scanRooms
+        handover.data = if (photo != null || rooms.isNotEmpty()) {
+            com.vastufirst.app.ui.scan.ScanReviewData(imageBytes = photo, rooms = rooms)
+        } else {
+            null
+        }
+    }
 }
 
 /** The NewPlanViewModel scoped to the whole "newplan" graph, so every step shares one draft. */

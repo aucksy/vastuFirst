@@ -122,10 +122,21 @@ class ScanReviewData(
 /**
  * The handover slot between the scan screen and this one — a one-field singleton rather than a
  * navigation argument, because the payload is an image plus a room list and the nav graph passes
- * strings. Written right before navigating here; never persisted.
+ * strings.
+ *
+ * ⭐⭐ OBSERVABLE since 16 Aug 2026, and it had to become so. It used to be filled in the same breath
+ * as the `navigate` call, so every screen could read it once at composition and be right. Resuming an
+ * unfinished home fills it from DISK instead, which is a suspend read that lands a few frames after
+ * the screen is already on display — and against a plain `var` those frames are permanent: the read
+ * happened, the value changed, and nothing recomposed. The reader sat looking at our redrawn squares
+ * with their own photograph in memory behind them.
+ *
+ * ⚠ Still not persisted, and that is unchanged: what is on disk is the JPEG beside the draft row (see
+ * `PlanPhotoStore`). This remains the in-memory slot that the screens draw from, and the only thing
+ * that ever writes it is a route that knows which home it belongs to.
  */
 class ScanReviewHandover {
-    var data: ScanReviewData? = null
+    var data: ScanReviewData? by mutableStateOf(null)
 }
 
 /**

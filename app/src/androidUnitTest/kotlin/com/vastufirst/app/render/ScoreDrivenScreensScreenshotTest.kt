@@ -99,6 +99,34 @@ class ScoreDrivenScreensScreenshotTest {
      * own notes. In this picture the control itself is taller than it is wide, and the plan runs the
      * full width of the column with the compass drawn over it.
      */
+    /**
+     * ⭐⭐ THE SAME SCREEN, REACHED BY "CARRY ON" — the picture the owner was actually handed, and the
+     * one nothing has ever rendered.
+     *
+     * ⚠ IT IS NOT THE GOLDEN ABOVE, and the difference is the whole bug of 16 Aug 2026. Resuming a
+     * photographed home lands here with `nextIsCheck = FALSE` — the checking screen is behind this
+     * reader, not in front of them — so the button reads "Read my home" rather than "Check what we
+     * read". Until this release it also arrived with `planImage = null`, because the photograph was
+     * thrown away when the reader walked off the screen, and the dial came up over our own redrawn
+     * coloured squares. That is a builder's grid to look at, on the one screen built to replace the
+     * builder's grid, and the owner reported it as "Carry on takes it to Manual grid". He was right
+     * about the picture and the routing was never at fault.
+     *
+     * So this golden pins the two things together: a photograph IS drawn, and the button names the
+     * screen it really opens.
+     */
+    @Test
+    fun markNorth_resumedPhoto() = render("marknorth-photo-resumed") {
+        MarkNorthContent(
+            rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
+            nextIsCheck = false,
+            planImage = android.graphics.Bitmap
+                .createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
+                .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+                .asImageBitmap(),
+        )
+    }
+
     @Test
     fun markNorth_onTallPhoto() = render("marknorth-photo-tall") {
         MarkNorthContent(

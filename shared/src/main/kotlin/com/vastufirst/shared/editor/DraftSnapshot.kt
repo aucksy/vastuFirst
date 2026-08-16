@@ -4,6 +4,7 @@ import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Zone
+import com.vastufirst.shared.scan.ScannedRoom
 import kotlinx.serialization.Serializable
 
 /**
@@ -71,13 +72,31 @@ data class DraftSnapshot(
      * placed is genuinely finished by hand on the grid, and that is the one path where the grid is
      * the right answer. Both flags stored, both meaning what they say.
      *
-     * ⚠ The photograph itself is deliberately NOT stored — it never has been, and a home's plan
-     * image can be several megabytes. So a resumed scan cannot show "Check what we read"; it picks
-     * up at the North dial with every room, kind and door intact, which is all the score is made of.
+     * ⚠ The photograph is not in THIS file and never will be — a plan image is several megabytes and
+     * this row is JSON in a TEXT column. It is kept beside the draft instead, one JPEG per unfinished
+     * home, keyed by the same id (see `PlanPhotoStore`). [scanRooms] is the other half of putting a
+     * resumed home back exactly as it was.
      *
      * A field appended LAST, with a default, so a draft written by an older build still loads.
      */
     val fromScan: Boolean = false,
+    /**
+     * ⭐⭐ THE ROOMS AS THE READER SAW THEM ON THE PAGE — the other half of showing a resumed home
+     * its own photograph (owner, 16 Aug 2026: *"Do A"*).
+     *
+     * ⚠ THIS IS NOT [rooms], AND THE TWO MUST NOT BE MERGED. [rooms] is the home — whole cells on
+     * the guided grid, which is what the engine scores. These are statements about the PICTURE: each
+     * room's printed caption, its printed size, and the fraction-of-the-page box it was read from.
+     * Without them a resumed home can show the photograph but nothing on it — no room outlines, no
+     * front-door mark, and a report room list calling "MASTER BEDROOM 1" plain "Master", because
+     * the caption lives here and nowhere else.
+     *
+     * ⚠ Empty for every home drawn by hand, which is the ordinary case and costs those drafts
+     * nothing: an empty list encodes to nothing at all under this project's Json settings.
+     *
+     * A field appended LAST, with a default, so a draft written by an older build still loads.
+     */
+    val scanRooms: List<ScannedRoom> = emptyList(),
 ) {
     /** Nothing drawn yet ⇒ nothing worth restoring, and nothing worth telling the user about. */
     val isEmpty: Boolean get() = rooms.isEmpty()

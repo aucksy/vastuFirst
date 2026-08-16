@@ -13,6 +13,8 @@ import com.vastufirst.shared.editor.Cell
 import com.vastufirst.shared.editor.DraftDoor
 import com.vastufirst.shared.editor.DraftRoom
 import com.vastufirst.shared.editor.DraftSnapshot
+import com.vastufirst.shared.editor.CellRect
+import com.vastufirst.shared.scan.ScannedRoom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -218,6 +220,16 @@ class PersistenceTest {
         door = DraftDoor("S", 4),
         cutOut = listOf(Cell(7, 0), Cell(8, 0)),
         kept = listOf(Cell(5, 5)),
+        // ⭐ The rooms as the READER saw them on the page, which is a different thing from the rooms
+        // above — see DraftSnapshot.scanRooms. They are in this fixture rather than in a test of
+        // their own so that "every part of the draft must survive" keeps meaning every part: the
+        // printed caption lives only here, and losing it silently is what made a resumed home's paid
+        // report call "MASTER BEDROOM 1" plain "Master".
+        fromScan = true,
+        scanRooms = listOf(
+            ScannedRoom(RoomType.KITCHEN, "KITCHEN 8'-0\"X7'-0\"", CellRect(0, 0, 2, 2)),
+            ScannedRoom(RoomType.POOJA, "POOJA", CellRect(3, 1, 1, 1)),
+        ),
     )
 
     @Test
