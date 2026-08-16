@@ -81,8 +81,12 @@ fun NorthDial(
         onNorthChange(d)
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxWidth().aspectRatio(1f)) {
+    // ⭐ The control takes the PLAN's shape when there is a photographed one — see [dialAspectFor].
+    // Square for every hand-drawn home, exactly as it always was.
+    val aspect = model.planImage?.let { dialAspectFor(it.width, it.height) } ?: 1f
+    BoxWithConstraints(modifier = modifier.fillMaxWidth().aspectRatio(aspect)) {
         val dim = maxWidth
+        val tall = maxHeight
         // The label + adjustable semantics live on the interactive overlay below, not here — one
         // labelled node, no duplicate for TalkBack / the ATF a11y gate.
         ZoneMap(
@@ -90,6 +94,7 @@ fun NorthDial(
             modifier = Modifier.matchParentSize(),
             showLabels = true,
             contentDescription = null,
+            aspect = aspect,
         )
 
         // Input layer — drag or tap sets North to the bearing of the touch from the centre. It also
@@ -116,10 +121,16 @@ fun NorthDial(
         )
 
         // Knob — positioned on the ring at the current North bearing.
+        //
+        // ⚠ The RING's radius comes from the narrower side (the canvas does the same arithmetic),
+        // but the knob's vertical origin is the box's own centre. Written as `dim` for both, the
+        // knob rode a circle centred half a width down a box that is taller than that — so on a
+        // tall plan it sat well above the ring it is supposed to be gripping.
         val ringFrac = 66f / 160f
+        val ringR = minOf(dim, tall) * ringFrac
         val nrad = model.northDegrees * (PI.toFloat() / 180f)
-        val knobX = dim * (0.5f + ringFrac * sin(nrad))
-        val knobY = dim * (0.5f - ringFrac * cos(nrad))
+        val knobX = dim / 2f + ringR * sin(nrad)
+        val knobY = tall / 2f - ringR * cos(nrad)
         val hit = VastuTheme.sizes.knobHit
         val arrowColor = VastuTheme.colors.primary          // captured for the DrawScope below
         Box(

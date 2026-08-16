@@ -50,6 +50,8 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -139,8 +141,11 @@ const val PLAN_MAX_ZOOM = 5f
  * accessibility floor and never shrinks; the mark itself is proportional, because a fixed 48 dp disc
  * on a plan drawn 92 dp wide in landscape covers a third of the home. Bounded at both ends so it is
  * never a speck on a big sheet nor a blot on a small one.
+ *
+ * ⚠ Cut a fifth on 17 Aug 2026 (owner: *"Make it 20% smaller"*) — 0.09 → 0.072. The touch target it
+ * sits inside is unchanged, so nothing got harder to hit.
  */
-const val PLAN_DOOR_MARK_SHARE = 0.09f
+const val PLAN_DOOR_MARK_SHARE = 0.072f
 
 /**
  * ⭐⭐ ONE GESTURE READER FOR THE WHOLE PICTURE — taps, pinch, pan and the front door.
@@ -299,6 +304,9 @@ fun PlanWithRooms(
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
     val doorTouch = VastuTheme.sizes.minTouch
+    // One string is ever measured here ("E"), so the default cache is ample.
+    val measurer = rememberTextMeasurer()
+    val doorLetterStyle = VastuTheme.type.caption.copy(color = colors.paper)
     // ⚠ Real shape when it can zoom. The clamp below exists to stop a freakish sheet taking the whole
     // screen, and it does that by making the BOX a different shape from the picture — which only ever
     // added dead margin either side of a tall plan. Once the user can magnify, the honest thing is to
@@ -441,31 +449,58 @@ fun PlanWithRooms(
                 // which the owner could not find on his own plan at arm's length. This one is drawn
                 // to the size of the target it actually is, so what he sees is what he can hit.
                 doorAtPage?.let { (dx, dy) ->
+                    // ⚠ The letter has to FIT, so the floor is measured from the glyph rather than
+                    // guessed from the line weight — the same rule the compass "N" marker follows.
+                    // Without it a small plan draws a disc narrower than its own letter.
+                    val glyph = measurer.measure("E", doorLetterStyle)
+                    val letterFloor = maxOf(glyph.size.width, glyph.size.height) / 2f + strokeDp.toPx() / 2f
                     // Proportional, floored and capped — see [PLAN_DOOR_MARK_SHARE].
                     val r = (minOf(drawn.width, drawn.height) * PLAN_DOOR_MARK_SHARE)
-                        .coerceIn(strokeDp.toPx() * 2f, doorTouch.toPx() / 2f)
-                    // ⚠ HELD INSIDE THE PICTURE. The door sits ON a wall, so its point is 0 or 1
-                    // along one axis — and a circle centred exactly on the edge is drawn half off
-                    // the sheet. Pulling the centre in by its own radius keeps the whole mark on the
-                    // home it belongs to, which is also where a finger will look for it.
-                    val at = Offset(
-                        x = (origin.x + dx * drawn.width).coerceIn(origin.x + r, origin.x + drawn.width - r),
-                        y = (origin.y + dy * drawn.height).coerceIn(origin.y + r, origin.y + drawn.height - r),
+                        .coerceIn(maxOf(strokeDp.toPx() * 2f, letterFloor), doorTouch.toPx() / 2f)
+                    // ⭐⭐ IT SITS ON THE WALL NOW, HALF IN AND HALF OUT (owner, 17 Aug 2026: *"make
+                    // it sit on the border of the map so its half out and half in"*).
+                    //
+                    // ⚠ It used to be pulled INWARD by its own radius, which is what made it float
+                    // clear of the wall it is naming — on his own plan it hung in the sheet margin
+                    // beside the home rather than on it. The point is already on the home's outline
+                    // (doorMarkerOnPage puts it hard against that wall), and the outline sits inside
+                    // the photograph with the sheet's margin around it, so straddling it is drawn in
+                    // full without leaving the picture.
+                    //
+                    // ⚠ The one exception is the fallback where NO room carried a page box and the
+                    // home frame becomes the whole sheet. Then the point IS the picture's own edge,
+                    // and a canvas clips its ink — so at rest the centre is nudged just inside the
+                    // canvas, which is the only case where this does anything at all. While zoomed
+                    // the mark is deliberately left alone: pinning it to the screen edge would be
+                    // the picture claiming a door is somewhere it is not.
+                    val raw = Offset(origin.x + dx * drawn.width, origin.y + dy * drawn.height)
+                    val at = if (zoom > 1f) raw else Offset(
+                        x = raw.x.coerceIn(r, (size.width - r).coerceAtLeast(r)),
+                        y = raw.y.coerceIn(r, (size.height - r).coerceAtLeast(r)),
                     )
-                    drawCircle(color = doorHalo.copy(alpha = 0.85f), radius = r, center = at)
+                    // A paper collar WIDER than the disc, so the mark lifts off a busy sheet; then
+                    // the filled disc; then the letter. "E" for entrance — a coloured dot on its own
+                    // said only "something is here", which is what the owner could not read.
+                    //
+                    // ⚠ The collar has to be bigger than the disc or it is drawn and then completely
+                    // painted over, which is exactly nothing.
+                    drawCircle(color = doorHalo, radius = r + strokeDp.toPx() / 2f, center = at)
                     drawCircle(
-                        color = doorFill.copy(alpha = if (doorSelected) 1f else 0.85f),
-                        radius = r * 0.62f,
+                        color = doorFill.copy(alpha = if (doorSelected) 1f else 0.9f),
+                        radius = r,
                         center = at,
                     )
-                    drawCircle(
-                        color = doorHalo,
-                        radius = r * 0.62f,
-                        center = at,
-                        style = Stroke(width = strokeDp.toPx() / 2f),
+                    drawText(
+                        glyph,
+                        topLeft = Offset(at.x - glyph.size.width / 2f, at.y - glyph.size.height / 2f),
                     )
                     if (doorSelected) {
-                        drawCircle(color = doorFill, radius = r, center = at, style = Stroke(width = strokeDp.toPx() / 2f))
+                        drawCircle(
+                            color = doorFill,
+                            radius = r + strokeDp.toPx(),
+                            center = at,
+                            style = Stroke(width = strokeDp.toPx() / 2f),
+                        )
                     }
                 }
             }
@@ -487,7 +522,9 @@ internal fun buildPlanDescription(selectedName: String?, hasDoor: Boolean, zooma
     // reader cannot pinch and cannot drag a mark they navigate to by swiping, so telling them to do
     // either is telling them to do something they cannot. The button lower down the screen sets the
     // door with a single tap and is the route that works for everybody — it is named here instead.
-    val door = if (hasDoor) " Your front door is marked on it. To move it, use \"Put the front door somewhere else\" below." else ""
+    // ⚠ It names the LETTER now, because the mark carries one since 17 Aug 2026. A sighted reader
+    // sees an E on the wall; a screen-reader user hearing only "a mark" cannot ask anybody about it.
+    val door = if (hasDoor) " Your front door is marked E on it. To move it, use \"Put the front door somewhere else\" below." else ""
     val zoomWords = if (zoomable) " Pinch with two fingers to make the plan bigger." else ""
     return head + door + zoomWords
 }

@@ -138,8 +138,23 @@ class NewPlanViewModel(
     // autosave persists the REAL name, never a constant (E2E-ASSESSMENT review F3).
     var name by mutableStateOf<String?>(null)
         private set
-    var unlocked by mutableStateOf(false)
-        private set
+    /**
+     * ⭐⭐ WHICH HOME HAS BEEN PAID FOR — an id, not a yes/no (owner, 17 Aug 2026: *"699 is only for
+     * one plan so do not unlock new uploads by default"*).
+     *
+     * ⚠ THE DEFECT THIS REPLACES, in four taps. This ViewModel is scoped to the whole drawing graph,
+     * so it lives on until the reader leaves that graph for the saved-homes list. Unlock a report,
+     * press Back far enough to reach "Add a home", upload a SECOND plan, and the flag was still
+     * true — the new home was drawn unlocked, and [save] then wrote `unlocked = true` for it to
+     * disk. A second home free, for ever, with nothing on any screen to show it had happened.
+     *
+     * Held as the paid home's own id, the leak cannot be written: a new home is given a new id at
+     * its first save, and a different id is not this one.
+     */
+    private var unlockedPlanId by mutableStateOf<String?>(null)
+
+    /** True only for the home currently open, and only when that exact home has been paid for. */
+    val unlocked: Boolean get() = planId != null && planId == unlockedPlanId
 
     private val _analysis = MutableStateFlow<Analysis?>(null)
     val analysis: StateFlow<Analysis?> = _analysis
@@ -186,6 +201,17 @@ class NewPlanViewModel(
         private set
 
     /**
+     * ⭐⭐ True when this home's rooms were read off a PHOTOGRAPH that placed successfully — so the
+     * unfinished-home row it leaves behind knows it belongs to the scan flow, not the grid.
+     *
+     * ⚠ "Carry on" used to open the grid editor for every unfinished home, including scanned ones —
+     * the one screen the owner removed from the scan flow. See [DraftSnapshot.fromScan] for the
+     * whole reasoning and for why the photograph cannot come back with it.
+     */
+    var fromScan by mutableStateOf(false)
+        private set
+
+    /**
      * Set by the scan flow as it hands its rooms over. Cleared by [startAgain].
      *
      * ⚠ It nudges the save. The scan flow sets the rooms and THEN sets this, so relying on the
@@ -193,6 +219,9 @@ class NewPlanViewModel(
      * unplaced?" a question about timing rather than about behaviour.
      */
     fun markRoomsUnplaced(unplaced: Boolean) { roomsUnplaced = unplaced; markDirty() }
+
+    /** Same contract as [markRoomsUnplaced]: set by the scan flow AFTER the rooms, and it saves. */
+    fun markFromScan(scanned: Boolean) { fromScan = scanned; markDirty() }
 
     init {
         // ⭐⭐ NOTHING IS RESTORED HERE, and that is the fix (v0.6.6). This used to load the leftover
@@ -439,15 +468,60 @@ class NewPlanViewModel(
         }
     }
 
+    /**
+     * The reader has paid for THIS home.
+     *
+     * ⚠ It refuses when there is no home yet, and that refusal is the point: an unlock with nothing
+     * to attach it to is the "any home I open next is free" bug. Every path into the report saves
+     * first, so by the time this can be reached there is always an id.
+     */
     fun unlock() {
-        unlocked = true
         val id = planId ?: return
+        unlockedPlanId = id
         viewModelScope.launch { repo.setUnlocked(id, true, now()) }
     }
 
     /** Reopen a saved home by id (from the saved-plans list). */
     fun loadById(id: String) {
         viewModelScope.launch { repo.getPlan(id)?.let(::load) }
+    }
+
+    /**
+     * ⭐⭐ THIS IS A DIFFERENT HOME NOW — called when "Add a home" is opened while a FINISHED one is
+     * still in the shared draft (17 Aug 2026).
+     *
+     * ⚠ WHAT IT PREVENTS, and it is worse than the unlock leak that led me to it. This ViewModel
+     * belongs to the whole drawing graph, so it survives Back. Finish a home, press Back as far as
+     * "Add a home", and upload a second plan: the second plan's rooms were written into the FIRST
+     * home's saved row, because [planId] still pointed at it. One home silently replaced by another,
+     * with the same name and the same score line on the saved list. The unlock rode along with it.
+     *
+     * ⚠ It refuses when nothing has been saved yet ([planId] null), which is the whole safety of it:
+     * backing up to "Add a home" in the middle of drawing must not throw away work in progress. Only
+     * a home that has already become a saved row can be "the previous one".
+     *
+     * ⚠ It leaves the first question and the property type alone. Those are answered on the screen
+     * BEFORE this one, so clearing them here would blank an answer the reader has just given.
+     */
+    fun beginNewHome() {
+        if (planId == null) return
+        planId = null
+        handle.remove<String>(KEY_PLAN_ID)
+        name = null
+        unlockedPlanId = null
+        rooms = emptyList()
+        door = null
+        cutOutCells = emptySet()
+        keptCells = emptySet()
+        siteAnswers = SiteAnswers()
+        north = 0
+        roomsUnplaced = false
+        fromScan = false
+        restoredFromDraft = false
+        // Not this session's row any more — the next real edit mints a new one.
+        draftId = null
+        handle.remove<String>(KEY_DRAFT_ID)
+        _analysis.value = null
     }
 
     // --- the in-progress draft ---
@@ -467,6 +541,7 @@ class NewPlanViewModel(
         siteAnswers = siteAnswers.answers.mapKeys { it.key.name },
         siteDeclined = siteAnswers.declined.map { it.name },
         roomsUnplaced = roomsUnplaced,
+        fromScan = fromScan,
     )
 
     /**
@@ -499,6 +574,7 @@ class NewPlanViewModel(
         // nothing has cleared this — but any future edit here that does would silently wipe it, and
         // an unplaced scan would come back pretending to be a finished plan.
         roomsUnplaced = d.roomsUnplaced
+        fromScan = d.fromScan
     }
 
     /**
@@ -547,6 +623,10 @@ class NewPlanViewModel(
         intent = null
         restoredFromDraft = false
         roomsUnplaced = false
+        fromScan = false
+        // ⭐ AND THE UNLOCK GOES. "Start this home again" makes a DIFFERENT home, and a paid report
+        // belongs to the home it was bought for — see [unlockedPlanId].
+        unlockedPlanId = null
         _analysis.value = null
         // Drop the row this session owned and forget it, so the next thing drawn starts a new
         // unfinished home rather than resurrecting the one just thrown away.
@@ -565,7 +645,8 @@ class NewPlanViewModel(
         intent = saved.intent
         propertyType = saved.propertyType
         north = saved.plan.northOffsetDegrees
-        unlocked = saved.unlocked
+        // ⭐ The entitlement is this home's, read off this home's row — see [unlockedPlanId].
+        unlockedPlanId = if (saved.unlocked) saved.id else null
         // Rebuild the grid draft from the stored Plan so the zone map (and any further edit) has
         // its rooms/door back — the inverse of buildPlan(), exact for the integer grid geometry.
         rooms = gridRoomsFromPlan(saved.plan)

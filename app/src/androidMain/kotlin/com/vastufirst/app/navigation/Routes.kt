@@ -117,9 +117,28 @@ object Routes {
      */
     const val ARG_FROM_SCAN = "fromScan"
     const val MARK_NORTH_ROUTE =
-        "$MARK_NORTH?$ARG_FROM_REPORT={$ARG_FROM_REPORT}&$ARG_FROM_SCAN={$ARG_FROM_SCAN}"
+        "$MARK_NORTH?$ARG_FROM_REPORT={$ARG_FROM_REPORT}&$ARG_FROM_SCAN={$ARG_FROM_SCAN}" +
+            "&$ARG_DRAFT_ID={$ARG_DRAFT_ID}"
     fun markNorthFromReport() = "$MARK_NORTH?$ARG_FROM_REPORT=true"
     fun markNorthFromScan() = "$MARK_NORTH?$ARG_FROM_SCAN=true"
+
+    /**
+     * ⭐⭐ CARRYING ON WITH AN UNFINISHED **SCANNED** HOME (owner, 17 Aug 2026: *"'Carry On' option
+     * from Home Screen is taking user to manual grid… ensure this does not come except in scan
+     * flow"*).
+     *
+     * A scan that is left part-way through — the reader backs out at the North dial, or the phone
+     * takes the app away — still leaves its rooms in the unfinished list, which is right: that is
+     * real work. But "Carry on" sent EVERY unfinished home into the grid editor, and the grid editor
+     * is precisely the screen the owner removed from the scan flow on 6 August. Somebody who had
+     * photographed a plan was handed a builder's canvas full of squares they never drew.
+     *
+     * So a scanned home resumes at North instead, and goes on to its report from there. The
+     * photograph itself is gone (it is never written to disk, by design), so the review screen has
+     * nothing to show and is skipped — the rooms, their kinds and the front door all survive, which
+     * is everything the score is made of.
+     */
+    fun markNorthForDraft(draftId: String) = "$MARK_NORTH?$ARG_DRAFT_ID=$draftId"
 
     /**
      * ⭐ The on-photo door screen opened from a FINISHED REPORT ("change where the front door is")
@@ -142,6 +161,16 @@ object Routes {
      * look at instead, and offers this.
      */
     const val MORE_DETAILS = "more_details"
+
+    /**
+     * ⭐ It is now offered in TWO places (owner, 17 Aug 2026), so it has to know where it will send
+     * the reader back to. Offered at the END of "Check what we read" it returns to that checklist;
+     * offered on the report it returns to the report. The flag decides the words on its one button,
+     * which must always name the screen it actually opens.
+     */
+    const val MORE_DETAILS_ROUTE = "$MORE_DETAILS?$ARG_FROM_REPORT={$ARG_FROM_REPORT}"
+    fun moreDetailsFromReport() = "$MORE_DETAILS?$ARG_FROM_REPORT=true"
+
     const val UNLOCK = "unlock"
 
     /**

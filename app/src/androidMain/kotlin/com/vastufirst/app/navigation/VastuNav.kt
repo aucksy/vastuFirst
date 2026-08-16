@@ -31,6 +31,7 @@ import com.vastufirst.app.ui.legal.PrivacyScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.app.ui.newplan.SamplePlans
+import com.vastufirst.app.ui.report.READING_MILLIS
 import com.vastufirst.app.ui.report.ReportScreen
 import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ScanConsentScreen
@@ -97,10 +98,22 @@ fun VastuNavHost() {
             HomeScreen(
                 onAddHome = { nav.go(Routes.NEWPLAN_GRAPH) },
                 onOpenPlan = { id -> nav.go(Routes.reportForPlan(id)) },
-                // ⭐ Straight to the editor with the unfinished home in it — the ONLY route that
-                // brings one back. It lands inside the newplan graph without going through Welcome,
-                // because the user has already answered those questions once; Back returns here.
-                onOpenDraft = { id -> nav.go(Routes.guidedGridForDraft(id)) },
+                // ⭐ Straight back into the unfinished home — the ONLY route that brings one back.
+                // It lands inside the newplan graph without going through Welcome, because the user
+                // has already answered those questions once; Back returns here.
+                //
+                // ⭐⭐ AND IT LANDS ON THE RIGHT SCREEN (owner, 17 Aug 2026: *"'Carry On' option from
+                // Home Screen is taking user to manual grid"*). A home read off a PHOTOGRAPH picks
+                // up at the North dial and goes on to its report; the grid editor is not part of
+                // that flow and never was. A home drawn by hand — and a scan whose rooms could not
+                // be placed, which genuinely has to be arranged by hand — still opens the editor,
+                // because for those it is the right screen.
+                onOpenDraft = { id, fromScan ->
+                    nav.go(
+                        if (fromScan) Routes.markNorthForDraft(id)
+                        else Routes.guidedGridForDraft(id),
+                    )
+                },
                 onSettings = { nav.go(Routes.SETTINGS) },
             )
         }
@@ -142,7 +155,15 @@ fun VastuNavHost() {
                 // on "did THIS home arrive by scan". Emptying the slot when a new home begins is
                 // half of making those two the same question; the report route does the other half.
                 val newHomeHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                LaunchedEffect(Unit) { newHomeHandover.data = null }
+                LaunchedEffect(Unit) {
+                    newHomeHandover.data = null
+                    // ⭐⭐ AND THE PREVIOUS HOME LETS GO OF THE DRAFT (17 Aug 2026). This graph's
+                    // ViewModel outlives Back, so a reader who finished one home and pressed Back to
+                    // here was about to write their SECOND plan into the FIRST home's saved row —
+                    // and to inherit its paid unlock. A no-op unless a finished home is really
+                    // sitting in the draft; see NewPlanViewModel.beginNewHome.
+                    vm.beginNewHome()
+                }
                 AddHomeScreen(
                     onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
                     // ⭐ The consent screen is not optional and not skippable: the scanner is only
@@ -202,6 +223,10 @@ fun VastuNavHost() {
                         // then asks whether the leftovers of that strip are part of the home — which
                         // is the screen the owner was handed for his own flat.
                         planVm.markRoomsUnplaced(outcome !is com.vastufirst.shared.scan.ScanOutcome.Placed)
+                        // ⭐ And remember that these rooms came off a PHOTOGRAPH, so the unfinished
+                        // row this leaves behind reopens at North rather than in the grid editor —
+                        // the screen the scan flow does not use. See Routes.markNorthForDraft.
+                        planVm.markFromScan(outcome is com.vastufirst.shared.scan.ScanOutcome.Placed)
                         // ⭐⭐ THE FRONT DOOR, READ OFF THE PLAN (owner, 6 Aug 2026: "cant we do it
                         // ourselves when Entry is clearly marked? we ask only if its not"). Only for
                         // a PLACED scan: an assisted one parks its rooms in a provisional strip, so
@@ -315,6 +340,10 @@ fun VastuNavHost() {
                     // writes to, so the two ways of setting it cannot disagree.
                     onDoorChange = planVm::updateDoor,
                     onBack = { nav.popBackStack() },
+                    // ⭐ The optional extras, offered at the END of this screen since 17 Aug 2026.
+                    // "Done" there returns HERE, so the flag stays false and its button says so.
+                    siteAnswers = planVm.siteAnswers,
+                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
                 )
             }
 
@@ -406,9 +435,25 @@ fun VastuNavHost() {
                 arguments = listOf(
                     navArgument(Routes.ARG_FROM_REPORT) { type = NavType.BoolType; defaultValue = false },
                     navArgument(Routes.ARG_FROM_SCAN) { type = NavType.BoolType; defaultValue = false },
+                    navArgument(Routes.ARG_DRAFT_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
                 ),
             ) { entry ->
                 val vm = sharedVm(nav, entry)
+                // ⭐ Present ONLY when the reader tapped "Carry on" on an unfinished home that came
+                // off a photograph — see Routes.markNorthForDraft. Every other way here arrives with
+                // no id and the draft already on screen.
+                val northDraftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
+                val northDraftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                LaunchedEffect(northDraftId) {
+                    if (northDraftId != null) {
+                        // ⚠ The same rule the editor's draft route learned in v0.12.0: a photograph
+                        // belongs to the home it was taken for, and every door into a DIFFERENT home
+                        // has to close it. This home's own picture was never stored, so whatever is
+                        // in the slot belongs to somebody else's plan.
+                        northDraftHandover.data = null
+                        vm.resumeDraft(northDraftId)
+                    }
+                }
                 // ⭐ North on the user's OWN plan, when they got here by scanning one. Decoded once
                 // and remembered: the dial's model is a data class and an ImageBitmap compares by
                 // identity, so a fresh decode per recomposition would invalidate the measure cache
@@ -466,10 +511,18 @@ fun VastuNavHost() {
             }
             // The optional extras. Both ways out land back on the report, which re-reads the live
             // analysis — so an answer given here shows up in the number immediately.
-            composable(Routes.MORE_DETAILS) { entry ->
+            composable(
+                route = Routes.MORE_DETAILS_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_FROM_REPORT) { type = NavType.BoolType; defaultValue = false },
+                ),
+            ) { entry ->
                 val vm = sharedVm(nav, entry)
                 MoreDetailsScreen(
                     vm = vm,
+                    // ⭐ It is offered in two places now, so its one button names the screen it will
+                    // really return to: the report, or the checklist the reader came from.
+                    returnsToReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false,
                     onDone = { nav.popBackStack() },
                     onBack = { nav.popBackStack() },
                 )
@@ -546,12 +599,21 @@ fun VastuNavHost() {
                             else Routes.guidedGridForDoor(),
                         )
                     },
-                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
+                    onAddDetails = { nav.go(Routes.moreDetailsFromReport()) },
                     // Recovery when rooms survived a process kill but the intent answer didn't:
                     // back to the first question, on the same shared draft, so nothing redraws.
                     onRestart = { nav.go(Routes.WELCOME) },
                     planImage = planImage,
                     planRooms = planRooms,
+                    // ⭐⭐ NO "READING YOUR HOME" WHEN THE READING IS ALREADY DONE (owner, 17 Aug
+                    // 2026: *"If I am opening a saved home which has already generated its report,
+                    // why is there 'Reading your home' animation"*). He is right, and the honest
+                    // answer is that the beat is there to cover the hand-off at the END of the flow
+                    // — the engine takes about fifty milliseconds, so without it a reader who taps
+                    // "read my home" sees a flash. Reopening a home from the saved list is not that
+                    // moment: the home was read days ago, and replaying the bar every time makes
+                    // the app feel slower than it is. An id means "opened from the list".
+                    introMillis = if (planId != null) 0L else READING_MILLIS,
                 )
             }
         }

@@ -104,6 +104,61 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 17–23 August 2026
+
+### Monday 17 August — fifteen things you asked for, all in
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.18.0/vastufirst-v0.18.0.apk
+**This is the one to install.**
+
+**Your floor plan is roughly twice the size on the "which way is North" screen.** It used to be
+fitted into a small square inside the compass ring, so a tall builder's page came out about as wide
+as your thumb. The plan now fills the whole control and the compass is drawn over the top of it, and
+a tall page gets a taller control to sit in. Nothing about direction changed — the compass turns
+around the same centre it always did.
+
+**That screen is also shorter and calmer.** The colour key ("ideal, fine, not ideal, defect") has
+gone: it explained colours on a screen that scores nothing. So has the little box with the up and
+down arrows — the dial and the slider already set North, and three controls for one number was two
+too many. And the sentence that asks you to double-check your North is now three separate lines you
+can agree or disagree with one at a time, instead of one long sentence with commas in it.
+
+**The entrance mark is a fifth smaller, sits on the wall, and says E.** It used to float in the
+margin beside your home as an unlabelled green dot. It now straddles the wall it names, with the
+letter E inside it, and the first time we find your entrance for you the app says so in a message
+you can dismiss — including how to move it if we got the wall wrong.
+
+**Two lists stopped jumping under your finger.** Tapping a room in the list on your report used to
+scroll the page. It no longer does. Tapping a room on the picture still brings its row into view —
+and now lands on the right one, which it did not once you had paid, because a paid room opens onto a
+lot more reading and the page had already moved by the time it scrolled.
+
+**The line above "Unlock the full report" now says what is locked, not what is extra.** It read
+"4 more problems" while you could count more than four warnings on the screen — the four were the
+locked ones and the rest were the free rooms, but nothing on the page said so. It now says "still
+locked", which you can check by looking.
+
+**Opening a locked room gives you the unlock button right there.** Before, it gave you one grey
+sentence and nothing to do about it.
+
+**"Not rated" now explains itself.** Two different things were wearing that label. A laundry or a
+utility room really is not rated — our rules place no such room — and the screen now says that
+plainly instead of leaving you to wonder. Your entrance was never unrated at all: it is judged as
+your front door, at the top of the same report, and the label now says so.
+
+**Press and hold a saved home to delete it.** If you have paid to unlock that home, the app warns
+you first that the paid report goes with it.
+
+**One payment unlocks one home.** It was possible, by going backwards through the app and starting a
+second home, to have that second home come out already unlocked — and worse, to have it overwrite
+the first one. Both are fixed. The price itself is still a placeholder.
+
+**Three smaller ones.** Reopening a home you have already scored no longer replays the "reading your
+home" animation — it was read days ago. "Carry on" on a half-finished home you had photographed no
+longer drops you into the hand-drawing grid, which is a screen that flow does not use. And the
+optional extra questions — your water tank, a big tree, the road outside — are now offered at the
+end of "check what we read" as well as on the report, in plainer words.
+
 ## Week of 10–16 August 2026
 
 ### Sunday 16 August — your front door is on the plan, and tall plans can be made bigger

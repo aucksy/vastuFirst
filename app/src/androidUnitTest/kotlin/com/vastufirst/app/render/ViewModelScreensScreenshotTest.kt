@@ -2,6 +2,7 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import com.vastufirst.app.ui.home.DeleteHomeDialogContent
 import com.vastufirst.app.ui.home.DiscardDraftDialogContent
 import com.vastufirst.app.ui.home.HomeContent
 import com.vastufirst.app.ui.home.RemoveUnreadableDialogContent
@@ -157,7 +158,7 @@ class ViewModelScreensScreenshotTest {
             HomeContent(
                 plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
                 onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
-                drafts = RenderFixtures.savedDrafts, onOpenDraft = {}, onDiscardDraft = {},
+                drafts = RenderFixtures.savedDrafts, onOpenDraft = { _, _ -> }, onDiscardDraft = {},
             )
         }
         captureAcrossMatrix("home-unfinished", content)
@@ -175,11 +176,38 @@ class ViewModelScreensScreenshotTest {
             HomeContent(
                 plans = emptyList(), onAddHome = {}, onOpenPlan = {}, onSettings = {},
                 onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
-                drafts = RenderFixtures.savedDrafts.take(1), onOpenDraft = {}, onDiscardDraft = {},
+                drafts = RenderFixtures.savedDrafts.take(1), onOpenDraft = { _, _ -> }, onDiscardDraft = {},
             )
         }
         captureAcrossMatrix("home-unfinished-only", content)
         writeManifestAcrossMatrix("home-unfinished-only", content)
+    }
+
+    /**
+     * ⭐⭐ "Delete this home?" — the question a press-and-hold on a FINISHED home opens (17 Aug 2026).
+     *
+     * Two pictures, because it is two different warnings and the expensive one must be legible: a
+     * home that has been paid for says the payment is lost, and an ordinary one does not. No
+     * screenshot can reach either by tapping, and both have to keep their two buttons side by side
+     * and reachable at 200 % font on a 320 dp phone — which is exactly where the paid wording, being
+     * the longer of the two, is most likely to push them off.
+     */
+    @Test
+    fun home_delete() {
+        val content: @Composable () -> Unit = {
+            DeleteHomeDialogContent(name = "Dwarka flat", paid = false, onCancel = {}, onDelete = {})
+        }
+        captureAcrossMatrix("home-delete", content)
+        writeManifestAcrossMatrix("home-delete", content)
+    }
+
+    @Test
+    fun home_delete_paid() {
+        val content: @Composable () -> Unit = {
+            DeleteHomeDialogContent(name = "Dwarka flat", paid = true, onCancel = {}, onDelete = {})
+        }
+        captureAcrossMatrix("home-delete-paid", content)
+        writeManifestAcrossMatrix("home-delete-paid", content)
     }
 
     /**

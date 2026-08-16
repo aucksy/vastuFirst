@@ -61,6 +61,23 @@ data class DraftSnapshot(
      * A field appended LAST, with a default, so a draft written by an older build still loads.
      */
     val roomsUnplaced: Boolean = false,
+    /**
+     * ⭐⭐ True when these rooms were READ OFF A PHOTOGRAPH that the reader placed successfully —
+     * i.e. this half-finished home came through the scan, not the grid (owner, 17 Aug 2026:
+     * *"'Carry On' option from Home Screen is taking user to manual grid"*).
+     *
+     * ⚠ It exists to decide which SCREEN "Carry on" reopens, and nothing else. It never reaches the
+     * engine, and it is not the same question as [roomsUnplaced]: a scan whose rooms could NOT be
+     * placed is genuinely finished by hand on the grid, and that is the one path where the grid is
+     * the right answer. Both flags stored, both meaning what they say.
+     *
+     * ⚠ The photograph itself is deliberately NOT stored — it never has been, and a home's plan
+     * image can be several megabytes. So a resumed scan cannot show "Check what we read"; it picks
+     * up at the North dial with every room, kind and door intact, which is all the score is made of.
+     *
+     * A field appended LAST, with a default, so a draft written by an older build still loads.
+     */
+    val fromScan: Boolean = false,
 ) {
     /** Nothing drawn yet ⇒ nothing worth restoring, and nothing worth telling the user about. */
     val isEmpty: Boolean get() = rooms.isEmpty()

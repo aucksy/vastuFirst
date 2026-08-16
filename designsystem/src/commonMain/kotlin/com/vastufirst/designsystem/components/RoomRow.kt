@@ -59,7 +59,25 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * word the meter above uses. No finding is removed or softened — a defect is still red and still
  * says so; it is the room that is NOT a defect that stops being dressed as one.
  */
-enum class VastuRoomStatus { ALIGNED, NOT_IDEAL, NEEDS_FIXING, NOT_RATED }
+/**
+ * ⭐ A FIFTH WORD, ADDED 17 AUG 2026, AND IT FIXES A FLAT CONTRADICTION (owner: *"Laundry and Entry
+ * pills say 'Not Rated' — What is that about? Why not rated?"*).
+ *
+ * The two rooms are not the same case, and calling them the same thing was the defect:
+ *
+ * · **The laundry really is not rated.** Our rule data places no utility or wash area, so the engine
+ *   returns NOT_SCORED and the row says so. That is honest and it stays. What it needed was the
+ *   REASON said out loud on the screen instead of hidden behind a tap.
+ * · **The entrance IS rated — on the same page, higher up.** The engine scores it as the FRONT DOOR,
+ *   against the tradition's 32 named positions, which is finer than the eight directions a room
+ *   gets, and the report calls the door "the highest-weighted single element in the whole reading".
+ *   The ROOM is excluded only so it is not counted twice. Stamping "Not rated" on it made one
+ *   document say two opposite things about the one thing that moves the score most.
+ *
+ * ⚠ It sorts with NOT_RATED, and it must: it is neither a problem nor an approval on its own row.
+ * The verdict it carries lives in the front-door section, which leads the report.
+ */
+enum class VastuRoomStatus { ALIGNED, NOT_IDEAL, NEEDS_FIXING, NOT_RATED, RATED_AS_DOOR }
 
 @Composable
 fun VastuRoomStatus.color(): Color = when (this) {
@@ -67,6 +85,9 @@ fun VastuRoomStatus.color(): Color = when (this) {
     VastuRoomStatus.NOT_IDEAL -> VastuTheme.colors.verdictSuboptimal
     VastuRoomStatus.NEEDS_FIXING -> VastuTheme.colors.verdictDefect
     VastuRoomStatus.NOT_RATED -> VastuTheme.colors.verdictNotAssessed
+    // Informative, never a verdict — this pill points at where the verdict is, and the door's own
+    // card carries the colour that judges it.
+    VastuRoomStatus.RATED_AS_DOOR -> VastuTheme.colors.info
 }
 
 private fun VastuRoomStatus.label(): String = when (this) {
@@ -74,6 +95,10 @@ private fun VastuRoomStatus.label(): String = when (this) {
     VastuRoomStatus.NOT_IDEAL -> "Not ideal"
     VastuRoomStatus.NEEDS_FIXING -> "Needs fixing"
     VastuRoomStatus.NOT_RATED -> "Not rated"
+    // ⚠ Every word short. This pill sits in a FlowRow beside a direction pill at 320 dp and 200 %
+    // font, and a long word in a narrow control is drawn wider than its box with nothing to catch
+    // it (UI-POLISH §6.7b).
+    VastuRoomStatus.RATED_AS_DOOR -> "Read as your front door"
 }
 
 /**
@@ -92,6 +117,10 @@ private fun VastuRoomStatus.glyph(): String = when (this) {
     VastuRoomStatus.NOT_IDEAL -> "△"
     VastuRoomStatus.NEEDS_FIXING -> "△"
     VastuRoomStatus.NOT_RATED -> "–"
+    // ⚠ The same dash, and deliberately not a tick or a cross. This row has no verdict of its own;
+    // borrowing one of the verdict marks would put an approval or an alarm on it. And the dash is
+    // one of the handful of glyphs this project has PHOTOGRAPHED rendering in the bundled font.
+    VastuRoomStatus.RATED_AS_DOOR -> "–"
 }
 
 /** The status word as a pill — colour PLUS word PLUS glyph, so colour is never the only carrier. */

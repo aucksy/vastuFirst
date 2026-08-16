@@ -25,9 +25,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,13 +50,15 @@ import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
+import com.vastufirst.app.ui.details.addDetailsLabel
 import com.vastufirst.app.ui.details.coverageLine
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.common.readingOrder
 import com.vastufirst.app.ui.common.roomDisplayNames
 import com.vastufirst.app.ui.common.roomNamesById
-import com.vastufirst.app.ui.common.roomStatus
+import com.vastufirst.app.ui.common.NOT_RATED_MEANS
+import com.vastufirst.app.ui.common.rowStatus
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.toVastu
@@ -74,6 +76,7 @@ import com.vastufirst.designsystem.components.TagPill
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuRoomRow
+import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.components.ZoneMap
 import com.vastufirst.designsystem.components.VerdictPill
 import com.vastufirst.designsystem.components.VastuVerdict
@@ -94,7 +97,6 @@ import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.ZoneInfo
 import com.vastufirst.app.ui.common.screenRoot
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * Full report (§6.5/§6.6) — branches on intent (§2).
@@ -140,6 +142,17 @@ fun ReportScreen(
     /** The scanned photograph and its room rectangles, when this home arrived by scan. */
     planImage: ImageBitmap? = null,
     planRooms: List<PlanRoom> = emptyList(),
+    /**
+     * ⭐ How long the "reading your home" bar runs before the report appears — see the same
+     * parameter on [ReportContent].
+     *
+     * ⚠ ZERO when the reader OPENED a home from their saved list (owner, 17 Aug 2026). The beat
+     * exists to cover the hand-off at the end of the drawing flow, where the engine finishes in
+     * about fifty milliseconds and a reader who tapped "read my home" would otherwise see a flash.
+     * A home that was read last week is not being read again, and saying it is makes the app look
+     * slower than it is.
+     */
+    introMillis: Long = READING_MILLIS,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
@@ -161,7 +174,7 @@ fun ReportScreen(
         onRestart = onRestart,
         planImage = planImage,
         planRooms = planRooms,
-        introMillis = READING_MILLIS,
+        introMillis = introMillis,
     )
 }
 
@@ -366,21 +379,58 @@ fun ReportContent(
      * independent of how deeply the row is nested inside the page.
      */
     val rowY = remember { mutableStateMapOf<String, Int>() }
-    val scope = rememberCoroutineScope()
     val rowMarginPx = with(LocalDensity.current) { VastuTheme.spacing.s6.roundToPx() }
 
     /**
-     * ⭐⭐ THE ONE HANDLER BOTH ENDS CALL — the whole of what the owner asked for: *"Build a common
-     * UI/UX for this room highlight in the list which works the same way if user taps the room in
-     * list or room on floor plan"*. Tapping a room on the picture and tapping its row do the
-     * identical thing, because they are the same function. Two handlers is how that quietly breaks.
+     * ⭐⭐ BOTH ENDS OPEN THE SAME ROOM THE SAME WAY — the owner's rule: *"Build a common UI/UX for
+     * this room highlight in the list which works the same way if user taps the room in list or room
+     * on floor plan"*. It holds: [tapRoom] is the whole of "open this room", and both ends call it.
+     *
+     * ⚠ ONLY THE SCROLL DIFFERS, AND IT MUST — the identical amendment the check-what-we-read screen
+     * carries, arriving here for the identical reason (owner, 17 Aug 2026: *"Same issue with list
+     * auto-scrolling on 'Your Report' screen also"*). Scrolling is not part of opening a room; it is
+     * how the PICTURE reaches a row that is off the screen. A row the reader has just put their
+     * finger on is already under it, and moving it is the jump he reported. Do not merge these back.
      */
     fun tapRoom(id: String) {
         val closing = openRoomId == id
         openRoomId = if (closing) null else id
-        if (!closing) {
-            rowY[id]?.let { y -> scope.launch { scroll.animateScrollTo((scroll.value + y - rowMarginPx).coerceAtLeast(0)) } }
+    }
+
+    /**
+     * ⭐⭐ TAPPING A ROOM **ON THE PICTURE** — open it, then bring its row into view.
+     *
+     * ⚠ THE TARGET IS READ AFTER THE PAGE HAS MOVED, NOT BEFORE (owner, 17 Aug 2026: *"after
+     * unlocking the full report, tapping a room on the floor plan is not scrolling down to correct
+     * position"*). Opening a room does two things to this page at once: the newly opened row grows
+     * by its whole reasoning, and the row that WAS open shrinks back to a heading. Every row below
+     * the shrinking one therefore moves, and the position recorded for the room we are scrolling to
+     * was measured before any of that happened. The page settles somewhere else.
+     *
+     * ⚠ AND IT ONLY LOOKED WRONG ONCE PAID, which is why it survived. Locked, a room opens onto a
+     * single grey sentence, so the error is a few dp. Unlocked it opens onto provenance, the zone's
+     * meaning, the whole explanation, the layout change and every remedy — hundreds of dp of it —
+     * and the reader lands a screen and a half away from the room they tapped.
+     *
+     * So the id is parked here and the scroll is done by the effect below, one frame later, from
+     * the position the row actually ended up at.
+     */
+    var revealRoomId by remember { mutableStateOf<String?>(null) }
+    fun tapRoomOnPlan(id: String) {
+        val opening = openRoomId != id
+        tapRoom(id)
+        revealRoomId = if (opening) id else null
+    }
+    LaunchedEffect(revealRoomId) {
+        val id = revealRoomId ?: return@LaunchedEffect
+        // ⚠ Wait for a frame to be drawn. onGloballyPositioned reports after LAYOUT, and a
+        // LaunchedEffect body runs after COMPOSITION — so reading the map immediately would read
+        // exactly the stale numbers this exists to avoid. One frame is all it takes.
+        withFrameNanos { }
+        rowY[id]?.let { y ->
+            scroll.animateScrollTo((scroll.value + y - rowMarginPx).coerceAtLeast(0))
         }
+        revealRoomId = null
     }
 
     // ⚠ The pay bar's own MEASURED height, not a guess at it. It is two lines of text plus a 52 dp
@@ -467,7 +517,8 @@ fun ReportContent(
                         image = planImage,
                         rooms = planRooms,
                         selectedId = openRoomId,
-                        onTapRoom = { id -> tapRoom(id) },
+                        // The picture is the end that scrolls — see [tapRoomOnPlan].
+                        onTapRoom = { id -> tapRoomOnPlan(id) },
                         maxPlanHeight = VastuTheme.sizes.planPane,
                     )
                 } else {
@@ -539,8 +590,10 @@ fun ReportContent(
                 remediesOnly = remediesOnly,
                 expandAll = expandAll,
                 openRoomId = openRoomId,
+                // Select only. The row is already under the finger — see [tapRoom].
                 onTapRoom = ::tapRoom,
                 onRowPlaced = { id, y -> rowY[id] = y },
+                onUnlock = onUnlock,
             )
 
             // ⚠ A defect with no room behind it — a cut corner, an extension, a water tank, the
@@ -577,14 +630,18 @@ fun ReportContent(
             VText(coverageLine(siteAnswers), style = VastuTheme.type.body, color = colors.textSecondary)
             if (siteAnswers.answeredCount < SiteItem.entries.size) {
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
+                // ⭐ SECOND HOME, NOT ONLY HOME (owner, 17 Aug 2026: *"This 'Answer a few more and
+                // check more' does not belong on Report screen… we should nudge them to do this as
+                // optional below the 'These are my rooms' button — if they choose to skip then we
+                // continue to show it here also"*). The offer is now made at the end of "Check what
+                // we read", where the reader is still describing their home; this stays for
+                // everyone who skipped it there, and for every home drawn by hand, which never
+                // passes that screen at all.
+                //
+                // ⚠ The label is [addDetailsLabel] and nothing else. It used to be a literal here
+                // that three rules quoted word for word; both ends now read the one function.
                 VastuButton(
-                    // ⛔ DO NOT SHORTEN THIS LABEL. Three rules in the ruleset
-                    // (`notCheckedHow` on X-09, X-11 and X-12) QUOTE it word for word — "Tap
-                    // “Answer a few more and check more” on your report" — and those sentences are
-                    // printed a few lines above this button, on this same page, under "We couldn't
-                    // check these". Renaming the button turns that instruction into a search for
-                    // something that is not on screen. Caught by review, 11 Aug 2026, mid copy cut.
-                    "Answer a few more and check more",
+                    addDetailsLabel(siteAnswers),
                     onClick = onAddDetails,
                     style = VastuButtonStyle.SECONDARY,
                     large = false,
@@ -939,6 +996,8 @@ private fun RoomsSection(
     openRoomId: String?,
     onTapRoom: (String) -> Unit,
     onRowPlaced: (String, Int) -> Unit,
+    /** Opens checkout, from inside a locked row — see the button in the row body below. */
+    onUnlock: () -> Unit,
 ) {
     val colors = VastuTheme.colors
     if (rooms.isEmpty()) return
@@ -952,7 +1011,7 @@ private fun RoomsSection(
     val fallback = roomDisplayNames(rooms.map { it.type })
     val ordered = rooms
         .mapIndexed { i, r -> r to (names[r.roomId]?.takeIf { n -> n.isNotBlank() } ?: fallback[i]) }
-        .sortedBy { (r, _) -> r.verdict.roomStatus().readingOrder() }
+        .sortedBy { (r, _) -> r.rowStatus().readingOrder() }
 
     SectionLabel("Your rooms (${rooms.size})")
     Spacer(Modifier.height(VastuTheme.spacing.s2))
@@ -960,6 +1019,13 @@ private fun RoomsSection(
         "Worst first. Tap one for where and why.",
         style = VastuTheme.type.bodySm, color = colors.textSecondary,
     )
+    // ⭐ Said here, once, whenever a room actually carries that word — see [NOT_RATED_MEANS]. It
+    // used to be readable only by opening one of those rooms, so the pill looked like the app had
+    // given up rather than like an honest boundary of the rule data.
+    if (ordered.any { (r, _) -> r.rowStatus() == VastuRoomStatus.NOT_RATED }) {
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(NOT_RATED_MEANS, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+    }
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
         ordered.forEachIndexed { i, (r, name) ->
@@ -975,17 +1041,42 @@ private fun RoomsSection(
                 // ⚠ Capitalised HERE, not in [short], which also feeds running prose where "the
                 // centre" must stay lowercase ("Toilet — centre"). A pill is a label, not a sentence.
                 direction = r.zone.short().replaceFirstChar { it.uppercase() },
-                status = r.verdict.roomStatus(),
+                // ⚠ [rowStatus], not the bare verdict — the entrance is scored as the front door and
+                // must not be stamped "Not rated" on the page that judges it.
+                status = r.rowStatus(),
                 selected = open,
                 expanded = open,
                 modifier = Modifier.onGloballyPositioned { onRowPlaced(r.roomId, it.positionInRoot().y.toInt()) },
                 onTap = { onTapRoom(r.roomId) },
                 body = {
                     if (!free) {
-                        VText(
-                            LOCKED_REASONING,
-                            style = VastuTheme.type.bodySm, color = colors.textTertiary,
-                        )
+                        // ⭐⭐ THE WAY OUT IS INSIDE THE ROW (owner, 17 Aug 2026: *"For all other
+                        // rooms paywalled, expanding them should show them same Unlock full report
+                        // button but smaller and well aligned inside the pill"*).
+                        //
+                        // ⚠ Before this, opening a locked room produced one grey sentence and a dead
+                        // end: the only control that could act on it was the bar at the foot of the
+                        // screen, which is out of sight on a long list and is not obviously about
+                        // the room the reader is looking at. The sentence stays — it says what is
+                        // behind the price, which Product PRD §6.4 requires — and the button under
+                        // it opens the same checkout the bar does.
+                        //
+                        // ⚠ `large = false` and full width of the row's body: the small size is the
+                        // one the design system already owns, and filling the body is what keeps it
+                        // aligned inside the card at 320 dp and at a 200 % font, where a button
+                        // sized to its own words drifts off the column the text sits in.
+                        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+                            VText(
+                                LOCKED_REASONING,
+                                style = VastuTheme.type.bodySm, color = colors.textTertiary,
+                            )
+                            VastuButton(
+                                "Unlock the full report",
+                                onClick = onUnlock,
+                                large = false,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     } else if (roomDefects.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
                             roomDefects.forEach { DefectBody(it, zones, remediesOnly) }
@@ -1240,10 +1331,23 @@ internal fun payBarPromise(problems: Int, rooms: Int): String {
     // problems happen to have a remedy — which is a different, smaller promise than "three more
     // problems, and the remedies for them". This is the last sentence before ₹699 is spent.
     val pWithRemedies = if (problems == 1) "problem with its remedies" else "problems with their remedies"
+    // ⭐⭐ "STILL LOCKED", NOT "MORE" (owner, 17 Aug 2026: *"there is line above Unlock the full
+    // report which says 4 more problems.. but I see more than 4"*).
+    //
+    // ⚠ The number was never wrong — it counts the problems whose reasoning is behind the price, and
+    // the ones he could see belong to the entrance, kitchen and toilets, which are free. But "4 more"
+    // invites exactly the arithmetic he did: count the warnings on screen, compare, and find the
+    // sentence untrue. "More" is a word only we can resolve, because only we know which of the rows
+    // on screen were already free.
+    //
+    // Naming the state instead of the difference is answerable from the page: every locked row says
+    // "Reasoning and remedies — in the full report" in those words, so the reader can count the
+    // locked ones if they want to. This is the last sentence read before ₹699 is spent, and it has
+    // to survive being checked.
     return when {
-        problems > 0 && rooms > 0 -> "$problems more $pWithRemedies, and $rooms more $r read in full"
-        problems > 0 -> "$problems more $p, with the whole reason and the remedies"
-        rooms > 0 -> "$rooms more $r, each read in full"
+        problems > 0 && rooms > 0 -> "Still locked: $problems $pWithRemedies, and $rooms $r read in full"
+        problems > 0 -> "Still locked: $problems $p, with the whole reason and the remedies"
+        rooms > 0 -> "Still locked: $rooms $r, each read in full"
         else -> "The whole reading, and every verdict's reason"
     }
 }

@@ -95,6 +95,13 @@ class HomeViewModel(
      */
     fun removeUnreadable(id: String) { viewModelScope.launch { repo.delete(id) } }
 
+    /**
+     * ⭐ Delete ONE finished home (17 Aug 2026). Reached only by pressing and holding its row and
+     * then answering the question — and when that home has been paid for, the question says so,
+     * because one payment unlocks one home and deleting it ends that report.
+     */
+    fun deletePlan(id: String) { viewModelScope.launch { repo.delete(id) } }
+
     /** Rename a saved home (blank is ignored by the repository). The list updates via its flow. */
     fun rename(id: String, name: String) { viewModelScope.launch { repo.rename(id, name) } }
 }

@@ -48,6 +48,7 @@ import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.components.scoreBandColor
 import com.vastufirst.designsystem.components.scoreOutOfTen
 import com.vastufirst.designsystem.foundation.clickableTap
+import com.vastufirst.designsystem.foundation.clickableTapAndHold
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.relativeUpdated
 import com.vastufirst.app.ui.common.rememberDayClock
@@ -64,7 +65,8 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeScreen(
     onAddHome: () -> Unit,
     onOpenPlan: (String) -> Unit,
-    onOpenDraft: (String) -> Unit,
+    /** The draft's id, and whether it came off a photograph — see [HomeContent.onOpenDraft]. */
+    onOpenDraft: (String, Boolean) -> Unit,
     onSettings: () -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -94,6 +96,7 @@ fun HomeScreen(
         onOpenDraft = onOpenDraft,
         onDiscardDraft = viewModel::deleteDraft,
         onRemoveUnreadable = viewModel::removeUnreadable,
+        onDeletePlan = viewModel::deletePlan,
     )
 }
 
@@ -121,8 +124,15 @@ fun HomeContent(
      * this release, entering the drawing flow for ANY reason silently reloaded the leftover work.
      */
     drafts: List<SavedDraft> = emptyList(),
-    onOpenDraft: (String) -> Unit = {},
+    /**
+     * ⭐ The id AND whether that home came off a photograph — because "Carry on" has to open the
+     * right screen. A scanned home picks up at the North dial; a hand-drawn one (and a scan whose
+     * rooms could not be placed) opens the grid editor, which for those is the correct screen.
+     */
+    onOpenDraft: (String, Boolean) -> Unit = { _, _ -> },
     onDiscardDraft: (String) -> Unit = {},
+    /** Delete one finished home for good. Reached only through the press-and-hold confirmation. */
+    onDeletePlan: (String) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     // The home currently being renamed (null = no dialog). Held here so the dialog overlays the whole
@@ -133,6 +143,9 @@ fun HomeContent(
     var discarding by remember { mutableStateOf<SavedDraft?>(null) }
     // The unreadable home the user has asked to remove — same rule: destructive, so never one tap.
     var removing by remember { mutableStateOf<UnreadableHome?>(null) }
+    // The finished home the user has pressed and held on. Deleting one cannot be undone and can
+    // throw away a paid report, so the hold only ever opens the question — see [PlanRow.onDelete].
+    var deleting by remember { mutableStateOf<SavedPlan?>(null) }
 
     Column(
         modifier = Modifier.screenRoot(colors.paper).padding(VastuTheme.spacing.s6),
@@ -222,14 +235,20 @@ fun HomeContent(
                     items(drafts, key = { "draft:${it.id}" }) { draft ->
                         DraftRow(
                             draft = draft, now = now,
-                            onOpen = { onOpenDraft(draft.id) },
+                            onOpen = { onOpenDraft(draft.id, draft.draft.fromScan) },
                             onDiscard = { discarding = draft },
                         )
                     }
                     if (plans.isNotEmpty()) item(key = "plans-header") { SectionLabel("Finished") }
                 }
                 items(plans, key = { it.id }) { plan ->
-                    PlanRow(plan = plan, now = now, onOpen = onOpenPlan, onRename = { renaming = plan })
+                    PlanRow(
+                        plan = plan,
+                        now = now,
+                        onOpen = onOpenPlan,
+                        onRename = { renaming = plan },
+                        onDelete = { deleting = plan },
+                    )
                 }
             }
         }
@@ -271,6 +290,80 @@ fun HomeContent(
                 name = home.name,
                 onCancel = { removing = null },
                 onRemove = { onRemoveUnreadable(home.id); removing = null },
+            )
+        }
+    }
+
+    deleting?.let { plan ->
+        Dialog(onDismissRequest = { deleting = null }) {
+            DeleteHomeDialogContent(
+                name = plan.name,
+                paid = plan.unlocked,
+                onCancel = { deleting = null },
+                onDelete = { onDeletePlan(plan.id); deleting = null },
+            )
+        }
+    }
+}
+
+/**
+ * ⭐⭐ "DELETE THIS HOME?" — the question a press-and-hold opens.
+ *
+ * ⚠ IT SAYS THE PRICE OUT LOUD WHEN THERE IS ONE (owner, 17 Aug 2026: *"if payment is already done
+ * then give them fair warning that they will lose this"*). One payment unlocks ONE home, so deleting
+ * a paid home ends that report — there is nothing left for the entitlement to be attached to. A
+ * reader must not be able to discover that afterwards.
+ *
+ * ⚠ Two different warnings, not one with a clause bolted on. An unpaid home costs a reading that can
+ * be made again in two minutes; a paid one costs money. Saying both in one sentence makes the
+ * ordinary case sound frightening and the expensive case sound routine.
+ *
+ * Its own composable, like every other box on this screen, so the render harness can photograph it
+ * without a live Dialog window.
+ */
+@Composable
+fun DeleteHomeDialogContent(
+    name: String,
+    paid: Boolean,
+    onCancel: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VastuTheme.shapes.lg)
+            .background(colors.paper)
+            .padding(VastuTheme.spacing.s6),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+    ) {
+        VText("Delete $name?", style = VastuTheme.type.h3, color = colors.textPrimary)
+        VText(
+            if (paid) {
+                "You paid to unlock this home's full report. Deleting it deletes that report too, " +
+                    "and paying again would be a new payment. Your other homes aren't affected."
+            } else {
+                "Its rooms, its score and its report go for good, and we can't bring them back. " +
+                    "Your other homes aren't affected."
+            },
+            style = VastuTheme.type.body, color = colors.textSecondary,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            // ⚠ "Keep it" first and PRIMARY, exactly as the other two boxes on this screen do it.
+            // The safe answer is the one under the thumb, and the destructive one is the quieter of
+            // the two — a reader who opened this by accident should be one obvious tap from safety.
+            VastuButton(
+                "Keep it",
+                onClick = onCancel,
+                large = false,
+                modifier = Modifier.weight(1f),
+            )
+            VastuButton(
+                "Delete it",
+                onClick = onDelete,
+                style = VastuButtonStyle.SECONDARY,
+                large = false,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -450,13 +543,37 @@ private fun ScoreChangeCard(notice: ScoreChangeNotice, onAcknowledge: () -> Unit
 }
 
 @Composable
-private fun PlanRow(plan: SavedPlan, now: Long, onOpen: (String) -> Unit, onRename: () -> Unit) {
+private fun PlanRow(
+    plan: SavedPlan,
+    now: Long,
+    onOpen: (String) -> Unit,
+    onRename: () -> Unit,
+    /**
+     * ⭐⭐ PRESS AND HOLD TO DELETE (owner, 17 Aug 2026: *"Let people press and hold on saved plans
+     * to delete them on home screen"*).
+     *
+     * ⚠ A HOLD, not a visible ✕, and that is the owner's choice rather than a shortcut. The two
+     * destructive controls already on this screen — throwing away an unfinished home, removing one
+     * that cannot be opened — are rare states with a card of their own explaining them. A permanent
+     * cross beside every finished home puts deletion one slipped thumb away from the row a reader
+     * taps most, on the screen they land on every time they open the app.
+     *
+     * ⚠ The hold NEVER deletes on its own. It opens the are-you-sure, which names the home and, when
+     * it has been paid for, says what the money buys back — see [DeleteHomeDialogContent].
+     */
+    onDelete: () -> Unit,
+) {
     val colors = VastuTheme.colors
     val intentLabel = plan.intent.name.lowercase().replaceFirstChar { it.uppercase() }
     VastuListRow(
         title = plan.name,
         subtitle = "$intentLabel · ${relativeUpdated(plan.updatedAt, now)}",
-        modifier = Modifier.clickableTap(role = Role.Button, onClick = { onOpen(plan.id) }),
+        modifier = Modifier.clickableTapAndHold(
+            role = Role.Button,
+            onLongClickLabel = "delete this home",
+            onLongClick = onDelete,
+            onClick = { onOpen(plan.id) },
+        ),
         trailing = {
             // The pencil is a child tap target: it consumes its own tap, so tapping it renames while
             // tapping the rest of the row still opens the home.

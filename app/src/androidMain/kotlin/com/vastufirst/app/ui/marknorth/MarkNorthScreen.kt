@@ -4,14 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -19,10 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.buildZoneMapModel
@@ -30,7 +25,6 @@ import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.shared.Analysis
-import com.vastufirst.designsystem.components.DegreeStepper
 import com.vastufirst.designsystem.components.NorthDial
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
@@ -150,10 +144,13 @@ fun MarkNorthContent(
             hintPulse = hintPulse && !touchedNorth,
             contentDescription = "Floor plan compass. North at $north degrees. Drag to set North.",
         )
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        Legend()
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 
+        // ⛔ THE COLOUR KEY IS GONE (owner, 17 Aug 2026: *"Remove 'Ideal, Fine, Not Ideal, Defect'
+        // line"*). It explained four verdict colours on a screen that scores nothing and asks one
+        // question, and under a photographed plan it explained colours that are not even drawn. The
+        // report still names every verdict in words beside its own colour, which is where a reader
+        // meets them for a reason.
         com.vastufirst.designsystem.components.VastuSlider(
             value = north.toFloat(),
             onValueChange = { onNorthChange(it.roundToInt()) },
@@ -183,8 +180,12 @@ fun MarkNorthContent(
                 }
             }
         }
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
-        DegreeStepper(degrees = north, onChange = onNorthChange)
+        // ⛔ THE DEGREE STEPPER IS GONE (owner, 17 Aug 2026: *"Remove the small section that show the
+        // number and degree of North and has Up and Down button. This is already achieved with
+        // rotating dial and scroll bar"*). Three controls set one number; two of them are the dial
+        // and the slider, and both are adjustable by TalkBack in their own right — which is what the
+        // a11y contract actually needed, and it is untouched. The plain "North is at N°" readout
+        // above stays: that is the answer, not a fourth way to change it.
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
 
@@ -192,19 +193,33 @@ fun MarkNorthContent(
         // Where your own kitchen is, is. So the card states what this North MEANS, in the report's own
         // words, and the button that continues is the one that agrees with it — no extra tap, and the
         // user cannot walk past it without having read the claim.
-        val check = NorthCheck.sentence(analysis)
-        if (check.isNotEmpty()) {
+        //
+        // ⭐⭐ REWRITTEN 17 AUG 2026 (owner: *"all of the text in this box needs to get better and
+        // simpler and easier to understand"*). Three things changed and each one is the same idea:
+        // ask a question a person standing in their kitchen can answer.
+        //   · The heading was "Check this before we score" — our word, our process, and it named
+        //     scoring, which is not what the reader is being asked about.
+        //   · The claims were welded into ONE sentence with commas and an "and". Three facts in one
+        //     line are three things to hold at once; as separate lines each is a thing you either
+        //     agree with or do not.
+        //   · "Not right? Turn the dial until it is" told them the control. It now tells them what
+        //     to DO — look around the room they are in — which is the only way to answer it.
+        val claims = NorthCheck.claims(analysis)
+        if (claims.isNotEmpty()) {
             VastuCard(accent = colors.primary) {
-                VText("Check this before we score", style = VastuTheme.type.h3, color = colors.textPrimary)
+                VText("Is this right?", style = VastuTheme.type.h3, color = colors.textPrimary)
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    "With North where you have put it, $check.",
+                    "With North where you have put it, we read your home like this:",
                     style = VastuTheme.type.body, color = colors.textPrimary,
                 )
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
+                claims.forEach { claim ->
+                    VText("· $claim", style = VastuTheme.type.body, color = colors.textPrimary)
+                }
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
                 VText(
-                    "Not right? Turn the dial until it is. " +
-                        "Every direction in your report depends on this.",
+                    "Look around your home. If a line is wrong, turn the dial until it is right.",
                     style = VastuTheme.type.bodySm, color = colors.textSecondary,
                 )
             }
@@ -218,9 +233,9 @@ fun MarkNorthContent(
                     // ⚠ "what WE read", word for word the heading of the screen this opens. The
                     // whole point of this flag is that the button names its destination, and "what
                     // you read" named a different screen — one where the reader does the reading.
-                    nextIsCheck && check.isNotEmpty() -> "Yes — check what we read"
+                    nextIsCheck && claims.isNotEmpty() -> "Yes — check what we read"
                     nextIsCheck -> "Check what we read"
-                    check.isNotEmpty() -> "Yes — read my home"
+                    claims.isNotEmpty() -> "Yes — read my home"
                     else -> "Read my home"
                 },
                 onClick = onRead,
@@ -231,28 +246,7 @@ fun MarkNorthContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun Legend() {
-    val c = VastuTheme.colors
-    // FlowRow, not Row (B7): at font scale 2.0 the four keys overrun the width and the last one
-    // ("Defect") snapped mid-word to a second line ("Defec/t"). FlowRow wraps whole items instead.
-    FlowRow(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3),
-        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-    ) {
-        LegendItem("Ideal", c.verdictIdeal)
-        LegendItem("Fine", c.verdictAcceptable)
-        LegendItem("Not ideal", c.verdictSuboptimal)
-        LegendItem("Defect", c.verdictDefect)
-    }
-}
-
-@Composable
-private fun LegendItem(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
-        Box(Modifier.size(VastuTheme.sizes.dot).clip(VastuTheme.shapes.sm).background(color))
-        VText(label, style = VastuTheme.type.bodySm, color = VastuTheme.colors.textSecondary)
-    }
-}
+// ⛔ `Legend` and `LegendItem` were deleted on 17 Aug 2026 with the colour key they drew. Do not
+// bring them back here: this screen asks one question and scores nothing, so a key to four verdict
+// colours belonged to a screen that shows verdicts. The report labels every verdict in words beside
+// its own colour, which is the rule (colour is never the only carrier) and the right place for it.

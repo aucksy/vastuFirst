@@ -56,7 +56,7 @@ class AccessibilityTest {
                 HomeContent(
                     plans = RenderFixtures.savedPlans, onAddHome = {}, onOpenPlan = {}, onSettings = {},
                     onRename = { _, _ -> }, now = RenderFixtures.FIXED_NOW,
-                    drafts = RenderFixtures.savedDrafts, onOpenDraft = {}, onDiscardDraft = {},
+                    drafts = RenderFixtures.savedDrafts, onOpenDraft = { _, _ -> }, onDiscardDraft = {},
                 )
             },
             "home-rename" to { RenameDialogContent(currentName = "Compact 2BHK flat", onCancel = {}, onSave = {}) },

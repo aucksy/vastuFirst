@@ -62,7 +62,7 @@
     "explanation": "The water is stored the wrong way round — weight in the light corner, or water under the heavy one. The mandala grid draws water to the North-East — Ishanya, the water element — and sends weight to the South-West — Nairritya, earth. So underground water and the borewell belong North-East, North or East; the heavy overhead tank over the South-West or West.",
     "layoutFix": "Put the overhead tank over the South-West or West, and the sump or borewell towards the North-East, North or East.",
     "notCheckedLabel": "Where your water tank and borewell sit",
-    "notCheckedHow": "Tap \u201cAnswer a few more and check more\u201d on your report and tell us, and we will check this.",
+    "notCheckedHow": "Tell us where it is, using the optional questions your report offers, and we will check this.",
     "remedyIds": ["structural-correction", "water-follow-mandala", "vastu-shanti"],
     "requiresFixtureTypes": ["OVERHEAD_TANK", "UNDERGROUND_WATER", "BOREWELL"]
   },
@@ -77,7 +77,7 @@
     "explanation": "A road runs straight at the plot — Veedhi Shoola, the 'street spear'. Our reading treats a thrust from the South, South-West, South-East or North-West as harmful; from the North, North-East or East, benign. A stricter school calls every road-arrow harmful. The schools genuinely disagree, so this is shown but never counted in your score.",
     "layoutFix": "Buffer the affected side with a boundary wall or a line of planting.",
     "notCheckedLabel": "Whether a road points straight at your plot",
-    "notCheckedHow": "Tap \u201cAnswer a few more and check more\u201d on your report and tell us, and we will check this.",
+    "notCheckedHow": "Tell us where it is, using the optional questions your report offers, and we will check this.",
     "remedyIds": ["structural-correction", "road-buffer", "vastu-shanti"],
     "requiresSite": true
   },
@@ -86,7 +86,7 @@
     "explanation": "A heavy tree stands in the North-East or the centre — ground meant to stay light. The North-East should be the property's lightest, most open part; the centre is Brahma's square, which the Manasara text wants unweighted. A big tree sets permanent weight and shade on that ground. The same reasoning bars heavy storage from both places.",
     "layoutFix": "Keep the North-East and the centre free of heavy planting; the big canopy belongs to the South or West.",
     "notCheckedLabel": "Where the large trees on your property stand",
-    "notCheckedHow": "Tap \u201cAnswer a few more and check more\u201d on your report and tell us, and we will check this.",
+    "notCheckedHow": "Tell us where it is, using the optional questions your report offers, and we will check this.",
     "remedyIds": ["structural-correction", "tree-relocate", "lighten-ne", "vastu-shanti"],
     "requiresFixtureTypes": ["HEAVY_TREE"]
   },

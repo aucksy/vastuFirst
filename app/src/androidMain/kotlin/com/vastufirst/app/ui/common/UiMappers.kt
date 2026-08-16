@@ -53,6 +53,33 @@ fun Verdict.roomStatus(): VastuRoomStatus = when (this) {
 }
 
 /**
+ * ⭐⭐ THE WORD A ROOM'S ROW CARRIES, which is not always the word its VERDICT maps to.
+ *
+ * One room breaks the one-to-one: the ENTRANCE. The engine deliberately does not score it, because
+ * it is already scored — as the FRONT DOOR, on the tradition's 32 named positions, in its own
+ * section at the top of the same report. Reading its verdict alone therefore stamped "Not rated" on
+ * the one element the report calls the heaviest in the whole reading, two inches under a card
+ * judging it. See [VastuRoomStatus.RATED_AS_DOOR].
+ *
+ * ⚠ Use this, not `verdict.roomStatus()`, anywhere a ROOM is being labelled. The plain verdict
+ * mapper stays for callers that have a verdict and no room.
+ */
+fun com.vastufirst.shared.RoomResult.rowStatus(): VastuRoomStatus =
+    if (verdict == Verdict.NOT_SCORED && type == RoomType.ENTRANCE) VastuRoomStatus.RATED_AS_DOOR
+    else verdict.roomStatus()
+
+/**
+ * ⭐ WHAT "NOT RATED" MEANS, said on the screen rather than only behind a tap (owner, 17 Aug 2026:
+ * *"Laundry and Entry pills say 'Not Rated' — What is that about? Why not rated?"*).
+ *
+ * About one room in eight comes back this way — a utility, a corridor, a bathroom — because our rule
+ * data places no such room. Without this line the pill reads like a failure to do the work.
+ */
+const val NOT_RATED_MEANS: String =
+    "“Not rated” means the tradition does not place that kind of room — " +
+        "so it is neither a problem nor an approval."
+
+/**
  * Reading order for the unified room list: what needs looking at, then what we could not rate, then
  * what is already right. Within a band the engine's own order is kept, so the ranking that "fix
  * first" used to carry survives — the list is sorted, not re-scored.
@@ -64,6 +91,9 @@ fun VastuRoomStatus.readingOrder(): Int = when (this) {
     VastuRoomStatus.NEEDS_FIXING -> 0
     VastuRoomStatus.NOT_IDEAL -> 1
     VastuRoomStatus.NOT_RATED -> 2
+    // ⚠ Beside "not rated", not above it. The entrance's real verdict already leads the report in
+    // its own section; its ROOM row is a pointer, and a pointer does not outrank a finding.
+    VastuRoomStatus.RATED_AS_DOOR -> 2
     VastuRoomStatus.ALIGNED -> 3
 }
 

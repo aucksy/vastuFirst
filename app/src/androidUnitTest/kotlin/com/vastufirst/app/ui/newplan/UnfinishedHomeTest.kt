@@ -323,6 +323,87 @@ class UnfinishedHomeTest {
         assertNotNull("the score must compute again by itself", after.analysis.value)
     }
 
+    /**
+     * ⭐⭐ A HOME READ OFF A PHOTOGRAPH COMES BACK KNOWING IT WAS (17 Aug 2026).
+     *
+     * "Carry on" opened the grid editor for every unfinished home, including scanned ones — the one
+     * screen the owner removed from the scan flow. Which screen it opens is decided by this flag, so
+     * the flag has to survive the round trip to disk or the routing silently reverts.
+     */
+    @Test
+    fun `a scanned home comes back marked as scanned`() = runTest(main) {
+        val vm = newSession()
+        vm.updateRooms(someRooms)
+        vm.markFromScan(true)               // exactly what the scan hand-over does, in that order
+        advanceUntilIdle()
+        val id = repo.observeDrafts().first().single().id
+
+        val resumed = newSession()
+        resumed.resumeDraft(id)
+        advanceUntilIdle()
+        assertTrue(
+            "a photographed home must not be sent back to the grid editor it never used",
+            resumed.fromScan,
+        )
+    }
+
+    /** And a home drawn by hand must never claim to be one, or it would skip the editor it needs. */
+    @Test
+    fun `a hand-drawn home is not marked as scanned`() = runTest(main) {
+        val vm = newSession()
+        vm.updateRooms(someRooms)
+        advanceUntilIdle()
+        val id = repo.observeDrafts().first().single().id
+
+        val resumed = newSession()
+        resumed.resumeDraft(id)
+        advanceUntilIdle()
+        assertTrue("the grid is the right screen for a home drawn on it", !resumed.fromScan)
+    }
+
+    /**
+     * ⭐⭐ ONE PAYMENT UNLOCKS ONE HOME (owner, 17 Aug 2026: *"699 is only for one plan so do not
+     * unlock new uploads by default"*).
+     *
+     * ⚠ THE PATH THIS PINS IS FOUR TAPS AND WAS REACHABLE. The drawing graph's ViewModel outlives
+     * Back, so a reader could finish and unlock one home, press Back as far as "Add a home", and
+     * start a second — and the second was drawn unlocked AND written to disk unlocked. Worse, it was
+     * written into the FIRST home's row, because the saved id was still sitting there.
+     *
+     * Two assertions, because it is two failures: the new home is not free, and the paid home is
+     * still both paid and intact.
+     */
+    @Test
+    fun `a second home does not inherit the first home's payment`() = runTest(main) {
+        val vm = newSession()
+        vm.intent = Intent.BUYING
+        vm.updateRooms(someRooms)
+        vm.updateDoor(GridDoor(DoorSide.N, 2))
+        advanceUntilIdle()
+        vm.save()
+        advanceUntilIdle()
+        vm.unlock()
+        advanceUntilIdle()
+        assertTrue("the home just paid for must be unlocked", vm.unlocked)
+
+        // "Add a home", on the same shared draft — the screen that starts the next home.
+        vm.beginNewHome()
+        assertTrue("a home nobody has paid for must not open unlocked", !vm.unlocked)
+
+        vm.updateRooms(listOf(GridRoom("b1", RoomType.BEDROOM, 0, 0, 2, 2)))
+        vm.updateDoor(GridDoor(DoorSide.S, 1))
+        advanceUntilIdle()
+        vm.save()
+        advanceUntilIdle()
+
+        val saved = repo.observePlans().first().plans
+        assertEquals("both homes must exist — the second must not overwrite the first", 2, saved.size)
+        assertEquals(
+            "exactly one home is paid for, and it is the one that was paid for",
+            1, saved.count { it.unlocked },
+        )
+    }
+
     /** Passing through the flow without drawing anything must leave nothing behind to be offered. */
     @Test
     fun `a session that draws nothing leaves no unfinished home`() = runTest(main) {

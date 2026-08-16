@@ -43,6 +43,24 @@ data class ZoneMapRoom(
 /** One directional wedge of the compass ring, in fixed order N, NE, E, SE, S, SW, W, NW. */
 data class ZoneWedge(val label: String, val color: Color)
 
+/**
+ * ⭐ THE SHAPE OF THE NORTH CONTROL, given the plan inside it (owner, 17 Aug 2026 — the picture was
+ * too small on "Which way is North?").
+ *
+ * A square control is right for our own drawn rooms and wrong for a photographed sheet: a portrait
+ * sheet fitted into a square uses barely half the column's width. Letting the box grow TALLER for a
+ * tall sheet, and never wider than square, gives the picture back that width. The compass itself
+ * stays a circle sized from the narrower side, so nothing about direction changes.
+ *
+ * ⚠ Bounded at [MIN_DIAL_ASPECT]. A freakishly tall sheet would otherwise make a control taller than
+ * the phone, which is how this project has twice pushed a screen's own buttons off the bottom.
+ */
+const val MIN_DIAL_ASPECT = 0.72f
+
+fun dialAspectFor(imageWidth: Int, imageHeight: Int): Float =
+    if (imageWidth <= 0 || imageHeight <= 0) 1f
+    else (imageWidth.toFloat() / imageHeight).coerceIn(MIN_DIAL_ASPECT, 1f)
+
 /** Everything the [ZoneMap] needs to draw — computed by the app from an engine Analysis. */
 data class ZoneMapModel(
     val rooms: List<ZoneMapRoom>,
@@ -80,6 +98,12 @@ fun ZoneMap(
     modifier: Modifier = Modifier,
     showLabels: Boolean = true,
     contentDescription: String? = null,
+    /**
+     * The control's shape, width ÷ height. Square everywhere except under a TALL photograph, where
+     * [dialAspectFor] gives it a taller box so the sheet is not squeezed into a square — see the
+     * note on the photograph inside the canvas.
+     */
+    aspect: Float = 1f,
 ) {
     // A generous measure cache (C14): this Canvas lays out 20+ distinct strings per frame — 8 wedge
     // labels, each room's name + verdict, plus "N"/"Wg". The default cache holds only 8, so every
@@ -99,38 +123,58 @@ fun ZoneMap(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
+            .aspectRatio(aspect)
             .then(if (desc != null) Modifier.semanticsLabel(desc) else Modifier)
     ) {
         val s = min(size.width, size.height) / 160f
-        fun off(ux: Float, uy: Float) = Offset((ux + 30f) * s, (uy + 30f) * s)
+        // ⚠ CENTRED ON THE CANVAS, not anchored at its top-left corner. It used to read
+        // `(u + 30) * s`, which is the same thing only while the canvas is exactly square — and
+        // since 17 Aug 2026 it is not: a tall photograph gives the dial a tall box (see [aspect]).
+        // Anchored, the compass would have sat at the top of that box with the plan's lower half
+        // outside the ring entirely.
+        fun off(ux: Float, uy: Float) =
+            Offset(size.width / 2f + (ux - 50f) * s, size.height / 2f + (uy - 50f) * s)
         val centre = off(50f, 50f)
         val ringR = 66f * s
         val north = model.northDegrees
         fun rad(bearingDeg: Float) = (bearingDeg) * (kotlin.math.PI.toFloat() / 180f)
 
-        // Outer ring.
-        drawCircle(color = line, radius = ringR, center = centre, style = Stroke(width = 0.6f * s))
-
-        // ⭐ The scanned plan, where there is one — drawn into the same 92-unit square the rooms use,
-        // aspect-fit and centred. It goes in HERE, before the wedges, and that position is the whole
-        // trick: every layer that follows (the wedge tints, the Brahmasthan disc, the plan outline,
-        // the North line and marker) then paints over the photograph in the order it always has, so
-        // the dial reads identically whether the plan underneath is drawn or photographed.
+        // ⭐⭐ THE SCANNED PLAN FILLS THE WHOLE CONTROL (owner, 17 Aug 2026: *"The floor plan image
+        // is small on 'Which way is North' screen also. Figure out a different approach to make it
+        // bigger."*).
+        //
+        // ⚠ It used to be fitted into the same 92-unit square the drawn rooms use — the square
+        // INSCRIBED in the compass ring — which is as small as the picture can honestly be made. On
+        // a 412 dp phone that square is about 209 dp, and a portrait sheet then fits its HEIGHT to
+        // it and comes out around 145 dp wide: forty per cent of the column, for the picture the
+        // whole screen is about.
+        //
+        // Now the photograph is fitted to the whole canvas and the compass is drawn OVER it. Two
+        // things make that honest rather than merely bigger:
+        //   · the picture stays CENTRED on the same point the wedges radiate from, so every
+        //     direction still means what it meant — nothing is re-anchored;
+        //   · the plan outline square below is skipped when a photograph is showing, because that
+        //     rectangle describes where our redrawn rooms live and never described the sheet.
+        // Together with the taller box a tall sheet gets ([aspect]), the picture is roughly twice
+        // the size it was in each direction.
         model.planImage?.let { img ->
             if (img.width > 0 && img.height > 0) {
-                val tl = off(4f, 4f)
-                val box = 92f * s
-                val k = min(box / img.width, box / img.height)
+                val k = min(size.width / img.width, size.height / img.height)
                 val dw = img.width * k
                 val dh = img.height * k
                 drawImage(
                     image = img,
-                    dstOffset = IntOffset((tl.x + (box - dw) / 2f).toInt(), (tl.y + (box - dh) / 2f).toInt()),
+                    dstOffset = IntOffset(
+                        ((size.width - dw) / 2f).toInt(),
+                        ((size.height - dh) / 2f).toInt(),
+                    ),
                     dstSize = IntSize(dw.toInt(), dh.toInt()),
                 )
             }
         }
+
+        // Outer ring — over the photograph, never under it.
+        drawCircle(color = line, radius = ringR, center = centre, style = Stroke(width = 0.6f * s))
 
         // 8 directional wedges, rotated by North (drawArc: 0° = +x, clockwise; bearing→canvas = −90).
         model.wedges.forEachIndexed { i, w ->
@@ -146,6 +190,19 @@ fun ZoneMap(
             if (showLabels) {
                 val m = rad(i * 45f + north)
                 val lp = Offset(centre.x + 73f * s * sin(m), centre.y - 73f * s * cos(m))
+                // ⚠ A PAPER PATCH UNDER EACH LETTER WHEN A PHOTOGRAPH IS SHOWING. The direction
+                // labels now sit ON the sheet rather than on empty paper, and a builder's plan is
+                // full of thin black lines — "NE" printed straight onto a wall hatch is a word
+                // nobody can read. Only drawn when there is something underneath to hide, so every
+                // hand-drawn home's dial is unchanged.
+                if (model.planImage != null) {
+                    val box = measurer.measure(w.label, zoneStyle).size
+                    drawRect(
+                        color = paper.copy(alpha = 0.82f),
+                        topLeft = Offset(lp.x - box.width / 2f - 1.5f * s, lp.y - box.height / 2f - 0.5f * s),
+                        size = Size(box.width + 3f * s, box.height + 1f * s),
+                    )
+                }
                 drawCentered(measurer, w.label, lp, zoneStyle.copy(color = ink))
             }
         }
@@ -153,13 +210,16 @@ fun ZoneMap(
         // Brahmasthan centre — kept open, drawn faint, never covered.
         drawCircle(color = model.centreColor.copy(alpha = 0.13f), radius = 11f * s, center = centre)
 
-        // Plan outline (the analysis square).
-        drawRect(
-            color = faint,
-            topLeft = off(4f, 4f),
-            size = Size(92f * s, 92f * s),
-            style = Stroke(width = 0.6f * s),
-        )
+        // Plan outline (the analysis square) — OUR square, so it is drawn only when our rooms are.
+        // Over a photograph it was a rectangle that described nothing on the sheet beneath it.
+        if (model.planImage == null) {
+            drawRect(
+                color = faint,
+                topLeft = off(4f, 4f),
+                size = Size(92f * s, 92f * s),
+                style = Stroke(width = 0.6f * s),
+            )
+        }
 
         // Rooms, coloured by verdict — stood down when the user's own plan is showing, because
         // drawing our rectangles on top of their photograph would claim their rooms are where we put

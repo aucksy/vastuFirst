@@ -68,6 +68,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +78,9 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
+import com.vastufirst.app.ui.details.SiteAnswers
+import com.vastufirst.app.ui.details.SiteItem
+import com.vastufirst.app.ui.details.addDetailsLabel
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.roomDisplayNames
@@ -90,10 +94,12 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonInline
 import com.vastufirst.designsystem.components.VastuButtonStyle
+import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuRoomRow
 import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.theme.VastuTheme
-import com.vastufirst.app.ui.common.roomStatus
+import com.vastufirst.app.ui.common.NOT_RATED_MEANS
+import com.vastufirst.app.ui.common.rowStatus
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.scan.ScannedRoom
@@ -170,7 +176,10 @@ data class RoomReading(val status: VastuRoomStatus, val direction: String)
 fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
     analysis?.roomResults.orEmpty().associate { r ->
         r.roomId to RoomReading(
-            status = r.verdict.roomStatus(),
+            // ⚠ [rowStatus], the same mapper the report uses. The entrance is scored as the FRONT
+            // DOOR and stamping "Not rated" on it here said the opposite of the sentence at the foot
+            // of this very screen, which names the wall we read it on.
+            status = r.rowStatus(),
             // ⚠ Capitalised HERE and nowhere deeper, exactly as the report does it: [short] also
             // feeds running prose where "the centre" has to stay lowercase. A pill is a label.
             direction = r.zone.short().replaceFirstChar { it.uppercase() },
@@ -196,6 +205,9 @@ fun ScanReviewScreen(
     /** The user moved the door on the plan itself — see [ScanReviewContent]'s own note. */
     onDoorChange: (GridDoor) -> Unit = {},
     onBack: () -> Unit,
+    /** The optional extras already answered, and the way into the rest — see [ScanReviewContent]. */
+    siteAnswers: SiteAnswers = SiteAnswers(),
+    onAddDetails: () -> Unit = {},
 ) {
     val data = handover.data
     val image = remember(data) { data?.decodeImage() }
@@ -210,6 +222,8 @@ fun ScanReviewScreen(
         onChangeDoor = onChangeDoor,
         onDoorChange = onDoorChange,
         onBack = onBack,
+        siteAnswers = siteAnswers,
+        onAddDetails = onAddDetails,
     )
 }
 
@@ -283,10 +297,20 @@ fun ScanReviewContent(
      */
     onDoorChange: (GridDoor) -> Unit = {},
     onBack: () -> Unit = {},
+    /**
+     * ⭐ What the reader has already told us about the water tank, a big tree and the road outside —
+     * so the optional offer at the foot of this screen can count what is left and disappear once
+     * there is nothing left to ask.
+     */
+    siteAnswers: SiteAnswers = SiteAnswers(),
+    /** Opens the optional extras. Offered here since 17 Aug 2026; the report still offers it too. */
+    onAddDetails: () -> Unit = {},
     /** For the harness: pre-select a room so the golden shows the tint. -1 = nothing selected. */
     startSelected: Int = -1,
     /** For the harness: draw the screen with the door mark selected, so the golden shows that state. */
     startDoorSelected: Boolean = false,
+    /** For the harness: draw the screen with the "we found your entrance" card already put away. */
+    startDoorHintDismissed: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
@@ -335,6 +359,8 @@ fun ScanReviewContent(
      */
     val doorAtPage = remember(door, rooms) { door?.let { doorMarkerOnPage(it, rooms) } }
     var doorSelected by remember { mutableStateOf(startDoorSelected) }
+    /** The "we found your entrance" card, put away by the reader — see where it is drawn below. */
+    var doorHintDismissed by rememberSaveable { mutableStateOf(startDoorHintDismissed) }
 
     /**
      * ⭐⭐ BOTH ENDS STILL SELECT THE SAME ROOM THE SAME WAY. Tapping a room on the picture and
@@ -465,6 +491,14 @@ fun ScanReviewContent(
         // the card above already explains it, so the list heading only appears when there is a list.
         if (rooms.isNotEmpty()) {
             SectionLabel("${rooms.size} rooms read from your plan")
+            // ⭐ Said the moment a row on this screen actually carries that word — see
+            // [NOT_RATED_MEANS]. This screen has no expandable rows at all, so before this the pill
+            // was the reader's ONLY information about it, and it reads like a failure rather than a
+            // stated boundary of what our rule data covers.
+            if (readings.values.any { it.status == VastuRoomStatus.NOT_RATED }) {
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                VText(NOT_RATED_MEANS, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+            }
             Spacer(Modifier.height(VastuTheme.spacing.s2))
         }
 
@@ -486,19 +520,47 @@ fun ScanReviewContent(
                 .verticalScroll(listScroll),
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
-            // ⭐⭐ WHAT THE DOOR MARK IS, SAID THE MOMENT IT IS TAPPED.
+            // ⭐⭐ SAYING THAT WE MARKED IT, ONCE (owner, 17 Aug 2026: *"there need to some message
+            // letting user know that we have auto-detected your main entrance but you can tap the
+            // circle and change its position. This message can be dismissed."*).
             //
-            // ⚠ THE FIRST THING IN THE SCROLLING LIST, NOT PINNED ABOVE IT — and the difference is a
-            // screen that works at 200 % font. Everything above this point is fixed height, and this
-            // screen has already lost its last child to zero height twice for exactly that reason:
-            // at large font in landscape the fixed parts are together taller than the window before
-            // the picture is even drawn. Adding one more pinned line would have taken the room list
-            // itself down with it — and the geometry gate cannot see it, because the layout box stays
-            // the right size while the content is squeezed out.
+            // ⚠ Only while the door is still OURS. Once the reader has moved it themselves, telling
+            // them we found it would be taking credit for their correction — the same defect the
+            // three-way sentence at the foot of this list was written to fix.
             //
-            // Inside the list it costs nothing and is still the first thing under the picture, which
-            // is where the finger just was. That is the whole of "tapping it should say this is your
-            // main entrance".
+            // ⚠ Dismissal is remembered for the session, not for ever, and that is deliberate: this
+            // sentence is about ONE home's door, and the next plan scanned has a different one.
+            //
+            // ⚠ INSIDE THE SCROLLING LIST, NOT PINNED ABOVE IT — the same rule the line below it
+            // follows, and for the same reason: everything above this point is fixed height, and
+            // this screen has twice lost its last child to zero height at a 200 % font in landscape,
+            // where the fixed parts are together taller than the window before the picture is even
+            // drawn. One more pinned card would have taken the room list itself down with it, and
+            // the geometry gate cannot see that — the layout box stays the right size while the
+            // content is squeezed out of it.
+            if (door != null && doorIsOurs && !doorHintDismissed) {
+                VastuCard(accent = colors.primary) {
+                    VText(
+                        "We found your main entrance and marked it E on your plan, " +
+                            "on ${doorSideWords(door.side)}.",
+                        style = VastuTheme.type.body,
+                        color = colors.textPrimary,
+                    )
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    VText(
+                        "Wrong wall? Tap the E, then drag it where you come in.",
+                        style = VastuTheme.type.bodySm,
+                        color = colors.textSecondary,
+                    )
+                    Spacer(Modifier.height(VastuTheme.spacing.s3))
+                    VastuButtonInline(
+                        "Got it",
+                        onClick = { doorHintDismissed = true },
+                        style = VastuButtonStyle.SECONDARY,
+                    )
+                }
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+            }
             if (doorSelected && door != null) {
                 VText(
                     "This is your main entrance, on ${doorSideWords(door.side)}. Drag the mark to move it.",
@@ -595,6 +657,32 @@ fun ScanReviewContent(
                     VastuButtonInline(
                         "Put the front door somewhere else",
                         onClick = onChangeDoor,
+                        style = VastuButtonStyle.SECONDARY,
+                    )
+                }
+                // ⭐⭐ THE OPTIONAL EXTRAS ARE OFFERED HERE NOW (owner, 17 Aug 2026: *"we should
+                // nudge them to do this as optional below the 'These are my rooms — read my home'
+                // button — if they choose to skip then we continue to show it here also"*).
+                //
+                // ⚠ BELOW the button that carries on, never above it, and never in its way. The
+                // reader's job on this screen is to check what we read; four more questions offered
+                // first would be a detour before the thing they came for. Skipping costs nothing —
+                // the report keeps the same offer, in the same words, for anyone who walks past it.
+                //
+                // ⚠ It is hidden once every question is answered, so it can never invite somebody
+                // into a screen with nothing left on it.
+                if (rooms.isNotEmpty() && siteAnswers.answeredCount < SiteItem.entries.size) {
+                    Spacer(Modifier.height(VastuTheme.spacing.s4))
+                    VText(
+                        "Optional: we have not looked at your water tank, a big tree, " +
+                            "or the road outside. Tell us and we will check those too.",
+                        style = VastuTheme.type.bodySm,
+                        color = colors.textSecondary,
+                    )
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    VastuButtonInline(
+                        addDetailsLabel(siteAnswers),
+                        onClick = onAddDetails,
                         style = VastuButtonStyle.SECONDARY,
                     )
                 }
