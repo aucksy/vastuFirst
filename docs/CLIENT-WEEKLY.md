@@ -106,6 +106,34 @@ developer account.
 
 ## Week of 17–23 August 2026
 
+### Wednesday 19 August — your own plan comes back with you
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.20.0/vastufirst-v0.20.0.apk
+**This is the one to install.**
+
+**Pick up a home you photographed and you now see your own plan again.** Before this, if you
+photographed a plan and stopped part way through — at the compass, say — coming back to it later
+showed you the app's own drawing of your rooms as plain coloured boxes instead of your sheet. Your
+rooms and their names were all correct, but the page in front of you was not the one you had
+photographed, and it looked like being sent back to the draw-it-yourself grid. Your photograph is now
+kept with the half-finished home, so carrying on puts you back on your own plan, with the rooms
+outlined on it and your entrance marked where you left it. Your finished report shows the same
+picture.
+
+**A reading is no longer thrown away if you walk off after taking it.** Photograph a plan, look at
+the list of rooms we found, then leave — and the whole reading was gone, so you had to do it again.
+That reading now saves itself the moment it finishes, and the home is waiting for you under "still to
+finish" like everything else.
+
+**"Change where the front door is" opens your photograph.** On a home you had come back to, that
+button used to open the draw-it-yourself grid, which is not where you marked your door in the first
+place. It now opens your own plan, the same as everywhere else.
+
+**About the photograph itself:** it stays on your phone and is never sent anywhere or kept by us. It
+is removed the moment you finish that home, throw it away, or use "delete all my data" — the same
+promise as the rest of your data, now covering the picture too.
+
+
 ### Tuesday 18 August — one entrance mark, one button width
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.19.0/vastufirst-v0.19.0.apk
