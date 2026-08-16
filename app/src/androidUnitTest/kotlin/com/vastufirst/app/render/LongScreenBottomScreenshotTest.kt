@@ -229,6 +229,36 @@ class LongScreenBottomScreenshotTest {
     }
 
     /**
+     * ⭐⭐ THE SAME STRETCH WITH THE ROWS **OPEN** — where the locked rows now carry a control.
+     *
+     * ⚠ Added 17 Aug 2026 with the button itself, and the gap it closes is the one this file exists
+     * for. `report-free-open` is a full-screen golden, so it starts at the top of the report — and
+     * the room list is four sections down. The unlock button now sitting inside every locked row
+     * would therefore have appeared in NO picture at ANY size, on the very release that added it,
+     * which is "a golden is a viewport, not a document" landing on brand-new UI for the third time.
+     *
+     * The two sizes are the two that break buttons: 200 % font, where a label can outgrow its own
+     * card, and 320 dp, where a full-width control inside an already-indented row has least room.
+     */
+    @Test
+    fun report_free_open_rooms() {
+        val content: @Composable () -> Unit = {
+            ReportContent(
+                analysis = RenderFixtures.sampleAnalysis,
+                intent = Intent.BUYING,
+                unlocked = false,
+                expandAll = true,
+            )
+        }
+        captureBottom("report-free-open", "rooms", hasTestTag(TAG_ROOMS_END), 1.0f, content = content)
+        captureBottom("report-free-open", "rooms_font2_0", hasTestTag(TAG_ROOMS_END), 2.0f, content = content)
+        captureBottom(
+            "report-free-open", "rooms_w320", hasTestTag(TAG_ROOMS_END), 1.0f,
+            "+w320dp-h711dp-port-xhdpi", content,
+        )
+    }
+
+    /**
      * ⭐ THE DRAWING SCREEN'S ENDING — the half of it nobody had ever seen.
      *
      * The guided grid is the longest screen in the app: a title, the plan, the shape question, the
