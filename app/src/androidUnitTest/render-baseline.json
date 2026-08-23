@@ -1,5 +1,5 @@
 {
-  "addhome": 4,
+  "addhome": 0,
   "addhome-flat": 0,
   "editor": 6,
   "editor-door": 2,
@@ -43,6 +43,7 @@
   "report-disputes": 0,
   "report-disputes-relabelled": 0,
   "report-flat": 0,
+  "report-flat-building": 0,
   "report-free": 0,
   "report-free-open": 0,
   "report-insufficient": 0,
