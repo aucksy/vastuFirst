@@ -1,5 +1,5 @@
 {
-  "version": "2026.08.23-2",
+  "version": "2026.08.23-3",
   "kbDraft": "2.1",
-  "changeNote": "No score has moved, and nothing about how we score has changed. Three things read differently. Where two schools disagree we no longer name a school this app does not follow — both readings are still shown in full. Those disagreements now also say which side your own number takes. And a home you tell us is a flat is no longer offered changes to the building around it, which nobody living in a flat can make."
+  "changeNote": "No score has moved. Two disagreements read differently: they no longer name a school this app does not follow, still show both readings, and now say which side your number takes. A home you call a flat is never told to move the building."
 }
