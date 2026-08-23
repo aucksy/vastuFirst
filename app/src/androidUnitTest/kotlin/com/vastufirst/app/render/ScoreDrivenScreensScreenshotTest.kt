@@ -2,8 +2,6 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -464,42 +462,41 @@ class ScoreDrivenScreensScreenshotTest {
      * viewport, not a document. Shipping on `report-flat` alone would have put the flats release
      * into a picture that shows none of it — the exact trap this project has logged twice.
      *
-     * BOTH ANSWERS, ONE PICTURE, and that is the point of the pairing. The identical finding is
-     * drawn twice: as a HOUSE it must read "Change the layout — before it's built" and give the
-     * footprint instruction, and as a FLAT that block must be replaced by "The building's, not your
-     * flat's". A picture of the flat alone cannot show that anything was withheld — only the pair
-     * makes the difference visible to somebody reviewing it.
+     * ⚠ AND THEY ARE TWO PICTURES, NOT ONE. The first attempt stacked the house above the flat in a
+     * single column so a reviewer could see both answers at once. Looked at, the house card alone —
+     * expanded, with four remedies — is taller than the viewport, so the flat half fell off exactly
+     * as it had off the full report. The same trap, one level down. Two captures each fit whole.
      *
-     * Rendered through the report's own composable with the shipped rule data, so it is the real
-     * card, laid out exactly as it is in the document.
+     * Read them as a pair: the SAME finding, from the SAME fixture, differing only in
+     * `isFlat`. A house is told to extend its footprint. A flat is told whose the footprint is.
      */
     @Test
-    fun report_flat_building_block() = render("report-flat-building") {
-        val house = RenderFixtures.houseWithBuildingFinding
-        val flat = RenderFixtures.flatAnalysis
+    fun report_building_finding_as_a_house() = render("report-building-house") {
+        BuildingFinding(RenderFixtures.houseWithBuildingFinding, isFlat = false)
+    }
+
+    /** The half that matters, and the half no whole-report golden can reach. See above. */
+    @Test
+    fun report_building_finding_as_a_flat() = render("report-building-flat") {
+        BuildingFinding(RenderFixtures.flatAnalysis, isFlat = true)
+    }
+
+    /** The report's own structural section, drawn on its own so it fits in a viewport. */
+    @Composable
+    private fun BuildingFinding(a: com.vastufirst.shared.Analysis, isFlat: Boolean) {
         Column(
             Modifier.screenRoot(VastuTheme.colors.paper)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = VastuTheme.spacing.s6),
         ) {
             StructuralSection(
-                structural = house.defects.filter { it.roomId == null },
-                rooms = house.roomResults,
-                zones = house.zoneInfo,
+                structural = a.defects.filter { it.roomId == null },
+                rooms = a.roomResults,
+                zones = a.zoneInfo,
                 unlocked = true,
                 remediesOnly = false,
                 expandAll = true,
-                isFlat = false,
-            )
-            Spacer(Modifier.height(VastuTheme.spacing.s6))
-            StructuralSection(
-                structural = flat.defects.filter { it.roomId == null },
-                rooms = flat.roomResults,
-                zones = flat.zoneInfo,
-                unlocked = true,
-                remediesOnly = false,
-                expandAll = true,
-                isFlat = true,
+                isFlat = isFlat,
             )
         }
     }
