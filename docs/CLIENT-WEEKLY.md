@@ -85,11 +85,6 @@ feedback continuously; the three-phone pass still has to happen.
   where it is on your own plan instead. About one plan in six needs this today.
 - **The Vastu assistant** — ask a question, get an answer drawn only from the rule set, with the
   source named, and an honest "the texts do not say" when they do not.
-- **Flats treated properly** as their own case, with a report honest about what a flat owner cannot
-  move.
-- **The finer 16-direction reading**, alongside today's 8. Today the app reads 8 and says so plainly
-  in Settings; where the 16-zone school reads a room differently, the report already shows both under
-  "where the schools disagree".
 - **A polish round** — the score reveal, the empty screens, the finish of the thing.
 
 **Stage 5 — money and iPhone.** The ₹699 payment is built and switched off, waiting on your decision
@@ -105,6 +100,50 @@ developer account.
 **No dates on any of this.** Several of them move only when a decision above lands.
 
 ## Week of 17–23 August 2026
+
+### Sunday 23 August — a flat is finally read as a flat
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.22.0/vastufirst-v0.22.0.apk
+**This is the one to install.**
+
+**Until today the app read every home as though you owned the whole building.** Nobody was ever
+asked whether their home was a house or a flat, so everybody got a house's advice. Somebody in a
+seventh-floor flat was told to square off the missing corner of the building, to move the front
+door along the wall, to shift the water tank to the other side of the roof, and to plant a buffer
+against the road outside. Not one of those is a thing a flat owner can do. It was the widest gap
+between what this app promises and what it did.
+
+**You are now asked, once, when you add a home: is it a house or a flat?** It sits on the same
+screen where you choose to photograph a plan or draw one, and it starts on "a house", which is what
+every home has silently been until now — so nothing changes unless you say so. Your report shows
+which of the two it used, so you can see it and correct it.
+
+**For a flat, seven findings now say whose they are.** The shape of the building, the front door in
+a wall shared with the lobby, the water tank, the underground tank, the road at the gate and the
+tree in the compound. Each one still appears in your report, still counts towards your score and
+still explains itself in full — nothing is hidden or dropped. What changes is the advice: instead
+of an instruction you cannot follow, the report says the thing belongs to the whole building, and
+offers what you genuinely can do about it. The one exception is a staircase inside your own flat,
+which really is yours to move, so that advice stays.
+
+**Your score is the same either way, and that is deliberate.** A toilet in the north-east is exactly
+as much of a problem seven floors up as it is in a bungalow. Scoring a flat differently would mean
+deciding something no Vastu authority has decided for us. What we can honestly change is what we
+tell you to do about it, so that is what changed.
+
+**One reading, and it is ours.** Two places in the report used to credit a second opinion to "the
+16-zone school". We read the classic eight directions and the centre, we do not offer that finer
+reading, and we have now decided we will not — so naming it suggested the app had something it does
+not. **This replaces the plan to add a 16-direction reading alongside today's eight.** Handing one
+home two different scores from two systems is more likely to confuse than to help, and it was
+never a promise we were comfortable keeping. Both disagreements stay on the page in full, both
+sides still shown; the second opinion is now simply "a finer reading".
+
+**And those two now say where your own score stands.** The report was showing you two views of a
+toilet in the east — one calling it a fault, one allowing it — while quietly marking it down, and
+saying nothing about which it had followed. It now tells you. Showing both sides and staying silent
+about your own number is half an answer.
+
 
 ### Sunday 23 August — plans that share a page with a picture, and homes drawn the right shape
 
