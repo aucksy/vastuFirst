@@ -2,6 +2,8 @@ package com.vastufirst.app.render
 
 import android.app.Application
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +15,7 @@ import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteItem
 import com.vastufirst.app.ui.marknorth.MarkNorthContent
 import com.vastufirst.app.ui.report.DisputesSection
+import com.vastufirst.app.ui.report.StructuralSection
 import com.vastufirst.app.ui.report.ReadingProgress
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -449,5 +452,55 @@ class ScoreDrivenScreensScreenshotTest {
             intent = Intent.BUILDING,
             expandAll = true,
         )
+    }
+
+    /**
+     * ⭐⭐ THE ONE SENTENCE THIS WHOLE RELEASE EXISTS TO SHOW A READER — which [report_flat] above
+     * does NOT contain, and could not.
+     *
+     * ⚠ MEASURED, NOT ASSUMED. The flat report was rendered, looked at, and the building block was
+     * nowhere in it at any of the eight configurations: it lives in the structural section, below
+     * the score, the room counts, "Start here", the front door and every room row. A golden is a
+     * viewport, not a document. Shipping on `report-flat` alone would have put the flats release
+     * into a picture that shows none of it — the exact trap this project has logged twice.
+     *
+     * BOTH ANSWERS, ONE PICTURE, and that is the point of the pairing. The identical finding is
+     * drawn twice: as a HOUSE it must read "Change the layout — before it's built" and give the
+     * footprint instruction, and as a FLAT that block must be replaced by "The building's, not your
+     * flat's". A picture of the flat alone cannot show that anything was withheld — only the pair
+     * makes the difference visible to somebody reviewing it.
+     *
+     * Rendered through the report's own composable with the shipped rule data, so it is the real
+     * card, laid out exactly as it is in the document.
+     */
+    @Test
+    fun report_flat_building_block() = render("report-flat-building") {
+        val house = RenderFixtures.houseWithBuildingFinding
+        val flat = RenderFixtures.flatAnalysis
+        Column(
+            Modifier.screenRoot(VastuTheme.colors.paper)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VastuTheme.spacing.s6),
+        ) {
+            StructuralSection(
+                structural = house.defects.filter { it.roomId == null },
+                rooms = house.roomResults,
+                zones = house.zoneInfo,
+                unlocked = true,
+                remediesOnly = false,
+                expandAll = true,
+                isFlat = false,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s6))
+            StructuralSection(
+                structural = flat.defects.filter { it.roomId == null },
+                rooms = flat.roomResults,
+                zones = flat.zoneInfo,
+                unlocked = true,
+                remediesOnly = false,
+                expandAll = true,
+                isFlat = true,
+            )
+        }
     }
 }

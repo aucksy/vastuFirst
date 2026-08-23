@@ -130,7 +130,7 @@ object RenderFixtures {
         )
 
     /**
-     * ⭐⭐ THE SAME HOME, READ AS A FLAT — with a finding that belongs to the BUILDING.
+     * ⭐⭐ THE SAME HOME, READ AS A FLAT — carrying a REAL finding that belongs to the building.
      *
      * ⚠ THE MISSING CORNER IS ADDED DELIBERATELY, and the golden is worthless without it. The
      * bundled sample is a rectangle drawn on a grid with no site answers, so it raises none of the
@@ -138,30 +138,42 @@ object RenderFixtures {
      * house's, be photographed as "the flat screen", and be adopted as the baseline — proving
      * nothing while looking like proof.
      *
-     * ⚠ It is placed FIRST so it is also what the "Start here" card above the fold reaches for.
-     * That card prints the top finding's layout change, and it was the single most visible place a
-     * flat owner was handed advice about a building they own one floor of.
+     * ⚠ AND IT IS BUILT FROM THE SHIPPED RULE DATA, not typed here. The first version of this
+     * fixture hand-wrote the explanation and the fix and left the remedy list EMPTY — which made
+     * the "Start here" card photograph as a heading with nothing under it, because that card falls
+     * back to the first remedy once the layout change is withheld. The picture showed a worse
+     * product than the one that ships. Reading the real definition also means X-04's real remedy
+     * ordering is exercised: its rank-0 remedy is the MOVE_IT one, so a flat genuinely has to fall
+     * through it to the next.
      *
-     * The text is the real ruleset's, word for word, so the picture shows what ships.
+     * ⚠ Placed FIRST so it is also what "Start here" reaches for — the most visible place a flat
+     * owner was handed advice about a building they own one floor of.
      */
     val flatAnalysis: Analysis = sampleAnalysis.let { base ->
+        val rules = com.vastufirst.rules.RuleSetLoader.loadDefault()
+        val def = rules.defects.first { it.id == "X-04" }
         val missingCorner = com.vastufirst.shared.Defect(
-            id = "X-04",
-            severity = com.vastufirst.shared.Severity.MAJOR,
+            id = def.id,
+            severity = def.severity,
             zone = com.vastufirst.shared.Zone.NE,
             roomId = null,
-            ruleSourceId = "X-04",
-            provenance = com.vastufirst.shared.Provenance.DERIV,
-            explanation = "The plan is missing part of its North-East corner, the ground the " +
-                "tradition values most.",
-            layoutFix = "Extend the footprint to square off the North-East corner.",
-            belongsToBuilding = true,
+            ruleSourceId = def.id,
+            provenance = def.provenance,
+            explanation = def.explanation,
+            layoutFix = def.layoutFix,
+            remedyNote = def.remedyNote,
+            remedies = rules.remediesFor(def),
+            belongsToBuilding = def.belongsToBuilding,
         )
         base.copy(
             propertyType = PropertyType.FLAT,
             defects = listOf(missingCorner) + base.defects,
         )
     }
+
+    /** The same finding, same fixture, read as a HOUSE — so one picture can show both answers. */
+    val houseWithBuildingFinding: Analysis =
+        flatAnalysis.copy(propertyType = PropertyType.INDEPENDENT_HOUSE)
 
     // --- a SCANNED home: the owner's OWN sheet, and the words printed on it ---
     /**

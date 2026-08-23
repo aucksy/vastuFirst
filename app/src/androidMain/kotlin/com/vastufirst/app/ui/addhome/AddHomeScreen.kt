@@ -75,7 +75,16 @@ fun AddHomeScreen(
         VText("Add your home", style = VastuTheme.type.h2, color = colors.textPrimary)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
-            "Place your rooms on a simple grid — or try a sample to see the whole flow first.",
+            // ⚠ REWRITTEN 23 Aug 2026, because inserting the house-or-flat question above the
+            // method cards left the old line stranded: "Place your rooms on a simple grid — or try
+            // a sample to see the whole flow first" described the three cards, and now sat two
+            // sections above them, answering a question the reader had not been asked yet.
+            //
+            // It was also stale on its own terms. Upload leads these cards and has since the reader
+            // shipped; a subtitle naming the grid first described the app as it was two releases
+            // ago. The three cards each carry their own line, so nothing is lost by letting this one
+            // say what the SCREEN does instead of what one card does.
+            "Tell us what kind of home it is, then how you'd like to add it.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
 
@@ -198,11 +207,15 @@ private fun PropertyChoice(
             .padding(VastuTheme.spacing.s4),
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
     ) {
-        VText(
-            label,
-            style = VastuTheme.type.h3,
-            color = if (isSelected) colors.primary else colors.textPrimary,
-        )
+        // ⚠ textPrimary WHETHER OR NOT IT IS CHOSEN, matching the welcome screen's intent cards —
+        // which are the app's other two-of-a-kind choice and have always done it this way.
+        //
+        // Tinting the chosen label green cost one ATF error-level accessibility finding on this
+        // screen, measured in CI: the app's green on its own 10 %-alpha wash is a low-contrast pair,
+        // and it put the WORSE contrast on the option the reader had just picked. It was also
+        // colour doing a job colour must not do alone. The fill and the heavier border already say
+        // "chosen", and the control reports its state to a screen reader besides.
+        VText(label, style = VastuTheme.type.h3, color = colors.textPrimary)
         VText(subtitle, style = VastuTheme.type.bodySm, color = colors.textSecondary)
     }
 }

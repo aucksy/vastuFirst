@@ -1303,9 +1303,19 @@ private const val LOCKED_REASONING: String = "Reasoning and remedies — in the 
  *
  * ⚠ These are real defects and they were previously ranked in "fix first" alongside the room ones.
  * They keep their ranking and their full reasoning; only their place on the page has changed.
+ *
+ * ⭐⭐ PUBLIC, AND RENDERED ON ITS OWN IN THE SCREENSHOT HARNESS — exactly like [DisputesSection],
+ * and for exactly the same reason. This section sits below the rooms of a long document, so no
+ * whole-report golden at any of the eight configurations has ever contained it: a golden is a
+ * viewport, not a document (docs/UI-POLISH.md §6.4).
+ *
+ * That was survivable while this was the rarest part of the page. It stopped being survivable on
+ * 23 Aug 2026, when six of the seven findings a FLAT owner cannot act on landed here — so the one
+ * sentence the flats release exists to show a reader ("this belongs to the whole building, not to
+ * your flat") would have shipped in no picture at all.
  */
 @Composable
-private fun StructuralSection(
+fun StructuralSection(
     structural: List<Defect>,
     rooms: List<RoomResult>,
     zones: List<ZoneInfo>,
