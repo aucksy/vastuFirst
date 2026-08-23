@@ -106,6 +106,41 @@ developer account.
 
 ## Week of 17–23 August 2026
 
+### Sunday 23 August — plans that share a page with a picture, and homes drawn the right shape
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.21.0/vastufirst-v0.21.0.apk
+**This is the one to install.**
+
+**Builder sheets that put a picture beside the plan now work.** Plenty of marketing sheets show a
+large three-dimensional cutaway of the flat on one side, the ordinary flat plan on the other, and a
+numbered list of the room names down the edge. The app was judging the whole page, deciding it was a
+three-dimensional picture, and turning the sheet away — even though it had already found the flat
+plan and read all fifteen rooms and their printed sizes off it. It now judges the drawing it is
+actually measuring. A sheet that shows nothing but an angled picture is still turned away, which is
+right: rooms seen at an angle cannot be measured.
+
+**Every home is now drawn the shape it really is — and this is the bigger of the two.** The app was
+working out how wide or tall a home is from the whole page it was printed on, not from the drawing on
+that page. Nearly every builder's sheet has a margin, a title block, an area table or a legend around
+the plan, so nearly every home was coming out the wrong shape: a tall narrow flat drawn square, a
+wide one drawn tall. **Rooms drawn the wrong shape sit in the wrong Vastu direction, and direction is
+what the score is made of.**
+
+Three of the plans we hold print their own overall size, so the right answer was on the paper — one
+says 25 feet by 40 feet, and the app had been treating it as square. The clearest proof is a flat we
+hold two copies of: the same 336 sq ft home on a branded sheet and on a plain one. The app read the
+two copies as two different shapes and drew one of them wide and squat. It now reads both as the same
+tall narrow flat the paper shows. Across every plan on file, twenty homes are now drawn a different
+shape, five keep a room they had been losing, and none lost one.
+
+**A room that is listed but never drawn is no longer invented.** One sheet's list names seventeen
+rooms while only fifteen appear on the drawing — the last two, a staff room and a staff toilet, are
+printed in the list and nowhere else. The app used to place both, stacked on top of each other in a
+single spot. It now reports what the drawing contains.
+
+Every one of the sample plans we hold was re-read and the result looked at side by side with the
+sheet before this went out.
+
 ### Wednesday 19 August — your own plan comes back with you
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.20.0/vastufirst-v0.20.0.apk
