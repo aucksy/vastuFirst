@@ -14,7 +14,7 @@
     "id": "W-03", "title": "The main bedroom in the West", "appliesTo": "MASTER_BEDROOM", "appliesToZone": "W",
     "readingA": { "label": "Acceptable", "text": "Tradition accepts the West, the other settled, heavier quarter, instead of the South-West.", "school": "Traditional" },
     "readingB": { "label": "Advised against", "text": "A finer reading keeps the main bedroom out of the west-south-west, its quarter of study.", "school": "Finer" },
-    "howWeScore": "Your score follows the traditional reading: the main bedroom in the West is accepted, not marked as a fault. The objection is shown here and never costs you points."
+    "howWeScore": "Your score follows the traditional reading and accepts the West rather than calling it a fault. The South-West still reads best, so the West scores below it. The finer reading's objection is shown here and never counted against you."
   },
   {
     "id": "W-04", "title": "A front door in the South-East",

@@ -323,19 +323,73 @@ class ReportTextTest {
 
     /**
      * ⭐ A dispute we have NOT ruled on must not claim we scored it. The "what your score uses" line
-     * is drawn only when the rule data supplies one, so the eight surfaced-not-scored questions stay
-     * exactly what they were: both readings, no winner.
+     * is drawn only when the rule data supplies one, so every surfaced-not-scored question stays
+     * exactly what it was: both readings, no winner.
+     *
+     * ⭐⭐ THE LIST GREW FROM ONE TO THREE ON 23 AUGUST 2026, and the reason is the opposite of a
+     * relaxation. W-01 and W-03 were **already ruled** — docs/EXPERT-RULINGS.md records "a defect"
+     * for an eastern toilet and "acceptable" for a western main bedroom — and the score has been
+     * acting on both rulings all along. It simply never said so. The report showed the reader two
+     * readings of their eastern toilet while quietly marking it down: exactly the half-truth this
+     * field was added for, sitting undisclosed on two cards while W-12 disclosed it on one.
+     *
+     * ⚠ SO THIS TEST STILL BANS WHAT IT ALWAYS BANNED. A line here is a claim about where the
+     * number stands, and it must be a claim we can check against the rule data. Both new ones were,
+     * and one of them was WRONG on the first attempt: W-03's said a western bedroom "never costs you
+     * points", when the West scores ACCEPTABLE (70) against the South-West's IDEAL (100). It costs
+     * thirty. The corrected line says so. Before adding a fourth id here, work out the verdict the
+     * engine actually gives and make the sentence match it.
      */
     @Test
     fun only_the_disputes_we_actually_ruled_on_say_what_the_score_uses() {
         val ruleSet = com.vastufirst.rules.RuleSetLoader.loadDefault()
         val ruled = ruleSet.disputes.filter { it.howWeScore != null }.map { it.id }
-        assertEquals("W-12 is the only ruling that moved into the score", listOf("W-12"), ruled)
-        ruleSet.disputes.filter { it.howWeScore == null }.forEach {
+        assertEquals(
+            "these three are ruled in docs/EXPERT-RULINGS.md and the score acts on all three. " +
+                "Anything else claiming a position is claiming one we have not taken.",
+            listOf("W-01", "W-03", "W-12"), ruled,
+        )
+        ruleSet.disputes.forEach {
             assertTrue(
-                "${it.id} is surfaced, not scored, so it must still carry both readings",
+                "${it.id} must carry both readings whether or not we ruled on it — ruling on a " +
+                    "question never removes the other side from the page",
                 it.readingA.text.isNotBlank() && it.readingB.text.isNotBlank(),
             )
+        }
+        ruleSet.disputes.mapNotNull { it.howWeScore }.forEach {
+            assertTrue("a 'what your score uses' line must actually say something", it.isNotBlank())
+        }
+    }
+
+    /**
+     * ⭐⭐ NO REPORT SENTENCE NAMES A SCHOOL THIS APP DOES NOT IMPLEMENT (owner ruling, 23 Aug 2026:
+     * one reading, the classic 8-direction one — Product PRD §4.7).
+     *
+     * Two disputes used to open *"The 16-zone school…"*, which tells a paying reader the app has a
+     * second reading it has never had and will not get. Both disagreements are kept whole; only the
+     * attribution changed.
+     *
+     * ⚠ THE `school` FIELD IS CHECKED TOO, even though nothing renders it. It is the copy a future
+     * session would reach for when writing that attribution back onto the page.
+     */
+    @Test
+    fun no_dispute_names_a_school_the_app_does_not_offer() {
+        val ruleSet = com.vastufirst.rules.RuleSetLoader.loadDefault()
+        val gone = listOf("16-zone", "16 zone", "45-devata", "sixteen-zone")
+        ruleSet.disputes.forEach { d ->
+            listOf(d.readingA, d.readingB).forEach { r ->
+                gone.forEach { school ->
+                    assertTrue(
+                        "${d.id} names \"$school\", a reading this app does not implement: " +
+                            "\"${r.text.take(60)}…\"",
+                        !r.text.contains(school, ignoreCase = true),
+                    )
+                    assertTrue(
+                        "${d.id}'s school tag is \"${r.school}\" — not a school this app offers",
+                        r.school?.contains(school, ignoreCase = true) != true,
+                    )
+                }
+            }
         }
     }
 
