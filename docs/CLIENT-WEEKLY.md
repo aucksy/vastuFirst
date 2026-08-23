@@ -131,18 +131,10 @@ as much of a problem seven floors up as it is in a bungalow. Scoring a flat diff
 deciding something no Vastu authority has decided for us. What we can honestly change is what we
 tell you to do about it, so that is what changed.
 
-**One reading, and it is ours.** Two places in the report used to credit a second opinion to "the
-16-zone school". We read the classic eight directions and the centre, we do not offer that finer
-reading, and we have now decided we will not — so naming it suggested the app had something it does
-not. **This replaces the plan to add a 16-direction reading alongside today's eight.** Handing one
-home two different scores from two systems is more likely to confuse than to help, and it was
-never a promise we were comfortable keeping. Both disagreements stay on the page in full, both
-sides still shown; the second opinion is now simply "a finer reading".
-
-**And those two now say where your own score stands.** The report was showing you two views of a
-toilet in the east — one calling it a fault, one allowing it — while quietly marking it down, and
-saying nothing about which it had followed. It now tells you. Showing both sides and staying silent
-about your own number is half an answer.
+**Where two readings disagree, your report now says which one your score follows.** It was showing
+you both views of, say, a toilet in the east — one calling it a fault, one allowing it — while
+quietly marking it down, and saying nothing about which it had gone with. It now tells you. Showing
+both sides and staying silent about your own number is half an answer.
 
 
 ### Sunday 23 August — plans that share a page with a picture, and homes drawn the right shape
