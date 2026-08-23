@@ -1,0 +1,148 @@
+{
+ "file": "plan-030.jpg",
+ "imageSize": [
+  1200,
+  674
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "3D_RENDER",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.08,
+   "y": 0.0,
+   "w": 0.84,
+   "h": 1.0
+  },
+  "rooms": [
+   {
+    "label": "Poola Room",
+    "size": "",
+    "x": 0.1,
+    "y": 0.23,
+    "w": 0.13,
+    "h": 0.24,
+    "confidence": 0.88
+   },
+   {
+    "label": "Family Lounge",
+    "size": "",
+    "x": 0.21,
+    "y": 0.12,
+    "w": 0.24,
+    "h": 0.34,
+    "confidence": 0.89
+   },
+   {
+    "label": "Modular Kitchen",
+    "size": "",
+    "x": 0.4,
+    "y": 0.05,
+    "w": 0.22,
+    "h": 0.3,
+    "confidence": 0.9
+   },
+   {
+    "label": "Bedroom 2",
+    "size": "",
+    "x": 0.59,
+    "y": 0.1,
+    "w": 0.24,
+    "h": 0.3,
+    "confidence": 0.92
+   },
+   {
+    "label": "Bedroom 3",
+    "size": "",
+    "x": 0.77,
+    "y": 0.18,
+    "w": 0.21,
+    "h": 0.31,
+    "confidence": 0.92
+   },
+   {
+    "label": "Sit-out",
+    "size": "",
+    "x": 0.01,
+    "y": 0.42,
+    "w": 0.19,
+    "h": 0.24,
+    "confidence": 0.88
+   },
+   {
+    "label": "Ground Floor Master Suite",
+    "size": "",
+    "x": 0.2,
+    "y": 0.44,
+    "w": 0.2,
+    "h": 0.25,
+    "confidence": 0.87
+   },
+   {
+    "label": "Open airy Courtyard",
+    "size": "",
+    "x": 0.39,
+    "y": 0.36,
+    "w": 0.23,
+    "h": 0.27,
+    "confidence": 0.91
+   },
+   {
+    "label": "Family Lounge",
+    "size": "",
+    "x": 0.54,
+    "y": 0.37,
+    "w": 0.2,
+    "h": 0.27,
+    "confidence": 0.8
+   },
+   {
+    "label": "Living",
+    "size": "",
+    "x": 0.39,
+    "y": 0.59,
+    "w": 0.22,
+    "h": 0.24,
+    "confidence": 0.9
+   },
+   {
+    "label": "Poola Room",
+    "size": "",
+    "x": 0.28,
+    "y": 0.73,
+    "w": 0.18,
+    "h": 0.17,
+    "confidence": 0.86
+   },
+   {
+    "label": "Modular Kitchen",
+    "size": "",
+    "x": 0.69,
+    "y": 0.5,
+    "w": 0.16,
+    "h": 0.18,
+    "confidence": 0.72
+   },
+   {
+    "label": "Utility",
+    "size": "",
+    "x": 0.79,
+    "y": 0.62,
+    "w": 0.11,
+    "h": 0.14,
+    "confidence": 0.7
+   },
+   {
+    "label": "Powder Room",
+    "size": "",
+    "x": 0.72,
+    "y": 0.7,
+    "w": 0.1,
+    "h": 0.11,
+    "confidence": 0.78
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}

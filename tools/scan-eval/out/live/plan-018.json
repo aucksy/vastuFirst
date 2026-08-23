@@ -1,0 +1,157 @@
+{
+ "file": "plan-018.avif",
+ "imageSize": [
+  1400,
+  577
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "3D_RENDER",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.577,
+   "y": 0.347,
+   "w": 0.224,
+   "h": 0.484
+  },
+  "rooms": [
+   {
+    "label": "DRAWING ROOM",
+    "size": "16'2\" x 11'9 1/2\"",
+    "x": 0.717,
+    "y": 0.337,
+    "w": 0.271,
+    "h": 0.319,
+    "confidence": 0.78
+   },
+   {
+    "label": "LIVING ROOM",
+    "size": "11'1 1/2\" x 12'4 1/2\"",
+    "x": 0.455,
+    "y": 0.079,
+    "w": 0.159,
+    "h": 0.258,
+    "confidence": 0.8
+   },
+   {
+    "label": "DINING",
+    "size": "11'1 1/2\" x 17'4\"",
+    "x": 0.452,
+    "y": 0.333,
+    "w": 0.166,
+    "h": 0.355,
+    "confidence": 0.82
+   },
+   {
+    "label": "BALCONY",
+    "size": "11'1 1/2\" x 6'10\"",
+    "x": 0.452,
+    "y": 0.706,
+    "w": 0.185,
+    "h": 0.254,
+    "confidence": 0.75
+   },
+   {
+    "label": "BALCONY",
+    "size": "6'5\" x 11'1 1/2\"",
+    "x": 0.006,
+    "y": 0.337,
+    "w": 0.15,
+    "h": 0.319,
+    "confidence": 0.75
+   },
+   {
+    "label": "KITCHEN",
+    "size": "9'2\" x 13'1\"",
+    "x": 0.771,
+    "y": 0.653,
+    "w": 0.223,
+    "h": 0.307,
+    "confidence": 0.82
+   },
+   {
+    "label": "UTILITY",
+    "size": "8'5 1/2\" x 5'1\"",
+    "x": 0.637,
+    "y": 0.814,
+    "w": 0.134,
+    "h": 0.146,
+    "confidence": 0.72
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "12'1 1/2\" x 12'5\"",
+    "x": 0.006,
+    "y": 0.653,
+    "w": 0.405,
+    "h": 0.307,
+    "confidence": 0.78
+   },
+   {
+    "label": "BEDROOM",
+    "size": "12'7\" x 11'1 1/2\"",
+    "x": 0.159,
+    "y": 0.333,
+    "w": 0.287,
+    "h": 0.355,
+    "confidence": 0.8
+   },
+   {
+    "label": "BEDROOM",
+    "size": "12'10\" x 12'5\"",
+    "x": 0.006,
+    "y": 0.079,
+    "w": 0.287,
+    "h": 0.258,
+    "confidence": 0.82
+   },
+   {
+    "label": "BEDROOM",
+    "size": "10'2\" x 12'1 1/2\"",
+    "x": 0.611,
+    "y": 0.079,
+    "w": 0.383,
+    "h": 0.258,
+    "confidence": 0.8
+   },
+   {
+    "label": "POWDER ROOM",
+    "size": "6'4\" x 4'5\"",
+    "x": 0.637,
+    "y": 0.688,
+    "w": 0.128,
+    "h": 0.129,
+    "confidence": 0.7
+   },
+   {
+    "label": "ATT. TOILET",
+    "size": "5'4\" x 8'4 1/2\"",
+    "x": 0.287,
+    "y": 0.685,
+    "w": 0.153,
+    "h": 0.14,
+    "confidence": 0.72
+   },
+   {
+    "label": "ATT. TOILET",
+    "size": "5'4\" x 8'4 1/2\"",
+    "x": 0.287,
+    "y": 0.079,
+    "w": 0.121,
+    "h": 0.18,
+    "confidence": 0.72
+   },
+   {
+    "label": "ATT. TOILET",
+    "size": "5'4\" x 8'4 1/2\"",
+    "x": 0.624,
+    "y": 0.079,
+    "w": 0.134,
+    "h": 0.18,
+    "confidence": 0.72
+   }
+  ],
+  "planConfidence": 0.86
+ }
+}

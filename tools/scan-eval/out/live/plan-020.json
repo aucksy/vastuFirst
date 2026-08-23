@@ -1,0 +1,157 @@
+{
+ "file": "plan-020.jpg",
+ "imageSize": [
+  1399,
+  1389
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.103,
+   "y": 0.132,
+   "w": 0.764,
+   "h": 0.752
+  },
+  "rooms": [
+   {
+    "label": "DINING ROOM",
+    "size": "11'-0\" x 15'-0\"",
+    "x": 0.012,
+    "y": 0.017,
+    "w": 0.329,
+    "h": 0.303,
+    "confidence": 0.99
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-6\" x 9'-5\"",
+    "x": 0.228,
+    "y": 0.122,
+    "w": 0.113,
+    "h": 0.199,
+    "confidence": 0.98
+   },
+   {
+    "label": "BALCONY",
+    "size": "33'-5\"x5'-0\"",
+    "x": 0.343,
+    "y": 0.099,
+    "w": 0.649,
+    "h": 0.104,
+    "confidence": 0.96
+   },
+   {
+    "label": "PANTRY",
+    "size": "7'-0\" x 13'-6\"",
+    "x": 0.846,
+    "y": 0.203,
+    "w": 0.142,
+    "h": 0.277,
+    "confidence": 0.98
+   },
+   {
+    "label": "ENTRY",
+    "size": "",
+    "x": 0.001,
+    "y": 0.354,
+    "w": 0.081,
+    "h": 0.075,
+    "confidence": 0.95
+   },
+   {
+    "label": "FOYER",
+    "size": "17'-2\"x6'-0\"",
+    "x": 0.012,
+    "y": 0.32,
+    "w": 0.33,
+    "h": 0.132,
+    "confidence": 0.97
+   },
+   {
+    "label": "LOBBY/DINING",
+    "size": "12'-9\" x 19'-0\"",
+    "x": 0.342,
+    "y": 0.202,
+    "w": 0.258,
+    "h": 0.594,
+    "confidence": 0.94
+   },
+   {
+    "label": "KITCHEN",
+    "size": "12'-8\" x 13'-6\"",
+    "x": 0.598,
+    "y": 0.203,
+    "w": 0.247,
+    "h": 0.277,
+    "confidence": 0.98
+   },
+   {
+    "label": "DRAWING ROOM",
+    "size": "16'-2\" x 18'-4\"",
+    "x": 0.012,
+    "y": 0.452,
+    "w": 0.331,
+    "h": 0.369,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM-1",
+    "size": "12'-4\" x 16'-9\"",
+    "x": 0.618,
+    "y": 0.48,
+    "w": 0.227,
+    "h": 0.345,
+    "confidence": 0.99
+   },
+   {
+    "label": "DRESS",
+    "size": "7'-0\" x 8'-3\"",
+    "x": 0.846,
+    "y": 0.48,
+    "w": 0.142,
+    "h": 0.177,
+    "confidence": 0.98
+   },
+   {
+    "label": "TOILET",
+    "size": "7'-0\" x 8'-2\"",
+    "x": 0.846,
+    "y": 0.657,
+    "w": 0.142,
+    "h": 0.168,
+    "confidence": 0.98
+   },
+   {
+    "label": "BALCONY",
+    "size": "17'-4\"x8'-3\"",
+    "x": 0.003,
+    "y": 0.826,
+    "w": 0.608,
+    "h": 0.173,
+    "confidence": 0.97
+   },
+   {
+    "label": "BALCONY",
+    "size": "13'-9\"x10'-0\"",
+    "x": 0.342,
+    "y": 0.826,
+    "w": 0.267,
+    "h": 0.173,
+    "confidence": 0.95
+   },
+   {
+    "label": "BALCONY",
+    "size": "20'-2\"x6'-0\"",
+    "x": 0.608,
+    "y": 0.826,
+    "w": 0.386,
+    "h": 0.128,
+    "confidence": 0.97
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

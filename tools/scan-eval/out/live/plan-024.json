@@ -1,0 +1,21 @@
+{
+ "file": "plan-024.jpg",
+ "imageSize": [
+  1400,
+  734
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": false,
+  "northMarked": false,
+  "building": {
+   "x": 0.184,
+   "y": 0.056,
+   "w": 0.631,
+   "h": 0.694
+  },
+  "rooms": [],
+  "planConfidence": 0.99
+ }
+}

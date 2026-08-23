@@ -1,0 +1,21 @@
+{
+ "file": "plan-032.webp",
+ "imageSize": [
+  1200,
+  630
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": false,
+  "northMarked": false,
+  "building": {
+   "x": 0.17,
+   "y": 0,
+   "w": 0.72,
+   "h": 1
+  },
+  "rooms": [],
+  "planConfidence": 0.98
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "file": "plan-029.jpg",
+ "imageSize": [
+  1024,
+  649
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "NOT_A_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.055,
+   "y": 0.06,
+   "w": 0.655,
+   "h": 0.64
+  },
+  "rooms": [],
+  "planConfidence": 0.99
+ }
+}

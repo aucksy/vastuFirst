@@ -1,0 +1,139 @@
+{
+ "file": "plan-026.webp",
+ "imageSize": [
+  720,
+  900
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.021,
+   "y": 0.004,
+   "w": 0.965,
+   "h": 0.991
+  },
+  "rooms": [
+   {
+    "label": "O.T.S.",
+    "size": "3'x4'11\"",
+    "x": 0.023,
+    "y": 0.001,
+    "w": 0.099,
+    "h": 0.128,
+    "confidence": 0.99
+   },
+   {
+    "label": "BATHROOM",
+    "size": "7'7\"X4'11\"",
+    "x": 0.124,
+    "y": 0.001,
+    "w": 0.272,
+    "h": 0.129,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "11'X11'7\"",
+    "x": 0.023,
+    "y": 0.129,
+    "w": 0.373,
+    "h": 0.305,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11'X9'",
+    "x": 0.023,
+    "y": 0.435,
+    "w": 0.373,
+    "h": 0.244,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "11'X11'9\"",
+    "x": 0.023,
+    "y": 0.68,
+    "w": 0.36,
+    "h": 0.301,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "12'X10'7\"",
+    "x": 0.396,
+    "y": 0.001,
+    "w": 0.39,
+    "h": 0.273,
+    "confidence": 0.99
+   },
+   {
+    "label": "O.T.S.",
+    "size": "4'8\"X3'",
+    "x": 0.799,
+    "y": 0.001,
+    "w": 0.153,
+    "h": 0.079,
+    "confidence": 0.99
+   },
+   {
+    "label": "BATHROOM",
+    "size": "4'8\"X7'2\"",
+    "x": 0.785,
+    "y": 0.08,
+    "w": 0.17,
+    "h": 0.193,
+    "confidence": 0.99
+   },
+   {
+    "label": "LOBBY/DINING",
+    "size": "17'1\"X9'10\"",
+    "x": 0.396,
+    "y": 0.273,
+    "w": 0.559,
+    "h": 0.264,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11'X9'",
+    "x": 0.023,
+    "y": 0.435,
+    "w": 0.373,
+    "h": 0.244,
+    "confidence": 0.99
+   },
+   {
+    "label": "VERANDAH",
+    "size": "9'5\"X4'6\"",
+    "x": 0.384,
+    "y": 0.536,
+    "w": 0.213,
+    "h": 0.445,
+    "confidence": 0.96
+   },
+   {
+    "label": "BED ROOM",
+    "size": "10'8\"X12'4\"",
+    "x": 0.598,
+    "y": 0.536,
+    "w": 0.357,
+    "h": 0.331,
+    "confidence": 0.99
+   },
+   {
+    "label": "BATH ROOM",
+    "size": "7'3\"X4'6\"",
+    "x": 0.704,
+    "y": 0.867,
+    "w": 0.251,
+    "h": 0.115,
+    "confidence": 0.99
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

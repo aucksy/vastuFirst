@@ -1,0 +1,112 @@
+{
+ "file": "plan-031.jpg",
+ "imageSize": [
+  1400,
+  884
+ ],
+ "prompt": "v3",
+ "reply": {
+  "planType": "3D_RENDER",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.173,
+   "y": 0.197,
+   "w": 0.679,
+   "h": 0.553
+  },
+  "rooms": [
+   {
+    "label": "TOILET",
+    "size": "10'6\" X 4'6\"",
+    "x": 0.023,
+    "y": 0.094,
+    "w": 0.204,
+    "h": 0.268,
+    "confidence": 0.88
+   },
+   {
+    "label": "TOILET",
+    "size": "4'6\" x 7'6\"",
+    "x": 0.525,
+    "y": 0.112,
+    "w": 0.125,
+    "h": 0.319,
+    "confidence": 0.72
+   },
+   {
+    "label": "UTILITY",
+    "size": "6'9\" x 2'0\"",
+    "x": 0.642,
+    "y": 0.112,
+    "w": 0.095,
+    "h": 0.319,
+    "confidence": 0.68
+   },
+   {
+    "label": "TOILET",
+    "size": "5'0\" x 7'6\"",
+    "x": 0.691,
+    "y": 0.251,
+    "w": 0.107,
+    "h": 0.255,
+    "confidence": 0.82
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "10'6\" x 13'0\"",
+    "x": 0.001,
+    "y": 0.28,
+    "w": 0.236,
+    "h": 0.49,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING & DINING",
+    "size": "11'0\" x 18'0\" / 3'0\" x 10'9\"",
+    "x": 0.217,
+    "y": 0.288,
+    "w": 0.265,
+    "h": 0.48,
+    "confidence": 0.94
+   },
+   {
+    "label": "KITCHEN",
+    "size": "7'6\" x 9'0\"",
+    "x": 0.462,
+    "y": 0.436,
+    "w": 0.18,
+    "h": 0.423,
+    "confidence": 0.91
+   },
+   {
+    "label": "D.Y",
+    "size": "",
+    "x": 0.466,
+    "y": 0.744,
+    "w": 0.18,
+    "h": 0.19,
+    "confidence": 0.62
+   },
+   {
+    "label": "BEDROOM",
+    "size": "9'6\" x 11'6\"",
+    "x": 0.633,
+    "y": 0.442,
+    "w": 0.185,
+    "h": 0.368,
+    "confidence": 0.94
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "9'6\" x 13'0\" / 3'3\" x 3'0\"",
+    "x": 0.798,
+    "y": 0.26,
+    "w": 0.198,
+    "h": 0.509,
+    "confidence": 0.95
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}
