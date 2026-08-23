@@ -1,0 +1,245 @@
+{
+ "file": "plan-002.webp",
+ "imageSize": [
+  1400,
+  900
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2392,
+  "candidatesTokenCount": 2673,
+  "thoughtsTokenCount": 1552
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.028,
+   "y": 0.019,
+   "w": 0.942,
+   "h": 0.951
+  },
+  "rooms": [
+   {
+    "label": "DRESSING",
+    "size": "1800X2250",
+    "x": 0.036,
+    "y": 0.06,
+    "w": 0.092,
+    "h": 0.172,
+    "confidence": 0.99
+   },
+   {
+    "label": "ATT. TOILET",
+    "size": "1350X2250",
+    "x": 0.127,
+    "y": 0.05,
+    "w": 0.071,
+    "h": 0.181,
+    "confidence": 0.98
+   },
+   {
+    "label": "BALCONY",
+    "size": "3300X2000",
+    "x": 0.2,
+    "y": 0.048,
+    "w": 0.165,
+    "h": 0.164,
+    "confidence": 0.99
+   },
+   {
+    "label": "BEDROOM",
+    "size": "6750X4350",
+    "x": 0.033,
+    "y": 0.21,
+    "w": 0.332,
+    "h": 0.339,
+    "confidence": 0.99
+   },
+   {
+    "label": "DUCT",
+    "size": "1500X450",
+    "x": 0.001,
+    "y": 0.55,
+    "w": 0.031,
+    "h": 0.124,
+    "confidence": 0.85
+   },
+   {
+    "label": "TOILET",
+    "size": "3300X1500",
+    "x": 0.033,
+    "y": 0.549,
+    "w": 0.168,
+    "h": 0.127,
+    "confidence": 0.99
+   },
+   {
+    "label": "BEDROOM",
+    "size": "3300X3650",
+    "x": 0.033,
+    "y": 0.677,
+    "w": 0.168,
+    "h": 0.277,
+    "confidence": 0.99
+   },
+   {
+    "label": "LOUNGE",
+    "size": "3300X3200",
+    "x": 0.201,
+    "y": 0.549,
+    "w": 0.163,
+    "h": 0.245,
+    "confidence": 0.99
+   },
+   {
+    "label": "LIFT",
+    "size": "1850X1850 (8 PERSON)",
+    "x": 0.365,
+    "y": 0.207,
+    "w": 0.106,
+    "h": 0.161,
+    "confidence": 0.99
+   },
+   {
+    "label": "LOBBY",
+    "size": "5100X1800",
+    "x": 0.368,
+    "y": 0.367,
+    "w": 0.253,
+    "h": 0.136,
+    "confidence": 0.99
+   },
+   {
+    "label": "STORE",
+    "size": "1650X1500",
+    "x": 0.367,
+    "y": 0.507,
+    "w": 0.083,
+    "h": 0.118,
+    "confidence": 0.99
+   },
+   {
+    "label": "ELECTRICAL DUCT",
+    "size": "1500X1500",
+    "x": 0.451,
+    "y": 0.507,
+    "w": 0.086,
+    "h": 0.118,
+    "confidence": 0.97
+   },
+   {
+    "label": "ENT.LOBBY",
+    "size": "1650X1500",
+    "x": 0.537,
+    "y": 0.507,
+    "w": 0.085,
+    "h": 0.118,
+    "confidence": 0.98
+   },
+   {
+    "label": "STUDY-ROOM",
+    "size": "2425X2600",
+    "x": 0.621,
+    "y": 0.088,
+    "w": 0.115,
+    "h": 0.209,
+    "confidence": 0.99
+   },
+   {
+    "label": "ATT.TOILET",
+    "size": "1350X2000",
+    "x": 0.737,
+    "y": 0.051,
+    "w": 0.08,
+    "h": 0.246,
+    "confidence": 0.97
+   },
+   {
+    "label": "BEDROOM",
+    "size": "3000X3650",
+    "x": 0.814,
+    "y": 0.084,
+    "w": 0.172,
+    "h": 0.284,
+    "confidence": 0.99
+   },
+   {
+    "label": "LIVING",
+    "size": "3925X5500",
+    "x": 0.62,
+    "y": 0.298,
+    "w": 0.197,
+    "h": 0.326,
+    "confidence": 0.99
+   },
+   {
+    "label": "SIT-OUT",
+    "size": "3275X3300",
+    "x": 0.814,
+    "y": 0.368,
+    "w": 0.171,
+    "h": 0.256,
+    "confidence": 0.99
+   },
+   {
+    "label": "DINING",
+    "size": "4175X2975",
+    "x": 0.515,
+    "y": 0.624,
+    "w": 0.206,
+    "h": 0.234,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2950X4200",
+    "x": 0.367,
+    "y": 0.624,
+    "w": 0.149,
+    "h": 0.329,
+    "confidence": 0.99
+   },
+   {
+    "label": "UTILITY",
+    "size": "4175X1200",
+    "x": 0.516,
+    "y": 0.858,
+    "w": 0.204,
+    "h": 0.097,
+    "confidence": 0.99
+   },
+   {
+    "label": "BEDROOM",
+    "size": "3300X4200",
+    "x": 0.816,
+    "y": 0.623,
+    "w": 0.169,
+    "h": 0.334,
+    "confidence": 0.99
+   },
+   {
+    "label": "C.TOILET",
+    "size": "1450X1800",
+    "x": 0.725,
+    "y": 0.708,
+    "w": 0.081,
+    "h": 0.186,
+    "confidence": 0.98
+   },
+   {
+    "label": "DUCT",
+    "size": "1450X900",
+    "x": 0.729,
+    "y": 0.895,
+    "w": 0.076,
+    "h": 0.063,
+    "confidence": 0.96
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

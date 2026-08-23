@@ -1,0 +1,182 @@
+{
+ "file": "plan-014.jpg",
+ "imageSize": [
+  1291,
+  802
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2140,
+  "candidatesTokenCount": 2525,
+  "thoughtsTokenCount": 1425
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.126,
+   "y": 0.045,
+   "w": 0.743,
+   "h": 0.723
+  },
+  "rooms": [
+   {
+    "label": "WALK-IN WARDROBE",
+    "size": "1.62m x 1.71m; 5'4\" x 5'7\"",
+    "x": 0.006,
+    "y": 0.181,
+    "w": 0.103,
+    "h": 0.15,
+    "confidence": 0.97
+   },
+   {
+    "label": "TOILET-1",
+    "size": "2.43m x 1.54m; 8' x 5'1\"",
+    "x": 0.109,
+    "y": 0.167,
+    "w": 0.169,
+    "h": 0.183,
+    "confidence": 0.98
+   },
+   {
+    "label": "UTILITY",
+    "size": "2.01m x 1.40m; 6'7\" x 4'7\"",
+    "x": 0.345,
+    "y": 0.021,
+    "w": 0.138,
+    "h": 0.191,
+    "confidence": 0.98
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2.43m x 3.13m; 8' x 10'3\"",
+    "x": 0.483,
+    "y": 0.021,
+    "w": 0.153,
+    "h": 0.34,
+    "confidence": 0.98
+   },
+   {
+    "label": "TOILET-2",
+    "size": "2.13m x 1.54m; 7'0\" x 5'1\"",
+    "x": 0.279,
+    "y": 0.167,
+    "w": 0.131,
+    "h": 0.183,
+    "confidence": 0.98
+   },
+   {
+    "label": "PUJA SPACE",
+    "size": "1.20m x 0.58; 3'3\" x 1'11\"",
+    "x": 0.41,
+    "y": 0.212,
+    "w": 0.115,
+    "h": 0.2,
+    "confidence": 0.9
+   },
+   {
+    "label": "VERANDAH",
+    "size": "1.52m x 1.40m; 5' x 4'7\"",
+    "x": 0.746,
+    "y": 0.021,
+    "w": 0.132,
+    "h": 0.167,
+    "confidence": 0.98
+   },
+   {
+    "label": "FOYER",
+    "size": "1.51m x 3.29m; 4'11\" x 10'10\"",
+    "x": 0.635,
+    "y": 0.167,
+    "w": 0.109,
+    "h": 0.245,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET-3",
+    "size": "2.43m x 1.54m; 8' x 5'1\"",
+    "x": 0.746,
+    "y": 0.167,
+    "w": 0.155,
+    "h": 0.183,
+    "confidence": 0.98
+   },
+   {
+    "label": "PASSAGE",
+    "size": "1.14m x 1.11m; 3'9\" x 3'8\"",
+    "x": 0.006,
+    "y": 0.35,
+    "w": 0.272,
+    "h": 0.161,
+    "confidence": 0.87
+   },
+   {
+    "label": "PASSAGE",
+    "size": "2.05m x 1.11m; 6'9\" x 3'8\"",
+    "x": 0.278,
+    "y": 0.35,
+    "w": 0.132,
+    "h": 0.117,
+    "confidence": 0.91
+   },
+   {
+    "label": "LIVING & DINING",
+    "size": "6.27m x 4.77m; 20'7\" x 15'8\"",
+    "x": 0.41,
+    "y": 0.35,
+    "w": 0.385,
+    "h": 0.483,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM-1",
+    "size": "3.33m x 4.27m; 10'11\" x 14'",
+    "x": 0.006,
+    "y": 0.512,
+    "w": 0.205,
+    "h": 0.269,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM-2",
+    "size": "3.03m x 3.49m; 9'11\" x 11'5\"",
+    "x": 0.221,
+    "y": 0.467,
+    "w": 0.19,
+    "h": 0.366,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM-3",
+    "size": "3.03m x 4.3m; 9'11\" x 14'1\"",
+    "x": 0.806,
+    "y": 0.512,
+    "w": 0.184,
+    "h": 0.269,
+    "confidence": 0.98
+   },
+   {
+    "label": "DECK",
+    "size": "3.33m x 0.84m; 10'11\" x 2'9\"",
+    "x": 0.006,
+    "y": 0.783,
+    "w": 0.205,
+    "h": 0.11,
+    "confidence": 0.97
+   },
+   {
+    "label": "DECK",
+    "size": "6.27m x 1.35m; 20'7\" x 4'5\"",
+    "x": 0.41,
+    "y": 0.833,
+    "w": 0.394,
+    "h": 0.15,
+    "confidence": 0.97
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

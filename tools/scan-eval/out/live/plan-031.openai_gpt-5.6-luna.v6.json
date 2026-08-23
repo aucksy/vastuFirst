@@ -1,0 +1,119 @@
+{
+ "file": "plan-031.jpg",
+ "imageSize": [
+  1400,
+  884
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2339,
+  "candidatesTokenCount": 1553,
+  "thoughtsTokenCount": 987
+ },
+ "reply": {
+  "planType": "3D_RENDER",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.173,
+   "y": 0.196,
+   "w": 0.679,
+   "h": 0.553
+  },
+  "rooms": [
+   {
+    "label": "TOILET",
+    "size": "10'6\" X 4'6\"",
+    "x": 0.025,
+    "y": 0.103,
+    "w": 0.205,
+    "h": 0.192,
+    "confidence": 0.84
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "10'6\" X 13'0\"",
+    "x": 0.022,
+    "y": 0.295,
+    "w": 0.218,
+    "h": 0.455,
+    "confidence": 0.89
+   },
+   {
+    "label": "LIVING & DINING",
+    "size": "11'0\" X 18'0\" / 3'0\" X 10'9\"",
+    "x": 0.23,
+    "y": 0.095,
+    "w": 0.242,
+    "h": 0.66,
+    "confidence": 0.82
+   },
+   {
+    "label": "TOILET",
+    "size": "4'6\" X 7'6\"",
+    "x": 0.565,
+    "y": 0.105,
+    "w": 0.12,
+    "h": 0.315,
+    "confidence": 0.7
+   },
+   {
+    "label": "UTILITY",
+    "size": "6'9\" X 2'0\"",
+    "x": 0.67,
+    "y": 0.115,
+    "w": 0.115,
+    "h": 0.295,
+    "confidence": 0.76
+   },
+   {
+    "label": "TOILET",
+    "size": "5'0\" X 7'6\"",
+    "x": 0.755,
+    "y": 0.245,
+    "w": 0.105,
+    "h": 0.205,
+    "confidence": 0.7
+   },
+   {
+    "label": "KITCHEN",
+    "size": "7'6\" X 9'0\"",
+    "x": 0.445,
+    "y": 0.44,
+    "w": 0.17,
+    "h": 0.42,
+    "confidence": 0.8
+   },
+   {
+    "label": "D.Y",
+    "size": "",
+    "x": 0.465,
+    "y": 0.655,
+    "w": 0.13,
+    "h": 0.18,
+    "confidence": 0.55
+   },
+   {
+    "label": "BEDROOM",
+    "size": "9'6\" X 11'6\"",
+    "x": 0.63,
+    "y": 0.44,
+    "w": 0.18,
+    "h": 0.36,
+    "confidence": 0.85
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "9'6\" X 13'0\" / 3'3\" X 3'0\"",
+    "x": 0.805,
+    "y": 0.28,
+    "w": 0.18,
+    "h": 0.47,
+    "confidence": 0.89
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}

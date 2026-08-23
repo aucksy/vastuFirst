@@ -1,0 +1,236 @@
+{
+ "file": "plan-001.jpg",
+ "imageSize": [
+  993,
+  702
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 1705,
+  "candidatesTokenCount": 3045,
+  "thoughtsTokenCount": 2070
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.101,
+   "y": 0.254,
+   "w": 0.803,
+   "h": 0.509
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "4'-0\" WIDE",
+    "x": 0.004,
+    "y": 0.008,
+    "w": 0.094,
+    "h": 0.083,
+    "confidence": 0.94
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.005,
+    "y": 0.092,
+    "w": 0.101,
+    "h": 0.259,
+    "confidence": 0.96
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.109,
+    "y": 0.008,
+    "w": 0.104,
+    "h": 0.331,
+    "confidence": 0.96
+   },
+   {
+    "label": "KITCHEN",
+    "size": "",
+    "x": 0.216,
+    "y": 0.008,
+    "w": 0.069,
+    "h": 0.331,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING / DINING",
+    "size": "",
+    "x": 0.213,
+    "y": 0.336,
+    "w": 0.183,
+    "h": 0.247,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET",
+    "size": "",
+    "x": 0.004,
+    "y": 0.359,
+    "w": 0.075,
+    "h": 0.132,
+    "confidence": 0.91
+   },
+   {
+    "label": "TOILET",
+    "size": "",
+    "x": 0.004,
+    "y": 0.504,
+    "w": 0.075,
+    "h": 0.117,
+    "confidence": 0.91
+   },
+   {
+    "label": "BALCONY",
+    "size": "4'-0\" WIDE",
+    "x": 0.004,
+    "y": 0.941,
+    "w": 0.094,
+    "h": 0.057,
+    "confidence": 0.94
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.005,
+    "y": 0.675,
+    "w": 0.096,
+    "h": 0.261,
+    "confidence": 0.96
+   },
+   {
+    "label": "KITCHEN",
+    "size": "",
+    "x": 0.111,
+    "y": 0.725,
+    "w": 0.069,
+    "h": 0.273,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING / DINING",
+    "size": "",
+    "x": 0.181,
+    "y": 0.584,
+    "w": 0.101,
+    "h": 0.414,
+    "confidence": 0.94
+   },
+   {
+    "label": "BALCONY",
+    "size": "4'-0\" WIDE",
+    "x": 0.902,
+    "y": 0.008,
+    "w": 0.096,
+    "h": 0.083,
+    "confidence": 0.94
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.794,
+    "y": 0.092,
+    "w": 0.101,
+    "h": 0.259,
+    "confidence": 0.96
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.691,
+    "y": 0.008,
+    "w": 0.103,
+    "h": 0.331,
+    "confidence": 0.96
+   },
+   {
+    "label": "KITCHEN",
+    "size": "",
+    "x": 0.619,
+    "y": 0.008,
+    "w": 0.069,
+    "h": 0.331,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING / DINING",
+    "size": "",
+    "x": 0.604,
+    "y": 0.336,
+    "w": 0.183,
+    "h": 0.247,
+    "confidence": 0.95
+   },
+   {
+    "label": "TOILET",
+    "size": "",
+    "x": 0.921,
+    "y": 0.359,
+    "w": 0.075,
+    "h": 0.132,
+    "confidence": 0.91
+   },
+   {
+    "label": "TOILET",
+    "size": "",
+    "x": 0.921,
+    "y": 0.504,
+    "w": 0.075,
+    "h": 0.117,
+    "confidence": 0.91
+   },
+   {
+    "label": "BALCONY",
+    "size": "4'-0\" WIDE",
+    "x": 0.902,
+    "y": 0.941,
+    "w": 0.096,
+    "h": 0.057,
+    "confidence": 0.94
+   },
+   {
+    "label": "BEDROOM",
+    "size": "",
+    "x": 0.899,
+    "y": 0.675,
+    "w": 0.096,
+    "h": 0.261,
+    "confidence": 0.96
+   },
+   {
+    "label": "KITCHEN",
+    "size": "",
+    "x": 0.82,
+    "y": 0.725,
+    "w": 0.069,
+    "h": 0.273,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING / DINING",
+    "size": "",
+    "x": 0.718,
+    "y": 0.584,
+    "w": 0.101,
+    "h": 0.414,
+    "confidence": 0.94
+   },
+   {
+    "label": "LIFT / STAIRCASE LOBBY",
+    "size": "",
+    "x": 0.391,
+    "y": 0.405,
+    "w": 0.217,
+    "h": 0.178,
+    "confidence": 0.91
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

@@ -1607,3 +1607,131 @@ Not counted, looked at, on the owner's own recorded plan (CLAUDE.md §2b):
 carry an amber **Check** badge. A badge on almost every row cannot tell anybody which row to look
 at — it reads as decoration. Worth a session of its own to find which flag is firing so widely and
 whether it deserves that much of the user's attention.
+
+---
+
+## 3w. ⭐⭐⭐ The home was being measured against the PAGE, and a sheet with two pictures was refused (23 August 2026)
+
+Two faults, found one after the other on the same sheet, and they only make sense together.
+
+**`plan-018` is a builder's marketing sheet.** A large tilted showcase render fills the left half. In
+the middle sits a clean, flat, straight-overhead plan of the flat. Down the right is a numbered
+legend — *1 DRAWING ROOM 16'2" × 11'9½"*, fifteen entries, every one with its printed size. There is
+a north arrow. It is one of the most readable sheets in the whole corpus.
+
+The app refused it.
+
+### Fault 1 — the camera question was asked about the SHEET, not about the DRAWING
+
+Prompt v5 fixed *what* the 2D/3D question is (the angle, never the styling — §3u). It did not fix
+*what the question is asked about*. The prompt opened "an image that is supposed to be a home's floor
+plan" and asked the reader to judge that image. **A marketing sheet is not one image.**
+
+So the reader looked at the biggest thing on the page, answered `3D_RENDER`, and the whole sheet was
+refused — while the very same reply had already boxed the flat plan correctly and returned all
+fifteen rooms with their printed sizes. **The evidence that the sheet was measurable was sitting
+inside the answer that refused it.**
+
+Prompt **v6** points the question at the drawing being measured:
+
+> ONE SHEET OFTEN CARRIES SEVERAL PICTURES … The question above is about THE ONE DRAWING YOU
+> MEASURE, never about the sheet as a whole. … Answer "3D_RENDER" only when a tilted view is the
+> ONLY drawing of the home on the sheet.
+
+The second sentence is load-bearing and is pinned by its own test. Without it the change would wave
+through `plan-030` (a genuinely tilted street aerial, roof off, cars and neighbours in frame), which
+is exactly the harm the 2D gate exists to stop.
+
+### Fault 2 — and it was much bigger: the home's SHAPE came from the page
+
+Fixing the triage exposed the second fault immediately, because `plan-018` mapped to a **10 × 4**
+grid: a nearly square flat squashed into a letterbox with a room falling off the end.
+
+Room coordinates are fractions of **the building's outer wall** — the prompt's own contract since
+v4. Turning those fractions into pixels needs the *building's* width ÷ height. `ScanMapper` was
+using the ratio of the **whole sheet**. Those are the same number only when the drawing fills the
+page, and a real sheet never does — there is a title block, a legend, an area table, margins, and on
+`plan-018` a showcase render taking half the width. **Every room was stretched by exactly
+`building.w / building.h`,** in the grid's shape and in the wall-line snap, which are the two things
+that decide where a room lands. A room's position is its Vastu direction. A sheet with wide margins
+was scored as a differently-shaped home than the one on the paper.
+
+**It is arithmetic, not an opinion.** Three sheets in the corpus print their own overall size, so
+the right answer can be read off the paper:
+
+| sheet | what the paper says | page ratio gave | building ratio gives |
+|---|---|---|---|
+| `plan-034` | prints 25'0" × 40'0" = **0.63** | 1.00 | **0.63** |
+| `plan-017` | prints 45' × 36' = **1.25** | 0.75 | **1.22** |
+| `plan-018` | the flat plan measures ≈ **1.17** | 2.72 | **1.12** |
+
+And the check that needs no printed dimensions at all: **the owner's Green Court flat is in the
+corpus on two different sheets** — a branded one (square page, green panel down the side) and a clean
+one (tall page, no panel). Same flat. Through the page ratio they read **1.00 and 0.69**, a 46 %
+disagreement about the shape of one home, drawn as a 10 × 10 and as a 7 × 10. Through the building
+box they read **0.415 and 0.412**, and both draw the tall narrow flat the paper draws.
+
+`ScanMapper.planAspect` does the conversion once, and both callers use it. It shares one sanity
+predicate (`saneBuilding`) with the on-photo tint, so a mad box cannot be trusted by one and refused
+by the other. **Missing or mad box → the old number, exactly** — which is every pre-v4 recording and
+every bundled fixture, and is why no pinned test moved.
+
+### What the corpus says — `tools/scan-eval/exp-plan-aspect.mjs`, free to re-run
+
+Over the 34 recorded reads that carry a building box, replayed through the mapper mirror:
+
+- **20 get a different grid.**
+- **5 place more rooms. 0 place fewer.** No plan loses a room anywhere in the corpus.
+- `plan-018` goes 10 × 4 → **10 × 8**, and from 14 rooms placed to **all 15**.
+
+All five mirror fuzz suites stay green.
+
+### ⚠ Corrected while here, because it was pointing the next session at a wrong conclusion
+
+`exp-3d-gate.mjs` described `plan-031` as a "flat sheet the reader mislabels 3D". **It is not flat.**
+It is a doll's-house isometric on a navy background, side faces of every wall visible, names on
+leader lines — the reader is right about it. It also prints its room sizes, 9 of 10, which is the
+one thing `sheetPrintsItsOwnSizes` assumes a marketing render never does. So the two classes do not
+separate absolutely, and a genuinely tilted render can reach the "read it anyway" door with a placed
+layout behind it. Left as it ships — it is still behind a refusal the user must walk past, and the
+alternative hands them to the guided grid — but the comment is corrected and the case is now named
+as the counter-example it is.
+
+`audit-mapper.mjs` and `batch-real.py` also gained loud banners: both are built on **prompt v1/v3
+recordings**, so their failure lists describe a reader that is not in the product. That confusion has
+already cost one session, which named `plan-005` and `plan-007` as failing when both read perfectly
+on the shipping reader.
+
+### The re-measure — 38 paid scans, owner-approved, 23 August 2026
+
+The whole sample set re-read on the shipping model with prompt v6 (`--tag=v6` recordings in
+`out/live`, ~₹0.09 each, ₹3.42 in total), then compared with
+`tools/scan-eval/exp-prompt-diff.mjs --from=v5 --to=v6`:
+
+- **One sheet changed its triage answer: `plan-018`, `3D_RENDER` → `2D_PLAN`.** That is the sheet
+  this change is for, and it is the only movement anywhere in the set.
+- **No sheet moved the other way.** Every genuine refusal held: `plan-030` and `plan-031` still
+  `NOT_2D`, `plan-029` still `NOT_A_PLAN`, `plan-024` / `plan-032` / `plan-036` still `NO_LABELS`.
+- `plan-018` now maps to **10 × 9 with all fifteen rooms placed**, and against the sheet room by
+  room it is right: bedrooms across the top, master bedroom bottom-left, kitchen bottom-right,
+  dining and drawing room down the middle-right.
+
+⚠ **Room counts wobbled by one or two on several sheets in both directions, and that is not
+evidence about this change.** Only six sheets in the corpus had a v5 recording to compare against;
+for the rest the tool falls back to a v4a/v4b/plain read, so those rows span two prompt generations
+plus ordinary run-to-run variation. The tool now prints which baseline each row actually used and
+says this in its own output. **The triage column is the one that answers the question**, and it moved
+once.
+
+One room-count change WAS worth chasing and turned out to be an improvement. `plan-012` went from 17
+rooms to 15. Its legend lists 17 entries, but **entries 16 and 17 — STAFF ROOM and STAFF TOILET —
+are not drawn anywhere on the plan.** The older read invented them: both landed at the *identical*
+coordinates (0.501, 0.891) with the two lowest confidences in the whole reply, 0.55 and 0.40. Asking
+about the drawing rather than the sheet stopped the reader reporting two rooms that the drawing does
+not contain.
+
+### And it makes the sheet cheaper as well as readable
+
+A `NOT_2D` answer from the primary model fires the second opinion — `google/gemini-3.1-pro-preview`,
+about ₹1.4 a call against the primary's ₹0.09. Every scan of a sheet in this class was paying that
+and then *still* showing a refusal. It now costs one primary call and shows the flat.

@@ -1,0 +1,28 @@
+{
+ "file": "plan-024.jpg",
+ "imageSize": [
+  1400,
+  734
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2075,
+  "candidatesTokenCount": 272,
+  "thoughtsTokenCount": 204
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": false,
+  "northMarked": false,
+  "building": {
+   "x": 0.1843,
+   "y": 0.0559,
+   "w": 0.6307,
+   "h": 0.6921
+  },
+  "rooms": [],
+  "planConfidence": 0.99
+ }
+}

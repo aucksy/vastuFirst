@@ -445,4 +445,57 @@ class RecordedScanTest {
         assertEquals(2, balcony.rect!!.h, "the 1 825 mm strip holds on this copy too")
         assertEquals(9, placed.rows, "and the dead edge rows are gone here too")
     }
+
+    /**
+     * ⭐⭐ THE SHEET WITH TWO PICTURES ON IT — refused for weeks, and the reply that refused it was
+     * carrying the whole flat.
+     *
+     * `plan-018` is a builder's marketing page: a big tilted showcase render on the left, a clean
+     * straight-overhead plan in the middle, a numbered legend naming all fifteen rooms with their
+     * printed sizes on the right, and a north arrow. Prompt v5 asked the camera question about "the
+     * image", the reader judged the biggest thing on the page, answered `3D_RENDER`, and the sheet
+     * was refused — with fifteen correctly-boxed, correctly-sized rooms sitting inside that same
+     * answer. Prompt v6 asks about the one DRAWING being measured. See `ScanReaderConfigTest`.
+     *
+     * Two separate faults meet on this fixture, so it pins both:
+     *
+     *  1. **the triage answer**, which must not go back to a refusal;
+     *  2. **the home's shape**, which must come from the building box and not from the page. The
+     *     page is 2.43 times wider than tall because half of it is the showcase render; the flat is
+     *     very nearly square. Shaped from the page it is a 10 × 4 letterbox with a room falling off
+     *     the end. Shaped from the drawing it fits, and every room lands where the paper draws it.
+     */
+    @Test
+    fun `⭐⭐ a flat plan drawn beside a showcase render is read, and is not squashed into a letterbox`() {
+        val rec = assertNotNull(
+            RecordedScans.load(RecordedScans.COMPOSITE_SHEET),
+            "plan-018-composite is not bundled",
+        )
+        assertEquals(PlanImageType.TWO_D_PLAN, rec.reply.planType, "the sheet carries a flat plan")
+
+        // The sheet's own proportions, as the platform layer would supply them.
+        val out = ScanMapper.map(rec.reply, imageAspect = 1400.0 / 577.0)
+        val placed = assertIs<ScanOutcome.Placed>(out, "a readable sheet must not be refused")
+        assertEquals(15, placed.rooms.size, "all fifteen rooms the legend names")
+        assertTrue(placed.rooms.all { it.rect != null }, "a Placed outcome must carry geometry")
+
+        // ⭐ The letterbox check, and the reason this fixture exists. gridFor() on the PAGE's ratio
+        // (2.43, stretched to 2.72 by the frame) returns 10 × 4. Anything at or below that means the
+        // building box has stopped being read and every room is stretched again.
+        assertTrue(
+            placed.rows >= 8,
+            "the flat is nearly square: got ${placed.cols} x ${placed.rows}, and 10 x 4 is the bug",
+        )
+
+        // And the thing that actually decides the score: the sheet draws the kitchen on the east
+        // side and the master bedroom on the west. A grid the wrong shape swaps rooms between
+        // directions, which is the whole reason a wrong ratio is not cosmetic.
+        val kitchen = placed.rooms.single { it.type == RoomType.KITCHEN }
+        val master = placed.rooms.single { it.type == RoomType.MASTER_BEDROOM }
+        assertTrue(
+            kitchen.rect!!.col > master.rect!!.col,
+            "the paper puts the kitchen east of the master bedroom: " +
+                "kitchen at ${kitchen.rect!!.col}, master at ${master.rect!!.col}",
+        )
+    }
 }

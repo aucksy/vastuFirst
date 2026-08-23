@@ -1,0 +1,28 @@
+{
+ "file": "plan-036.webp",
+ "imageSize": [
+  1232,
+  928
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2218,
+  "candidatesTokenCount": 210,
+  "thoughtsTokenCount": 146
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": false,
+  "northMarked": false,
+  "building": {
+   "x": 0.077,
+   "y": 0.056,
+   "w": 0.838,
+   "h": 0.915
+  },
+  "rooms": [],
+  "planConfidence": 0.99
+ }
+}

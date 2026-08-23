@@ -1,0 +1,74 @@
+{
+ "file": "plan-009.webp",
+ "imageSize": [
+  1024,
+  800
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 1821,
+  "candidatesTokenCount": 1336,
+  "thoughtsTokenCount": 1034
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.05,
+   "y": 0.053,
+   "w": 0.402,
+   "h": 0.645
+  },
+  "rooms": [
+   {
+    "label": "BEDROOM",
+    "size": "11'4\"X12'0\"",
+    "x": 0.029,
+    "y": 0.015,
+    "w": 0.454,
+    "h": 0.303,
+    "confidence": 0.98
+   },
+   {
+    "label": "TOILET",
+    "size": "4'0\"X7'8\"",
+    "x": 0.483,
+    "y": 0.117,
+    "w": 0.177,
+    "h": 0.206,
+    "confidence": 0.97
+   },
+   {
+    "label": "KITCHEN",
+    "size": "7'8\"X12'0\"",
+    "x": 0.658,
+    "y": 0.015,
+    "w": 0.316,
+    "h": 0.303,
+    "confidence": 0.98
+   },
+   {
+    "label": "HALL",
+    "size": "12'0\"X22'8\"",
+    "x": 0.029,
+    "y": 0.319,
+    "w": 0.505,
+    "h": 0.59,
+    "confidence": 0.96
+   },
+   {
+    "label": "PORCH",
+    "size": "11'0\"X16'6\"",
+    "x": 0.534,
+    "y": 0.582,
+    "w": 0.439,
+    "h": 0.405,
+    "confidence": 0.95
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

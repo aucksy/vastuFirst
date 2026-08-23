@@ -1,0 +1,155 @@
+{
+ "file": "plan-019.jpg",
+ "imageSize": [
+  1400,
+  840
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2286,
+  "candidatesTokenCount": 2187,
+  "thoughtsTokenCount": 1552
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.156,
+   "y": 0.142,
+   "w": 0.454,
+   "h": 0.543
+  },
+  "rooms": [
+   {
+    "label": "Masterbed",
+    "size": "360X370",
+    "x": 0.002,
+    "y": 0.018,
+    "w": 0.233,
+    "h": 0.336,
+    "confidence": 0.99
+   },
+   {
+    "label": "Bed",
+    "size": "360X390",
+    "x": 0.453,
+    "y": 0.002,
+    "w": 0.223,
+    "h": 0.344,
+    "confidence": 0.99
+   },
+   {
+    "label": "Toilet",
+    "size": "150x210",
+    "x": 0.679,
+    "y": 0.002,
+    "w": 0.107,
+    "h": 0.2,
+    "confidence": 0.98
+   },
+   {
+    "label": "Dress",
+    "size": "170x105",
+    "x": 0.679,
+    "y": 0.202,
+    "w": 0.107,
+    "h": 0.149,
+    "confidence": 0.97
+   },
+   {
+    "label": "Toilet",
+    "size": "150x120",
+    "x": 0.789,
+    "y": 0.002,
+    "w": 0.061,
+    "h": 0.189,
+    "confidence": 0.86
+   },
+   {
+    "label": "W/area",
+    "size": "224x270",
+    "x": 0.851,
+    "y": 0.002,
+    "w": 0.137,
+    "h": 0.241,
+    "confidence": 0.97
+   },
+   {
+    "label": "Store",
+    "size": "150x150",
+    "x": 0.786,
+    "y": 0.186,
+    "w": 0.096,
+    "h": 0.147,
+    "confidence": 0.98
+   },
+   {
+    "label": "Kitchen",
+    "size": "336x330",
+    "x": 0.784,
+    "y": 0.329,
+    "w": 0.203,
+    "h": 0.2,
+    "confidence": 0.99
+   },
+   {
+    "label": "Dining",
+    "size": "360x560",
+    "x": 0.554,
+    "y": 0.349,
+    "w": 0.231,
+    "h": 0.316,
+    "confidence": 0.99
+   },
+   {
+    "label": "Pooja",
+    "size": "150X100",
+    "x": 0.453,
+    "y": 0.263,
+    "w": 0.112,
+    "h": 0.09,
+    "confidence": 0.98
+   },
+   {
+    "label": "Toilet",
+    "size": "130x240",
+    "x": 0.003,
+    "y": 0.434,
+    "w": 0.096,
+    "h": 0.23,
+    "confidence": 0.92
+   },
+   {
+    "label": "Library (sunken floor)",
+    "size": "",
+    "x": 0.101,
+    "y": 0.434,
+    "w": 0.22,
+    "h": 0.23,
+    "confidence": 0.99
+   },
+   {
+    "label": "Drawing",
+    "size": "360X390",
+    "x": 0.228,
+    "y": 0.658,
+    "w": 0.233,
+    "h": 0.342,
+    "confidence": 0.99
+   },
+   {
+    "label": "Porch",
+    "size": "360x450",
+    "x": 0.775,
+    "y": 0.524,
+    "w": 0.225,
+    "h": 0.386,
+    "confidence": 0.99
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

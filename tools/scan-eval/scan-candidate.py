@@ -18,7 +18,7 @@ along for the cost column of the scoreboard.
 ⚠ HARD RULE (CLAUDE.md 2c): every invocation is one paid image scan. The owner approves
 the exact scan count BEFORE any batch runs.
 """
-import base64, json, os, re, sys, urllib.error, urllib.request
+import base64, hashlib, json, os, re, sys, urllib.error, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -110,7 +110,10 @@ def main():
 
     os.makedirs(OUT, exist_ok=True)
     out_path = os.path.join(OUT, "%s.%s.%s.json" % (stem, model.replace("/", "_"), tag))
-    json.dump({"file": name, "imageSize": list(size), "prompt": "v3", "model": model,
+    # ⚠ Was a hard-coded "v3" here too — see the note in scan-live.py. A fingerprint of the words
+    # actually sent, so a recording can never claim a prompt it did not use.
+    prompt_id = "sha1:" + hashlib.sha1(prompt.encode("utf-8")).hexdigest()[:12]
+    json.dump({"file": name, "imageSize": list(size), "prompt": prompt_id, "model": model,
                "modelVersion": model_version, "usage": usage, "reply": reply},
               open(out_path, "w", encoding="utf-8"), indent=1)
     print("planType=%s rooms=%d tokens: in=%s out=%s (thoughts=%s)" % (

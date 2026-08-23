@@ -31,6 +31,15 @@ PACE = 26.0  # seconds between calls, to stay under 8000 TPM
 spec = importlib.util.spec_from_file_location("ev", os.path.join(HERE, "run-eval.py"))
 ev = importlib.util.module_from_spec(spec); spec.loader.exec_module(ev)
 
+# ⚠⚠ THIS IS THE RETIRED v1 PROMPT AND IT IS NOT WHAT THE APP SENDS. Kept, verbatim and frozen, so
+# that the recordings this script produced (out/real-plans.json, out/real-plans-rects.json) can be
+# read for what they are. The shipping prompt lives in ONE place —
+# shared/src/main/resources/scan/plan-read-prompt.txt — and is now on v6; scan-live.py and
+# scan-candidate.py both read that file rather than carrying a copy.
+#
+# Do NOT sync this text forward. Editing it would silently reinterpret data it did not produce. If
+# you want a fresh corpus, record one with scan-live.py — and get the owner's approved scan count
+# first (CLAUDE.md §2c).
 PROMPT = """You are looking at an image that is supposed to be a home's floor plan.
 
 FIRST decide what kind of image it is:

@@ -12,11 +12,13 @@ grid for a plan, a session reproduces it end to end without his phone:
 
 Faithful to the app (GroqPlanReader): prompt text from shared/src/main/resources/scan/
 plan-read-prompt.txt, model/effort/temperature/UA from reader-config.json, image downscaled to
-1400px JPEG q88 before upload exactly as the app does. Costs one real API call (~Rs 0.21).
+1400px JPEG q88 before upload exactly as the app does. Costs ONE REAL PAID SCAN
+(~Rs 0.09 on the shipping reader; the old Rs 0.21 figure was the retired Groq one). The owner
+approves the exact count first - CLAUDE.md 2c.
 
 Replies land in out/live/ — kept OUT of out/*.json, which are the frozen corpus recordings.
 """
-import base64, io, json, os, re, sys, urllib.request
+import base64, hashlib, io, json, os, re, sys, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -111,7 +113,13 @@ def main():
 
     os.makedirs(OUT, exist_ok=True)
     out_path = os.path.join(OUT, stem + ".json")
-    json.dump({"file": name, "imageSize": list(size), "prompt": "v3", "reply": reply},
+    # ⚠ This field said a hard-coded "v3" from the day it was written and never moved, so EVERY
+    # recording in out/live claims v3 — including the ones whose filename says v4a, v4b or v5. It is
+    # a label, not a measurement, and it was read as one. The script has always sent whatever
+    # plan-read-prompt.txt currently holds, so the honest thing to record is a fingerprint of the
+    # words that were actually sent.
+    prompt_id = "sha1:" + hashlib.sha1(prompt.encode("utf-8")).hexdigest()[:12]
+    json.dump({"file": name, "imageSize": list(size), "prompt": prompt_id, "reply": reply},
               open(out_path, "w", encoding="utf-8"), indent=1)
     print("planType=%s rooms=%d tokens=%s" % (
         reply.get("planType"), len(reply.get("rooms", [])), usage.get("total_tokens")))

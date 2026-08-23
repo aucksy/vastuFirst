@@ -1,5 +1,21 @@
 // audit-mapper.mjs — every RECORDED real reply through the mapper mirror, measured.
 //
+// ⚠⚠ READ THIS BEFORE QUOTING A SINGLE NUMBER THIS TOOL PRINTS (owner, 22 Aug 2026).
+//
+// THIS TOOL MEASURES THE MAPPER, NOT THE READER — and it feeds the mapper from a corpus recorded
+// with RETIRED PROMPTS: `out/real-plans-rects.json` is prompt v1 and `out/exp-size-field.json` is
+// prompt v3. The app ships v6. So a plan appearing in this tool's FAILURE list is telling you that
+// an old reply mapped badly; it is NOT telling you the app fails on that plan, and twice now it has
+// been read as if it were. It named plan-005 and plan-007 as failing; both read perfectly on the
+// reader we actually ship.
+//
+// The distinction that matters:
+//   · CHANGED THE MAPPER (snapping, framing, reshaping, labels)?  this tool is the right measure —
+//     same replies in, so any movement is yours.
+//   · WANT TO KNOW HOW THE APP READS A PLAN?                      this tool cannot answer that.
+//     Use the recordings in `out/live/`, which come from the shipping prompt and model, via
+//     `render-grid.mjs --reply=` or `exp-plan-aspect.mjs`. They are free to replay.
+//
 // WHY: the fuzz suite proves the mapper never emits an illegal plan, and the pinned cases prove a
 // handful of known answers — but neither says how good the corpus AS A WHOLE comes out. This runs
 // all recorded replies (30 old-prompt + 9 size-field + the owner's flat) and reports, per plan:

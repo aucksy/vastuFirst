@@ -36,7 +36,13 @@
     "by its STYLING ('often with furniture, shadows'), so both models refused straight-overhead",
     "furnished renders - a flat, fully-dimensioned, perfectly readable class. It blocked the",
     "owner's own plan on BOTH models and the escalation could not save him. Re-measured over the",
-    "corpus - plan doc 3u carries the numbers."
+    "corpus - plan doc 3u carries the numbers.",
+    "",
+    "prompt v6 (23 Aug 2026): the camera question is asked about THE ONE DRAWING BEING MEASURED,",
+    "not about the sheet. v5 asked about 'the image', so a sheet carrying a big showcase render",
+    "BESIDE a clean 2D plan came back as 3D_RENDER and the whole sheet was refused - even though",
+    "the reader had already boxed the flat plan and read all fifteen of its rooms with their",
+    "printed sizes. That is a common builder marketing layout. Re-measured over the corpus."
   ],
   "endpoint": "https://openrouter.ai/api/v1/chat/completions",
   "model": "openai/gpt-5.6-luna",

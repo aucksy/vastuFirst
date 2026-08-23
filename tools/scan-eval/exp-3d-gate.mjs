@@ -39,8 +39,16 @@ const MIN_PRINTED_TO_FIT = 3;
 // sheets as controls. Names are the stems written by scan-live.py into out/live.
 const SHEETS = [
   ['plan-030', 'tilted street aerial — roof off, cars, neighbours (a real render)'],
-  ['plan-031', 'flat sheet the reader mislabels 3D'],
-  ['plan-018', 'flat sheet the reader mislabels 3D'],
+  // ⚠ CORRECTION, 23 Aug 2026. This row read "flat sheet the reader mislabels 3D". It is not flat.
+  // Open the sheet and look: Poonam Estate, a doll's-house isometric on a navy background, side
+  // faces of every wall visible, names on leader lines outside the building. The reader is RIGHT
+  // about it. It prints its room sizes anyway — 9 of 10 — which is the one thing the rule below
+  // assumed a marketing render never does, so the two classes do NOT separate absolutely. Left
+  // shipping as it is (a tilted render reaching the "read it anyway" door with a placed layout is
+  // still behind a refusal the user has to walk past), but the claim needed correcting: the next
+  // person to read this file would otherwise tune a rule against a sheet that is not what it says.
+  ['plan-031', '⚠ GENUINELY TILTED, and prints its sizes — the counter-example to the rule below'],
+  ['plan-018', 'flat 2D plan drawn beside a big showcase render (fixed in prompt v6)'],
   ['plan-007', 'straight-overhead furnished render (control)'],
   ['plan-012', 'numbered rooms with a legend (control)'],
   ['aipl-zen-residences-gurgaon_2bhk-1262sqft (1)', "the owner's Gurgaon sheet (control)"],

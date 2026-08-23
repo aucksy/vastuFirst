@@ -764,7 +764,13 @@ class ScanMapperTest {
 
     /**
      * The on-photo tint's fix: a sane building box composes each room's SOURCE onto the page;
-     * no box, or a mad one, leaves the source exactly as today. Placement maths never reads it.
+     * no box, or a mad one, leaves the source exactly as today.
+     *
+     * ⚠ This note used to end "Placement maths never reads it." That stopped being true on
+     * 23 Aug 2026: the placement maths now takes the DRAWING's proportions through this same box
+     * (`ScanMapper.planAspect`), because room coordinates are building-framed and were being turned
+     * into pixels with the ratio of the whole sheet. The two callers share one sanity predicate —
+     * [ScanMapper.saneBuilding] — so a mad box cannot be trusted by one and refused by the other.
      */
     @Test
     fun `a sane building box composes the tint source onto the page`() {
@@ -804,6 +810,62 @@ class ScanMapperTest {
         assertTrue(sources.all { it.x >= 0.4 - 1e-9 && it.x + it.w <= 0.9 + 1e-9 },
             "every tint stays inside the building's page box: $sources")
     }
+
+    // ---- the DRAWING's proportions, not the SHEET's (23 Aug 2026) ---------------------------------
+
+    /**
+     * ⭐⭐ Room boxes are fractions of the BUILDING's outer wall, so turning them into pixels needs
+     * the BUILDING's width÷height, not the page's. Getting this wrong stretches every room by
+     * exactly `building.w / building.h`, and a room's position is its Vastu direction — so a sheet
+     * with wide margins was scored as a differently-shaped home than the one on the paper.
+     *
+     * The numbers below are read off sheets that print their own overall size, so this is arithmetic
+     * and not an opinion — see `tools/scan-eval/exp-plan-aspect.mjs` for the corpus run.
+     */
+    @Test
+    fun `the plan's proportions come from the building box, not the page`() {
+        // plan-018: a 4 BHK drawn beside a large showcase render. The page is 2.43 wide; the flat
+        // itself is very nearly square, and the sheet's own drawing measures about 1.17.
+        val plan018 = ScanBox(x = 0.577, y = 0.347, w = 0.224, h = 0.484)
+        assertEquals(1.12, ScanMapper.planAspect(plan018, 1400.0 / 577.0)!!, 0.02)
+
+        // plan-034 prints 25'0" x 40'0" on the sheet = 0.625. The page is square, so the old number
+        // was 1.00 — a tall narrow house drawn as a square one.
+        val plan034 = ScanBox(x = 0.13, y = 0.06, w = 0.50, h = 0.80)
+        assertEquals(0.63, ScanMapper.planAspect(plan034, 1.0)!!, 0.02)
+
+        // A drawing that genuinely fills its page must come back completely unchanged.
+        val fills = ScanBox(x = 0.0, y = 0.0, w = 1.0, h = 1.0)
+        assertEquals(1.7, ScanMapper.planAspect(fills, 1.7)!!, 1e-9)
+    }
+
+    @Test
+    fun `no building box, or a mad one, leaves the proportions exactly as they were`() {
+        // Every pre-v4 recording and every bundled fixture arrives without a box. They must not move
+        // — which is also why none of the pinned plans in this suite changed when this landed.
+        assertEquals(1.7, ScanMapper.planAspect(null, 1.7)!!, 1e-9)
+        assertEquals(1.7, ScanMapper.planAspect(ScanBox(w = 0.01, h = 0.9), 1.7)!!, 1e-9, "a sliver is not a building")
+        assertEquals(1.7, ScanMapper.planAspect(ScanBox(x = 0.9, w = 0.5, h = 0.9), 1.7)!!, 1e-9, "off the page is ignored")
+        assertEquals(1.7, ScanMapper.planAspect(ScanBox(w = Double.NaN, h = 0.5), 1.7)!!, 1e-9, "not a number is ignored")
+        assertEquals(null, ScanMapper.planAspect(plan018Box(), null), "no image ratio stays no image ratio")
+    }
+
+    /**
+     * ⭐ THE SAME HOME, PHOTOGRAPHED TWO WAYS, MUST COME OUT THE SAME SHAPE — and until this landed
+     * it did not. The owner's Green Court flat exists in the corpus on two sheets: a branded one
+     * (square page, big green panel down the side) and a clean one (tall page, no panel). Through
+     * the page's ratio they read 1.00 and 0.69 — a 46 % disagreement about the shape of one flat,
+     * which drew it as a 10x10 and as a 7x10. Through the building box they read 0.415 and 0.412.
+     */
+    @Test
+    fun `the same flat on two different sheets now gives the same proportions`() {
+        val branded = ScanMapper.planAspect(ScanBox(x = 0.34, y = 0.11, w = 0.32, h = 0.77), 1100.0 / 1100.0)!!
+        val clean = ScanMapper.planAspect(ScanBox(x = 0.22, y = 0.09, w = 0.49, h = 0.82), 669.0 / 976.0)!!
+        assertEquals(branded, clean, 0.03, "one flat, two sheets, one shape: $branded vs $clean")
+        assertTrue(branded < 0.6, "and it is the tall narrow flat the paper draws, not a square one")
+    }
+
+    private fun plan018Box() = ScanBox(x = 0.577, y = 0.347, w = 0.224, h = 0.484)
 
     private fun ScanOutcome.scannedRoomsForTest(): List<ScannedRoom> = when (this) {
         is ScanOutcome.Placed -> rooms

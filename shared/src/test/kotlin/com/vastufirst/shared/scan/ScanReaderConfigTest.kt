@@ -98,6 +98,38 @@ class ScanReaderConfigTest {
     }
 
     @Test
+    fun `the camera question is asked about the drawing, not about the whole sheet`() {
+        // ⭐ Prompt v6, 23 Aug 2026. v5 fixed WHAT the question is (the angle, not the styling) but
+        // left WHAT IT IS ASKED ABOUT wrong: "an image that is supposed to be a home's floor plan",
+        // judged as one thing. A builder's marketing sheet is not one thing. plan-018 of the corpus
+        // prints a large tilted showcase render on the left, a clean flat plan in the middle, a
+        // numbered legend naming every room with its printed size on the right, and a north arrow —
+        // and came back "3D_RENDER", so the whole sheet was refused. The same reply had already
+        // boxed the flat plan correctly and read all fifteen rooms with their sizes: the evidence
+        // that the sheet was measurable was inside the answer that refused it.
+        //
+        // The words must therefore keep pointing at the DRAWING BEING MEASURED, and must keep
+        // saying that a tilted picture standing next to a flat one does not disqualify the sheet.
+        // Compared on one line — the prompt is wrapped prose and re-wrapping must not unpin it.
+        val prompt = recipe.prompt.replace(Regex("\\s+"), " ")
+        assertTrue(
+            prompt.contains("THE ONE DRAWING YOU MEASURE, never about the sheet"),
+            "the classification is about the drawing being measured, not the page it sits on",
+        )
+        assertTrue(
+            prompt.contains("straight-overhead plan of the home is printed anywhere on the sheet"),
+            "…and a flat plan anywhere on the sheet is what makes the sheet readable",
+        )
+        // The other half, and the half that keeps the gate honest: a genuinely tilted sheet with no
+        // flat drawing on it must still refuse. plan-030 (a street aerial with cars and neighbours)
+        // and plan-031 (a tilted marketing render that DOES print its sizes) both depend on this.
+        assertTrue(
+            prompt.contains("only when a tilted view is the ONLY drawing of the home"),
+            "a sheet with no flat drawing on it must still be refused",
+        )
+    }
+
+    @Test
     fun `no Vastu vocabulary reaches the model`() {
         // ⭐ SAFETY RULE S1, now mechanical instead of a note in a document.
         //

@@ -1,0 +1,137 @@
+{
+ "file": "plan-017.webp",
+ "imageSize": [
+  1050,
+  1400
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2603,
+  "candidatesTokenCount": 1675,
+  "thoughtsTokenCount": 1034
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.074,
+   "y": 0.269,
+   "w": 0.805,
+   "h": 0.495
+  },
+  "rooms": [
+   {
+    "label": "BED ROOM",
+    "size": "11'-2\"X8'-0\"",
+    "x": 0.018,
+    "y": 0.102,
+    "w": 0.247,
+    "h": 0.216,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "10'-0\"X11'-5\"",
+    "x": 0.273,
+    "y": 0.02,
+    "w": 0.222,
+    "h": 0.299,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "10'-0\"X11'-5\"",
+    "x": 0.504,
+    "y": 0.02,
+    "w": 0.222,
+    "h": 0.299,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "11'-2\"X8'-0\"",
+    "x": 0.735,
+    "y": 0.102,
+    "w": 0.249,
+    "h": 0.216,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN/DINNING",
+    "size": "15'-0\"X9'-0\"",
+    "x": 0.018,
+    "y": 0.33,
+    "w": 0.334,
+    "h": 0.25,
+    "confidence": 0.98
+   },
+   {
+    "label": "KITCHEN/DINNING",
+    "size": "15'-0\"X9'-0\"",
+    "x": 0.649,
+    "y": 0.33,
+    "w": 0.335,
+    "h": 0.25,
+    "confidence": 0.98
+   },
+   {
+    "label": "BATH",
+    "size": "3'-10\"X5'-0\"",
+    "x": 0.357,
+    "y": 0.328,
+    "w": 0.088,
+    "h": 0.147,
+    "confidence": 0.96
+   },
+   {
+    "label": "BATH",
+    "size": "3'-10\"X5'-0\"",
+    "x": 0.558,
+    "y": 0.328,
+    "w": 0.086,
+    "h": 0.147,
+    "confidence": 0.96
+   },
+   {
+    "label": "W.C",
+    "size": "3'-0\"X4'-0\"",
+    "x": 0.421,
+    "y": 0.58,
+    "w": 0.076,
+    "h": 0.12,
+    "confidence": 0.94
+   },
+   {
+    "label": "W.C",
+    "size": "3'-0\"X4'-0\"",
+    "x": 0.499,
+    "y": 0.58,
+    "w": 0.075,
+    "h": 0.12,
+    "confidence": 0.94
+   },
+   {
+    "label": "LIVING HALL",
+    "size": "10'-0\"X13'-9\"",
+    "x": 0.127,
+    "y": 0.584,
+    "w": 0.225,
+    "h": 0.372,
+    "confidence": 0.98
+   },
+   {
+    "label": "LIVING HALL",
+    "size": "10'-0\"X13'-9\"",
+    "x": 0.649,
+    "y": 0.584,
+    "w": 0.335,
+    "h": 0.372,
+    "confidence": 0.98
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

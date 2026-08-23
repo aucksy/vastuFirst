@@ -1,0 +1,137 @@
+{
+ "file": "plan-026.webp",
+ "imageSize": [
+  720,
+  900
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 1661,
+  "candidatesTokenCount": 1852,
+  "thoughtsTokenCount": 1227
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.019,
+   "y": 0.003,
+   "w": 0.949,
+   "h": 0.987
+  },
+  "rooms": [
+   {
+    "label": "O.T.S.",
+    "size": "3'x4'11\"",
+    "x": 0.003,
+    "y": 0.002,
+    "w": 0.122,
+    "h": 0.124,
+    "confidence": 0.98
+   },
+   {
+    "label": "BATHROOM",
+    "size": "7'7\"X4'11\"",
+    "x": 0.132,
+    "y": 0.002,
+    "w": 0.262,
+    "h": 0.134,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "11'X11'7\"",
+    "x": 0.025,
+    "y": 0.131,
+    "w": 0.378,
+    "h": 0.306,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "12'X10'7\"",
+    "x": 0.406,
+    "y": 0.002,
+    "w": 0.394,
+    "h": 0.273,
+    "confidence": 0.99
+   },
+   {
+    "label": "O.T.S.",
+    "size": "4'8\"X3'",
+    "x": 0.815,
+    "y": 0.002,
+    "w": 0.154,
+    "h": 0.078,
+    "confidence": 0.98
+   },
+   {
+    "label": "BATHROOM",
+    "size": "4'8\"X7'2\"",
+    "x": 0.799,
+    "y": 0.081,
+    "w": 0.192,
+    "h": 0.191,
+    "confidence": 0.99
+   },
+   {
+    "label": "LOBBY/DINING",
+    "size": "17'1\"X9'10\"",
+    "x": 0.404,
+    "y": 0.275,
+    "w": 0.568,
+    "h": 0.261,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11'X9'",
+    "x": 0.025,
+    "y": 0.439,
+    "w": 0.364,
+    "h": 0.235,
+    "confidence": 0.99
+   },
+   {
+    "label": "BED ROOM",
+    "size": "11'X11'9\"",
+    "x": 0.025,
+    "y": 0.681,
+    "w": 0.364,
+    "h": 0.301,
+    "confidence": 0.99
+   },
+   {
+    "label": "VERANDAH",
+    "size": "9'5\"X4'6\"",
+    "x": 0.391,
+    "y": 0.537,
+    "w": 0.217,
+    "h": 0.445,
+    "confidence": 0.96
+   },
+   {
+    "label": "BED ROOM",
+    "size": "10'8\"X12'4\"",
+    "x": 0.609,
+    "y": 0.545,
+    "w": 0.364,
+    "h": 0.323,
+    "confidence": 0.99
+   },
+   {
+    "label": "BATH ROOM",
+    "size": "7'3\"X4'6\"",
+    "x": 0.724,
+    "y": 0.869,
+    "w": 0.268,
+    "h": 0.113,
+    "confidence": 0.99
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

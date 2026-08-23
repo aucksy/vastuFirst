@@ -1168,6 +1168,30 @@ function scanHomeAspect(frame, imageAspect) {
   return (frame.w * a) / frame.h;
 }
 
+/** Mirrors ScanMapper.saneBuilding — a real box, mostly inside the page, no sliver. */
+function scanSaneBuilding(building) {
+  const b = building;
+  if (!b) return null;
+  for (const v of [b.x, b.y, b.w, b.h]) if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+  const sane = b.w > 0.05 && b.h > 0.05 && b.w <= 1 && b.h <= 1
+    && b.x >= -0.02 && b.y >= -0.02 && b.x + b.w <= 1.05 && b.y + b.h <= 1.05;
+  return sane ? b : null;
+}
+
+/**
+ * ⭐⭐ Mirrors ScanMapper.planAspect — the DRAWING's width÷height, not the SHEET's.
+ *
+ * Room boxes are fractions of the building's outer wall, so one unit of x is `building.w` of the
+ * page and one unit of y is `building.h` of it. Using the page's own ratio stretches every room by
+ * exactly `building.w / building.h`, and on plan-018 (a flat drawn beside a showcase render) that
+ * turned a near-square home into a 10 × 4 letterbox. Null/mad box → the old number, unchanged.
+ */
+function scanPlanAspect(building, imageAspect) {
+  if (typeof imageAspect !== 'number' || !Number.isFinite(imageAspect) || imageAspect <= 0) return imageAspect;
+  const b = scanSaneBuilding(building);
+  return b ? imageAspect * (b.w / b.h) : imageAspect;
+}
+
 /**
  * Each EDGE rounded independently, so rooms flush on the plan stay flush on the grid — but measured
  * against the FRAME, and with a one-cell floor so a small room rounds SMALL rather than away.
@@ -1826,8 +1850,11 @@ function scanMap(draft, imageAspect, opts = {}) {
     : scanFrameOf(rooms.map((c) => c.box));
   if (!frame) return { kind: 'assisted', reason: 'TOO_FEW_PLACED', rooms: identified, notes: notes() };
   const roundedAway = [];
+  // ⭐ The DRAWING's ratio, not the SHEET's — see scanPlanAspect. One number, used for the grid's
+  // shape and for the snap, because they are two answers to the same question.
+  const planAspect = scanPlanAspect(draft.building, imageAspect);
   let [cols, rows] = widenForWidest(
-    scanGridFor(scanHomeAspect(frame, imageAspect), inject), rooms.map((c) => c.box), inject,
+    scanGridFor(scanHomeAspect(frame, planAspect), inject), rooms.map((c) => c.box), inject,
   );
   // ⭐ The plan's own WALL LINES: edges within half a cell of each other are the same wall, agreed
   // once and rounded once. Without it, a shared wall reported as 3.48 by one room and 3.52 by its
@@ -1838,10 +1865,10 @@ function scanMap(draft, imageAspect, opts = {}) {
   // is stated rather than dressed up (the frame-picture precedent): the proof lives in the corpus
   // audit instead, where no-walls still tears real plans open — plan-015 empty 5 → 18, plan-017
   // 40 → 54, plan-014 17 → 22 (tools/scan-eval/audit-mapper.mjs --inject=no-walls).
-  const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, imageAspect, cols, rows, inject);
+  const walls = inject === 'no-walls' ? null : scanWallLines(rooms.map((c) => c.box), frame, planAspect, cols, rows, inject);
   let snapped = [];
   for (const c of rooms) {
-    const rect = scanSnap(c.box, frame, imageAspect, cols, rows, inject, walls);
+    const rect = scanSnap(c.box, frame, planAspect, cols, rows, inject, walls);
     if (!rect) { roundedAway.push(c.box.label); dropped.push({ label: c.box.label, reason: 'DEGENERATE' }); }
     // The printed size is attached here, NOT inside reshapeToPrinted, so that deleting the
     // reshaping (--inject=no-printed-sizes) still leaves the invariant something to judge. An

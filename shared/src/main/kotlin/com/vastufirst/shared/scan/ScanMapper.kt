@@ -354,9 +354,13 @@ object ScanMapper {
     /**
      * Turn one model reply into an outcome.
      *
-     * [imageAspect] is width ÷ height of the source image, supplied by the platform layer — the model
-     * is never asked, because measuring is the thing it cannot do. It only chooses the shape of the
-     * drawing grid; `null` gives a square one.
+     * [imageAspect] is width ÷ height of the SOURCE IMAGE, supplied by the platform layer — the model
+     * is never asked, because measuring is the thing it cannot do. `null` gives a square grid.
+     *
+     * ⚠ It is not used as it arrives. The room boxes are fractions of the BUILDING, not of the page,
+     * so it is converted through the reply's building box first — [planAspect], which carries the
+     * measurements. Anything downstream of that conversion wants the drawing's ratio, never the
+     * sheet's; the two are the same number only when the drawing fills the page.
      *
      * ⭐⭐ THE PICTURE AND THE SCORE TAKE THEIR SHAPES FROM DIFFERENT PLACES, ON PURPOSE (15 Aug
      * 2026). The GRID is a statement about the home, so it is shaped from the sizes the sheet
@@ -502,10 +506,14 @@ object ScanMapper {
         //     `sanitise` exists to guarantee and which that injection now fails outright.
         val frame = frameOf(rooms.map { it.box })
             ?: return ScanOutcome.Assisted(identified, AssistReason.TOO_FEW_PLACED, notes())
-        val (cols, rows) = widenForWidest(gridFor(homeAspect(frame, imageAspect)), rooms.map { it.box })
+        // ⭐ The DRAWING's ratio, not the SHEET's — see [planAspect]. Computed once and used for both
+        // the grid's shape and the snap, because they are two answers to the same question and must
+        // never disagree.
+        val planAspect = planAspect(draft.building, imageAspect)
+        val (cols, rows) = widenForWidest(gridFor(homeAspect(frame, planAspect)), rooms.map { it.box })
         // ⭐ Snapped TOGETHER, not one at a time — see [WALL_TOLERANCE]. Rooms that share a wall on
         // the plan must share a grid line here, or the home arrives as a scatter of islands.
-        val rects = snapAll(rooms.map { it.box }, frame, imageAspect, cols, rows)
+        val rects = snapAll(rooms.map { it.box }, frame, planAspect, cols, rows)
         val snapped = rooms.mapIndexed { i, c -> c to rects[i] }
 
         // ---- 7b/8. ⭐ shape each room to the size PRINTED on the plan, then place them -------------
@@ -603,10 +611,7 @@ object ScanMapper {
      * into one corner.
      */
     fun pageSource(building: ScanBox?, box: ScanBox): ScanBox {
-        val b = building ?: return box
-        val sane = b.w > 0.05 && b.h > 0.05 && b.w <= 1.0 && b.h <= 1.0 &&
-            b.x >= -0.02 && b.y >= -0.02 && b.x + b.w <= 1.05 && b.y + b.h <= 1.05
-        if (!sane) return box
+        val b = saneBuilding(building) ?: return box
         return box.copy(
             x = b.x + box.x * b.w,
             y = b.y + box.y * b.h,
@@ -1120,6 +1125,59 @@ object ScanMapper {
         val y1 = min(1.0, boxes.maxOf { it.y + it.h })
         if (x1 <= x0 || y1 <= y0) return null
         return ScanBox("", x0, y0, x1 - x0, y1 - y0, 1.0)
+    }
+
+    /**
+     * ⭐ The building box, but only when it is one — a real box, mostly inside the page, no sliver.
+     * Null means "the reply did not usefully say where the drawing is", and every caller then keeps
+     * exactly the behaviour it had before prompt v4 added the box.
+     *
+     * ⚠ ONE predicate, deliberately, because two callers now depend on the same judgement: the
+     * on-photo tint ([pageSource]) and the drawing's proportions ([planAspect]). A mad box must not
+     * be trusted by one of them and refused by the other.
+     */
+    internal fun saneBuilding(building: ScanBox?): ScanBox? {
+        val b = building ?: return null
+        if (!b.x.isFinite() || !b.y.isFinite() || !b.w.isFinite() || !b.h.isFinite()) return null
+        val sane = b.w > 0.05 && b.h > 0.05 && b.w <= 1.0 && b.h <= 1.0 &&
+            b.x >= -0.02 && b.y >= -0.02 && b.x + b.w <= 1.05 && b.y + b.h <= 1.05
+        return if (sane) b else null
+    }
+
+    /**
+     * ⭐⭐ HOW MANY PIXELS WIDE ONE UNIT OF ROOM-SPACE IS, DIVIDED BY HOW MANY TALL — the number every
+     * shape downstream is built on, and it is NOT the sheet's (23 Aug 2026).
+     *
+     * Room coordinates are fractions of the BUILDING'S OUTER WALL, by the prompt's own contract, so
+     * one unit of x is `building.w` of the sheet's width and one unit of y is `building.h` of its
+     * height. Multiplying room fractions by the SHEET's width÷height therefore only tells the truth
+     * when the drawing fills the page — and on a real sheet it never does. Everything else is
+     * stretched by exactly `building.w / building.h`.
+     *
+     * Measured against the sheets that print their own overall dimensions, so this is arithmetic
+     * rather than an opinion — with the sheet's ratio, then with the building's, against what the
+     * paper says:
+     *
+     *   plan-034  the sheet prints 25'0" × 40'0" = 0.63   ·  sheet said 1.00  ·  building says 0.63
+     *   plan-017  the sheet prints 45'   × 36'   = 1.25   ·  sheet said 0.75  ·  building says 1.22
+     *   plan-018  the 2D drawing measures         ≈ 1.17  ·  sheet said 2.72  ·  building says 1.12
+     *
+     * plan-018 is the sheet this was found on: a 4 BHK drawn beside a big showcase render, so the
+     * page is two and a half times wider than the home. The grid came out 10 × 4 and the flat was
+     * squashed into a letterbox with a room falling off it; through the building box it is 10 × 8
+     * and all fifteen rooms land where the paper draws them.
+     *
+     * ⚠ A wrong ratio here is not cosmetic. It decides the grid's shape and every room's snapped
+     * position, and a room's position is its Vastu direction, which is the score the customer pays
+     * for. A sheet with wide margins was being scored as a different-shaped home.
+     *
+     * Degrades to the old number, exactly, whenever the box is missing or mad — every pre-v4
+     * recording and every fixture in the test suite, which is why none of them move.
+     */
+    internal fun planAspect(building: ScanBox?, imageAspect: Double?): Double? {
+        val a = imageAspect?.takeIf { it.isFinite() && it > 0.0 } ?: return imageAspect
+        val b = saneBuilding(building) ?: return a
+        return a * (b.w / b.h)
     }
 
     /** Width ÷ height of the HOME in real pixels — the frame's proportions, not the sheet's. */

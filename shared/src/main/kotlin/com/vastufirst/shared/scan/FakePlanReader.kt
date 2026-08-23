@@ -157,6 +157,32 @@ object RecordedScans {
      */
     const val GREENCOURT_336_BRANDED = "greencourt-336-branded"
 
+    /**
+     * ⭐⭐ **THE SHEET WITH TWO PICTURES ON IT** — a builder's marketing page carrying a large tilted
+     * showcase render on the left, a clean straight-overhead plan of the flat in the middle, and a
+     * numbered legend down the right naming all fifteen rooms with their printed sizes. There is a
+     * north arrow. It is one of the most readable sheets in the whole corpus.
+     *
+     * It was **refused** until 23 August 2026. Prompt v5 asked the camera question about "the
+     * image", so the reader judged the biggest thing on the page and answered `3D_RENDER` — while
+     * the very same reply had already boxed the flat plan correctly and returned every room with its
+     * size. **The evidence that the sheet was measurable was inside the answer that refused it.**
+     *
+     * This fixture is the reply recorded under prompt v6, and it guards two things at once:
+     *
+     *  - the triage answer, which must stay `2D_PLAN` — the refusal is the thing that was wrong;
+     *  - the home's SHAPE, which comes from the building box and not the page. The page is 2.43
+     *    times wider than it is tall; the flat is very nearly square. Read through the page it maps
+     *    to a 10 × 4 letterbox with a room falling off the end. Through the building box it is
+     *    10 × 9 and all fifteen rooms land where the paper draws them.
+     *
+     * ⚠ DELIBERATELY NOT IN [ids]. That list is what [FakePlanReader] cycles through, in order, and
+     * what every screen golden is rendered from — adding to it would silently re-shuffle which
+     * fixture each screenshot shows. It is also the only bundled reply not from `qwen/qwen3.6-27b`,
+     * which the "every recorded reply is bundled" test pins. Loaded by name where it is needed.
+     */
+    const val COMPOSITE_SHEET = "plan-018-composite"
+
     val ids: List<String> = listOf(
         CLEAN, COMPRESSED, PHOTO, DENSE, OWNER_FLAT, PLAN_020, GREENCOURT,
         GREENCOURT_336_CLEAN, GREENCOURT_336_BRANDED, UNSIZED,

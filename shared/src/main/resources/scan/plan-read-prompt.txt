@@ -20,6 +20,14 @@ FIRST decide what kind of image it is. The ONLY question is the CAMERA ANGLE:
 Tie-break: if the room names are printed INSIDE the rooms they name, you are
 looking straight down - answer "2D_PLAN".
 
+ONE SHEET OFTEN CARRIES SEVERAL PICTURES - a tilted showcase view, a flat plan, a
+key plan of the whole floor, an area table, a list of room names. The question
+above is about THE ONE DRAWING YOU MEASURE, never about the sheet as a whole.
+So if a straight-overhead plan of the home is printed anywhere on the sheet,
+answer "2D_PLAN", box THAT drawing, and read its rooms - however large the
+tilted picture beside it happens to be. Answer "3D_RENDER" only when a tilted
+view is the ONLY drawing of the home on the sheet.
+
 THEN locate the building and the rooms.
 
 Return ONLY JSON:

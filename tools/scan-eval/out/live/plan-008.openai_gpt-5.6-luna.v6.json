@@ -1,0 +1,137 @@
+{
+ "file": "plan-008.webp",
+ "imageSize": [
+  640,
+  905
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 1557,
+  "candidatesTokenCount": 2188,
+  "thoughtsTokenCount": 1552
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.198,
+   "y": 0.092,
+   "w": 0.475,
+   "h": 0.676
+  },
+  "rooms": [
+   {
+    "label": "TOILET",
+    "size": "5'-7\"X4'-6\"",
+    "x": 0.003,
+    "y": 0.002,
+    "w": 0.23,
+    "h": 0.093,
+    "confidence": 0.86
+   },
+   {
+    "label": "DRESS",
+    "size": "5'-7\"X4'-6\"",
+    "x": 0.233,
+    "y": 0.002,
+    "w": 0.23,
+    "h": 0.093,
+    "confidence": 0.9
+   },
+   {
+    "label": "DRESS",
+    "size": "6'-7\"X4'-6\"",
+    "x": 0.463,
+    "y": 0.002,
+    "w": 0.273,
+    "h": 0.093,
+    "confidence": 0.91
+   },
+   {
+    "label": "TOILET",
+    "size": "6'-7\"X4'-6\"",
+    "x": 0.736,
+    "y": 0.002,
+    "w": 0.264,
+    "h": 0.093,
+    "confidence": 0.9
+   },
+   {
+    "label": "BEDROOM",
+    "size": "11'-5\"X11'-8\"",
+    "x": 0.003,
+    "y": 0.095,
+    "w": 0.46,
+    "h": 0.232,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM",
+    "size": "13'-5\"X11'-8\"",
+    "x": 0.477,
+    "y": 0.095,
+    "w": 0.52,
+    "h": 0.232,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM",
+    "size": "9'-8\"X12'-0\"",
+    "x": 0.62,
+    "y": 0.332,
+    "w": 0.377,
+    "h": 0.228,
+    "confidence": 0.98
+   },
+   {
+    "label": "LIVING HALL",
+    "size": "15'-6\"X20'-8\"",
+    "x": 0.003,
+    "y": 0.33,
+    "w": 0.617,
+    "h": 0.47,
+    "confidence": 0.84
+   },
+   {
+    "label": "TOILET",
+    "size": "6'-4\"X5'-0\"",
+    "x": 0.62,
+    "y": 0.56,
+    "w": 0.377,
+    "h": 0.115,
+    "confidence": 0.94
+   },
+   {
+    "label": "TOILET",
+    "size": "6'-4\"X5'-4\"",
+    "x": 0.62,
+    "y": 0.675,
+    "w": 0.377,
+    "h": 0.115,
+    "confidence": 0.94
+   },
+   {
+    "label": "KITCHEN",
+    "size": "9'-4\"X10'-0\"",
+    "x": 0.003,
+    "y": 0.8,
+    "w": 0.26,
+    "h": 0.2,
+    "confidence": 0.97
+   },
+   {
+    "label": "BEDROOM",
+    "size": "9'-8\"X10'-8\"",
+    "x": 0.62,
+    "y": 0.79,
+    "w": 0.377,
+    "h": 0.21,
+    "confidence": 0.98
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}

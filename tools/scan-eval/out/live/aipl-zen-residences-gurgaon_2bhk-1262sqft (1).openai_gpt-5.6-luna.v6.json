@@ -1,0 +1,119 @@
+{
+ "file": "aipl-zen-residences-gurgaon_2bhk-1262sqft (1).webp",
+ "imageSize": [
+  1207,
+  1400
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2867,
+  "candidatesTokenCount": 1074,
+  "thoughtsTokenCount": 516
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.147,
+   "y": 0.054,
+   "w": 0.724,
+   "h": 0.706
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.048,
+    "y": 0.105,
+    "w": 0.246,
+    "h": 0.151,
+    "confidence": 0.98
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.374,
+    "y": 0.0,
+    "w": 0.214,
+    "h": 0.149,
+    "confidence": 0.98
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.693,
+    "y": 0.324,
+    "w": 0.257,
+    "h": 0.144,
+    "confidence": 0.98
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "11' 0\" X 12' 3\"",
+    "x": 0.0,
+    "y": 0.245,
+    "w": 0.34,
+    "h": 0.327,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM",
+    "size": "10' 0\" X 12' 0\"",
+    "x": 0.337,
+    "y": 0.142,
+    "w": 0.314,
+    "h": 0.346,
+    "confidence": 0.99
+   },
+   {
+    "label": "MASTER TOILET",
+    "size": "8' 6\" X 5' 5\"",
+    "x": 0.0,
+    "y": 0.568,
+    "w": 0.271,
+    "h": 0.177,
+    "confidence": 0.98
+   },
+   {
+    "label": "TOILET",
+    "size": "8' 0\" X 5' 5\"",
+    "x": 0.267,
+    "y": 0.567,
+    "w": 0.176,
+    "h": 0.237,
+    "confidence": 0.98
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "19' 0\" X 12' 1\"",
+    "x": 0.433,
+    "y": 0.464,
+    "w": 0.563,
+    "h": 0.338,
+    "confidence": 0.99
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11' 0\" X 7' 0\"",
+    "x": 0.52,
+    "y": 0.794,
+    "w": 0.351,
+    "h": 0.204,
+    "confidence": 0.99
+   },
+   {
+    "label": "SERVICE BALCONY",
+    "size": "4' 11\" WIDE",
+    "x": 0.369,
+    "y": 0.795,
+    "w": 0.169,
+    "h": 0.158,
+    "confidence": 0.97
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

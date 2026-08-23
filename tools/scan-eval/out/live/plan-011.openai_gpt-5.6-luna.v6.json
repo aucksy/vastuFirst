@@ -1,0 +1,119 @@
+{
+ "file": "plan-011.webp",
+ "imageSize": [
+  800,
+  1280
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2061,
+  "candidatesTokenCount": 1474,
+  "thoughtsTokenCount": 1034
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.139,
+   "y": 0.152,
+   "w": 0.724,
+   "h": 0.784
+  },
+  "rooms": [
+   {
+    "label": "PORTICO",
+    "size": "",
+    "x": 0,
+    "y": 0,
+    "w": 0.643,
+    "h": 0.113,
+    "confidence": 0.96
+   },
+   {
+    "label": "FAMILY ROOM",
+    "size": "",
+    "x": 0.207,
+    "y": 0.113,
+    "w": 0.43,
+    "h": 0.681,
+    "confidence": 0.98
+   },
+   {
+    "label": "POOJA",
+    "size": "",
+    "x": 0.641,
+    "y": 0.121,
+    "w": 0.116,
+    "h": 0.069,
+    "confidence": 0.97
+   },
+   {
+    "label": "KITCHEN ROOM",
+    "size": "",
+    "x": 0.638,
+    "y": 0.113,
+    "w": 0.354,
+    "h": 0.262,
+    "confidence": 0.96
+   },
+   {
+    "label": "DINING",
+    "size": "",
+    "x": 0.638,
+    "y": 0.374,
+    "w": 0.354,
+    "h": 0.158,
+    "confidence": 0.98
+   },
+   {
+    "label": "BATH",
+    "size": "",
+    "x": 0.638,
+    "y": 0.532,
+    "w": 0.354,
+    "h": 0.079,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM-2",
+    "size": "",
+    "x": 0.638,
+    "y": 0.611,
+    "w": 0.354,
+    "h": 0.174,
+    "confidence": 0.98
+   },
+   {
+    "label": "BEDROOM-3",
+    "size": "",
+    "x": 0.207,
+    "y": 0.786,
+    "w": 0.285,
+    "h": 0.213,
+    "confidence": 0.98
+   },
+   {
+    "label": "BATH",
+    "size": "",
+    "x": 0.492,
+    "y": 0.858,
+    "w": 0.114,
+    "h": 0.141,
+    "confidence": 0.98
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "",
+    "x": 0.506,
+    "y": 0.786,
+    "w": 0.486,
+    "h": 0.213,
+    "confidence": 0.98
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}
