@@ -103,13 +103,23 @@ class AuditFixesTest {
         assertFalse("X-GEN" in defects, "no ruled room may reach the reader as the generic text")
     }
 
+    /**
+     * ⭐ ONE READING, AND IT SAYS SO (owner ruling, 23 August 2026).
+     *
+     * This replaces a test that asked for the 16-zone profile and checked the engine fell back to
+     * the classic reading with a note. That profile no longer exists, so the fallback cannot be
+     * reached and the note has gone with it. What is worth pinning now is the opposite claim: the
+     * app offers exactly one reading, and every analysis is stamped with it.
+     */
     @Test
-    fun `an unimplemented school profile degrades to the default reading with a note, never an error`() {
-        val a = engine.analyze(Fixtures.sample01().copy(schoolProfile = SchoolProfile.SIXTEEN_ZONE))
-        assertEquals(31, a.score, "falls back to the classic 8-direction score")
-        assertTrue(a.notes.any { it.code == "school-default" })
-        // Must report the reading it ACTUALLY gave, never mislabel it as the requested school.
-        assertEquals(SchoolProfile.TRADITIONAL_8, a.schoolProfile)
+    fun `there is exactly one school profile and every analysis is stamped with it`() {
+        assertEquals(
+            listOf(SchoolProfile.TRADITIONAL_8),
+            SchoolProfile.entries.toList(),
+            "VastuFirst ships the classic 8-direction reading only. Adding a value here puts a " +
+                "school back in the product that the owner has ruled out of scope.",
+        )
+        assertEquals(SchoolProfile.TRADITIONAL_8, engine.analyze(Fixtures.sample01()).schoolProfile)
     }
 
     @Test

@@ -67,4 +67,29 @@ class SimpleScreensScreenshotTest {
         captureAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) }
         writeManifestAcrossMatrix("addhome") { AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {}) }
     }
+
+    /**
+     * ⭐⭐ THE HOUSE-OR-FLAT QUESTION WITH "A FLAT" CHOSEN (23 August 2026).
+     *
+     * ⚠ A SECOND GOLDEN, NOT A REPLACEMENT, and that is the whole point. `addhome` above photographs
+     * the default state — which is "A house", because that is what every home in the product
+     * silently was until this screen asked. The chosen state is a different picture: a filled card,
+     * a heavier border and a coloured label, and none of it appears in the default one.
+     *
+     * ⚠ It matters most at the configurations nobody looks at. Two cards side by side each hold a
+     * heading and a subtitle, and at 200 % font scale on a 320 dp screen that is where a two-word
+     * label runs out of room. The matrix renders exactly those, which is why this is a golden and
+     * not a unit test.
+     */
+    @Test
+    fun addHomeFlatChosen() {
+        val flat: @androidx.compose.runtime.Composable () -> Unit = {
+            AddHomeScreen(
+                onDrawGrid = {}, onScan = {}, onSample = {},
+                propertyType = com.vastufirst.shared.PropertyType.FLAT,
+            )
+        }
+        captureAcrossMatrix("addhome-flat", flat)
+        writeManifestAcrossMatrix("addhome-flat", flat)
+    }
 }

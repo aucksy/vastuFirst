@@ -409,19 +409,19 @@ A false positive damages trust more than a missed defect. Prefer fewer, accurate
 **Defect id coverage.** Every `(RoomType, prohibited Zone)` pair must resolve to a defect id, severity and remedy set. Where §8.4 names no specific id (e.g. kitchen in SW, which R-02 prohibits but which has no X-entry), the engine raises a **generic** `X-GEN` defect at `MODERATE`, using the room rule's own text. Silent `DEFECT` verdicts with no defect record are a bug.
 
 
-### 4.7 School profiles
+### 4.7 School profile — ⭐ ONE READING, AND IT IS OURS (owner ruling, 23 August 2026)
 
-The app supports multiple systems. **These are different geometries, not settings on one geometry** — the 16-zone model is angular at 22.5° and is not a refinement of the 81-pada grid. Offering both requires running two independent evaluations, not reinterpreting one.
+**VastuFirst scores the classic 8-direction reading and nothing else.** The 16-zone and 45-devata systems are **out of scope**, and out of scope until the owner says otherwise in as many words.
 
 | Profile | Geometry | Status |
 |---|---|---|
-| `TRADITIONAL_8` | 81-pada square grid, 8 zones + centre | Default |
-| `SIXTEEN_ZONE` | 16 angular zones at 22.5° | Independent evaluator |
-| `FORTY_FIVE_DEVATA` | 45 devata padas | Independent evaluator |
+| `TRADITIONAL_8` | 81-pada square grid, 8 zones + centre | **The only reading. `SchoolProfile` has one value.** |
 
-Where profiles conflict, the app **shows both readings side by side and does not pick a winner**. See §8.5.
+**M-11 is answered by this ruling.** The question was whether offering the 8-zone and 16-zone systems in one app is honest or merely confusing. The owner's answer: one reading, ours. The 16-zone model is angular at 22.5° and is genuinely *not* a refinement of the 81-pada grid, so offering both would have meant running two independent evaluations and handing the reader two different numbers for one home. That is the confusion the question was worried about.
 
-> **Flag for the product owner:** knowledge base entry M-11 concludes the 16-zone system is a genuinely incompatible geometry and asks reviewers whether presenting both in one app is honest or merely confusing. That question is unresolved. Build the profile abstraction now; treat shipping `SIXTEEN_ZONE` and `FORTY_FIVE_DEVATA` as gated on that ruling.
+**What this does NOT cancel: §8.5 stands whole.** Where serious sources disagree, the report still shows both readings and still does not pick a winner. That is the product's promise and no ruling touches it. What changed is only that a reading we do not implement is no longer *named after a school we do not offer* — a report that cites the "16-zone school" implies the app has one, which it does not and will not.
+
+> **⚠ Do not reinstate the abstraction "for later".** `SIXTEEN_ZONE` and `FORTY_FIVE_DEVATA` were declared for three months and never built. Nothing ever persisted a profile, so removing them broke nothing. Putting an unbuilt value back in the enum is how a cancelled idea gets shipped by a session that read this table and not this paragraph.
 
 
 ---
@@ -436,7 +436,7 @@ enum class Verdict { IDEAL, ACCEPTABLE, SUBOPTIMAL, DEFECT, NOT_SCORED }
 enum class PadaVerdict { AUSPICIOUS, MODERATE, MIXED, INAUSPICIOUS }
 enum class Severity { MAJOR, MODERATE, MINOR }
 enum class FixKind { MOVE_IT, REMEDY_IT, RITUAL }
-enum class SchoolProfile { TRADITIONAL_8, SIXTEEN_ZONE, FORTY_FIVE_DEVATA }
+enum class SchoolProfile { TRADITIONAL_8 }   // one reading only — see §4.7
 enum class AnomalyKind { CUT, EXTENSION }
 
 enum class RoomType {
@@ -755,13 +755,15 @@ Each pada spans 11.25°, eight per side. **Roughly nine or ten of the thirty-two
 
 ### 8.5 Disputes — show both, never resolve
 
-The app shows both readings and lets the user pick a school profile. All `DISP`.
+The app shows both readings and picks no winner. All `DISP`.
+
+⚠ There is **no school picker** and there will not be one (§4.7). A dispute's second reading is shown on its own merits, and — since 23 August 2026 — **is never attributed on screen to a school this app does not implement.** The reasoning behind each reading is unchanged; only the attribution is.
 
 | ID | Dispute | Reading A | Reading B |
 |---|---|---|---|
-| W-01 | Toilet in the East | A defect — East is the sun's quarter | Acceptable in specific east-of-SE / ESE sub-zones |
+| W-01 | Toilet in the East | A defect — East is the sun's quarter | Acceptable in specific east-of-SE / ESE sub-zones *(shown as a finer reading, not named as a school — §4.7)* |
 | W-02 | Kitchen in the North | Not ideal — Kubera and water against fire | Merely suboptimal, not a hard defect |
-| W-03 | Master bedroom in the West | Acceptable heavy-zone alternative to SW | 16-zone reads WSW as education zone; advises against |
+| W-03 | Master bedroom in the West | Acceptable heavy-zone alternative to SW | A finer reading treats WSW as the quarter of study; advises against *(not named as a school — §4.7)* |
 | W-04 | Main entrance in the South-East | Acceptable on the right pada | A defect — Manasara says never face SE |
 | W-05 | Sleeping head direction | Head-to-South best, East good, West neutral | **Head-to-North avoided — the one near-universal cross-school agreement.** The magnetic-repulsion rationale usually given is folk science, not established; a 2015 PSQI study of 153 students concluded the opposite. **State as tradition; make no health claim.** |
 | W-06 | Idol facing | Idols on W/SW wall, worshipper faces East | Idols on E wall facing West |
@@ -874,7 +876,7 @@ The first client delivery. Everything needed for a real person to score a real h
 - Remedy content with `MOD` labelling and correct ranking (§7.2)
 - ~~Six languages (§7.5)~~ — **CANCELLED 9 Aug 2026. English only, permanently.**
 - Flat and apartment analysis (§7.4)
-- `SIXTEEN_ZONE` and `FORTY_FIVE_DEVATA` profiles — **gated on the M-11 expert ruling**
+- ~~`SIXTEEN_ZONE` and `FORTY_FIVE_DEVATA` profiles~~ — **OUT OF SCOPE, 23 Aug 2026. One reading only, and it is the classic 8-direction one (§4.7). Not a deliverable of this or any phase.**
 - PDF export and share
 
 ---
@@ -956,7 +958,7 @@ These are with expert reviewers and **unresolved as of 19 July 2026**. Each is c
 | M-05 | Brahmasthan extent: central 9 of 81, central 4 of 64, or one-ninth by area? | Central 3×3 of 9×9 |
 | M-07 | Is the hybrid (square grid for rooms, angular padas for the door) defensible, or does it mix incompatible systems? | Hybrid implemented |
 | M-10 | Rooms spanning padas: centroid, largest overlap, or any encroachment? | Any-encroachment for defects, largest-overlap for credit |
-| M-11 | Is offering 8-zone and 16-zone in one app honest, or confusing? | Profile abstraction built; shipping gated |
+| ~~M-11~~ | ~~Is offering 8-zone and 16-zone in one app honest, or confusing?~~ | ✅ **ANSWERED 23 Aug 2026 (owner): one reading, ours.** 16-zone and 45-devata are out of scope; the enum has one value; no report names a school we do not implement. See §4.7. |
 | P-08 | Door located by bearing from centre, or proportion along wall? | Bearing from centre |
 | R-05 / W-12 | Pooja: classical centre or modern NE? | Both shown, neither penalised |
 | B-04 / W-09 | Septic tank: N, NW or SE? | Not hard-coded; both shown |
@@ -1049,7 +1051,7 @@ Cited in §12 and §0, defined here for self-containment.
 | Y-09 | Plants — Tulsi genuinely traditional; money plant and lucky bamboo are modern imports. `MOD`/`DERIV` |
 | Y-10 | Keep gadget remedies but label them modern with efficacy not established, and rank layout change and Vastu Shanti above them. `MOD` |
 
-**Note on §0.5 wording:** "zones are computed on the 81-pada grid, not 45° sectors" governs **room** zoning. The door is angular by design (§4.3, the M-07 hybrid), and `SIXTEEN_ZONE` is a separate angular geometry run as an independent evaluator (§4.7). These are not exceptions to §0.5; they are different computations.
+**Note on §0.5 wording:** "zones are computed on the 81-pada grid, not 45° sectors" governs **room** zoning. The door is angular by design (§4.3, the M-07 hybrid). That is not an exception to §0.5; it is a different computation. *(This note used to add "and `SIXTEEN_ZONE` is a separate angular geometry run as an independent evaluator". That profile is out of scope as of 23 Aug 2026 and no longer exists — see §4.7.)*
 
 **Note on `CENTRAL_FOUR_OF_64`:** §8.1 records that the 64-pada Manduka is for temples. The option exists only because M-05 lists it as one of the three readings a reviewer might endorse. It is not the default and should not be offered in the UI unless a reviewer rules for it.
 

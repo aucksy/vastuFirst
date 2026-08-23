@@ -23,20 +23,20 @@
     "appliesTo": [ { "roomType": "STAIRCASE", "zone": "BRAHMASTHAN" } ]
   },
   {
-    "id": "X-04", "title": "Cut or missing North-East corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
+    "id": "X-04", "belongsToBuilding": true, "title": "Cut or missing North-East corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
     "explanation": "The plan is missing part of its North-East corner, the ground the tradition values most. That corner is Ishanya — the head of the mandala grid, its most auspicious square. The same tradition welcomes a North-East extension, yet calls a cut there a serious defect.",
     "layoutFix": "Extend the footprint to square off the North-East corner while the plan is still on paper.",
     "remedyNote": "There is no classical remedy for a corner that is simply not there. What follows is how the tradition asks you to treat the ground instead.",
     "remedyIds": ["structural-correction", "ne-corner-open", "tulsi", "vastu-shanti"]
   },
   {
-    "id": "X-05", "title": "South-West extension", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
+    "id": "X-05", "belongsToBuilding": true, "title": "South-West extension", "severity": "MAJOR", "provenance": "DERIV", "tier": "B",
     "explanation": "The plan pushes out at the South-West, the corner meant to stay square and still. That corner is Nairritya — earth's element, the feet of the Purusha. The tradition wants it heaviest and most settled — the firm corner the home rests against. Pushing it outward unbalances exactly that.",
     "layoutFix": "Trim the South-West projection back so the footprint is square at that corner.",
     "remedyIds": ["structural-correction", "weight-sw", "vastu-shanti"]
   },
   {
-    "id": "X-06", "title": "Main entrance on the South-West corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
+    "id": "X-06", "belongsToBuilding": true, "title": "Main entrance on the South-West corner", "severity": "MAJOR", "provenance": "DERIV", "tier": "A",
     "explanation": "The main entrance stands on the South-West corner — the one door placement every school examined prohibits. The 32-position door table names these positions Yama and Gandharva; in the mandala grid this is the heaviest, most closed corner, meant to stay solid. The entrance is the reading's highest-weighted element, so its position outweighs any single room.",
     "layoutFix": "Move the main entrance onto a favourable position on the North or the East wall.",
     "remedyNote": "The texts say where a door belongs; they are silent on correcting one built wrongly. The steps below are traditional entrance practice, not a recorded cure for this position.",
@@ -58,7 +58,7 @@
     "appliesTo": [ { "roomType": "TOILET", "zone": "SW" } ]
   },
   {
-    "id": "X-09", "title": "Water stored against the mandala", "severity": "MODERATE", "provenance": "DERIV", "tier": "C",
+    "id": "X-09", "belongsToBuilding": true, "title": "Water stored against the mandala", "severity": "MODERATE", "provenance": "DERIV", "tier": "C",
     "explanation": "The water is stored the wrong way round — weight in the light corner, or water under the heavy one. The mandala grid draws water to the North-East — Ishanya, the water element — and sends weight to the South-West — Nairritya, earth. So underground water and the borewell belong North-East, North or East; the heavy overhead tank over the South-West or West.",
     "layoutFix": "Put the overhead tank over the South-West or West, and the sump or borewell towards the North-East, North or East.",
     "notCheckedLabel": "Where your water tank and borewell sit",
@@ -73,7 +73,7 @@
     "remedyIds": ["structural-correction", "pooja-separate-wall", "stair-clockwise", "vastu-shanti"]
   },
   {
-    "id": "X-11", "title": "A road pointing straight at the plot", "severity": "MODERATE", "provenance": "DISP", "tier": "D",
+    "id": "X-11", "belongsToBuilding": true, "title": "A road pointing straight at the plot", "severity": "MODERATE", "provenance": "DISP", "tier": "D",
     "explanation": "A road runs straight at the plot — Veedhi Shoola, the 'street spear'. Our reading treats a thrust from the South, South-West, South-East or North-West as harmful; from the North, North-East or East, benign. A stricter school calls every road-arrow harmful. The schools genuinely disagree, so this is shown but never counted in your score.",
     "layoutFix": "Buffer the affected side with a boundary wall or a line of planting.",
     "notCheckedLabel": "Whether a road points straight at your plot",
@@ -82,7 +82,7 @@
     "requiresSite": true
   },
   {
-    "id": "X-12", "title": "Heavy trees in the North-East or the centre", "severity": "MINOR", "provenance": "DERIV", "tier": "C",
+    "id": "X-12", "belongsToBuilding": true, "title": "Heavy trees in the North-East or the centre", "severity": "MINOR", "provenance": "DERIV", "tier": "C",
     "explanation": "A heavy tree stands in the North-East or the centre — ground meant to stay light. The North-East should be the property's lightest, most open part; the centre is Brahma's square, which the Manasara text wants unweighted. A big tree sets permanent weight and shade on that ground. The same reasoning bars heavy storage from both places.",
     "layoutFix": "Keep the North-East and the centre free of heavy planting; the big canopy belongs to the South or West.",
     "notCheckedLabel": "Where the large trees on your property stand",
@@ -100,7 +100,7 @@
     "requiresFixtureTypes": ["MIRROR", "CEILING_BEAM"]
   },
   {
-    "id": "X-15", "title": "The home is long and narrow", "severity": "MINOR", "provenance": "DERIV", "tier": "B",
+    "id": "X-15", "belongsToBuilding": true, "title": "The home is long and narrow", "severity": "MINOR", "provenance": "DERIV", "tier": "B",
     "explanation": "The home is more than twice as long as it is wide. The mandala grid behind the reading is a square; the tradition calls a square, or a rectangle within about one-to-two, balanced — only then do the nine zones come out roughly equal. This plan stretches its zones thin one way, so the reading is less even.",
     "layoutFix": "Where the plot allows, keep the built footprint closer to a one-to-one-and-a-half proportion.",
     "remedyNote": "There is no classical remedy for a plot's shape. This is a limitation of the reading, not something an object can correct.",

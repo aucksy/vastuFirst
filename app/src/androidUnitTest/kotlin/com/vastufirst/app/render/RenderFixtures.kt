@@ -129,6 +129,40 @@ object RenderFixtures {
             )!!,
         )
 
+    /**
+     * ⭐⭐ THE SAME HOME, READ AS A FLAT — with a finding that belongs to the BUILDING.
+     *
+     * ⚠ THE MISSING CORNER IS ADDED DELIBERATELY, and the golden is worthless without it. The
+     * bundled sample is a rectangle drawn on a grid with no site answers, so it raises none of the
+     * seven building-owned findings. A flat report built straight on it would look identical to a
+     * house's, be photographed as "the flat screen", and be adopted as the baseline — proving
+     * nothing while looking like proof.
+     *
+     * ⚠ It is placed FIRST so it is also what the "Start here" card above the fold reaches for.
+     * That card prints the top finding's layout change, and it was the single most visible place a
+     * flat owner was handed advice about a building they own one floor of.
+     *
+     * The text is the real ruleset's, word for word, so the picture shows what ships.
+     */
+    val flatAnalysis: Analysis = sampleAnalysis.let { base ->
+        val missingCorner = com.vastufirst.shared.Defect(
+            id = "X-04",
+            severity = com.vastufirst.shared.Severity.MAJOR,
+            zone = com.vastufirst.shared.Zone.NE,
+            roomId = null,
+            ruleSourceId = "X-04",
+            provenance = com.vastufirst.shared.Provenance.DERIV,
+            explanation = "The plan is missing part of its North-East corner, the ground the " +
+                "tradition values most.",
+            layoutFix = "Extend the footprint to square off the North-East corner.",
+            belongsToBuilding = true,
+        )
+        base.copy(
+            propertyType = PropertyType.FLAT,
+            defects = listOf(missingCorner) + base.defects,
+        )
+    }
+
     // --- a SCANNED home: the owner's OWN sheet, and the words printed on it ---
     /**
      * ⭐⭐ THE OWNER'S PLAN, READ THE WAY THE APP READS IT — the recorded reply for `plan-020` put

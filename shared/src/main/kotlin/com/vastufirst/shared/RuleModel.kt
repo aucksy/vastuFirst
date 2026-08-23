@@ -122,6 +122,31 @@ data class DefectDefinition(
     val requiresFixtureTypes: List<FixtureType> = emptyList(),
     /** Tier D: evaluated only when a Site is present. */
     val requiresSite: Boolean = false,
+    /**
+     * ⭐⭐ TRUE when this finding is about the BUILDING, not about the home inside it
+     * (Product PRD §7.4).
+     *
+     * Seven findings are of this kind — the footprint's missing corner and its bulge, how long and
+     * narrow the shell is, where the front door sits in a structural wall, the water tank and the
+     * sump, the road that points at the plot, and the heavy tree in the compound.
+     *
+     * For someone in a FLAT, none of those is theirs. Not the owner, not a buyer, not even a buyer
+     * choosing off-plan: the shell, the shafts, the compound and the lobby wall belong to the
+     * building. The report was telling them to *"Extend the footprint to square off the North-East
+     * corner"* and to *"Trim the South-West projection back"* — instructions no flat owner on earth
+     * can follow.
+     *
+     * ⚠ WHAT THIS FLAG DOES NOT DO. It never removes the finding, never lowers its severity and
+     * never moves a point (CLAUDE.md §2h — no change deletes a finding). A toilet in the North-East
+     * is exactly as much of a problem in a flat as in a house; scoring a flat differently would be
+     * inventing an answer to the open expert question A-03, which nobody has ruled on. All it
+     * changes is the *advice*: for a flat the "change this" block is replaced by an honest line
+     * saying whose the thing actually is.
+     *
+     * ⚠ AND IT IS DATA, NOT A LIST IN KOTLIN. Deriving it (say, from "the defect names no room")
+     * would be an implementation coincidence that drifts the first time a new defect is added.
+     */
+    val belongsToBuilding: Boolean = false,
 )
 
 @Serializable

@@ -49,18 +49,13 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             val san = PlanSanitizer.sanitize(plan)
             val level = san.level ?: return insufficient(plan, san.notes)
             val notes = san.notes.toMutableList()
-            if (plan.schoolProfile != SchoolProfile.TRADITIONAL_8) {
-                // ⚠ NO "COMING SOON". The old wording promised other schools were on the way; there
-                // is no picker, no plan and no date, so it was a commitment to a customer that
-                // nobody had made. It also cannot appear today — nothing in the app can ask for
-                // another school — but the branch stays as the safety net it is, for a saved home
-                // written by some future build that can.
-                notes += AnalysisNote(
-                    "school-default",
-                    "Read under the classic 8-direction tradition, which is the reading this app scores.",
-                    NoteLevel.INFO,
-                )
-            }
+            // ⛔ THE "READ UNDER THE DEFAULT SCHOOL INSTEAD" NOTE IS GONE (23 August 2026).
+            //
+            // It existed to catch a plan asking for the 16-zone or 45-devata reading and quietly
+            // fall back. The owner has since ruled that this app ships ONE reading, the classic
+            // 8-direction one, so those two values no longer exist on [SchoolProfile] and no plan
+            // can ask for them. The branch could not fire, and dead code that names a school we do
+            // not offer is exactly how a cancelled idea gets reinstated by a later session.
             runCore(plan, level, san.northOffset, san.quality, notes)
         } catch (t: Throwable) {
             // Absolute safety net — an unforeseen input must degrade, never crash the app.
@@ -169,8 +164,9 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
             intent = plan.intent,
             propertyType = plan.propertyType,
             northOffsetDegrees = north,
-            // Report the school we ACTUALLY used (the 81-pada reading), not the one requested —
-            // otherwise a 16-zone request would be mislabelled while showing 8-direction numbers.
+            // The reading that produced this number, stamped on its face. There is exactly one and
+            // it cannot vary (owner ruling, 23 Aug 2026 — Product PRD §4.7), so this is a record
+            // rather than a choice: an Analysis should never be readable without knowing what read it.
             schoolProfile = SchoolProfile.TRADITIONAL_8,
             score = scored.score,
             base = scored.base,
@@ -229,6 +225,7 @@ class VastuEngine(private val ruleSet: RuleSet = RuleSetLoader.loadDefault()) {
         layoutFix = def.layoutFix,
         remedyNote = def.remedyNote,
         remedies = ruleSet.remediesFor(def),
+        belongsToBuilding = def.belongsToBuilding,
     )
 
     /** Sort defects by severity (MAJOR first), then by the offending element's weight (§5). */

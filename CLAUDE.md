@@ -155,6 +155,21 @@ rendered picture. Prefer deleting the duplication to updating it: one shared pie
 The full rule, with the four steps and the failure that produced it, is in `D:\Apps\CLAUDE.md`,
 which loads automatically alongside this file. It binds here.
 
+## 2h. ⭐ HARD RULE — a change never DELETES a finding from the report (owner rule, 23 Aug 2026)
+
+**No edit may leave a reader with less than the report told them before.** If a rule, a dispute, a
+note or a caveat is on the page today, it is on the page tomorrow. Reword it, re-rank it, relabel
+it, explain it better — never drop it.
+
+- **Rewording is not deleting.** Changing *how* a reading is described is always allowed. Removing
+  the reading is not. When a label is wrong, fix the label and keep the substance.
+- **"It scores nothing anyway" is not a reason.** Most disputes move no score; showing both sides is
+  the product's whole promise, not a scoring detail.
+- **If a finding genuinely must go, that is the owner's call, asked as a question, before the edit.**
+
+⚠ This rule was believed to exist for weeks and was written down nowhere — which is why it is here,
+in the auto-loaded file, and not in a document.
+
 ## 3. How to work
 
 1. **Plan first** for anything bigger than a one-line change. Show a numbered plan; wait for "go."

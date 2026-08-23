@@ -54,6 +54,7 @@ fun MoreDetailsScreen(
         onDone = onDone,
         onBack = onBack,
         returnsToReport = returnsToReport,
+        isFlat = vm.propertyType == com.vastufirst.shared.PropertyType.FLAT,
     )
 }
 
@@ -73,6 +74,19 @@ fun MoreDetailsContent(
      * this project has logged as a defect twice.
      */
     returnsToReport: Boolean = false,
+    /**
+     * ⭐⭐ EVERY ONE OF THESE FOUR BELONGS TO THE BUILDING WHEN THE HOME IS A FLAT — the roof tank,
+     * the sump, the tree in the compound, the road at the gate. Not one of them is on the reader's
+     * own floor.
+     *
+     * ⚠ AND THE QUESTIONS ARE STILL ASKED. Hiding them was the obvious move and it is the wrong
+     * one: the score has only ever come from rooms, the front door and the shape, and these four
+     * are exactly what closes that gap. Dropping them for flats would quietly leave every flat in
+     * the product on a permanently lower ceiling than every house — a worse reading, delivered
+     * silently, which is the failure this screen was built to end. So the wording changes and the
+     * questions stay; the report withholds the fix, not the finding.
+     */
+    isFlat: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -101,6 +115,16 @@ fun MoreDetailsContent(
                 "Skip what you don't know — we say so, we don't guess.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
+        if (isFlat) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            VText(
+                // ⚠ Says both halves. "These are the building's" on its own reads as "so why are
+                // you asking me" — the second sentence is what makes the question worth answering.
+                "In a flat these four belong to the whole building. They still change how your home "
+                    + "reads, so it is worth answering what you know; we will not suggest moving them.",
+                style = VastuTheme.type.bodySm, color = colors.textTertiary,
+            )
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s6))
 
         SiteItem.entries.forEach { item ->

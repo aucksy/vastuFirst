@@ -33,8 +33,17 @@ enum class Severity { MAJOR, MODERATE, MINOR }
 @Serializable
 enum class FixKind { MOVE_IT, REMEDY_IT, RITUAL }
 
+/**
+ * The reading this app scores. There is exactly one, and that is the owner's decision
+ * (23 August 2026, answering the open expert question about offering two schools at once).
+ *
+ * SIXTEEN_ZONE and FORTY_FIVE_DEVATA were declared here and never built. Neither was ever
+ * written to disk -- no saved home carries a profile of any kind, because nothing persists this
+ * field -- so removing them breaks nothing that exists. The type stays, with one value, so an
+ * Analysis still records on its face which reading produced the number.
+ */
 @Serializable
-enum class SchoolProfile { TRADITIONAL_8, SIXTEEN_ZONE, FORTY_FIVE_DEVATA }
+enum class SchoolProfile { TRADITIONAL_8 }
 
 @Serializable
 enum class AnomalyKind { CUT, EXTENSION }

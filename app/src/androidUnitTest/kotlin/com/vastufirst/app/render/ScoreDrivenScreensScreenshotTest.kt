@@ -396,4 +396,58 @@ class ScoreDrivenScreensScreenshotTest {
             DisputesSection(RenderFixtures.prayerRoomAnalysis.disputes)
         }
     }
+
+    /**
+     * ⭐⭐ THE TWO DISAGREEMENTS THAT USED TO NAME A SCHOOL WE DO NOT OFFER (23 August 2026).
+     *
+     * The owner ruled that VastuFirst ships the classic 8-direction reading alone, so a report
+     * sentence beginning *"The 16-zone school…"* was telling a paying reader the app has a second
+     * reading it does not have. Both disagreements are kept whole — nothing is deleted (CLAUDE.md
+     * §2h) — and the second reading is now introduced as *"A finer reading"*, which is true of both:
+     * on the toilet it is the LOOSER of the two and on the bedroom the stricter, and what actually
+     * separates that school from ours is narrower compass slices, not severity.
+     *
+     * ⚠ Rendered from the SHIPPED ruleset, not a hand-written fixture, so a future edit to those
+     * sentences moves this picture. And rendered separately from `report-disputes` above because
+     * that fixture's plan raises neither of these two — a golden that cannot contain the thing it
+     * is named after is worse than no golden.
+     *
+     * It also carries the "What your score uses" line, added to both in the same release: the
+     * report showed two readings of an eastern toilet and said nothing about the fact that the
+     * number marks one down.
+     */
+    @Test
+    fun report_disputes_relabelled() = render("report-disputes-relabelled") {
+        val two = com.vastufirst.rules.RuleSetLoader.loadDefault().disputes
+            .filter { it.id == "W-01" || it.id == "W-03" }
+        Column(
+            Modifier.screenRoot(VastuTheme.colors.paper)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VastuTheme.spacing.s6),
+        ) {
+            DisputesSection(two)
+        }
+    }
+
+    /**
+     * ⭐⭐ A FLAT'S REPORT — the whole point of this release, photographed.
+     *
+     * ⚠ THE FIXTURE CARRIES ITS OWN BUILDING-OWNED FINDING, and it has to. The bundled sample home
+     * is a rectangle drawn on a grid with no site answers, so it raises **none** of the seven — no
+     * missing corner, no bulge, no tank, no road. A golden of a flat report built on the sample
+     * would photograph a screen where nothing had changed and would be adopted as the baseline
+     * anyway: the exact "a NEW screen's findings get adopted as baseline" trap.
+     *
+     * What to look for: the FLAT pill beside BUILDING at the top, a headline that does NOT say
+     * nothing is built yet, and — below the rooms — the missing-corner finding carrying *"belongs
+     * to the whole building"* where a house is told to extend its footprint.
+     */
+    @Test
+    fun report_flat() = render("report-flat") {
+        ReportContent(
+            analysis = RenderFixtures.flatAnalysis,
+            intent = Intent.BUILDING,
+            expandAll = true,
+        )
+    }
 }

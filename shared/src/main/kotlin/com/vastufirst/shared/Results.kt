@@ -20,6 +20,14 @@ data class Defect(
     /** Said out loud when the texts record no cure that leaves the element where it is. */
     val remedyNote: String? = null,
     val remedies: List<Remedy> = emptyList(),
+    /**
+     * ⭐ TRUE when this is the BUILDING's, not the home's — see [com.vastufirst.shared.DefectDefinition.belongsToBuilding].
+     *
+     * Read together with [com.vastufirst.shared.PropertyType]: in an independent house it changes
+     * nothing, because the owner of the house owns the footprint, the tank and the tree. In a FLAT
+     * it is the difference between advice and nonsense.
+     */
+    val belongsToBuilding: Boolean = false,
 )
 
 /**

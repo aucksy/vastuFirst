@@ -91,6 +91,7 @@ import com.vastufirst.shared.Dispute
 import com.vastufirst.shared.DoorResult
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.PadaVerdict
+import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.RoomResult
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.Verdict
@@ -288,6 +289,22 @@ fun ReportContent(
     val colors = VastuTheme.colors
     val resolvedIntent = intent ?: Intent.BUILDING
     val remediesOnly = resolvedIntent != Intent.BUILDING
+
+    /**
+     * ⭐⭐ IS THIS A FLAT? Until 23 August 2026 nothing on any screen asked, so every home in the
+     * product was read as an independent house — and a flat owner was handed layout advice about a
+     * building they own one floor of. Product PRD §7.4: *"a flat owner cannot move the building
+     * gate, the lift, the shafts or the shared walls… report copy must reflect this rather than
+     * suggesting impossible fixes."*
+     *
+     * ⚠ IT IS A SECOND, INDEPENDENT QUESTION FROM [remediesOnly], not a harsher version of it.
+     * `remediesOnly` asks *can this reader move a wall at all* — no, if the home is already
+     * standing. This asks *is this particular wall even theirs* — no, if it is the building's,
+     * however early they are. The two overlap for a buyer and a resident; they come apart for the
+     * one case neither covered: somebody BUILDING, choosing a flat off-plan, who can still pick
+     * their kitchen and can never square off the tower's North-East corner.
+     */
+    val isFlat = analysis?.propertyType == PropertyType.FLAT
 
     // ⭐⭐ THE RECOVERY STATES THAT ARRIVE HERE INSTEAD OF A SPINNER — inherited whole from the free
     // score screen this report REPLACED (owner, 10 Aug 2026: "After the North is marked, jump
@@ -498,13 +515,21 @@ fun ReportContent(
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
                 IntentBadge(resolvedIntent)
+                // ⭐ WHICH READING THIS IS, on the reader's face. Every home in the product was
+                // silently an independent house until 23 Aug 2026, and a silent default is one
+                // nobody can spot and correct. Drawn only for a flat: an unmarked report means a
+                // house, which is what the two words directly above it already establish.
+                if (isFlat) PropertyBadge()
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s4))
             // ⚠ The number counts up ONLY when the animation ran. In a still photograph a counting
             // number is a number caught mid-count, and every golden would show a score that is not
             // this home's score.
-            VerdictHeader(a.score, defects.size, remediesOnly, unlocked, countUp = introMillis > 0L)
+            VerdictHeader(
+                a.score, defects.size, remediesOnly, unlocked,
+                countUp = introMillis > 0L, isFlat = isFlat,
+            )
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             // ⭐⭐ ALL THREE NUMBERS COUNT ROOMS. The third one used to count PROBLEMS, beside two
@@ -617,7 +642,7 @@ fun ReportContent(
             // still always names the problem; only the fix now honours the lock.
             defects.firstOrNull()?.let { top ->
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
-                StartHere(top, a.roomResults, remediesOnly, roomNames, unlocked = unlocked)
+                StartHere(top, a.roomResults, remediesOnly, isFlat, roomNames, unlocked = unlocked)
             }
 
             // ---- one list, not three chapters ------------------------------------------------
@@ -635,7 +660,7 @@ fun ReportContent(
             // here whatever else on the page has opened or closed in the meantime.
             a.doorResult?.let {
                 DoorSection(
-                    it, zones, remediesOnly,
+                    it, zones, remediesOnly, isFlat,
                     modifier = Modifier.onGloballyPositioned { c -> doorY = c.positionInRoot().y.toInt() },
                 )
             }
@@ -647,6 +672,7 @@ fun ReportContent(
                 zones = zones,
                 unlocked = unlocked,
                 remediesOnly = remediesOnly,
+                isFlat = isFlat,
                 expandAll = expandAll,
                 openRoomId = openRoomId,
                 // Select only. The row is already under the finger — see [tapRoom].
@@ -662,7 +688,7 @@ fun ReportContent(
             val structural = defects.filter { it.roomId == null }
             if (structural.isNotEmpty()) {
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
-                StructuralSection(structural, a.roomResults, zones, unlocked, remediesOnly, expandAll)
+                StructuralSection(structural, a.roomResults, zones, unlocked, remediesOnly, expandAll, isFlat)
             }
 
             Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -830,6 +856,7 @@ private fun VerdictHeader(
     remediesOnly: Boolean,
     unlocked: Boolean,
     countUp: Boolean = false,
+    isFlat: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     val mark = LocalDecimalMark.current
@@ -874,7 +901,10 @@ private fun VerdictHeader(
             )
         }
         }
-        VText(verdictSentence(score, defectCount, remediesOnly, unlocked), style = VastuTheme.type.body, color = colors.textSecondary)
+        VText(
+            verdictSentence(score, defectCount, remediesOnly, unlocked, isFlat),
+            style = VastuTheme.type.body, color = colors.textSecondary,
+        )
     }
 }
 
@@ -888,7 +918,13 @@ private fun bandWord(score: Int): String = when {
  * One honest sentence about the whole home. It leads with what is working, because the counts
  * immediately below break the same home down and a reader needs the shape before the detail.
  */
-private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean, unlocked: Boolean): String {
+private fun verdictSentence(
+    score: Int,
+    defectCount: Int,
+    remediesOnly: Boolean,
+    unlocked: Boolean,
+    isFlat: Boolean = false,
+): String {
     // ⚠ Copy cut 11 Aug 2026. Every band keeps its own verdict and none has been merged with
     // another — a home with no defects still says so, and a home with several still says so.
     val head = when {
@@ -902,6 +938,11 @@ private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean,
         // ⚠ "without moving a wall" is PINNED by two tests in ReportIntentTest — it is the sentence
         // that proves a buyer and a resident are never handed layout advice. Shorten around it.
         remediesOnly -> " Here is what you can do without moving a wall."
+        // ⭐ A FLAT CHOSEN OFF-PLAN. This reader counts as BUILDING and genuinely can still move a
+        // kitchen — so the remedies-only sentence would sell them short. But "the layout is still
+        // yours" is a straight untruth about a tower: the shell, the shafts and the lobby wall were
+        // decided before they ever saw the brochure. Both halves, in one sentence.
+        isFlat -> " Inside the flat the layout is still yours; the building around it is not."
         else -> " Nothing is built yet — the layout is still yours."
     }
     val free = if (unlocked) "" else " Entrance, kitchen and toilets are below in full, free."
@@ -929,8 +970,52 @@ private fun verdictSentence(score: Int, defectCount: Int, remediesOnly: Boolean,
  *
  * So the filter lives here, once, and the test now bans the sentence itself.
  */
-private fun advisableRemedies(d: Defect, remediesOnly: Boolean): List<com.vastufirst.shared.Remedy> =
-    if (remediesOnly) d.remedies.filter { it.kind != com.vastufirst.shared.FixKind.MOVE_IT } else d.remedies
+private fun advisableRemedies(
+    d: Defect,
+    remediesOnly: Boolean,
+    isFlat: Boolean = false,
+): List<com.vastufirst.shared.Remedy> =
+    if (noLayoutFor(d, remediesOnly, isFlat)) {
+        d.remedies.filter { it.kind != com.vastufirst.shared.FixKind.MOVE_IT }
+    } else {
+        d.remedies
+    }
+
+/**
+ * ⭐⭐ THE ONE RULE — is this finding's LAYOUT CHANGE something this reader could actually make?
+ *
+ * Two independent reasons it might not be, and every advice path on the report asks this one
+ * function rather than re-deriving them:
+ *
+ *  · **The home is already standing** (`remediesOnly`) — the owner's v0.6.6 ruling. A buyer and a
+ *    resident are shown remedies and nothing else, whatever the finding is.
+ *  · **The thing is not theirs** (`isFlat` + [Defect.belongsToBuilding]) — Product PRD §7.4. Seven
+ *    findings are about the building: the shell's missing corner and its bulge, how long and narrow
+ *    it is, the front door in a structural wall, the water tank and sump, the road at the plot, and
+ *    the tree in the compound. No flat owner can move any of them, and — this is the case the first
+ *    reason misses entirely — neither can a flat buyer choosing off-plan, who counts as BUILDING.
+ *
+ * ⚠ THIS NEVER REMOVES THE FINDING (CLAUDE.md §2h). It removes one block of advice and puts an
+ * honest sentence in its place. The problem, its severity, its reasoning, its zone and its points
+ * are all untouched — a toilet in the North-East is exactly as much of a problem in a flat.
+ */
+private fun noLayoutFor(d: Defect, remediesOnly: Boolean, isFlat: Boolean): Boolean =
+    remediesOnly || (isFlat && d.belongsToBuilding)
+
+/**
+ * ⭐ What replaces the layout block when the thing is the BUILDING's, not the reader's.
+ *
+ * ⚠ CHECKED AGAINST THE BAN LIST IN `ReportIntentTest` BEFORE IT WAS WRITTEN, because a flat is
+ * very often also a home somebody is buying or already living in, so this sentence renders on the
+ * branch that bans "Change the layout", "renovate", "still free to make", "Nothing is built yet",
+ * "Move or resize", "still on paper" and "on the drawing". It uses none of them.
+ *
+ * ⚠ And it does not end the reader at a dead end. The remedies below it still stand — what is gone
+ * is only the instruction to move something that was never theirs.
+ */
+private const val BUILDING_NOT_YOURS =
+    "This belongs to the whole building, not to your flat. No single flat can move it, so what " +
+        "follows is a way to soften it rather than to correct it."
 
 /* ─────────────────────────── start here ─────────────────────────── */
 
@@ -939,6 +1024,8 @@ private fun StartHere(
     d: Defect,
     rooms: List<RoomResult>,
     remediesOnly: Boolean,
+    /** See [noLayoutFor]. The card's one line of advice must obey the same rule as every other. */
+    isFlat: Boolean = false,
     names: Map<String, String> = emptyMap(),
     /**
      * ⭐⭐ THE PAYWALL, and the reason this parameter has no default.
@@ -979,8 +1066,10 @@ private fun StartHere(
             "Of those ranked below, this moves your score most.",
             style = VastuTheme.type.bodySm, color = colors.textSecondary,
         )
-        val first = if (remediesOnly) {
-            advisableRemedies(d, true).firstOrNull()?.let { remedyLine(it) }
+        // ⚠ Was `if (remediesOnly)`, which handed a flat buyer the building's layout change as the
+        // very first thing on their report. [noLayoutFor] is the same rule every finding below uses.
+        val first = if (noLayoutFor(d, remediesOnly, isFlat)) {
+            advisableRemedies(d, remediesOnly = true, isFlat = isFlat).firstOrNull()?.let { remedyLine(it) }
         } else {
             d.layoutFix
         }
@@ -1017,6 +1106,7 @@ private fun DoorSection(
     door: DoorResult,
     zones: List<ZoneInfo>,
     remediesOnly: Boolean,
+    isFlat: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // ⚠ A Column purely so the section has ONE node to report its position from — the entrance mark
@@ -1025,7 +1115,7 @@ private fun DoorSection(
     Column(modifier.fillMaxWidth()) {
         SectionLabel("Your front door")
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        DoorCard(door, zones, remediesOnly)
+        DoorCard(door, zones, remediesOnly, isFlat)
         Spacer(Modifier.height(VastuTheme.spacing.s6))
     }
 }
@@ -1060,6 +1150,8 @@ private fun RoomsSection(
     zones: List<ZoneInfo>,
     unlocked: Boolean,
     remediesOnly: Boolean,
+    /** See [noLayoutFor]. Passed to every finding a room row opens onto. */
+    isFlat: Boolean = false,
     expandAll: Boolean,
     openRoomId: String?,
     onTapRoom: (String) -> Unit,
@@ -1147,7 +1239,7 @@ private fun RoomsSection(
                         }
                     } else if (roomDefects.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-                            roomDefects.forEach { DefectBody(it, zones, remediesOnly) }
+                            roomDefects.forEach { DefectBody(it, zones, remediesOnly, isFlat) }
                         }
                     } else {
                         RoomBody(
@@ -1220,6 +1312,13 @@ private fun StructuralSection(
     unlocked: Boolean,
     remediesOnly: Boolean,
     expandAll: Boolean,
+    /**
+     * ⭐ Six of the seven building-owned findings land in THIS section — the shell's missing corner
+     * and bulge, its proportions, the tank, the road, the tree. It is the section a flat reader
+     * most needs told the truth about, and it is also the one furthest below the fold, which is
+     * why no golden has ever photographed it (docs/UI-POLISH.md §6.4 — a golden is a viewport).
+     */
+    isFlat: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     SectionLabel("Your home's shape and surroundings")
@@ -1236,7 +1335,7 @@ private fun StructuralSection(
                 locked = !free,
                 startOpen = expandAll,
             ) {
-                DefectBody(d, zones, remediesOnly)
+                DefectBody(d, zones, remediesOnly, isFlat)
             }
         }
     }
@@ -1335,7 +1434,7 @@ private fun FindingRow(
 
 /** The whole of a defect's reasoning — unchanged in substance from the first paid report. */
 @Composable
-private fun DefectBody(d: Defect, zones: List<ZoneInfo>, remediesOnly: Boolean) {
+private fun DefectBody(d: Defect, zones: List<ZoneInfo>, remediesOnly: Boolean, isFlat: Boolean = false) {
     val colors = VastuTheme.colors
     ProvenanceTag(d.provenance.toVastu())
     zoneMeaning(d.zone, zones)?.let {
@@ -1347,12 +1446,20 @@ private fun DefectBody(d: Defect, zones: List<ZoneInfo>, remediesOnly: Boolean) 
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     // ⭐ Each remedy carries its OWN provenance, not the defect's — a rite from the Mayamatam and a
     // 20th-century rock-salt bowl can sit two lines apart.
-    val remedies = advisableRemedies(d, remediesOnly).map { remedyLine(it) }
-    if (remediesOnly) {
-        RemedyBlock(remedies, d.remedyNote)
-    } else {
-        d.layoutFix?.let { LayoutBlock(it); Spacer(Modifier.height(VastuTheme.spacing.s2)) }
-        RemedyBlock(remedies, d.remedyNote)
+    val remedies = advisableRemedies(d, remediesOnly, isFlat).map { remedyLine(it) }
+    when {
+        // The thing is the building's. Say whose it is — never silently drop the block, which
+        // would leave a flat reader wondering why this one finding came with nothing at all.
+        isFlat && d.belongsToBuilding -> {
+            BuildingBlock()
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+            RemedyBlock(remedies, d.remedyNote)
+        }
+        remediesOnly -> RemedyBlock(remedies, d.remedyNote)
+        else -> {
+            d.layoutFix?.let { LayoutBlock(it); Spacer(Modifier.height(VastuTheme.spacing.s2)) }
+            RemedyBlock(remedies, d.remedyNote)
+        }
     }
 }
 
@@ -1460,7 +1567,7 @@ private fun PayBar(modifier: Modifier, a: Analysis, onUnlock: () -> Unit) {
 
 /** The front door, read on the 32-position table the tradition actually uses. */
 @Composable
-private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean) {
+private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean, isFlat: Boolean = false) {
     val colors = VastuTheme.colors
     VastuCard(accent = padaAccent(d.verdict), background = colors.surfaceRaised) {
         TagPill(text = padaBadge(d.verdict), color = padaAccent(d.verdict))
@@ -1477,7 +1584,15 @@ private fun DoorCard(d: DoorResult, zones: List<ZoneInfo>, remediesOnly: Boolean
             VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(doorExplanation(d, remediesOnly), style = VastuTheme.type.bodySm, color = colors.textSecondary)
+        // ⚠ SWEPT 23 Aug 2026. The door has its own advice sentence, separate from every finding
+        // card, and it ended "Worth raising while it is still on paper" for anyone BUILDING. A flat
+        // chosen off-plan counts as building and its front door is a hole in a structural wall
+        // shared with the lobby — nobody is raising that with anyone. A flat therefore reads the
+        // neutral sentence, which stays genuinely useful: it is how you compare two flats.
+        VText(
+            doorExplanation(d, remediesOnly = remediesOnly || isFlat),
+            style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        )
     }
 }
 
@@ -1497,6 +1612,17 @@ private fun padaAccent(v: PadaVerdict) = with(VastuTheme.colors) {
 // resident ("still on paper", "on the drawing", "still free to make", …). This heading only ever
 // renders on the building branch, but a banned phrase here is one refactor away from a red gate.
 private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — before it's built", text, VastuTheme.colors.primary)
+
+/**
+ * ⭐ The flat reader's replacement for [LayoutBlock] — see [BUILDING_NOT_YOURS].
+ *
+ * Drawn in the "schools disagree" accent rather than the primary one on purpose: this is context,
+ * not an instruction, and colouring it like advice would be the third time this report has drawn
+ * something that looks actionable and is not.
+ */
+@Composable
+private fun BuildingBlock() =
+    AdviceBlock("✦ The building's, not your flat's", BUILDING_NOT_YOURS, VastuTheme.colors.provenanceDisp)
 
 /**
  * The remedies for THIS problem — and, where the classical texts record none, the sentence that says
@@ -1538,6 +1664,9 @@ private fun ReadingRow(label: String, text: String) {
         VText(text, style = VastuTheme.type.bodySm, color = colors.textSecondary)
     }
 }
+
+@Composable
+private fun PropertyBadge() = TagPill(text = "FLAT", color = VastuTheme.colors.provenanceDisp)
 
 @Composable
 private fun IntentBadge(intent: Intent) {

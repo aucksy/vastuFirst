@@ -162,6 +162,10 @@ fun VastuNavHost() {
                     vm.beginNewHome()
                 }
                 AddHomeScreen(
+                    // ⭐ House or flat, asked here and nowhere else — see the screen's own note for
+                    // why it cannot live on the welcome screen beside "what brings you here".
+                    propertyType = vm.propertyType,
+                    onPropertyTypeChange = { vm.propertyType = it },
                     onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
                     // ⭐ The consent screen is not optional and not skippable: the scanner is only
                     // ever reached through it, or after it has already been answered once.

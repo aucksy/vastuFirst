@@ -17,21 +17,44 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.screenRoot
+import com.vastufirst.shared.PropertyType
 
 /**
- * Add home — method choice (§6.2 · design system screen 2). Phase 2 wires the guided grid and
- * bundled samples; AI plan-reading (upload) is Phase 4, shown here as "coming soon" rather than
- * hidden, so the full shape of the product is visible.
+ * Add home — method choice (§6.2 · design system screen 2), and since 23 August 2026 the one
+ * screen that asks whether this home is a HOUSE OR A FLAT.
+ *
+ * ⭐⭐ WHY THE QUESTION LIVES HERE, and not on the welcome screen where the other one does.
+ *
+ * "What brings you here?" is a fact about the PERSON — buying, building, or already living
+ * somewhere — and it is asked once, on a fresh install. House-or-flat is a fact about the HOME. A
+ * reader weighing a flat against a house would have to answer once and be wrong about one of them.
+ *
+ * This screen is the only one BOTH paths pass through before anything is read: the photograph path
+ * and the drawing path both start on these three cards, and both end at a report. Anywhere later
+ * and the compass dial or the room checklist would have to carry a question that has nothing to do
+ * with what it is for.
+ *
+ * ⚠ IT STARTS ON "A HOUSE" DELIBERATELY. That is what every home in the product silently was until
+ * this screen asked, so the default changes nothing for anybody — it only makes the assumption
+ * visible and one tap to correct. A required choice would put a second tap in front of the sample
+ * plan, whose whole promise is "the whole flow in ten seconds". The report carries a FLAT badge so
+ * the answer is visible again at the other end.
  */
 @Composable
 fun AddHomeScreen(
     onDrawGrid: () -> Unit,
     onScan: () -> Unit,
     onSample: () -> Unit,
+    propertyType: PropertyType = PropertyType.INDEPENDENT_HOUSE,
+    onPropertyTypeChange: (PropertyType) -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -55,7 +78,40 @@ fun AddHomeScreen(
             "Place your rooms on a simple grid — or try a sample to see the whole flow first.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
+
+        // ⭐ ASKED BEFORE THE METHOD, not after, because it changes what the report is allowed to
+        // tell them and they should see it before they invest any work in the home.
         Spacer(Modifier.height(VastuTheme.spacing.s6))
+        SectionLabel("Is it a house or a flat?")
+        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        VText(
+            // ⚠ Says WHY, in one line. A question with no stated consequence gets tapped past, and
+            // this one decides whether the reader is offered advice about a building they own a
+            // floor of. It also has to be true of both answers, so it names the difference rather
+            // than describing either one.
+            "A flat cannot move the building's walls, tank or front door. We read those either way, "
+                + "and only offer changes you could actually make.",
+            style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        )
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
+        Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            PropertyChoice(
+                label = "A house",
+                subtitle = "The whole building is yours",
+                isSelected = propertyType == PropertyType.INDEPENDENT_HOUSE,
+                modifier = Modifier.weight(1f),
+            ) { onPropertyTypeChange(PropertyType.INDEPENDENT_HOUSE) }
+            PropertyChoice(
+                label = "A flat",
+                subtitle = "One home in a bigger building",
+                isSelected = propertyType == PropertyType.FLAT,
+                modifier = Modifier.weight(1f),
+            ) { onPropertyTypeChange(PropertyType.FLAT) }
+        }
+
+        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        SectionLabel("How would you like to add it?")
+        Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
             // Upload leads, because it is the shortcut. The subtitle was "we read the room names,
@@ -94,6 +150,60 @@ fun AddHomeScreen(
                 style = VastuTheme.type.bodySm, color = colors.textTertiary,
             )
         }
+    }
+}
+
+/**
+ * One of the two house-or-flat answers.
+ *
+ * ⚠ TWO LINES, NOT A SEGMENTED PILL. A pill reading "House | Flat" fits, and at 200 % font scale on
+ * a 320 dp screen it is two truncated words with no room for the subtitle that makes either of them
+ * mean anything. This is a card, so it wraps instead of clipping — the failure this project has
+ * photographed more than any other (docs/UI-POLISH.md).
+ *
+ * ⚠ `Role.RadioButton` and `selected` are both set, so a screen reader announces which one is
+ * chosen. Colour alone would say it only to people who can see colour.
+ */
+@Composable
+private fun PropertyChoice(
+    label: String,
+    subtitle: String,
+    /**
+     * ⚠ NOT NAMED `selected`, on purpose. `androidx.compose.ui.semantics.selected` is an extension
+     * property on the semantics receiver, so inside the `semantics { }` lambda below a parameter of
+     * that name and the property being assigned are the same bare word — `selected = selected`
+     * either self-assigns an unset property or fails to resolve, depending on which scope wins.
+     * Renaming the parameter removes the question rather than betting on the answer.
+     */
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    Column(
+        modifier = modifier
+            .clip(VastuTheme.shapes.md)
+            .background(if (isSelected) colors.primary.copy(alpha = 0.10f) else colors.surfaceRaised)
+            .border(
+                if (isSelected) VastuTheme.borders.strong else VastuTheme.borders.regular,
+                if (isSelected) colors.primary else colors.borderDefault,
+                VastuTheme.shapes.md,
+            )
+            .clickableTap(role = Role.RadioButton, onClick = onClick)
+            // ⚠ SEPARATE FROM THE ROLE, and it has to be: the app's shared tap modifier forwards
+            // enabled, role and the click label and nothing else, so a RadioButton role on its own
+            // announces "radio button" and never says which of the two is chosen. Colour alone
+            // says it only to people who can see colour.
+            .semantics { selected = isSelected }
+            .padding(VastuTheme.spacing.s4),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
+    ) {
+        VText(
+            label,
+            style = VastuTheme.type.h3,
+            color = if (isSelected) colors.primary else colors.textPrimary,
+        )
+        VText(subtitle, style = VastuTheme.type.bodySm, color = colors.textSecondary)
     }
 }
 

@@ -241,7 +241,7 @@ Covered in §3. Done = §3.5 checklist.
 - **Remedies** (§7.2): ship gadget remedies but tag every one `MOD`, rank layout-change and Vastu Shanti above them.
 - ~~**Six languages** (§7.5)~~ — **CANCELLED, see the banner above. Not a deliverable of this or any phase.**
 - **Flats** (§7.4): the second analysis path; report copy honest about what a flat owner cannot move.
-- **16-zone / 45-devata profiles:** build the abstraction; shipping is **gated on the M-11 expert ruling** (§13). Do not enable them by default before the ruling lands.
+- ~~**16-zone / 45-devata profiles**~~ — **OUT OF SCOPE (owner ruling, 23 Aug 2026), not gated and not deferred.** VastuFirst ships the classic 8-direction reading only. `SchoolProfile` now has a single value, the engine's fall-back-to-default branch is gone because it can no longer fire, and no report names a school the app does not implement. Product PRD §4.7 carries the ruling. **Do not rebuild the abstraction "for later"** — it stood unbuilt for three months and cost a stale promise in two report sentences.
 
 **Verification gate:** AI never writes a score without user confirmation; every AI answer carries a citation; `MOD` remedies never rank above layout change. *(The "a Hindi and a Tamil report render without clipping" clause is struck — the app is English only. Long-text stress is covered by font scale 2.0, 360 dp and 320 dp, which is what the Hindi/Tamil configs were standing in for and never actually tested.)*
 

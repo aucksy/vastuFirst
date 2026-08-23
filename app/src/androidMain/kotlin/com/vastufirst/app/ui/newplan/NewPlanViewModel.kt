@@ -622,6 +622,10 @@ class NewPlanViewModel(
         cutOutCells = emptySet()
         keptCells = emptySet()
         siteAnswers = SiteAnswers()
+        // ⚠ House-or-flat is a fact about THIS home, so it resets with everything else. Somebody
+        // comparing a flat against a house would otherwise carry the flat answer into the house and
+        // be told the walls of their own bungalow are not theirs to move.
+        propertyType = PropertyType.INDEPENDENT_HOUSE
         north = 0
         roomsUnplaced = false
         fromScan = false

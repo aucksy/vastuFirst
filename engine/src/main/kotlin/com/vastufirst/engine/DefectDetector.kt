@@ -220,5 +220,6 @@ internal class DefectDetector(private val ruleSet: RuleSet, private val grid: Pa
         layoutFix = def.layoutFix,
         remedyNote = def.remedyNote,
         remedies = ruleSet.remediesFor(def),
+        belongsToBuilding = def.belongsToBuilding,
     )
 }
