@@ -3401,3 +3401,65 @@ phone's dark mode, and this app has one light palette, so both bars are pinned l
 composable, so neither is in the goldens. The icon was checked with the offline render above; the
 splash on a real phone is on the manual list (`DEVICE-TEST-CHECKLIST.md` §S). No screen fixture
 changed, so no golden moved.
+
+---
+
+## v0.24.0 — the walls are read off the photograph, and every room's box is moved onto them (8 Sep 2026)
+
+**What the owner saw.** "Check what we read", bedroom selected: the highlight ran ~20 % of the room's
+height past the bottom wall, over the balcony. "Check bedroom detection, it's incorrect… I want this
+to be automatically accurate… the fix can't be specific to this plan."
+
+**Why it was wrong, measured.** The on-photo box is the reader's own rectangle (`ScannedRoom.source`).
+Against `truth-rooms.json`, the reader's boxes cover their rooms 96–98 % but spill 22 % onto
+neighbours on the Gurgaon render and 2 % on Green Court. Every reply-only fix was tried against that
+truth and failed: trimming the strip two boxes both claim ("larger yields" and "split") moves mean
+IoU by +0.2, helping four rooms and hurting two — nothing in the reply says which box to trust
+(sizes match captions, confidence 0.97–0.99 throughout). The 15 Aug ruling stands: the caption must
+not shape the on-photo box.
+
+**What was not being used: the picture.** `WallSnap` (`:shared`, pure Kotlin) + `PlanImage` (two byte
+planes: luma, saturation; built in `:app` by `PlanImages.kt` from the same JPEG the reader was sent).
+For each edge of each box: strong lines within reach → keep those that are WALLS → move the edge
+onto the nearest wall's INNER face. A wall is: continuous ≥ 60 % of the room's side (door gaps
+allowed); still ≥ 60 % over a band extended 25 % each end (runs past the room — furniture does not);
+grey (render furniture is coloured; a coloured pixel is not ink at all); a dark core along ≥ 50 % of
+its length (a rug is grey with no dark edge); thickness — the 10th percentile along its length, so a
+tile hairline lined up with a bed's edge stays "thin" — between 45 % of the sheet's outer wall and
+6 % of the home. The outer wall is found first (frame edges ± 8 %); the reference is the thicker of
+that and the p90 of the grey dark-cored lines beside the rooms (a cropped picture may have no outer
+wall). Ink is judged against a per-edge floor level (p90 of the search region, floored at white−30)
+so a pink toilet floor never merges into a wall. No qualifying wall → the edge keeps the reader's
+value; a snap that halves a box or grows it past 1.5× is dropped per axis.
+
+**Measured, prototype-first (`tools/scan-eval/wall-snap.mjs` is that prototype, kept as the mirror):**
+- `plan-01` (exact truth from the fixture HTML): mean IoU **79.2 → 97.0**; JPEG copy **73.1 → 96.6**;
+  the skewed photo: every move toward a wall, none beyond the sanity bounds.
+- The owner's render, reconstructed untinted from his two screenshots (each shows the other room
+  clean): DINING left → the outer wall's inner face, right → the shared wall's dining face, top →
+  its top wall, bottom unchanged (open onto the living room); BEDROOM left → the shared wall's
+  bedroom face, bottom → the wall above the balcony (the complaint), top ≈ unchanged (already on the
+  wall), right unchanged (wardrobe niche, no clear wall). Every overlay rendered and looked at.
+- Eleven prototype rounds got here, each one a real failure on that render: continuity alone grabbed
+  tile lines; darkness mass counted floor texture; a fixed-window "thinness" rejected wide grey
+  walls; gap-bridging welded tiles to text; the local floor at p75 called a busy neighbourhood the
+  floor; the median thickness let a tile+bed line pass. The rule above is what survived.
+
+**Where it runs.** `PlanReader.read(image, aspect, picture)`; `GroqWire.readOutcome` and
+`FakePlanReader` do `ScanMapper.map(WallSnap.refine(draft, picture), aspect)`, so the GRID is built
+from the corrected rectangles too — tint, door and score describe one room. `picture == null` (every
+recorded reply in every test) ⇒ the reply is used as read ⇒ no golden, no pinned grid moved.
+
+**Tests.** `WallSnapTest`: a 600×600 drawing made in code (10 px outer wall, 5 px partitions, 1 px
+dark tile lines every 40 px, a wooden table, a grey rug, four rooms read wrong four ways) — every
+edge lands on its wall's inner face ± 1 px; the fixture PNG/JPEG through ImageIO with floors 95 % /
+93 % and a required 10-point gain; the photo: 8 rooms back, areas within 0.25–2.25×; null/blank
+picture ⇒ same instance. `ScanReviewBoxShapeTest`'s invariant (drawn box === source) is untouched.
+
+**Not proven yet, said plainly.** Four pictures, three styles. The corpus's 34 sheet images live in
+`Documents/Sample Floor plans` on the owner's machine, not in the repo. `wall-snap.mjs` runs the
+identical arithmetic over every recording that has its image beside it, draws an overlay per sheet
+to `out/wall-snap/`, and scores against `truth-rooms.json` (`cd tools/scan-eval && npm install &&
+node wall-snap.mjs`). That run is the next step, and the phone list (§T) is the proof that matters.
+
+**No paid scans were used.** Recordings, the two screenshots and the bundled fixtures only.

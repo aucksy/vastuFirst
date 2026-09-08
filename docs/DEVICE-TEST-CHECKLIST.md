@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.23.0 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.23.0/vastufirst-v0.23.0.apk)
+**Latest build to test:** v0.24.0 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.24.0/vastufirst-v0.24.0.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -623,3 +623,24 @@ launcher, and the opening picture is drawn by Android before the app's first scr
 - [ ] **S5 · The clock and buttons stay dark.** Put the phone in dark mode and open the app from cold.
       The clock, battery and navigation buttons over the opening picture should be dark on cream,
       not white.
+
+## T · The room boxes sit on the walls  *(new in this build)*
+
+The app now reads the walls off your picture and moves each room's box onto them. The automated
+checks prove it on a sample drawing and on your render, reconstructed from your screenshots; a real
+scan on a real phone is the proof that matters.
+
+- [ ] **T1 · ⭐⭐ Scan the same plan as before and tap the bedroom.** On the screenshot you sent, its box
+      ran past the bottom wall over the balcony. It should now end at that wall, and its left edge
+      should sit on the wall shared with the dining room. Its right edge, beside the wardrobe niche,
+      may still be where the reader put it — there is no clear wall there, and that is by design.
+- [ ] **T2 · ⭐ Tap every other room.** Each box should sit on its walls. A room that opens onto another
+      with no wall between them — the dining room onto the living room — will keep a loose edge on
+      that side, which is honest: there is no wall to find.
+- [ ] **T3 · Nothing grabs a tile line, a bed, a table or a rug.** If any box edge sits on a floor-tile
+      line, on the edge of a piece of furniture, or on a rug rather than a wall, photograph it and
+      send it — that is exactly the kind of picture this needs to learn from.
+- [ ] **T4 · A plain architect's drawing.** If you have a thin-lined CAD-style plan, scan it too: the
+      boxes should land on its thin walls just as well as on the render's thick ones.
+- [ ] **T5 · A photo taken at an angle.** Boxes may improve less on a tilted photo; they must never get
+      worse than they were.

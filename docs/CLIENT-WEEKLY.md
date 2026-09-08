@@ -101,6 +101,35 @@ developer account.
 
 ## Week of 7–13 September 2026
 
+### Tuesday 8 September — the app now reads the walls, so a room's box sits on the room
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.24.0/vastufirst-v0.24.0.apk
+**This is the one to install.**
+
+**The highlight on "Check what we read" now ends at the wall.** You showed us a bedroom whose box ran
+a fifth of the room's height past its bottom wall, out over the balcony. The reason is that the AI
+reader is very good at reading names and printed sizes off a plan and only rough at drawing the
+rectangle around a room. Until now that rough rectangle was all the app had.
+
+**It now looks at the picture itself.** On every plan the walls are the thick grey lines. For each
+side of each room, the app finds the nearest line that really is a wall — long, grey, thick — and
+moves the edge of the box onto it. Floor-tile lines are far too thin to count, furniture is coloured
+so it never counts, and a rug has no dark edge so it never counts either. Because "thick" is judged
+against that plan's own outer wall, the same rule reads a thin-lined architect's drawing and a
+heavy-walled builder's render. Where no wall can be found near an edge, the box stays exactly as the
+reader drew it, so a room can never come out worse than before.
+
+**The score follows.** The grid the app builds, and therefore the score and the report, are made from
+the corrected rectangles, not the rough ones — so the picture you check and the number you are given
+describe the same rooms.
+
+**Measured, not assumed.** On a sample drawing whose true room positions are known to the pixel, the
+boxes went from covering 79 % of their rooms to 97 %; on a compressed copy of it from 73 % to 97 %; on
+a photograph of it taken at an angle every box moved toward a wall and none ran wild. On your own
+render, the bedroom's box now ends at the wall above the balcony and sits on the wall it shares with
+the dining room. We have checked four kinds of picture so far; running it across the whole set of
+sample plans is next.
+
 ### Tuesday 8 September — the icon fits its tile, and the app opens on its own mark
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.23.0/vastufirst-v0.23.0.apk
