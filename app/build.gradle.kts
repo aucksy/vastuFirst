@@ -29,6 +29,9 @@ kotlin {
 
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
+            // The opening screen (res/values/themes.xml, Theme.VastuFirst.Starting): the brand
+            // mark on paper on every Android version, held until the first screen is decided.
+            implementation(libs.androidx.core.splashscreen)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)

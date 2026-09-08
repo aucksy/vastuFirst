@@ -3,9 +3,19 @@
   The VastuFirst mark, identical in geometry to designsystem BrandMark.kt: a mandala square with
   its 3x3 grid, the North arrow, and the gold Brahmasthan dot.
 
-  BrandMark draws on a 40-unit grid. Adaptive-icon foregrounds are 108x108 with only the central
-  72x72 guaranteed visible after masking, so the 40-unit design is scaled x1.65 and centred:
-      x' = 21 + x * 1.65      (36-unit square -> 59.4 units, well inside the safe zone)
+  BrandMark draws on a 40-unit grid. An adaptive-icon foreground is 108x108, the launcher shows the
+  central 72x72 through its mask, and ONLY a 66-unit circle in the middle is guaranteed visible —
+  every launcher (circle, squircle, rounded square) keeps that circle and cuts differently outside it.
+
+  ⚠ The square's CORNERS are what have to fit, not its sides. At the old scale of 1.65 the square
+  was 59.4 wide, so its sides sat inside the visible area but its corners reached 42 units from the
+  centre — nine past the safe circle — and every launcher cut them off (owner, 8 Sep 2026: "the
+  square is cutting out"). At 1.25 the square is 45 wide, which is Material's keyline for a square
+  icon graphic, and its farthest corner including the stroke is 30.6 from the centre: inside the
+  safe circle with room to spare. The Android 12 splash draws this same drawable inside a circle of
+  the same proportion, so it fits there for the same reason.
+
+      x' = 29 + x * 1.25      (centred: design point 20 lands on canvas point 54)
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -17,28 +27,28 @@
     <path
         android:fillColor="#7A9E7E"
         android:fillAlpha="0.18"
-        android:pathData="M44.1,44.1 L63.9,44.1 L63.9,63.9 L44.1,63.9 Z" />
+        android:pathData="M46.5,46.5 L61.5,46.5 L61.5,61.5 L46.5,61.5 Z" />
 
     <!-- Outer rounded square -->
     <path
         android:strokeColor="#DDDED3"
-        android:strokeWidth="2.31"
+        android:strokeWidth="1.75"
         android:fillColor="@android:color/transparent"
-        android:pathData="M30.9,24.3 L77.1,24.3 A6.6,6.6 0 0 1 83.7,30.9 L83.7,77.1 A6.6,6.6 0 0 1 77.1,83.7 L30.9,83.7 A6.6,6.6 0 0 1 24.3,77.1 L24.3,30.9 A6.6,6.6 0 0 1 30.9,24.3 Z" />
+        android:pathData="M36.5,31.5 L71.5,31.5 A5,5 0 0 1 76.5,36.5 L76.5,71.5 A5,5 0 0 1 71.5,76.5 L36.5,76.5 A5,5 0 0 1 31.5,71.5 L31.5,36.5 A5,5 0 0 1 36.5,31.5 Z" />
 
     <!-- 3x3 grid -->
     <path
         android:strokeColor="#DDDED3"
-        android:strokeWidth="1.32"
-        android:pathData="M44.1,24.3 L44.1,83.7 M63.9,24.3 L63.9,83.7 M24.3,44.1 L83.7,44.1 M24.3,63.9 L83.7,63.9" />
+        android:strokeWidth="1"
+        android:pathData="M46.5,31.5 L46.5,76.5 M61.5,31.5 L61.5,76.5 M31.5,46.5 L76.5,46.5 M31.5,61.5 L76.5,61.5" />
 
     <!-- North arrow -->
     <path
         android:fillColor="#7A9E7E"
-        android:pathData="M54,29.25 L59.61,46.74 L54,43.11 L48.39,46.74 Z" />
+        android:pathData="M54,35.25 L58.25,48.5 L54,45.75 L49.75,48.5 Z" />
 
     <!-- Gold Brahmasthan dot -->
     <path
         android:fillColor="#C9A227"
-        android:pathData="M49.71,54 A4.29,4.29 0 1 1 58.29,54 A4.29,4.29 0 1 1 49.71,54 Z" />
+        android:pathData="M50.75,54 A3.25,3.25 0 1 1 57.25,54 A3.25,3.25 0 1 1 50.75,54 Z" />
 </vector>

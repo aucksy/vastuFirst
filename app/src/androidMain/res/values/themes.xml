@@ -13,4 +13,28 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <!--
+      ⭐ THE OPENING SCREEN, on every Android version this app runs on.
+
+      The launcher activity starts in THIS theme and MainActivity swaps to Theme.VastuFirst the
+      moment it is created (installSplashScreen). Android 12 and later draw the system splash from
+      it — the brand mark on paper. Android 8 to 11 have no system splash at all, so before this
+      the app opened on a bare cream window with nothing on it; the AndroidX splash library draws
+      the same mark, the same size, on those versions too. One look on every phone.
+
+      The mark is the launcher icon's own foreground and is masked to a circle exactly as the
+      launcher masks it, which is why it is drawn inside the icon's safe zone (see the drawable).
+
+      ⚠ The library's base theme follows the phone's dark mode. This app has one light palette, so
+      the bars are pinned light here (dark clock and buttons on cream) or a phone in dark mode would
+      draw white system icons over the cream splash. windowLightNavigationBar lives in values-v27
+      because Android 8.0 has no such attribute.
+    -->
+    <style name="Theme.VastuFirst.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/paper</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.VastuFirst</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

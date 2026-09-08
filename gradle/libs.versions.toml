@@ -6,6 +6,9 @@ agp = "8.7.3"                     # AGP 8.5+; 8.7 supports compileSdk 35 and is 
 composeMultiplatform = "1.7.1"   # Compose Multiplatform 1.6+
 androidxActivityCompose = "1.9.3"
 androidxCoreKtx = "1.13.1"
+# The opening screen on Android 8-11, which have no system splash of their own. On 12+ it maps the
+# same theme attributes onto the platform splash, so one theme describes the launch everywhere.
+androidxCoreSplashscreen = "1.0.1"
 kotlinxSerialization = "1.7.3"
 kotlinxDatetime = "0.6.1"         # engine uses no java.time (Product PRD §3.1)
 kotlinxCoroutines = "1.9.0"
@@ -47,6 +50,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCoreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidxCoreSplashscreen" }
 
 # DI (declared now, wired in later phases).
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

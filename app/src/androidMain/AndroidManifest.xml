@@ -34,9 +34,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VastuFirst">
 
+        <!--
+          The activity starts in Theme.VastuFirst.Starting — the splash — and switches itself to
+          Theme.VastuFirst on creation (see MainActivity). The application-level theme above stays
+          the plain one, so nothing else that inherits it shows a splash.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:theme="@style/Theme.VastuFirst.Starting"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

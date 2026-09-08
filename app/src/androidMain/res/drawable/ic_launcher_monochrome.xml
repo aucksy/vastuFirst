@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed-icon layer (API 33+). Same geometry, single colour — the system tints it. -->
+<!-- Themed-icon layer (API 33+). Same geometry as ic_launcher_foreground (scale 1.25, inside the
+     66-unit safe circle), single colour — the system tints it. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -8,17 +9,17 @@
     android:tint="#000000">
     <path
         android:strokeColor="#000000"
-        android:strokeWidth="2.31"
+        android:strokeWidth="1.75"
         android:fillColor="@android:color/transparent"
-        android:pathData="M30.9,24.3 L77.1,24.3 A6.6,6.6 0 0 1 83.7,30.9 L83.7,77.1 A6.6,6.6 0 0 1 77.1,83.7 L30.9,83.7 A6.6,6.6 0 0 1 24.3,77.1 L24.3,30.9 A6.6,6.6 0 0 1 30.9,24.3 Z" />
+        android:pathData="M36.5,31.5 L71.5,31.5 A5,5 0 0 1 76.5,36.5 L76.5,71.5 A5,5 0 0 1 71.5,76.5 L36.5,76.5 A5,5 0 0 1 31.5,71.5 L31.5,36.5 A5,5 0 0 1 36.5,31.5 Z" />
     <path
         android:strokeColor="#000000"
-        android:strokeWidth="1.32"
-        android:pathData="M44.1,24.3 L44.1,83.7 M63.9,24.3 L63.9,83.7 M24.3,44.1 L83.7,44.1 M24.3,63.9 L83.7,63.9" />
+        android:strokeWidth="1"
+        android:pathData="M46.5,31.5 L46.5,76.5 M61.5,31.5 L61.5,76.5 M31.5,46.5 L76.5,46.5 M31.5,61.5 L76.5,61.5" />
     <path
         android:fillColor="#000000"
-        android:pathData="M54,29.25 L59.61,46.74 L54,43.11 L48.39,46.74 Z" />
+        android:pathData="M54,35.25 L58.25,48.5 L54,45.75 L49.75,48.5 Z" />
     <path
         android:fillColor="#000000"
-        android:pathData="M49.71,54 A4.29,4.29 0 1 1 58.29,54 A4.29,4.29 0 1 1 49.71,54 Z" />
+        android:pathData="M50.75,54 A3.25,3.25 0 1 1 57.25,54 A3.25,3.25 0 1 1 50.75,54 Z" />
 </vector>

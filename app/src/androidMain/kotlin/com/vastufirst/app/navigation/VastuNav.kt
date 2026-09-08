@@ -50,16 +50,22 @@ import org.koin.compose.koinInject
 /**
  * The app's navigation host. The guided-grid path is a nested graph so its screens share one
  * [NewPlanViewModel] (the draft home). Home is the start destination.
+ *
+ * [onFirstScreenDecided] fires once the launch route has chosen where to land and navigated there.
+ * MainActivity holds the opening splash on it, so the splash gives way to the first real screen
+ * rather than to a frame of nothing.
  */
 @Composable
-fun VastuNavHost() {
+fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Routes.LAUNCH) {
 
         // First frame decides where to land, so a fresh install never opens on an empty
         // "No plans yet" screen: returning users go to their saved plans, first-timers go straight
-        // into the flow. A themed splash (no white flash) shows for the single frame it takes to
-        // read the DB. popUpTo removes LAUNCH so Back from the first real screen exits the app.
+        // into the flow. The opening splash (MainActivity) stays up while the DB is read, so no
+        // user sees this route draw — its brand mark below is the fallback for the case where the
+        // splash has already let go. popUpTo removes LAUNCH so Back from the first real screen
+        // exits the app.
         composable(Routes.LAUNCH) {
             val repo = koinInject<PlanRepository>()
             var target by remember { mutableStateOf<String?>(null) }
@@ -81,6 +87,9 @@ fun VastuNavHost() {
             LaunchedEffect(target) {
                 target?.let { dest ->
                     nav.navigate(dest) { popUpTo(Routes.LAUNCH) { inclusive = true } }
+                    // AFTER navigating, not after deciding: released a frame earlier, the splash
+                    // would give way to this route's mark for one frame before the destination.
+                    onFirstScreenDecided()
                 }
             }
             Box(

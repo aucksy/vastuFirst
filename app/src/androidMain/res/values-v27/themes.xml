@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 8.1+ can draw dark navigation buttons on a light bar. The splash sits over a
+         transparent bar on cream, so without this a dark-mode phone shows white buttons on cream
+         for as long as the splash is up. Theme.VastuFirst itself does not need it: MainActivity
+         sets the bar style at runtime the moment it takes over. -->
+    <style name="Theme.VastuFirst.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/paper</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.VastuFirst</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
