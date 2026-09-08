@@ -3,12 +3,28 @@ name: Release
 # Tag-driven build: push a v* tag → build the app → publish a GitHub Release with the APK
 # attached, so there is a direct .apk download link per phase. Phase 2 ships a DEBUG-signed
 # APK (installable for client testing); a release-signed AAB/APK arrives with the store setup.
+#
+# ⭐ TWO WAYS IN, ONE PATH THROUGH (8 Sep 2026). A remote Claude session can push commits to its
+# branch but its connection refuses every tag ("only branch updates are permitted"), so a session
+# that had built, tested and written up a release could not cut it — v0.23.0 sat finished on a
+# branch with no way to tag it. The manual trigger now takes the version as an input: the runner,
+# which has no such restriction, creates the tag itself on the commit it checked out and pushes it
+# ONLY after every gate below has passed, then publishes exactly as a tag push would. Started by
+# hand with no version, it runs the gates and publishes nothing, as before.
+#
+# A tag pushed by the runner with its own token does not start another run of this workflow (GitHub
+# never fires workflows for GITHUB_TOKEN pushes), so there is no second release and no recursion.
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version to release, e.g. v0.23.0 — created on the chosen branch's latest commit once every gate passes. Leave empty to run the gates only."
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -39,6 +55,48 @@ jobs:
           # built to exit 2 rather than pass in that case — so this is what keeps it able to run.
           fetch-depth: 0
 
+      # ⭐ Which version this run releases, decided once and read by every later step as RELEASE_TAG.
+      #   · a tag push          → the tag that was pushed, exactly as before
+      #   · manual, with a tag  → that tag, created HERE on the checked-out commit (annotated, in the
+      #                           CI's own name) but NOT pushed yet — the push waits until every gate
+      #                           has passed, so a failed run never leaves a tag behind with no build
+      #   · manual, no tag      → empty: gates only, nothing published
+      # A name that already exists on some OTHER commit is refused outright rather than moved.
+      - name: Resolve the release tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG=""
+          PUSH_TAG="false"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          elif [ -n "${INPUT_TAG}" ]; then
+            TAG="${INPUT_TAG}"
+            if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::'$TAG' is not a version tag (expected the form v0.23.0)."
+              exit 1
+            fi
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null 2>&1; then
+              git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG"
+              if [ "$(git rev-parse "$TAG^{commit}")" != "$(git rev-parse HEAD)" ]; then
+                echo "::error::$TAG already exists on a different commit. A tag is never moved; pick the next version."
+                exit 1
+              fi
+              echo "$TAG already exists on this exact commit — reusing it (a re-run)."
+            else
+              git config user.name "VastuFirst CI"
+              git config user.email "simpleapps108@gmail.com"
+              git tag -a "$TAG" -m "VastuFirst $TAG — released by hand from $GITHUB_REF_NAME at $(git rev-parse --short HEAD)"
+              PUSH_TAG="true"
+              echo "Created $TAG locally on $(git rev-parse --short HEAD); it is pushed only once every gate has passed."
+            fi
+          else
+            echo "Manual run with no version: running the gates only, publishing nothing."
+          fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "PUSH_TAG=$PUSH_TAG" >> "$GITHUB_ENV"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -65,12 +123,13 @@ jobs:
       # is finding it out too late to fix in the same commit — which is the whole of the rule.
       # The tag is passed in rather than discovered: it is the subject of the check.
       #
-      # ⚠ …but ONLY when this really is a tag. This recipe also has a manual trigger, and run that
-      # way `ref_name` is the BRANCH — so passing it blindly asked the guard whether the client log
-      # mentions a build called "main", which it never will. An empty argument makes the guard find
-      # the newest tag itself, which is the right question for a manual run.
+      # ⚠ …and it is asked about RELEASE_TAG, never about `ref_name` blindly: on a manual run
+      # `ref_name` is the BRANCH, and that once asked the guard whether the client log mentions a
+      # build called "main", which it never will. A manual run WITH a version asks about that
+      # version (created just above, so its date is readable); one without passes an empty argument
+      # and the guard finds the newest tag itself, which is the right question for a gates-only run.
       - name: Client-log check (this release must be written up for the client)
-        run: bash scripts/check-client-log.sh "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+        run: bash scripts/check-client-log.sh "${{ env.RELEASE_TAG }}"
 
       - name: Module-boundary check
         run: bash scripts/check-boundaries.sh
@@ -164,23 +223,32 @@ jobs:
         run: python3 scripts/check-apk-signature.py "app/build/outputs/apk/debug/*.apk"
 
       - name: Name the APK for the release
+        if: env.RELEASE_TAG != ''
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/*.apk "release/vastufirst-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/debug/*.apk "release/vastufirst-${RELEASE_TAG}.apk"
 
       # The decoded key must not outlive the job even if a step above failed.
       - name: Shred the decoded signing key
         if: always()
         run: rm -f "${RUNNER_TEMP}/vastufirst-release.jks"
 
+      # Only now, with every gate green and the APK built, does a hand-started release get its tag
+      # on GitHub. Pushed with the runner's own token, so it starts no second run of this workflow.
+      - name: Push the release tag (manual runs only)
+        if: env.PUSH_TAG == 'true'
+        run: git push origin "refs/tags/${RELEASE_TAG}"
+
       - name: Publish GitHub Release
+        if: env.RELEASE_TAG != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           files: release/*.apk
           generate_release_notes: true
-          name: "VastuFirst ${{ github.ref_name }}"
+          name: "VastuFirst ${{ env.RELEASE_TAG }}"
           body: |
-            VastuFirst Android — ${{ github.ref_name }}.
+            VastuFirst Android — ${{ env.RELEASE_TAG }}.
             Test APK, installs on any Android 8.0+ device.
 
             From v0.3.17 onward every build is signed with the same key, so this installs straight
