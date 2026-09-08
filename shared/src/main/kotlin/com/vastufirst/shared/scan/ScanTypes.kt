@@ -236,6 +236,12 @@ data class ScannedRoom(
      *
      * The captions keep the job they are good at: `ScanMapper.reshapeToPrinted` shapes the grid,
      * and therefore the score, from them. Nothing about that changed.
+     *
+     * ⭐ SINCE 8 SEP 2026 THE READER'S RECTANGLE IS FIRST MOVED ONTO THE WALLS THE PICTURE DRAWS —
+     * see [WallSnap]. That is not the ruling above being undone: it is a statement about the
+     * picture made FROM the picture, whereas the caption is a statement about the home. An edge
+     * with no wall near it keeps exactly what the reader said. The grid is built from the same
+     * moved rectangle, so the tint, the door and the score all describe one room.
      */
     val source: ScanBox? = null,
     /**
@@ -421,14 +427,21 @@ sealed interface ScanResult {
  * the correctness risk lives — so it is built and proven green in CI before any account exists.
  */
 interface PlanReader {
-    /** [image] is the encoded bytes of a downscaled JPEG. Never throws — failures are [ScanResult]s. */
-    suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult
+    /**
+     * [image] is the encoded bytes of a downscaled JPEG. Never throws — failures are [ScanResult]s.
+     *
+     * ⭐ [picture] is the SAME photograph decoded, for [WallSnap]: with it, every room the reader
+     * returns is moved onto the walls the picture actually draws before anything is placed or
+     * tinted. Without it (a recorded reply in a test, a caller with no decoder) the reply is used
+     * exactly as read, which is what every build did before 8 Sep 2026.
+     */
+    suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage? = null): ScanResult
 
     /**
      * ⭐ The testing lever (owner request, 4 Aug 2026): read with ONE named model — no escalation,
      * no fallback — so two models can be compared on the same picture from the results screen.
      * Default: an ordinary read, so recorded/fake readers need not care which model was asked for.
      */
-    suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?): ScanResult =
-        read(image, imageAspect)
+    suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?, picture: PlanImage? = null): ScanResult =
+        read(image, imageAspect, picture)
 }

@@ -41,19 +41,19 @@ class GroqPlanReader(
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : PlanReader {
 
-    override suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult = withContext(io) {
+    override suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult = withContext(io) {
         // A build made without the key must not pretend to read anything. The screen checks this
         // first and says so plainly; this is the belt to that braces.
         if (apiKey.isBlank() || image.isEmpty()) return@withContext ScanResult.Unavailable
 
         val base64 = Base64.getEncoder().encodeToString(image)
-        val primary = postOnce(GroqWire.requestBody(recipe, base64), imageAspect)
+        val primary = postOnce(GroqWire.requestBody(recipe, base64), imageAspect, picture)
             .attributedTo(recipe.config.model)
 
         val escalation = recipe.config.escalationModel
         if (escalation.isNullOrBlank() || !refusedAsNot2d(primary)) return@withContext primary
 
-        val second = postOnce(GroqWire.requestBody(recipe, base64, model = escalation), imageAspect)
+        val second = postOnce(GroqWire.requestBody(recipe, base64, model = escalation), imageAspect, picture)
             .attributedTo(escalation)
         if (second is ScanResult.Read && second.outcome !is ScanOutcome.Refused) second else primary
     }
@@ -64,11 +64,11 @@ class GroqPlanReader(
      * an explicit choice must be deterministic, so the second-opinion machinery deliberately does
      * not run here.
      */
-    override suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?): ScanResult =
+    override suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult =
         withContext(io) {
             if (apiKey.isBlank() || image.isEmpty() || model.isBlank()) return@withContext ScanResult.Unavailable
             val base64 = Base64.getEncoder().encodeToString(image)
-            postOnce(GroqWire.requestBody(recipe, base64, model = model), imageAspect).attributedTo(model)
+            postOnce(GroqWire.requestBody(recipe, base64, model = model), imageAspect, picture).attributedTo(model)
         }
 
     /** Stamp which model produced a successful answer; failures pass through untouched. */
@@ -82,7 +82,7 @@ class GroqPlanReader(
     }
 
     /** One POST → one [ScanResult]. Never throws; see the rules at the top of the file. */
-    private fun postOnce(bodyText: String, imageAspect: Double?): ScanResult {
+    private fun postOnce(bodyText: String, imageAspect: Double?, picture: PlanImage?): ScanResult {
         val body = bodyText.toByteArray(Charsets.UTF_8)
         var connection: HttpURLConnection? = null
         return runCatching {
@@ -108,7 +108,7 @@ class GroqPlanReader(
             val text = stream?.use { it.readBytes().decodeToString() }.orEmpty()
 
             if (status in 200..299) {
-                GroqWire.readOutcome(text, imageAspect)
+                GroqWire.readOutcome(text, imageAspect, picture)
             } else {
                 GroqWire.mapStatus(status) { name -> conn.getHeaderField(name) }
             }

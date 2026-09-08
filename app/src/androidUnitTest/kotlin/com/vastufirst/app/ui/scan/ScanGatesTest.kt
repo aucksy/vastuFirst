@@ -1,5 +1,6 @@
 package com.vastufirst.app.ui.scan
 
+import com.vastufirst.shared.scan.PlanImage
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.shared.scan.ScanResult
 import kotlin.test.Test
@@ -24,7 +25,7 @@ class ScanGatesTest {
 
     /** Never called by these tests — a read would need a coroutine, which is the point. */
     private val neverCalled = object : PlanReader {
-        override suspend fun read(image: ByteArray, imageAspect: Double?): ScanResult =
+        override suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult =
             error("no read should be attempted in these tests")
     }
 

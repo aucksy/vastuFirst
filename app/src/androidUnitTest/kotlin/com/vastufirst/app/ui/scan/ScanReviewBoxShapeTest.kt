@@ -26,6 +26,10 @@ import kotlin.test.assertTrue
  * own room 56 % on that toilet and 51 % on that kitchen; the reader's rectangle covers them 75 %
  * and 95 %.
  *
+ * ⭐ Since 8 Sep 2026 the rectangle the reader returned is first moved onto the WALLS the picture
+ * draws (`WallSnap`, in :shared). That is still "the box that was read": it is corrected by the
+ * picture, never by the caption, and this test's invariant — drawn box === source — is untouched.
+ *
  * **This test exists to stop it being re-applied by someone who reads the 95 % and not the sheet.**
  * It asserts the drawn box is the read box, and it prints, for every bundled plan, how many rooms
  * the caption would turn ninety degrees away from the way the sheet draws them. Across every

@@ -10,7 +10,9 @@ import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.shared.scan.ScanOutcome
 import com.vastufirst.shared.scan.ScanResult
 import com.vastufirst.shared.scan.withRoomType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Drives one scan. Holds the screen's state and nothing else — the reading itself is behind
@@ -105,8 +107,11 @@ class ScanViewModel(
 
     private suspend fun readToState(image: DecodedImage, forcedModel: String? = null): ScanUiState {
         val pick = forcedModel ?: chosenModel
-        val r = if (pick != null) reader.readWith(pick, image.bytes, image.aspect)
-        else reader.read(image.bytes, image.aspect)
+        // ⭐ The same photograph, decoded, so the walls it draws can correct the reader's rectangles
+        // (WallSnap). Off the main thread: a 1400 px picture is two million pixels to walk.
+        val picture = withContext(Dispatchers.Default) { image.toPlanImage() }
+        val r = if (pick != null) reader.readWith(pick, image.bytes, image.aspect, picture)
+        else reader.read(image.bytes, image.aspect, picture)
         return when (r) {
             is ScanResult.Read -> ScanUiState.Done(r.outcome, readBy = r.readBy ?: pick)
             is ScanResult.Busy -> ScanUiState.Busy(r.retryAfterSeconds)

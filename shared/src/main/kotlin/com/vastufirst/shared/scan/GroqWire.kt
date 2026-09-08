@@ -97,10 +97,11 @@ object GroqWire {
      * user their plan is the problem and asks them to change it, and it would be a lie here. This
      * failed on our side and trying again is a reasonable thing to suggest.
      */
-    fun readOutcome(responseBody: String, imageAspect: Double?): ScanResult {
+    fun readOutcome(responseBody: String, imageAspect: Double?, picture: PlanImage? = null): ScanResult {
         val content = contentOf(responseBody) ?: return ScanResult.Unavailable
         val draft = RecordedScans.parseDraft(content) ?: return ScanResult.Unavailable
-        return ScanResult.Read(ScanMapper.map(draft, imageAspect))
+        // The walls in the picture correct the reader's rectangles BEFORE anything is placed.
+        return ScanResult.Read(ScanMapper.map(WallSnap.refine(draft, picture), imageAspect))
     }
 
     /**

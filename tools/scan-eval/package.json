@@ -1,0 +1,9 @@
+{
+  "name": "vastufirst-scan-eval",
+  "private": true,
+  "description": "Offline tools for the plan reader. Only wall-snap.mjs needs a dependency (jimp, a pure-JS image codec); every other script here runs on node alone.",
+  "type": "module",
+  "dependencies": {
+    "jimp": "0.22.12"
+  }
+}
