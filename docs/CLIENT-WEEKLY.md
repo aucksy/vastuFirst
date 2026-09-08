@@ -99,6 +99,27 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 7–13 September 2026
+
+### Tuesday 8 September — the icon fits its tile, and the app opens on its own mark
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.23.0/vastufirst-v0.23.0.apk
+**This is the one to install.**
+
+**The app's icon no longer has its corners cut off.** On the home screen, the square of the mark ran
+past the edge of its tile, so every phone trimmed it a little differently and the grid looked cropped
+rather than drawn. The mark is now sized to sit whole inside the tile on every kind of phone — whether
+the phone draws its icons as circles, rounded squares, or the shape in between. Same mark, same
+colours; it simply fits.
+
+**The app now opens on its own mark, on every Android phone.** Newer phones already showed the mark
+for a moment while the app started. Older ones — Android 8 to 11, still common — opened on a plain
+cream page and then flicked to the first screen. Every phone now shows the same opening picture, and
+it stays up until the app has decided where to land: your saved homes if you have any, the first
+question if you do not. So the first thing you see after it is a real screen, never a blank one.
+
+Nothing about scores, reports or plan reading changed in this build.
+
 ## Week of 17–23 August 2026
 
 ### Sunday 23 August — a flat is finally read as a flat

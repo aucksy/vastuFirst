@@ -133,8 +133,8 @@ android {
         targetSdk = libs.versions.targetSdk.get().toInt()
         // ⚠ These lagged the tags: v0.9.0 shipped still calling itself 0.8.1, so an installed build
         // could not be told apart from the one before it on the phone. Bump BOTH with every tag.
-        versionCode = 64
-        versionName = "0.22.0"
+        versionCode = 65
+        versionName = "0.23.0"
 
         // Escaped rather than interpolated raw: this string is pasted into generated Kotlin, so a
         // stray quote or backslash in a key would produce a file that does not compile.

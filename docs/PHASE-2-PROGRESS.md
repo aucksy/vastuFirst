@@ -3368,3 +3368,36 @@ time they start anything; a "take a photo" button that opens the camera rather t
 no new permission; a saved home whose rooms and North can finally be changed instead of only renamed;
 buying offered first; and — for anyone buying a home or already living in one — a report that stops
 telling them to move a wall they cannot move and gives them remedies instead.
+
+---
+
+## v0.23.0 — the launcher icon fits its mask, and one splash on every Android version (8 Sep 2026)
+
+**What the owner saw.** His screenshot of the home screen: the icon's square cut off at the corners.
+
+**Why.** An adaptive icon is a 108-unit canvas; the launcher shows the central 72 through its own
+mask and guarantees only a 66-unit circle in the middle. The mark was scaled ×1.65 so its square was
+59.4 wide — sides inside 72, but corners at 42 from the centre, nine past the safe circle, so every
+mask cut them. Now ×1.25: square 45 wide (Material's keyline for a square graphic), farthest corner
+30.6 including the stroke. Foreground and monochrome layers moved together. **Verified by rendering
+both versions under circle, squircle and rounded-square masks** (an SVG rasteriser in the session
+scratchpad, same paths as the drawables) **and looking**: cut under all three before, whole under all
+three after.
+
+**The splash.** Android 12+ drew a system splash from `values-v31`; Android 8–11 had none — cream
+window, one frame of the LAUNCH route's mark, then the screen. Now `androidx.core:core-splashscreen
+1.0.1`: `Theme.VastuFirst.Starting` (parent `Theme.SplashScreen`) on the activity,
+`installSplashScreen()` before `super.onCreate`, and `setKeepOnScreenCondition` held on
+`VastuNavHost(onFirstScreenDecided)`. That callback fires **after** the launch route navigates, not
+after it decides — released a frame earlier, the splash would give way to the LAUNCH mark for one
+frame before the destination. Cold start only (`savedInstanceState == null`: a restored process never
+runs LAUNCH, so nothing would release it). Capped at 1.5 s so a stalled read can never wedge the app
+on its splash. `values-v31/themes.xml` is deleted — the library's own v31 mapping does its one job and
+the rest duplicated the base theme. `values-v27/themes.xml` exists only for
+`windowLightNavigationBar`, which Android 8.0 does not have; the library's base theme follows the
+phone's dark mode, and this app has one light palette, so both bars are pinned light for the splash.
+
+**Not rendered by the harness, and said so.** The splash is a system window and the icon is not a
+composable, so neither is in the goldens. The icon was checked with the offline render above; the
+splash on a real phone is on the manual list (`DEVICE-TEST-CHECKLIST.md` §S). No screen fixture
+changed, so no golden moved.

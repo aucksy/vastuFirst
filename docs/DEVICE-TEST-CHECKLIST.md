@@ -15,8 +15,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — manual test list (things only a phone can prove)
 
-**Latest build to test:** v0.6.1 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.6.1/vastufirst-v0.6.1.apk)
+**Latest build to test:** v0.23.0 —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.23.0/vastufirst-v0.23.0.apk)
 
 Everything else about the app is checked automatically on every build — the maths, the layout at
 small screens and large fonts, the score, and screenshots of every screen. What's left below is the
@@ -602,3 +602,24 @@ exactly as they did. Everything below is about getting around the app.
       every problem should offer remedies only. Same test with "I already live here". Only "I am
       building a home" should still say "Change the layout — free now". If you see a layout
       suggestion on either of the other two, that is the bug.
+
+## S · The icon and the opening screen  *(new in this build)*
+
+Neither of these can be photographed by the automated checks: the icon is drawn by your phone's
+launcher, and the opening picture is drawn by Android before the app's first screen exists.
+
+- [ ] **S1 · ⭐ Look at the icon on your home screen.** The whole square should be inside the tile —
+      all four corners, all nine cells — with a clear band of cream around it. Before this build the
+      corners were cut off. If your phone lets you choose an icon shape (circle, rounded square, the
+      shape in between), try two of them: the square must be whole in every shape.
+- [ ] **S2 · The tinted icon (Android 13 and newer).** Turn on "themed icons" in your home-screen
+      settings. The mark should take the wallpaper's colour and still be whole.
+- [ ] **S3 · ⭐ Open the app from cold.** Swipe it away from your recent apps, then open it. You should
+      see the mark on cream for a moment, and the very next thing should be a real screen — your list
+      of homes, or the first question. Not a blank cream page, and not the mark drawn twice at two
+      different sizes.
+- [ ] **S4 · On an older phone (Android 8 to 11), if you have one.** The same: the mark on cream, then
+      the first screen. Before this build those phones opened on plain cream.
+- [ ] **S5 · The clock and buttons stay dark.** Put the phone in dark mode and open the app from cold.
+      The clock, battery and navigation buttons over the opening picture should be dark on cream,
+      not white.
