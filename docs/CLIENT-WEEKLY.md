@@ -130,6 +130,17 @@ render, the bedroom's box now ends at the wall above the balcony and sits on the
 the dining room. We have checked four kinds of picture so far; running it across the whole set of
 sample plans is next.
 
+**Update, Thursday 10 September — checked across the whole sample set.** We have now run the wall
+reading over all 32 usable sample plans and looked at every moved edge. On architects' line drawings
+and clean coloured renders — the kind your own plan is — it does what it should: boxes that hung out
+over a neighbour or stopped short of a wall now sit on the room, and no plan of that kind came out
+worse. On two kinds of picture it is not yet reliable: grey builders' renders where beds, counters
+and wardrobes are drawn as dark blocks, where a box can settle on a bed's headboard or a kitchen
+counter instead of the wall behind it; and thin-line drawings with a tiled balcony, where a tile
+line can pass for a wall. On those a room can come out a little worse than the reader drew it. We
+have marked the true rooms on two more plans by hand so the next round is measured rather than
+guessed, and teaching the app to tell furniture from a wall is the next piece of this work.
+
 ### Tuesday 8 September — the icon fits its tile, and the app opens on its own mark
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.23.0/vastufirst-v0.23.0.apk

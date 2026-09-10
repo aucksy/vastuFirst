@@ -3463,3 +3463,114 @@ to `out/wall-snap/`, and scores against `truth-rooms.json` (`cd tools/scan-eval 
 node wall-snap.mjs`). That run is the next step, and the phone list (§T) is the proof that matters.
 
 **No paid scans were used.** Recordings, the two screenshots and the bundled fixtures only.
+
+### The corpus run (10 Sep 2026) — 32 real sheets, by eye and against truth; nothing tuned, and why
+
+**How it ran.** `cd tools/scan-eval && npm install && python plans-to-png.py && node wall-snap.mjs`.
+The middle step is new: jimp reads PNG and JPEG only, and 17 of the 38 recorded sheets are WebP or AVIF
+(one, `floor-plan-1.jpg`, is a WebP wearing a .jpg name — it crashed the runner outright). The script
+writes lossless PNG copies into the git-ignored `out/plans-png/`, which the runner now searches first.
+The runner also gained `--log` (every edge's candidates, the way the Kotlin traces them, plus a per-room
+truth line), `--dump=<file>` (every box as read and as snapped, so two runs can be diffed), and the
+fixture's own truth, so plan-01's numbers print in the same table. The mirror's arithmetic is untouched
+and was diffed against the committed version after the experiments below: identical.
+
+**The numbers the tool prints, exactly.** Overlap with hand-marked truth, mean over rooms, before → after:
+
+| sheet | style | before → after |
+|---|---|---|
+| plan-01 (fixture) | CAD line drawing | 79 % → 97 % |
+| plan-01-jpeg (fixture) | its JPEG copy | 73 % → 97 % |
+| aipl-zen-residences-gurgaon (the owner's kind of sheet) | furnished render | 76 % → 79 % |
+| greencourt-336-branded | marketing composite, thin-line CAD with a tiled balcony | 95 % → 88 % |
+| hlv9vurn (marked today) | grey-scale builder's render, watermark | 80 % → 73 % |
+| plan-007 (marked today) | furnished render, dark wardrobe strips | 53 % → 54 % |
+
+Two truth sheets were added to `truth-rooms.json` today (33 rooms, read off the 5 % grid by eye) —
+the two renders where the snap most often landed on furniture — so that the failure class below can be
+measured rather than argued.
+
+**By eye, every overlay, every moved edge** (34 usable sheets; two 3-D pictures and four recordings
+with no rooms are excluded):
+
+| sheet | style | rooms | moved | right | wrong | what the wrong ones grabbed |
+|---|---|---|---|---|---|---|
+| plan-01 / -jpeg / -photo | CAD line drawing, JPEG, skewed photo | 8 each | 8 each | all | 0 | — |
+| 3bhk_1605 | furnished render | 13 | 11 | 10 | 1 | a toilet's dark shower floor |
+| aipl-zen (Gurgaon) | furnished render | 10 | 10 | 5 | 3 | two balconies grew onto the neighbouring bedroom's thick wall — their own frame lines are under 45 % of the outer wall; the service balcony's inner frame line; two near-misses where a wardrobe / basin counter touching the wall pulled the face 15–25 px; two edges missed (wall merged with a wardrobe / the shaft hatch, run too thick) |
+| floor-plan-1 | furnished render | 20 | 17 | 17 | 0 | — (guest bath, kitchen, jr master bedroom, bath all corrected) |
+| greencourt-336-branded | thin-line CAD composite | 7 | 5 | 2 | 3 | the balcony's floor-tile grid (all four edges); a tile line for the bedroom's top; the far face of a double-line wall for the bath |
+| greencourt-336-clean, -526 | thin-line CAD | 7, 7 | 2, 2 | all | 0 | — (1-px walls sit under the 2-px floor, so almost nothing moves; the reader was within a few px) |
+| hlv9vurn | grey builder's render | 16 | 15 | 9 | 6 | two bed headboards, the dining table, a kitchen counter, a dark block in the utility balcony, a wardrobe |
+| plan-001 | cluster plan, four small units | 23 | 21 | 11 | 10 | kitchen counters (five edges), bed headboards (three), a sofa, a WC |
+| plan-002 | coloured CAD, 53-px outer wall | 24 | 23 | 21 | 2 | a dark block past the store (the 15–20 px partitions are under the 24-px floor the outer wall set); the far side of a wall merged with a chair |
+| plan-003, -005, -008, -009, -012, -014, -015, -017, -018, -019, -026, -035, towerEF-1854 | renders and CADs of every kind | 5–21 | most | all | 0 | — |
+| plan-004 | render, thin interior walls | 19 | 11 | 7 | 4 | a bed headboard and a wardrobe; two counters; the printed caption under the plan |
+| plan-006 | coloured house plan | 10 | 3 | 1 | 2 | hob counter and fridge; a bed frame |
+| plan-007 | render, dark wardrobe strips | 17 | 13 | 6 | 7 | wardrobe strips and headboards on four bedrooms; the toilets' wall for the children's bedroom; two counters |
+| plan-010 | furnished render | 15 | 15 | 14 | 1 | the WC in the toilet below a passage (the wall under the passage is thin at its door, so its 10th-percentile thickness failed) |
+| plan-011 | coloured house plan | 10 | 8 | 6 | 2 | the compound's boundary line; a bed frame |
+| plan-016 | furnished render | 21 | 20 | 16 | 4 | four toilets, an edge each, onto the dark grey shower floor touching the wall |
+| plan-020 | render with pale walls | 15 | 5 | 3 | 2 | two kitchen counters (the walls are too pale to be ink; only furniture is dark) |
+| plan-021 | composite, tiny plan, reader's boxes already off the rooms | 9 | 7 | 4 | 3 | fixtures, a bed edge, a plot line |
+| plan-022 | CAD with GREEN walls | 13 | 7 | 1 | 6 | a wardrobe, a basin partition, a counter, three fixture lines — coloured walls are never ink, so only fixtures are left to land on |
+| plan-034 | CAD render | 9 | 5 | 4 | 1 | the counter band under the wash area |
+
+**Failure classes, counted across sheets.**
+
+1. **Dark furniture taken for a wall** — bed headboards, wardrobe strips, kitchen counters, shower
+   floors, a dining table — on 13 of the 34 sheets, ~45 rooms. Two mechanisms: (a) the wall-thickness
+   reference is set by furniture, not walls: the "rooms p90" term reads 13 px on hlv9vurn (walls 4–5),
+   55 on plan-020 (16–20), 30 on plan-034 (11–12), 23 on plan-006 (~6), 14 on plan-016 (6–14), so the
+   real partitions fall under the 45 % floor and only the thick dark furniture clears it; (b) a block
+   touching the wall merges into its run — the thickness balloons (edge missed) or the face lands on the
+   block's far side (near-miss). The "grey = wall, coloured = furniture" test does nothing on a
+   grey-scale render, and on these sheets the furniture is often DARKER and THICKER than the walls.
+2. **A balcony's own frame is thinner than 45 % of the outer wall**, so it grows onto the neighbouring
+   room's wall — 1 sheet (aipl, 2 of 3 balconies). Class 1(a) again in disguise.
+3. **Floor-tile grid lines on a thin-line sheet** — the tile lines and the walls are both 1–2 px, so
+   thickness cannot separate them — 1 sheet (greencourt-336-branded, the −7 above).
+4. **Lines outside the home** — a printed caption, a compound boundary, a plot line — 3 sheets, 1 room
+   each.
+5. **Coloured walls are invisible** (green on plan-022, pale cream on plan-020) — 2 sheets; only their
+   fixtures are dark, so only fixtures get chosen.
+
+**What was tried, measured, and NOT shipped** (each is a rule, not a per-sheet tweak; all run in the
+mirror only; the Kotlin was not touched):
+
+| change | plan-01 / jpeg | aipl | greencourt | hlv9vurn | plan-007 | rooms moved ≥ 4 px vs now |
+|---|---|---|---|---|---|---|
+| as shipped (v0.24.0) | 97 / 97 | 79 | 88 | 73 | 54 | — |
+| reference = median of the strong long lines beside rooms | 97 / 97 | 81 | 88 | — | — | 159 (crisp CADs: thin furniture outlines set it to 3–7 px, the floor collapses) |
+| + a 2.5× cap on thickness | 97 / 97 | 80 | 88 | — | — | 181 (throws away genuinely thick outer walls where partitions are thin: hlv9vurn 5 vs 31) |
+| + faces from the 10th / 90th percentile of the run edges | 97 / 97 | 81 | 88 | — | — | 330 |
+| reference = median thickness of the nearest strong line to each edge | 97 / 97 | 80 | 88 | 75 | 53 | 112 |
+| the same + the face rule | 97 / 97 | 81 | 88 | 75 | 56 | ~260 |
+| the face rule alone | 97 / 97 | 81 | 88 | 73 | 57 | ~150 |
+
+The nearest-strong-line reference is the right idea for the *reference* — it lands on the true
+partition thickness on 28 of 30 sheets where the current rule is off by 2–5× on ten — but a right
+reference does not help: 45 % of a 5-px wall is 2.3 px, and on a thin-walled render every dark
+furniture outline is 3–6 px. The floor cannot separate a wall from a headboard on these sheets because
+there is no thickness gap to find; the choice then falls to score and proximity, and a headboard is
+often nearer. Per room the best configuration fixes three rooms on hlv9vurn (bedroom 65 → 96, a toilet
+69 → 86, the utility balcony 70 → 87) and breaks one (dining 97 → 57), and on plan-007 fixes the master
+bedroom (83 → 90) and breaks the balcony (14 → 0). A gain of two points on each of four sheets with new
+losses inside them, and ~250 changed rooms on sheets without truth, is not a change to ship against a
+"do not tune to one sheet" rule. **The app's rule set is unchanged; v0.24.0 stands.**
+
+**What the corpus says the snap is worth today.** On CAD line drawings and clean coloured renders (23 of
+34 sheets) every moved edge landed on a wall and several boxes that hung over a neighbour or short of a
+wall were corrected; no such sheet came out worse. On grey builder's renders with dark furniture, and on
+thin-line sheets with a tiled balcony, it can leave a room worse than the reader drew it (−7 on two truth
+sheets). The owner's own sheet is of the first kind; the failing kind is common in marketing brochures.
+
+**The next step, stated plainly.** Furniture versus wall needs a discriminator that is not thickness.
+Candidates worth a prototype round against the four truth sheets: a line that two facing boxes both
+pick is a shared wall (furniture never is); a wall's tone is flat and a block leaning on it is a
+different tone, so a run should split at a brightness step (measured today: shower floors sit at luma
+160–200 beside 90–100 walls, but dark counters and wardrobes do not); and on a sheet whose walls are
+coloured or pale, the snap should stand down rather than choose among fixtures. Each needs the mirror
+first and the by-eye table after; none is a constant.
+
+**No paid scans were used.** Recordings and the sheet images on disk only.

@@ -11,9 +11,12 @@
 // line for line. A change to one without the other is a mirror that lies.
 //
 // Run:   cd tools/scan-eval && npm install          # once: jimp, the pure-JS image codec
+//        python plans-to-png.py                      # once per new sheet: PNG copies of WebP/AVIF sheets (jimp cannot read them)
 //        node wall-snap.mjs                          # every recording with an image beside it
 //        node wall-snap.mjs --only=plan-018          # ids containing the text
+//        node wall-snap.mjs --only=plan-018 --log    # …and every edge's candidates, the way WallSnap.kt traces them
 //        node wall-snap.mjs --plans=/path/to/images  # another folder of sheet images
+//        node wall-snap.mjs --dump=out/boxes.json     # every sheet's boxes as read and as snapped, to diff two runs
 // Output: tools/scan-eval/out/wall-snap/<id>.png + the table on stdout.
 import J from 'jimp';
 export const P = { reachRoom: 0.30, reachFrame: 0.06, minReach: 6, inset: 0.12, minScore: 0.6, thickShare: 0.45, minThick: 2, maxThickShare: 0.06, greyShare: 0.7, satMax: 40, darkCore: 0.5, inkDrop: 35, floorDrop: 30, proximity: 0.35, shrinkMin: 0.5, growMax: 1.5, frameReach: 0.08, extend: 0.25, extMin: 0.6 };
@@ -126,7 +129,7 @@ export const iou = (a, b) => { const ix = Math.max(0, Math.min(a.x1, b.x1) - Mat
 
 
 // ---- the corpus runner ------------------------------------------------------------------------------
-import { readFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 
@@ -139,8 +142,10 @@ if (process.argv[1] && basename(process.argv[1]) === 'wall-snap.mjs') {
   const plansDir = arg('plans') || join(ROOT, 'Documents', 'Sample Floor plans');
   const outDir = join(HERE, 'out', 'wall-snap'); mkdirSync(outDir, { recursive: true });
   const truthAll = existsSync(join(HERE, 'truth-rooms.json')) ? JSON.parse(readFileSync(join(HERE, 'truth-rooms.json'), 'utf8')) : {};
+  // jimp reads PNG and JPEG only. WebP and AVIF sheets (and a WebP wearing a .jpg name) are written as
+  // PNG copies into out/plans-png by plans-to-png.py, so that folder is searched first.
   const findImage = (stem) => {
-    const dirs = [plansDir, join(HERE, 'fixtures')];
+    const dirs = [join(HERE, 'out', 'plans-png'), plansDir, join(HERE, 'fixtures')];
     for (const d of dirs) { if (!existsSync(d)) continue; for (const f of readdirSync(d)) if (/\.(png|jpe?g)$/i.test(f) && f.replace(/\.[^.]+$/, '') === stem) return join(d, f); }
     return null;
   };
@@ -154,6 +159,12 @@ if (process.argv[1] && basename(process.argv[1]) === 'wall-snap.mjs') {
   // box, so the plan body (900 x 1200 at 50,120 on a 1000 x 1400 sheet) is supplied as one.
   const BODY = { x: 50 / 1000, y: 120 / 1400, w: 900 / 1000, h: 1200 / 1400 };
   const fixtures = ['plan-01', 'plan-01-jpeg', 'plan-01-photo'].map((id) => join(ROOT, 'shared', 'src', 'main', 'resources', 'scan', id + '.json'));
+  // plan-01's true rooms, fractions of the plan body (the fixture's own JSON; the same map WallSnapTest scores
+  // against with floors of 95 % clean and 93 % JPEG), put onto the page through BODY so the table shows them.
+  const PLAN01 = [['LIVING ROOM', 0, 0, 0.6, 0.4], ['POOJA', 0.6, 0, 0.4, 0.2], ['KITCHEN', 0.6, 0.2, 0.4, 0.2], ['MASTER BEDROOM', 0, 0.4, 0.5, 0.45], ['BEDROOM 2', 0.5, 0.4, 0.5, 0.3], ['TOILET', 0.5, 0.7, 0.2333, 0.15], ['BATH', 0.7333, 0.7, 0.2667, 0.15], ['BALCONY', 0, 0.85, 1, 0.15]]
+    .map(([label, x, y, w, h]) => ({ label, x: BODY.x + x * BODY.w, y: BODY.y + y * BODY.h, w: w * BODY.w, h: h * BODY.h }));
+  for (const id of ['plan-01', 'plan-01-jpeg']) if (!truthAll[id]) truthAll[id] = PLAN01;
+  const dump = {};
   for (const f of [...fixtures, ...files]) {
     if (!existsSync(f)) continue;
     const isFixture = fixtures.includes(f);
@@ -178,16 +189,20 @@ if (process.argv[1] && basename(process.argv[1]) === 'wall-snap.mjs') {
         const want = String(q.label).toUpperCase().trim(); let best = -1, hit = null;
         truth.forEach((t, j) => { if (claimed.has(j) || t.label.toUpperCase() !== want) return; const tb = E(t); const v = Math.max(0, Math.min(q.x1, tb.x1) - Math.max(q.x0, tb.x0)) * Math.max(0, Math.min(q.y1, tb.y1) - Math.max(q.y0, tb.y0)); if (v > best) { best = v; hit = j; } });
         if (hit == null) return; claimed.add(hit); const tb = E(truth[hit]); a += iou(q, tb); b += iou(out[i], tb); n++;
+        if (process.argv.includes('--log')) console.log(`  truth ${String(q.label).padEnd(16)} ${(iou(q, tb) * 100).toFixed(0).padStart(3)} % -> ${(iou(out[i], tb) * 100).toFixed(0).padStart(3)} %`);
         rect(L.im, tb, BLUE, 2);
       });
       if (n) { before = a / n; after = b / n; }
     }
+    dump[id] = { read: read.map((q) => [q.label, q.x0, q.y0, q.x1, q.y1]), out: out.map((q) => [q.label, q.x0, q.y0, q.x1, q.y1]), before, after };
     read.forEach((q, i) => { rect(L.im, q, RED, 3); rect(L.im, out[i], GREEN, 3); });
     await L.im.writeAsync(join(outDir, id + '.png'));
+    if (process.argv.includes('--log') || arg('log')) { console.log(`\n=== ${id}  ${L.W}x${L.H}  frame ${JSON.stringify(E(frameBox))}`); for (const line of log) console.log(line); }
     const moved = out.filter((o, i) => o.x0 !== read[i].x0 || o.y0 !== read[i].y0 || o.x1 !== read[i].x1 || o.y1 !== read[i].y1).length;
     rows.push([id, `${rooms.length} rooms, ${moved} moved` + (before != null ? `, truth ${(before * 100).toFixed(0)} % -> ${(after * 100).toFixed(0)} %` : ''), log[0] || '']);
   }
   console.log('sheet'.padEnd(34) + 'result');
   for (const r of rows) console.log(r[0].padEnd(34) + r.slice(1).join('   '));
+  if (arg('dump')) { writeFileSync(arg('dump'), JSON.stringify(dump, null, 1)); console.log(`boxes written to ${arg('dump')}`); }
   console.log(`\noverlays in ${outDir} — LOOK at them; the table cannot see a box on the wrong room.`);
 }
