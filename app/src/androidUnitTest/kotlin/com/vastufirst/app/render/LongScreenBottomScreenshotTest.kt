@@ -286,6 +286,26 @@ class LongScreenBottomScreenshotTest {
     }
 
     /**
+     * The same ending with a room SELECTED — the state whose panel the owner asked to be laid out
+     * symmetrically (13 Sep 2026). Its move cross and size rows are the LAST things in the panel, and
+     * every top-anchored golden cuts the cross at its middle row, so the block a reader uses to nudge
+     * and resize a room appeared whole in no picture at all. Anchored on the button that leaves, which
+     * sits directly under the panel, so the whole block is in frame above it.
+     */
+    @Test
+    fun editor_selected_bottom() = captureBottomPair("editor-selected", anchor = hasTestTag("editor.next")) {
+        val sample = SamplePlans.all.first()
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            startSelectedId = sample.rooms.first().id,
+        )
+    }
+
+    /**
      * The same ending from the EMPTY grid — the state every hand-drawn home actually starts in, and
      * the one where the palette a reader must reach sits furthest down the page.
      */
