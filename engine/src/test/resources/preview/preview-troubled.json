@@ -1,0 +1,190 @@
+{
+  "id": "preview-troubled",
+  "propertyType": "INDEPENDENT_HOUSE",
+  "intent": "BUYING",
+  "levels": [
+    {
+      "index": 0,
+      "outline": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 100.0,
+          "y": 0.0
+        },
+        {
+          "x": 100.0,
+          "y": 100.0
+        },
+        {
+          "x": 0.0,
+          "y": 100.0
+        }
+      ],
+      "rooms": [
+        {
+          "id": "toilet",
+          "type": "TOILET",
+          "polygon": [
+            {
+              "x": 70.0,
+              "y": 70.0
+            },
+            {
+              "x": 94.0,
+              "y": 70.0
+            },
+            {
+              "x": 94.0,
+              "y": 94.0
+            },
+            {
+              "x": 70.0,
+              "y": 94.0
+            }
+          ],
+          "label": ""
+        },
+        {
+          "id": "kitchen",
+          "type": "KITCHEN",
+          "polygon": [
+            {
+              "x": 6.0,
+              "y": 6.0
+            },
+            {
+              "x": 32.0,
+              "y": 6.0
+            },
+            {
+              "x": 32.0,
+              "y": 32.0
+            },
+            {
+              "x": 6.0,
+              "y": 32.0
+            }
+          ],
+          "label": ""
+        },
+        {
+          "id": "master",
+          "type": "MASTER_BEDROOM",
+          "polygon": [
+            {
+              "x": 70.0,
+              "y": 6.0
+            },
+            {
+              "x": 94.0,
+              "y": 6.0
+            },
+            {
+              "x": 94.0,
+              "y": 30.0
+            },
+            {
+              "x": 70.0,
+              "y": 30.0
+            }
+          ],
+          "label": ""
+        },
+        {
+          "id": "stairs",
+          "type": "STAIRCASE",
+          "polygon": [
+            {
+              "x": 40.0,
+              "y": 40.0
+            },
+            {
+              "x": 60.0,
+              "y": 40.0
+            },
+            {
+              "x": 60.0,
+              "y": 60.0
+            },
+            {
+              "x": 40.0,
+              "y": 60.0
+            }
+          ],
+          "label": ""
+        },
+        {
+          "id": "living",
+          "type": "LIVING",
+          "polygon": [
+            {
+              "x": 6.0,
+              "y": 40.0
+            },
+            {
+              "x": 30.0,
+              "y": 40.0
+            },
+            {
+              "x": 30.0,
+              "y": 64.0
+            },
+            {
+              "x": 6.0,
+              "y": 64.0
+            }
+          ],
+          "label": ""
+        },
+        {
+          "id": "bed2",
+          "type": "BEDROOM",
+          "polygon": [
+            {
+              "x": 38.0,
+              "y": 70.0
+            },
+            {
+              "x": 64.0,
+              "y": 70.0
+            },
+            {
+              "x": 64.0,
+              "y": 94.0
+            },
+            {
+              "x": 38.0,
+              "y": 94.0
+            }
+          ],
+          "label": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "main",
+          "centre": {
+            "x": 80.0,
+            "y": 6.0
+          },
+          "wallStart": {
+            "x": 60.0,
+            "y": 0.0
+          },
+          "wallEnd": {
+            "x": 100.0,
+            "y": 0.0
+          },
+          "isMainEntrance": true
+        }
+      ],
+      "fixtures": []
+    }
+  ],
+  "site": null,
+  "northOffsetDegrees": 0,
+  "schoolProfile": "TRADITIONAL_8"
+}

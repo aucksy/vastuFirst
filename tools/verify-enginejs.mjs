@@ -127,7 +127,11 @@ if (res.ok) {
   const a = res.analysis;
   check('score', a.score, 31);
   check('penalty', a.defectPenalty, 16);
-  check('base, to two places', Math.round(a.base * 100) / 100, 47.02);
+  // Truncated, NOT rounded — because that is exactly what Sample01Test does on the JVM
+  // (`(analysis.base * 100).toInt() / 100.0`). The real number is 870 / 18.5 = 47.027…, so
+  // rounding gives 47.03 and truncating gives 47.02. Both describe the same base; only one of
+  // them is comparable with what the phone's own test asserts, and that is the point of this file.
+  check('base, truncated to two places, as the JVM test does it', Math.trunc(a.base * 100) / 100, 47.02);
   check('findings', a.defects.map(d => d.id).sort(), ['X-01', 'X-03']);
   check('both findings are major', a.defects.map(d => d.severity), ['MAJOR', 'MAJOR']);
   check('door position', a.door && a.door.padaId, 'E6');
@@ -194,6 +198,42 @@ checkThat('every home scored', all.every(r => r.ok), JSON.stringify(all.filter(r
 checkThat('every score is a real number 0-100',
   all.every(r => Number.isInteger(r.analysis.score) && r.analysis.score >= 0 && r.analysis.score <= 100),
   'a score was out of range');
+
+// Print them. A corpus is only useful for previewing a rule change if the homes in it actually
+// differ, and the quickest way to notice they have all collapsed onto one number is to see them.
+const byId = Object.fromEntries(all.filter(r => r.ok).map(r => [r.planId, r.analysis]));
+for (const r of all.filter(x => x.ok)) {
+  const a = r.analysis;
+  console.log(`       ${r.planId.padEnd(26)} ${String(a.score).padStart(3)}   ` +
+    `${a.defects.length} finding(s), ${a.rooms.length} rooms, penalty ${a.defectPenalty}`);
+}
+
+// The corpus has to span the range, or a preview cannot show an expert that a change helps some
+// homes and hurts others — which is the entire question they are being asked to answer.
+const good = byId['preview-well-placed'];
+const bad = byId['preview-troubled'];
+checkThat('a well-placed home scores better than a troubled one',
+  good && bad && good.score > bad.score,
+  good && bad ? `well-placed ${good.score} vs troubled ${bad.score}` : 'one of them did not score');
+checkThat('the well-placed home is genuinely good', good && good.score >= 60, good && `it scored ${good.score}`);
+checkThat('the troubled home raises several findings', bad && bad.defects.length >= 3,
+  bad && `only ${bad.defects.length}`);
+checkThat('the troubled home puts a toilet in the north-east',
+  bad && bad.defects.some(d => d.id === 'X-01'), 'X-01 was not raised');
+
+// The flat exercises the shape rules and the flat wording at once.
+const flat = byId['preview-flat-cut-corner'];
+checkThat('the flat is read as having a missing corner', flat && flat.cuts.length >= 1,
+  flat && `cuts: ${flat.cuts.length}`);
+checkThat('at least one of its findings belongs to the building, not the flat',
+  flat && flat.defects.some(d => d.belongsToBuilding), 'no finding was marked as belonging to the building');
+
+// Findings must be sorted worst-first, because the panel shows them in the order it gets them.
+const order = { MAJOR: 0, MODERATE: 1, MINOR: 2 };
+checkThat('findings come back worst-first',
+  all.filter(r => r.ok).every(r => r.analysis.defects
+    .every((d, i, arr) => i === 0 || order[arr[i - 1].severity] <= order[d.severity])),
+  'a milder finding came before a worse one');
 
 // A broken home must not stop the rest.
 const withJunk = JSON.parse(api.scoreAll(rulesetJson, JSON.stringify([...homes, { id: 'nonsense' }])));
