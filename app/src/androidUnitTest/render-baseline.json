@@ -55,6 +55,7 @@
   "report-notideal": 0,
   "report-open": 0,
   "report-prayer": 0,
+  "report-published-rules": 0,
   "report-right": 14,
   "report-scanned": 0,
   "scan-angled-view": 0,
@@ -86,6 +87,8 @@
   "settings-reader": 0,
   "unlock": 0,
   "unlock-paid": 0,
+  "unlock-published-price": 0,
+  "unlock-published-price-waiting": 0,
   "unlock-unreachable": 0,
   "welcome": 0,
   "welcome-first": 0
