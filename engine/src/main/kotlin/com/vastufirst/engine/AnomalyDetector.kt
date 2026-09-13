@@ -130,8 +130,17 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
             val b = outline[(i + 1) % outline.size]
             val dx = b.x - a.x
             val dy = b.y - a.y
-            if (abs(dy) < edgeEps && abs(dx) > edgeEps) horiz.merge(snap(a.y, gran), abs(dx)) { x, y -> x + y }
-            if (abs(dx) < edgeEps && abs(dy) > edgeEps) vert.merge(snap(a.x, gran), abs(dy)) { x, y -> x + y }
+            // NOT `merge` — that comes from java.util.Map and does not exist when this file is
+            // compiled to JavaScript for the admin panel's rule preview (see :enginejs). Adding
+            // into the map by hand is the same arithmetic; do not tidy it back.
+            if (abs(dy) < edgeEps && abs(dx) > edgeEps) {
+                val level = snap(a.y, gran)
+                horiz[level] = (horiz[level] ?: 0.0) + abs(dx)
+            }
+            if (abs(dx) < edgeEps && abs(dy) > edgeEps) {
+                val level = snap(a.x, gran)
+                vert[level] = (vert[level] ?: 0.0) + abs(dy)
+            }
         }
         // Relative tolerance so a footprint whose wing sits exactly on the 60% threshold resolves
         // deterministically (borderline ⇒ qualifies) rather than flipping on floating-point noise.

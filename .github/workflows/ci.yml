@@ -89,6 +89,12 @@ jobs:
           case "$BEFORE" in ''|0000000000000000000000000000000000000000) BEFORE='HEAD~1' ;; esac
           bash scripts/check-ruleset-version.sh "$BEFORE" HEAD
 
+      # The scoring path is also compiled to JavaScript for the admin panel's rule preview
+      # (:enginejs). This keeps it compilable there. Full proof lives in the "Engine for the
+      # browser" workflow, which runs the built bundle and checks it still answers 31.
+      - name: Engine portability check (the rule preview runs this code in a browser)
+        run: bash scripts/check-engine-portable.sh
+
       - name: Module-boundary check (engine/rules/shared/data are Android-free)
         run: bash scripts/check-boundaries.sh
 

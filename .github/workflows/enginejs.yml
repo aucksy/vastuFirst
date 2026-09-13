@@ -54,6 +54,11 @@ jobs:
         with:
           node-version: '20'
 
+      # A grep, and it runs first because it answers in a second what the compiler takes minutes
+      # to say. It knows the handful of JVM-only calls that read as ordinary Kotlin.
+      - name: The scoring path stays portable
+        run: bash scripts/check-engine-portable.sh
+
       - name: Compile the engine to JavaScript
         run: gradle :enginejs:engineBundle --no-daemon --stacktrace
 
