@@ -66,6 +66,10 @@
        color:var(--primary-dark);font-size:17px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
   .stepgrp{display:flex;gap:8px;align-items:center}
   .stepval{min-width:58px;text-align:center;font-size:13px;color:var(--ink2)}
+  .mvsz{display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:4px}
+  .col{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:4px;justify-items:center;align-items:center}
+  .hint{font-size:12px;color:var(--ink3);margin:14px 0 -6px;line-height:1.4}
   .panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px}
   .panel h3{font-family:Marcellus,Georgia,serif;font-weight:400;font-size:18px;margin:0 0 2px}
   .panel .meta{font-size:12px;color:var(--ink3);margin-bottom:12px}
@@ -479,19 +483,21 @@ function render(){
   let chipText=null, chipBad=false;
   if (d && d.blocked){ chipText="Rooms can’t overlap"; chipBad=true; }
   else if (d){ chipText=describe(d.type, d.rect); }
-  else if (sel){ chipText=describe(sel.type, sel); }
   chip.className='chip'+(chipText?' on':'')+(chipBad?' bad':''); chip.textContent=chipText||'';
 
   // titles / subtitle
   document.getElementById('title').textContent = ed.doorMode ? 'Mark your front door' : 'Place your rooms';
   document.getElementById('sub').textContent =
-    ed.doorMode ? 'Your home is outlined below. Tap the wall where your main entrance is.' :
-    sel ? 'Drag the room to move it, or pull a corner to resize.' :
+    ed.doorMode && ed.door ? `Your front door is on the ${({N:'north',E:'east',S:'south',W:'west'})[ed.door.side]} wall. Tap another wall to move it.` :
+    ed.doorMode ? 'Your home is outlined below. Tap the wall where your front door is.' :
+    sel ? 'Drag to move, pull a corner to resize. Press Done to add more rooms.' :
     ed.armedType ? 'Press the plan where this room goes. Slide to adjust, lift to place.' :
     ed.rooms.length===0 ? 'Pick a room below, then press the plan to place it.' :
-    'Touch a room and slide to move it, or add another below.';
+    'Press a room and slide to move it, or add another below.';
 
-  document.getElementById('next').disabled = ed.rooms.length===0;
+  const nx=document.getElementById('next'); nx.disabled = ed.rooms.length===0;
+  nx.textContent = ed.door==null ? (ed.doorMode ? 'Skip the door — mark North' : 'Next — set the front door') : 'Next — mark North';
+  nx.onclick = ()=>{ if (ed.door==null && !ed.doorMode){ ed.doorMode=true; ed.selectedId=null; ed.armedType=null; render(); } };
   renderToolbar();
   selfCheck();
 }
@@ -510,16 +516,24 @@ function renderToolbar(){
     p.innerHTML = `<h3>${sel.type}</h3><div class="meta">${sel.w} × ${sel.h} · ${zoneOfRect(sel,ed.cols,ed.rows)}</div>`;
     p.appendChild(rowOf([ btn('Remove','sec',()=>{ commitRooms(ed.rooms.filter(r=>r.id!==sel.id)); ed.selectedId=null; render(); }),
                           btn('Done','',()=>{ ed.selectedId=null; render(); }) ]));
-    p.appendChild(sect('Move'));
-    p.appendChild(rowOf([ key('◀',()=>nudge(sel,-1,0)), key('▲',()=>nudge(sel,0,-1)), key('▼',()=>nudge(sel,0,1)), key('▶',()=>nudge(sel,1,0)) ]));
-    p.appendChild(sect('Size'));
-    const sz=document.createElement('div'); sz.className='row';
-    sz.appendChild(stepper(`W ${sel.w}`, ()=>resize(sel,-1,0), ()=>resize(sel,1,0)));
-    sz.appendChild(stepper(`H ${sel.h}`, ()=>resize(sel,0,-1), ()=>resize(sel,0,1)));
-    p.appendChild(sz);
+    // Move as a CROSS and the size rows beside it, everything centred — mirrors SelectedRoomTools.
+    const mv=document.createElement('div'); mv.className='mvsz';
+    const mc=document.createElement('div'); mc.className='col'; mc.appendChild(sect('Move'));
+    const pad=document.createElement('div'); pad.className='dpad';
+    const blank=()=>document.createElement('span');
+    [blank(), key('▲',()=>nudge(sel,0,-1)), blank(),
+     key('◀',()=>nudge(sel,-1,0)), blank(), key('▶',()=>nudge(sel,1,0)),
+     blank(), key('▼',()=>nudge(sel,0,1)), blank()].forEach(k=>pad.appendChild(k));
+    mc.appendChild(pad);
+    const sc=document.createElement('div'); sc.className='col'; sc.appendChild(sect('Size'));
+    sc.appendChild(stepper(`${sel.w} wide`, ()=>resize(sel,-1,0), ()=>resize(sel,1,0)));
+    sc.appendChild(stepper(`${sel.h} deep`, ()=>resize(sel,0,-1), ()=>resize(sel,0,1)));
+    mv.appendChild(mc); mv.appendChild(sc); p.appendChild(mv);
     tb.appendChild(p);
   } else if (ed.doorMode){
-    tb.appendChild(btnWide('Done placing door', ()=>{ ed.doorMode=false; render(); }));
+    tb.appendChild(btnWide(ed.door==null?'Back to my rooms':'Done placing door', ()=>{ ed.doorMode=false; render(); }, true));
+    if (ed.door==null){ const h=document.createElement('div'); h.className='hint';
+      h.textContent='You can carry on without marking the door — we will say so on your score.'; tb.appendChild(h); }
   } else if (ed.armedType){
     const b=document.createElement('div'); b.className='placing';
     b.innerHTML=`<span>Placing: ${ed.armedType}</span>`; const x=document.createElement('button'); x.textContent='✕';
@@ -535,9 +549,9 @@ function renderToolbar(){
     ROOM_TYPES.forEach(t=>{ const c=document.createElement('button'); c.className='chipbtn'; c.textContent=t.key;
       c.onclick=()=>{ ed.armedType=t.key; ed.selectedId=null; render(); }; pal.appendChild(c); });
     tb.appendChild(pal);
-    if (ed.rooms.length){
-      tb.appendChild(btnWide(ed.door==null?'Set the front door':'Move the front door',
-        ()=>{ ed.doorMode=true; ed.selectedId=null; ed.armedType=null; render(); }, ed.door!=null));
+    if (ed.rooms.length && ed.door!=null){   // setting the door is Next's own job while there is none
+      tb.appendChild(btnWide('Move the front door',
+        ()=>{ ed.doorMode=true; ed.selectedId=null; ed.armedType=null; render(); }, true));
     }
   }
 }

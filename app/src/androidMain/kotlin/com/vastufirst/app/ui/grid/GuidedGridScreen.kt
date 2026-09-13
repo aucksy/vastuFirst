@@ -294,6 +294,12 @@ fun GuidedGridContent(
      *  is drawn only in that mode, and a golden cannot press a button to get there), and it is the
      *  entry point a future "move the front door" shortcut would use. */
     startInDoorMode: Boolean = false,
+    /** What "Next" means here. Opened from the report ("change where the front door is") it hands
+     *  the reader back to the report; in the flow it goes on to North. It defaults to
+     *  [startInDoorMode] because the report is the only thing that opens this screen on the door
+     *  step — and it is a separate switch so a golden can photograph the FLOW's own door step, the
+     *  one with "Skip the door" on it, which the report path never shows. */
+    returnsToReport: Boolean = startInDoorMode,
     /** Open with a room already selected. Same reason as [startInDoorMode]: the selected-room panel
      *  appears only once something is selected, so **no golden had ever rendered it** — it shipped
      *  unseen through every build, contrary to CLAUDE.md §2b, and it is the panel this build adds a
@@ -1039,22 +1045,14 @@ fun GuidedGridContent(
                     horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
                     verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                        EditorKey("−", "Narrower plot") { stepPlot(cols - 1, rows) }
-                        VText(
-                            "$cols wide", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
-                        )
-                        EditorKey("+", "Wider plot") { stepPlot(cols + 1, rows) }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                        EditorKey("−", "Shallower plot") { stepPlot(cols, rows - 1) }
-                        VText(
-                            "$rows deep", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
-                        )
-                        EditorKey("+", "Deeper plot") { stepPlot(cols, rows + 1) }
-                    }
+                    SizeStepper(
+                        "$cols wide", "Narrower plot", "Wider plot",
+                        onLess = { stepPlot(cols - 1, rows) }, onMore = { stepPlot(cols + 1, rows) },
+                    )
+                    SizeStepper(
+                        "$rows deep", "Shallower plot", "Deeper plot",
+                        onLess = { stepPlot(cols, rows - 1) }, onMore = { stepPlot(cols, rows + 1) },
+                    )
                 }
 
                 SectionLabel("Add a room")
@@ -1114,7 +1112,7 @@ fun GuidedGridContent(
         // to North. The door is still not forced — inside the door step the same button reads "Skip
         // the door", with the same sentence the photograph path uses for the same choice — but nobody
         // can now reach a report with its heaviest reading missing without having been asked.
-        val needsDoor = !startInDoorMode && door == null
+        val needsDoor = !returnsToReport && door == null
         if (doorMode && needsDoor) {
             VText(
                 "You can carry on without marking the door — we will say so on your score.",
@@ -1124,7 +1122,7 @@ fun GuidedGridContent(
         }
         VastuButton(
             when {
-                startInDoorMode -> "Done — back to my report"
+                returnsToReport -> "Done — back to my report"
                 doorMode && needsDoor -> "Skip the door — mark North"
                 needsDoor -> "Next — set the front door"
                 else -> "Next — mark North"
@@ -1531,45 +1529,95 @@ private fun SelectedRoomTools(
             VastuButton("Done", onClick = onDone, large = false, modifier = Modifier.weight(1f))
         }
 
-        SectionLabel("Move")
-        Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
+        // ⭐ MOVE and SIZE as ONE balanced block (owner, 13 Sep 2026: *"I don't like how these buttons
+        // are placed — lacks symmetry"*). The four arrows sat in a left-hung row, ◀ ▲ ▼ ▶, that had to
+        // be read glyph by glyph, with the two size rows in a ragged line beneath, their keys landing
+        // in no column the arrows used. The arrows are now a CROSS, so a direction is a position
+        // rather than a symbol, and each size row is the very stepper the plot size uses, in the
+        // plot's own words ("2 wide", "2 deep") — one composable, so the two cannot drift. Side by
+        // side where the width allows, stacked and centred where it does not: the FlowRow wraps only
+        // between the two groups, never inside one, so no key is ever clipped (UI-POLISH §3.D). The
+        // centred captions echo NORTH over the plan above.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            ) {
+                SectionLabel("Move")
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                MovePad(onNudge)
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            ) {
+                SectionLabel("Size")
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                SizeStepper(
+                    "${room.w} wide", "Narrower", "Wider",
+                    onLess = { onResize(-1, 0) }, onMore = { onResize(1, 0) },
+                )
+                Spacer(Modifier.height(VastuTheme.spacing.s2))
+                SizeStepper(
+                    "${room.h} deep", "Shorter", "Taller",
+                    onLess = { onResize(0, -1) }, onMore = { onResize(0, 1) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The move arrows as a cross: up at the top, left and right at the sides, down at the bottom, with
+ * the middle left empty. A direction is then a POSITION on the pad, which is how every remote and
+ * game pad has taught people to read one — the old ◀ ▲ ▼ ▶ row had to be read glyph by glyph.
+ * The keys sit close (a hairline apart) so the cross reads as one control, not four buttons.
+ */
+@Composable
+private fun MovePad(onNudge: (Int, Int) -> Unit) {
+    val gap = VastuTheme.spacing.s1
+    Column(
+        verticalArrangement = Arrangement.spacedBy(gap),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        EditorKey("▲", "Move up") { onNudge(0, -1) }
+        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
             EditorKey("◀", "Move left") { onNudge(-1, 0) }
-            EditorKey("▲", "Move up") { onNudge(0, -1) }
-            EditorKey("▼", "Move down") { onNudge(0, 1) }
+            Spacer(Modifier.size(VastuTheme.sizes.minTouch))
             EditorKey("▶", "Move right") { onNudge(1, 0) }
         }
+        EditorKey("▼", "Move down") { onNudge(0, 1) }
+    }
+}
 
-        // Both size controls on ONE line (owner report #5). A FlowRow wraps to two lines only on a
-        // very narrow / large-font screen, and only between the W and H groups — never mid-group, so
-        // a control is never clipped (the UI-POLISH §3.D guarantee, kept without forcing two rows).
-        SectionLabel("Size")
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
-            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                EditorKey("−", "Narrower") { onResize(-1, 0) }
-                VText(
-                    "W ${room.w}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                    maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
-                )
-                EditorKey("+", "Wider") { onResize(1, 0) }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                EditorKey("−", "Shorter") { onResize(0, -1) }
-                VText(
-                    "H ${room.h}", style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                    maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s8),
-                )
-                EditorKey("+", "Taller") { onResize(0, 1) }
-            }
-        }
+/**
+ * One "− label +" stepper. The plot size and the selected room's size are the same control doing the
+ * same job, and they were two hand-copied rows that had already drifted (one said "8 wide", the other
+ * "W 2"; one gave its label 40 dp, the other 32). One composable, so they cannot drift again.
+ */
+@Composable
+private fun SizeStepper(
+    label: String,
+    lessDescription: String,
+    moreDescription: String,
+    onLess: () -> Unit,
+    onMore: () -> Unit,
+) {
+    val colors = VastuTheme.colors
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        EditorKey("−", lessDescription, onLess)
+        VText(
+            label, style = VastuTheme.type.bodySm, color = colors.textSecondary,
+            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+        )
+        EditorKey("+", moreDescription, onMore)
     }
 }
 

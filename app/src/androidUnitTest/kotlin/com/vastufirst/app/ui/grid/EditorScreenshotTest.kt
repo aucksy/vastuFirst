@@ -114,7 +114,7 @@ class EditorScreenshotTest {
     }
 
     @Composable
-    private fun MarginHouse(doorStep: Boolean = false, withDoor: Boolean = true) {
+    private fun MarginHouse(doorStep: Boolean = false, withDoor: Boolean = true, inFlow: Boolean = false) {
         GuidedGridContent(
             rooms = listOf(
                 GridRoom("m1", RoomType.LIVING, 3, 3, 3, 2),
@@ -127,6 +127,9 @@ class EditorScreenshotTest {
             cols = 10,
             rows = 10,
             startInDoorMode = doorStep,
+            // Opening on the door step is otherwise how the REPORT opens this screen; `inFlow`
+            // photographs the flow's own door step — the one with "Skip the door" on it.
+            returnsToReport = doorStep && !inFlow,
         )
     }
 
@@ -152,8 +155,8 @@ class EditorScreenshotTest {
      */
     @Test
     fun editor_door_unset() {
-        captureAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false) }
-        writeManifestAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false) }
+        captureAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false, inFlow = true) }
+        writeManifestAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false, inFlow = true) }
     }
 
     /**
