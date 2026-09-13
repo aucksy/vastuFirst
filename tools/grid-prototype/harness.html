@@ -539,16 +539,16 @@ function renderToolbar(){
     b.innerHTML=`<span>Placing: ${ed.armedType}</span>`; const x=document.createElement('button'); x.textContent='✕';
     x.onclick=()=>{ ed.armedType=null; render(); }; b.appendChild(x); tb.appendChild(b);
   } else {
-    tb.appendChild(sect('Plot size'));
-    const ps=document.createElement('div'); ps.className='row';
-    ps.appendChild(stepper(`${ed.cols} wide`, ()=>grid(ed.cols-1,ed.rows), ()=>grid(ed.cols+1,ed.rows)));
-    ps.appendChild(stepper(`${ed.rows} deep`, ()=>grid(ed.cols,ed.rows-1), ()=>grid(ed.cols,ed.rows+1)));
-    tb.appendChild(ps);
-    tb.appendChild(sect('Add a room'));
+    tb.appendChild(sect('Add a room'));   // the thing used most comes first (owner, 13 Sep 2026)
     const pal=document.createElement('div'); pal.className='palette';
     ROOM_TYPES.forEach(t=>{ const c=document.createElement('button'); c.className='chipbtn'; c.textContent=t.key;
       c.onclick=()=>{ ed.armedType=t.key; ed.selectedId=null; render(); }; pal.appendChild(c); });
     tb.appendChild(pal);
+    // Plot size: centred caption over an aligned pair — the same clothes as the room's size.
+    const ps=document.createElement('div'); ps.className='col'; ps.style.marginTop='12px'; ps.appendChild(sect('Plot size'));
+    ps.appendChild(stepper(`${ed.cols} wide`, ()=>grid(ed.cols-1,ed.rows), ()=>grid(ed.cols+1,ed.rows)));
+    ps.appendChild(stepper(`${ed.rows} deep`, ()=>grid(ed.cols,ed.rows-1), ()=>grid(ed.cols,ed.rows+1)));
+    tb.appendChild(ps);
     if (ed.rooms.length && ed.door!=null){   // setting the door is Next's own job while there is none
       tb.appendChild(btnWide('Move the front door',
         ()=>{ ed.doorMode=true; ed.selectedId=null; ed.armedType=null; render(); }, true));

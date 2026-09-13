@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +49,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -1035,42 +1039,62 @@ fun GuidedGridContent(
             armed != null -> PlacingBar(type = armed, onCancel = { armedType = null })
 
             else -> Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-                // Plot size — draw your real proportions (a rectangular plot, square cells). The score
-                // is unaffected (the engine scores the rooms' footprint), so this only shapes the
-                // canvas. ONE wrapping row: wide + deep sit side by side where there's room (owner
-                // report #2) and drop to two lines only on a very narrow / large-font screen — a
-                // FlowRow wraps between the two groups, never inside one (§3.D preserved).
-                SectionLabel("Plot size")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s4),
-                    verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                ) {
-                    SizeStepper(
-                        "$cols wide", "Narrower plot", "Wider plot",
-                        onLess = { stepPlot(cols - 1, rows) }, onMore = { stepPlot(cols + 1, rows) },
-                    )
-                    SizeStepper(
-                        "$rows deep", "Shallower plot", "Deeper plot",
-                        onLess = { stepPlot(cols, rows - 1) }, onMore = { stepPlot(cols, rows + 1) },
-                    )
-                }
-
+                // ⭐ ADD A ROOM FIRST (owner, 13 Sep 2026, from his own phone). It is what a reader
+                // does most on this screen — once per room — and it sat beneath the plot-size keys,
+                // which most people never touch. The thing used most now comes first.
                 SectionLabel("Add a room")
                 // ⭐ The SAME list the "Change room type" control offers (ALL_ROOM_TYPES). It used to
                 // be a shorter, separate one, so the app named eleven kinds here and nineteen there.
                 // The eleven commonest still come first, so nothing a user already knows has moved;
                 // the other eight — Corridor and Entrance among them — are further along the strip.
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(paletteScroll),
-                    horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-                ) {
-                    ALL_ROOM_TYPES.forEach { t ->
-                        VastuChip(
-                            text = t.label(),
-                            selected = false,
-                            onClick = { armedType = t; selectedId = null },
+                Box(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(paletteScroll),
+                        horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                    ) {
+                        ALL_ROOM_TYPES.forEach { t ->
+                            VastuChip(
+                                text = t.label(),
+                                selected = false,
+                                onClick = { armedType = t; selectedId = null },
+                            )
+                        }
+                    }
+                    // A soft fade at the right edge while there is more strip to come. A chip cut
+                    // mid-word was the only hint that this row scrolls; the fade says "more this way"
+                    // and disappears once the end is reached. It carries no pointer input, so every
+                    // touch still lands on the chip beneath it.
+                    if (paletteScroll.canScrollForward) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        0.8f to Color.Transparent,
+                                        1f to colors.paper,
+                                    ),
+                                ),
                         )
                     }
+                }
+
+                // ⭐ Plot size — draw your real proportions (a rectangular plot, square cells). The score
+                // is unaffected (the engine scores the rooms' footprint), so this only shapes the
+                // canvas. Laid out exactly as the room's size is in the selected-room panel — the same
+                // control in the same clothes: a centred caption over two rows that share one column
+                // grid, so the "+" keys line up whatever the numbers say. On the owner's phone "8 wide"
+                // and "8 deep" were two hand-copied rows a few pixels apart in width, hung on the left
+                // with the rest of the line empty — the ragged edge he was pointing at.
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                ) {
+                    SectionLabel("Plot size")
+                    SizePair(
+                        StepperSpec("$cols wide", "Narrower plot", "Wider plot", { stepPlot(cols - 1, rows) }, { stepPlot(cols + 1, rows) }),
+                        StepperSpec("$rows deep", "Shallower plot", "Deeper plot", { stepPlot(cols, rows - 1) }, { stepPlot(cols, rows + 1) }),
+                    )
                 }
                 // ⭐ Only "Move" lives here now. SETTING the door is the Next button's own job while
                 // there is none (see below): the front door is the highest-weighted thing the engine
@@ -1269,9 +1293,11 @@ private fun ShapeSection(
             style = VastuTheme.type.caption, color = colors.textTertiary,
         )
 
+        // Shorter (13 Sep 2026, the owner's own phone): three lines of grey text read as a warning
+        // under a plan with nothing wrong. The claim it makes — a full rectangle unless told
+        // otherwise, and how to tell us — is intact in two lines.
         else -> VText(
-            "We treat your home as a full rectangle. If a corner is missing, leave it empty — " +
-                "we'll ask.",
+            "We score your home as a full rectangle. Missing a corner? Leave it empty — we'll ask.",
             style = VastuTheme.type.caption, color = colors.textTertiary,
         )
     }
@@ -1557,14 +1583,9 @@ private fun SelectedRoomTools(
             ) {
                 SectionLabel("Size")
                 Spacer(Modifier.height(VastuTheme.spacing.s2))
-                SizeStepper(
-                    "${room.w} wide", "Narrower", "Wider",
-                    onLess = { onResize(-1, 0) }, onMore = { onResize(1, 0) },
-                )
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-                SizeStepper(
-                    "${room.h} deep", "Shorter", "Taller",
-                    onLess = { onResize(0, -1) }, onMore = { onResize(0, 1) },
+                SizePair(
+                    StepperSpec("${room.w} wide", "Narrower", "Wider", { onResize(-1, 0) }, { onResize(1, 0) }),
+                    StepperSpec("${room.h} deep", "Shorter", "Taller", { onResize(0, -1) }, { onResize(0, 1) }),
                 )
             }
         }
@@ -1594,30 +1615,50 @@ private fun MovePad(onNudge: (Int, Int) -> Unit) {
     }
 }
 
+/** One row of a [SizePair]: what it says, what its two keys are called, and what each does. */
+private class StepperSpec(
+    val label: String,
+    val lessDescription: String,
+    val moreDescription: String,
+    val onLess: () -> Unit,
+    val onMore: () -> Unit,
+)
+
 /**
- * One "− label +" stepper. The plot size and the selected room's size are the same control doing the
- * same job, and they were two hand-copied rows that had already drifted (one said "8 wide", the other
- * "W 2"; one gave its label 40 dp, the other 32). One composable, so they cannot drift again.
+ * Two "− label +" rows sharing ONE column grid. The plot size and the selected room's size are the
+ * same control doing the same job, and they were hand-copied rows that had drifted (one said
+ * "8 wide", the other "W 2"; one gave its label 40 dp, the other 32). And on the owner's phone
+ * "8 wide" and "8 deep" measured a few pixels apart, so the two "+" keys never lined up — the
+ * ragged edge he pointed at. `IntrinsicSize.Max` makes both rows as wide as the wider one and the
+ * label takes the slack, so the keys line up whatever the numbers say. One composable for both
+ * places, so they cannot drift again.
  */
 @Composable
-private fun SizeStepper(
-    label: String,
-    lessDescription: String,
-    moreDescription: String,
-    onLess: () -> Unit,
-    onMore: () -> Unit,
-) {
+private fun SizePair(first: StepperSpec, second: StepperSpec) {
+    Column(
+        modifier = Modifier.width(IntrinsicSize.Max),
+        verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+    ) {
+        StepperRow(first)
+        StepperRow(second)
+    }
+}
+
+@Composable
+private fun StepperRow(spec: StepperSpec) {
     val colors = VastuTheme.colors
     Row(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EditorKey("−", lessDescription, onLess)
+        EditorKey("−", spec.lessDescription, spec.onLess)
         VText(
-            label, style = VastuTheme.type.bodySm, color = colors.textSecondary,
-            maxLines = 1, align = TextAlign.Center, modifier = Modifier.widthIn(min = VastuTheme.spacing.s10),
+            spec.label, style = VastuTheme.type.bodySm, color = colors.textSecondary,
+            maxLines = 1, align = TextAlign.Center,
+            modifier = Modifier.weight(1f).widthIn(min = VastuTheme.spacing.s10),
         )
-        EditorKey("+", moreDescription, onMore)
+        EditorKey("+", spec.moreDescription, spec.onMore)
     }
 }
 
