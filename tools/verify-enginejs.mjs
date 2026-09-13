@@ -52,8 +52,11 @@ console.log('loading:', pick);
 
 const loaded = require(join(process.cwd(), engineDir, pick));
 
-// Kotlin's UMD output nests exports under the package path. Find the object however it is shaped.
-function findApi(root) {
+// Kotlin's UMD output nests exports under the package path, and - the part that cost a CI run -
+// it defines each level with a getter that is NOT enumerable. `Object.keys` on the bundle returns
+// only "com" and nothing below it, so a plain walk dead-ends at once. Take the known path first,
+// and fall back to a walk over getOwnPropertyNames, which does see them.
+function walkForApi(root) {
   const seen = new Set();
   const queue = [root];
   while (queue.length) {
@@ -63,19 +66,35 @@ function findApi(root) {
     if (typeof node.check === 'function' && typeof node.score === 'function' && typeof node.scoreAll === 'function') {
       return node;
     }
-    for (const key of Object.keys(node)) {
-      try { queue.push(node[key]); } catch { /* getters that throw are not the API */ }
+    for (const key of Object.getOwnPropertyNames(node)) {
+      if (key === 'constructor' || key === '__proto__') continue;
+      try { queue.push(node[key]); } catch { /* a getter that throws is not the API */ }
     }
   }
   return null;
 }
 
-const api = findApi(loaded) || findApi(globalThis.vastuengine);
+const direct = (() => {
+  try { return loaded.com.vastufirst.enginejs.VastuEngineJs; } catch { return null; }
+})();
+
+const api = (direct && typeof direct.check === 'function')
+  ? direct
+  : (walkForApi(loaded) || walkForApi(globalThis.vastuengine) || walkForApi(globalThis.enginejs));
+
 if (!api) {
-  console.error('Could not find VastuEngineJs in the bundle. Top-level keys:', Object.keys(loaded || {}));
+  console.error('Could not find VastuEngineJs in the bundle.');
+  console.error('  own property names at the top:', Object.getOwnPropertyNames(loaded || {}));
+  try {
+    console.error('  under com.vastufirst:', Object.getOwnPropertyNames(loaded.com.vastufirst));
+  } catch (e) { console.error('  com.vastufirst is not reachable:', e.message); }
   process.exit(2);
 }
-console.log('found the engine API\n');
+console.log('found the engine API at',
+  direct === api ? 'com.vastufirst.enginejs.VastuEngineJs' : '(found by walking the bundle)');
+console.log('it offers:',
+  Object.getOwnPropertyNames(Object.getPrototypeOf(api) || {}).filter(k => k !== 'constructor').join(', '));
+console.log('');
 
 // ---- the live rule set and the anchor home ---------------------------------------------------
 

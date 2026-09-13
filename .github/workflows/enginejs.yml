@@ -74,17 +74,22 @@ jobs:
           echo "--- sizes ---"
           du -h enginejs/build/engine-bundle/engine/*.js 2>/dev/null || true
 
-      # ⭐ The step that matters. Compiling proves nothing; this runs the bundle and checks it
-      # answers 31 on the anchor home, 17 when a major problem is raised to 20 points, and still
-      # refuses the five bad rule sets the app refuses.
-      - name: Prove it matches the phone
-        run: node tools/verify-enginejs.mjs enginejs/build/engine-bundle
-
+      # ⭐ Published BEFORE it is judged, and on failure too. A bundle that compiled but answered
+      # wrongly is exactly the thing worth having in your hands: it can be downloaded and poked at
+      # with node locally, which turns a three-minute round trip into three seconds. A bundle that
+      # fails the check below is never deployed — the panel keeps serving the last one that passed.
       - name: Publish the bundle
         uses: actions/upload-artifact@v4
+        if: always()
         continue-on-error: true
         with:
           name: engine-bundle
           path: enginejs/build/engine-bundle
           retention-days: 14
           if-no-files-found: error
+
+      # ⭐ The step that matters. Compiling proves nothing; this runs the bundle and checks it
+      # answers 31 on the anchor home, 17 when a major problem is raised to 20 points, and still
+      # refuses the five bad rule sets the app refuses.
+      - name: Prove it matches the phone
+        run: node tools/verify-enginejs.mjs enginejs/build/engine-bundle
