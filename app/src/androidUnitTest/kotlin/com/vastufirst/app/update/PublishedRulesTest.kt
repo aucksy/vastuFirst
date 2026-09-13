@@ -42,6 +42,30 @@ class PublishedRulesTest {
 
     private val goodReply by lazy { fixture("signed-reply-price.json") }
 
+    /**
+     * Change part of the stored reply, and PROVE the change landed.
+     *
+     * ⭐⭐ The assertion in here is the important line, and it is here because its absence cost a
+     * build. A tamper test built on String.replace() that matches nothing returns the ORIGINAL
+     * text — so the test quietly feeds a perfectly good, perfectly signed document to an assertion
+     * expecting a refusal, and fails with a message about the wrong thing entirely.
+     *
+     * ⚠ AND IT HAS TO BE INSIDE THE PAYLOAD. The reply is a wrapper around a payload STRING, and
+     * only the payload is signed. Editing the wrapper proves nothing: its version is cross-checked
+     * against the payload's own, and everything else in it is either the signature or ignored.
+     * Inside the payload the quotes are escaped, so the bytes to match look like BS-quote-key.
+     */
+    private fun changed(find: String, replaceWith: String): String {
+        val meddled = goodReply.replace(find, replaceWith)
+        assertTrue(
+            "This test meant to change <$find> and found nothing to change, so it would have " +
+                "handed a perfectly good, perfectly signed document to an assertion expecting a " +
+                "refusal.",
+            meddled != goodReply,
+        )
+        return meddled
+    }
+
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
@@ -86,18 +110,40 @@ class PublishedRulesTest {
 
     @Test
     fun `a file somebody has edited is thrown away, silently`() {
-        // One character. The signature is over bytes, so this is a different document — and the
-        // whole point of signing is that a phone can tell.
-        store.save(goodReply.replace("\"published\":true", "\"published\" :true"))
+        // One character inside the signed bytes. That makes it a different document, and the whole
+        // point of signing is that a phone can tell.
+        store.save(changed(
+            QUOTE + "minAppVersion" + QUOTE + ":" + QUOTE + "0.0.0" + QUOTE,
+            QUOTE + "minAppVersion" + QUOTE + ":" + QUOTE + "0.0.1" + QUOTE,
+        ))
         val settled = PublishedRules.atStartup(store, "99.0.0")
         assertFalse("a meddled file must never be used", settled.fromControlRoom)
         assertNotNull("and the app must still score homes", settled.ruleSet)
     }
 
     @Test
+    fun `the wrapper is not signed, and a wrapper claiming a different version is caught`() {
+        // ⭐ Worth writing down, because it is not obvious and it is what the first version of the
+        // test above got wrong: only the payload STRING is signed. The wrapper around it is not,
+        // and does not need to be — its version is checked against the payload's own, so a genuine
+        // payload re-labelled as a different version is refused as a mismatch rather than accepted.
+        store.save(changed(
+            "\"version\":\"2026.09.13-7\",\"payload\"",
+            "\"version\":\"2099.01.01-1\",\"payload\"",
+        ))
+        assertFalse(
+            "a genuine payload wearing somebody else's version label must not be used",
+            PublishedRules.atStartup(store, "99.0.0").fromControlRoom,
+        )
+    }
+
+    @Test
     fun `a price changed by somebody on the device is thrown away with the rest`() {
         // ⭐ The attack this actually stops: a phone with root, editing OUR price in OUR file.
-        store.save(goodReply.replace("\"priceInr\":849", "\"priceInr\":1"))
+        store.save(changed(
+            QUOTE + "priceInr" + QUOTE + ":849",
+            QUOTE + "priceInr" + QUOTE + ":1",
+        ))
         val settled = PublishedRules.atStartup(store, "99.0.0")
         assertFalse(settled.fromControlRoom)
         assertNull("a meddled price must never reach the screen", settled.plans)
@@ -185,5 +231,16 @@ class PublishedRulesTest {
         assertTrue(store.save(goodReply))
         RulesUpdater(store, "99.0.0", fetch = { "not a reply" }).refresh()
         assertEquals("₹849", PublishedRules.atStartup(store, "99.0.0").plans?.unlockPrice)
+    }
+
+    companion object {
+        /**
+         * The two characters that stand for a quote INSIDE the signed payload.
+         *
+         * The reply is JSON whose "payload" value is itself JSON, so every quote in there
+         * is escaped. Written as a constant rather than inline because a backslash before
+         * a quote is exactly the thing that gets eaten by whatever writes this file.
+         */
+        private const val QUOTE = "\\\""
     }
 }
