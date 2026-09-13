@@ -51,6 +51,9 @@ kotlin {
 
             kotlin.exclude("**/com/vastufirst/shared/scan/**")
             kotlin.exclude("**/com/vastufirst/shared/editor/**")
+            // Taking a signed rule set off the network: java.net and java.security, and only a
+            // phone ever does it. The panel is where rules come FROM.
+            kotlin.exclude("**/com/vastufirst/shared/update/**")
             kotlin.exclude("**/com/vastufirst/rules/RuleSetResources.kt")
 
             dependencies {
