@@ -88,7 +88,7 @@ internal class RoomEvaluator(
         if (roomArea <= 0.0) return 1.0
         val bad = flagged.sumOf { overlaps.perZone[it] ?: 0.0 }
         val raw = (bad / roomArea).coerceIn(0.0, 1.0)
-        return Math.round(raw * 10_000.0) / 10_000.0
+        return roundHalfUp(raw * 10_000.0) / 10_000.0
     }
 
     /**
@@ -105,7 +105,7 @@ internal class RoomEvaluator(
         // The room's main zone may itself be prohibited — then `clean` IS the floor and no credit
         // is given, which is right: that room is not clipping anything, it is sitting in it.
         val clean = (ruleSet.config.scorePoints[baseVerdict.name] ?: 0).coerceAtLeast(floor)
-        return Math.round(floor + (clean - floor) * (1.0 - share)).toInt()
+        return roundHalfUpToInt(floor + (clean - floor) * (1.0 - share))
     }
 
     private fun defectZones(

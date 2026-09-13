@@ -51,3 +51,15 @@ tools/scan-eval/corpus/
 scripts/__pycache__/
 tools/scan-eval/__pycache__/
 Documents/Gemini Key.txt
+
+# The website and the admin panel are each their OWN git repository living inside this folder.
+# Without these lines a `git add -A` here sweeps them in as embedded repositories — a clone of
+# this repo would then contain neither their files nor any way to fetch them.
+Website/
+Admin/
+
+# Kotlin/JS downloads node+yarn for the :enginejs bundle and writes a lock file here. It is NOT
+# committed on purpose: a committed lock that drifts from what the build resolves fails the whole
+# build with a mismatch, and there is nothing in this bundle worth pinning that the version
+# catalogue does not already pin.
+kotlin-js-store/

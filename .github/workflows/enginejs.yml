@@ -1,0 +1,85 @@
+name: Engine for the browser
+
+# Builds the scoring engine to JavaScript for the admin panel, and PROVES it answers the same
+# number the phone answers.
+#
+# ⭐ Why this is a workflow of its own rather than a step in CI. The Android job needs the Android
+# SDK and takes about twenty-five minutes; this needs neither an emulator nor a device and finishes
+# in about three. Keeping it separate means a rule-preview break is reported in minutes, and it
+# runs on every push that touches the scoring source, so it cannot silently rot.
+#
+# ⚠ It does NOT gate the release. What it gates is the admin panel: if this is red, the panel is
+# still showing the LAST bundle that passed, which is the safe behaviour — never a bundle that
+# scores differently from the app.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'engine/**'
+      - 'rules/**'
+      - 'shared/**'
+      - 'enginejs/**'
+      - 'tools/verify-enginejs.mjs'
+      - '.github/workflows/enginejs.yml'
+      - 'gradle/libs.versions.toml'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: enginejs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compile the engine to JavaScript
+        run: gradle :enginejs:engineBundle --no-daemon --stacktrace
+
+      # Reconnaissance, kept permanently: the exact shape of the Kotlin/JS output is the kind of
+      # thing that changes under you on a toolchain bump, and a printed listing turns "the panel
+      # went blank" into an obvious diff.
+      - name: What the build produced
+        run: |
+          echo "--- dist ---"
+          find enginejs/build/dist -type f 2>/dev/null | head -40 || echo "(no dist)"
+          echo "--- bundle ---"
+          find enginejs/build/engine-bundle -type f | sort
+          echo "--- sizes ---"
+          du -h enginejs/build/engine-bundle/engine/*.js 2>/dev/null || true
+
+      # ⭐ The step that matters. Compiling proves nothing; this runs the bundle and checks it
+      # answers 31 on the anchor home, 17 when a major problem is raised to 20 points, and still
+      # refuses the five bad rule sets the app refuses.
+      - name: Prove it matches the phone
+        run: node tools/verify-enginejs.mjs enginejs/build/engine-bundle
+
+      - name: Publish the bundle
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: engine-bundle
+          path: enginejs/build/engine-bundle
+          retention-days: 14
+          if-no-files-found: error

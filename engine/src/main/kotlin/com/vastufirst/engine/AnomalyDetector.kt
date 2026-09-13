@@ -100,7 +100,7 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
         val lo = minOf(r.width, r.height)
         val hi = maxOf(r.width, r.height)
         if (lo <= PadaGrid.AREA_EPS) return 1.0
-        return Math.round((hi / lo) * 10_000.0) / 10_000.0
+        return roundHalfUp((hi / lo) * 10_000.0) / 10_000.0
     }
 
     private fun toAnomalies(kind: AnomalyKind, byZone: Map<Zone, Double>, refArea: Double): List<ZoneAnomaly> {
@@ -145,7 +145,7 @@ internal class AnomalyDetector(private val cfg: AnomalyConfig) {
         return Rect(west, south, east, north)
     }
 
-    private fun snap(v: Double, gran: Double): Double = Math.round(v / gran) * gran
+    private fun snap(v: Double, gran: Double): Double = roundHalfUp(v / gran) * gran
 
     companion object {
         private const val REL_EDGE = 1e-7         // edge counts as axis-aligned within span*this

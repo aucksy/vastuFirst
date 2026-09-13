@@ -75,7 +75,7 @@ internal object Geometry {
      */
     fun rotate(p: Point, degrees: Double, origin: Point): Point {
         if (degrees == 0.0) return p
-        val theta = Math.toRadians(degrees)
+        val theta = toRadians(degrees)
         val c = cos(theta)
         val s = sin(theta)
         val dx = p.x - origin.x
@@ -206,7 +206,7 @@ internal object Geometry {
             sumCos += len * cos(4.0 * ang)
         }
         if (abs(sumSin) < 1e-12 && abs(sumCos) < 1e-12) return 0.0
-        var deg = Math.toDegrees(atan2(sumSin, sumCos) / 4.0)
+        var deg = toDegrees(atan2(sumSin, sumCos) / 4.0)
         deg %= 90.0
         if (deg < 0) deg += 90.0
         // Snap a near-cardinal footprint to exactly 0° so it takes the identity fast path and

@@ -57,7 +57,7 @@ internal class DoorResolver(private val ruleSet: RuleSet, private val config: Ru
     /** bearing = atan2(dx, dy) clockwise from North, from the analysis-rectangle centre. */
     private fun bearingFromCentre(centre: Point, rect: Rect): Double {
         val c = rect.centre
-        return norm(Math.toDegrees(atan2(centre.x - c.x, centre.y - c.y)))
+        return norm(toDegrees(atan2(centre.x - c.x, centre.y - c.y)))
     }
 
     /**

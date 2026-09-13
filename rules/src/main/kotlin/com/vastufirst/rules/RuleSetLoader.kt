@@ -53,9 +53,9 @@ object RuleSetLoader {
         return ruleSet
     }
 
-    private fun readResource(path: String): String =
-        RuleSetLoader::class.java.getResourceAsStream(path)?.bufferedReader()?.use { it.readText() }
-            ?: error("Rule dataset resource missing: $path")
+    // readResource lives in RuleSetResources.kt, because reading a classpath resource is the ONE
+    // thing in this module that only a JVM can do. Keeping it in its own file lets the JavaScript
+    // build of the engine swap in its own version and compile the rest of this file unchanged.
 
     private fun validate(rs: RuleSet) {
         val errors = mutableListOf<String>()

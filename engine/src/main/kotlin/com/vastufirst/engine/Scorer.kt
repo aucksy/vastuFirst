@@ -57,11 +57,11 @@ internal class Scorer(private val config: RulesetConfig) {
             .filter { it.provenance != Provenance.DISP }
             .sumOf { d ->
                 val full = config.penalties[d.severity.name] ?: 0
-                Math.round(full * penaltyFactor(d.roomId?.let(shareOf::get))).toInt()
+                roundHalfUpToInt(full * penaltyFactor(d.roomId?.let(shareOf::get)))
             }
         val penalty = minOf(rawPenalty, config.penaltyCap)
 
-        val score = Math.round(base - penalty).toInt().coerceIn(0, 100)
+        val score = roundHalfUpToInt(base - penalty).coerceIn(0, 100)
         return ScoreResult(score, base, penalty)
     }
 
