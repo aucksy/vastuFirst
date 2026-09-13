@@ -101,6 +101,23 @@ developer account.
 
 ## Week of 7–13 September 2026
 
+### Sunday 13 September, evening — the drawing screen is tidier below the plan
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.27.0/vastufirst-v0.27.0.apk
+**This is the one to install.**
+
+**Below the plan, the room list now comes first.** It is the thing you use most on that screen — once
+for every room — and it sat beneath the plot-size keys, which most people never touch. The list also
+fades out softly at its right edge while there is more to scroll, so it no longer looks cut off.
+
+**Plot size is a small centred block, the same shape as the room's size inside the room panel.** The
+two rows now line up with each other; before, "8 wide" and "8 deep" were slightly different widths,
+so the two "+" keys sat a few pixels apart and the whole thing hung on the left with the rest of the
+line empty.
+
+**The note under the plan is two lines instead of three,** and says the same thing: we score your home
+as a full rectangle unless you leave a corner empty, in which case we ask.
+
 ### Sunday 13 September, later — drawing a home by hand now walks you to the front door
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.26.0/vastufirst-v0.26.0.apk
