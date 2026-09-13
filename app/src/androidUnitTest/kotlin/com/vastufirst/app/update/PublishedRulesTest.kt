@@ -77,7 +77,9 @@ class PublishedRulesTest {
     @Test
     fun `the stored version is readable without checking the signature, for asking what is newer`() {
         store.save(goodReply)
-        assertTrue(store.storedVersion().matches(Regex("""\d{4}\.\d{2}\.\d{2}-\d+""")), store.storedVersion())
+        // ⚠ JUnit's assertTrue takes the MESSAGE FIRST — the opposite of kotlin.test's. Getting it
+        // the wrong way round does not fail a test, it fails to compile.
+        assertTrue(store.storedVersion(), store.storedVersion().matches(Regex("""\d{4}\.\d{2}\.\d{2}-\d+""")))
     }
 
     // ---- every way it can go wrong ends with the app still working ------------------------------
