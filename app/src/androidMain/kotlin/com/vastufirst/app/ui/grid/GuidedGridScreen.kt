@@ -301,6 +301,13 @@ fun GuidedGridContent(
     startSelectedId: String? = null,
     /** Open with the room-type list already unfolded, for the same reason: a golden cannot tap. */
     startTypeListOpen: Boolean = false,
+    /** Open with a room kind already armed for placing. The "Placing: Kitchen" bar and its own
+     *  instruction line exist only in that state, and a golden cannot tap a chip to reach it — so
+     *  the state every hand-drawn home passes through on every room had never been photographed. */
+    startArmedType: RoomType? = null,
+    /** The touches the editor answers with. The phone's own by default; a headless test hands in a
+     *  counting fake so "a key that cannot act says no" is proven rather than assumed. */
+    feedback: EditorFeedback = rememberEditorHaptics(),
     /** Cells the user has said are NOT part of their home — drawn cut away, and cut away in the score. */
     cutOutCells: Set<Cell> = emptySet(),
     /** Cells the user has confirmed ARE part of their home, so the app stops asking about that gap. */
@@ -330,7 +337,7 @@ fun GuidedGridContent(
     roomsUnplaced: Boolean = false,
 ) {
     val colors = VastuTheme.colors
-    val haptics = rememberEditorHaptics()
+    val haptics = feedback
 
     // Captured for the DrawScopes below, which cannot read a @Composable theme value. A bare `1f`
     // inside a draw scope is ONE PHYSICAL PIXEL — 0.33dp on a 3x phone, i.e. invisible (§5).
@@ -365,7 +372,7 @@ fun GuidedGridContent(
     // rememberSaveable so a rotation (or the OS briefly reclaiming the app) doesn't drop what the user
     // had selected / armed / the door step they were on (C15). RoomType is an enum → Serializable, so
     // the default saver handles it.
-    var armedType by rememberSaveable { mutableStateOf<RoomType?>(null) }
+    var armedType by rememberSaveable { mutableStateOf(startArmedType) }
     var selectedId by rememberSaveable { mutableStateOf(startSelectedId) }
     var doorMode by rememberSaveable { mutableStateOf(startInDoorMode) }
     // Replaced only when the SNAPPED cell changes, never per pointer event — so a drag recomposes
@@ -462,7 +469,15 @@ fun GuidedGridContent(
             haptics.reject()
             return
         }
-        if (next == sel.rect()) return
+        // ⭐ A key pressed AGAINST A WALL — "move left" on a room already at the west edge, "wider" on
+        // one already touching the east — comes back clamped to where the room already is. It used
+        // to do nothing at all: the same light tap as a key that worked. The plot keys were fixed to
+        // say "no" for exactly this reason (a control that fails silently reads as a broken button),
+        // and these are the SAME job on the same screen, so they say it the same way.
+        if (next == sel.rect()) {
+            haptics.reject()
+            return
+        }
         onRoomsChange(rooms.map { if (it.id == sel.id) it.withRect(next) else it })
     }
 
@@ -495,8 +510,17 @@ fun GuidedGridContent(
                 // same screen — so a reader could reasonably think they were being asked to place an
                 // entrance room instead of tapping a wall. Everywhere else in the app already says
                 // front door; this was the one line that did not.
+                // ⭐ Once a door IS on the plan, the line says which wall it landed on. The tap that
+                // placed it gave a buzz and a small green mark, and nothing else changed — the
+                // instruction still read "tap the wall where your front door is", as though the tap
+                // had not registered. Now the screen answers the tap in words, and says how to undo it.
+                doorMode && door != null ->
+                    "Your front door is on the ${door.side.spoken()} wall. Tap another wall to move it."
                 doorMode -> "Your home is outlined below. Tap the wall where your front door is."
-                selected != null -> "Drag the room to move it, or pull a corner to resize."
+                // ⭐ "Press Done to add more rooms": a room lands SELECTED, and the selected-room panel
+                // takes the place of the room list — so after placing their first room a reader was
+                // looking at Remove / Done / arrows with no word about where the list had gone.
+                selected != null -> "Drag to move, pull a corner to resize. Press Done to add more rooms."
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
                 // Copy cut (4 Aug 2026): 26 words -> 14; the read-but-not-placed refusal claim kept.
@@ -993,8 +1017,10 @@ fun GuidedGridContent(
             // SECONDARY, deliberately (audit C18): this exits the door step back to the full
             // editor, while the filled primary below it ("Next — mark North") continues the flow.
             // Two identical filled buttons stacked here read as the same action twice.
+            // "Done placing door" is only true once a door has been placed; with none on the plan the
+            // same button is the way back to the room list, and says so.
             doorMode -> VastuButton(
-                "Done placing door",
+                if (door == null) "Back to my rooms" else "Done placing door",
                 onClick = { doorMode = false },
                 style = VastuButtonStyle.SECONDARY,
                 large = false,
@@ -1048,17 +1074,17 @@ fun GuidedGridContent(
                         )
                     }
                 }
-                // The door is placed by tapping a wall, and placeDoor does nothing until a room
-                // exists — so offering "Set the front door" on the empty grid is a dead end (UAT S4).
-                // Show it only once there's something to attach a wall to. HIGHLIGHTED (primary) — the
-                // front door is the highest-weighted thing the engine scores, and as a low-contrast
-                // secondary button it read as absent (owner report #3). Once a door is set it steps
-                // back to secondary, since "move it" is a lesser action than "you still need one".
-                if (rooms.isNotEmpty()) {
+                // ⭐ Only "Move" lives here now. SETTING the door is the Next button's own job while
+                // there is none (see below): the front door is the highest-weighted thing the engine
+                // scores, and a hand-drawn home could walk straight past it to North and on to a
+                // report with its biggest reading missing — the photograph path has always made the
+                // door a step of its own, and the drawn path now does too. "Move" is a lesser action
+                // than "you still need one", so it stays secondary, and only once a door exists.
+                if (rooms.isNotEmpty() && door != null) {
                     VastuButton(
-                        text = if (door == null) "Set the front door" else "Move the front door",
+                        text = "Move the front door",
                         onClick = { doorMode = true; selectedId = null; armedType = null },
-                        style = if (door == null) VastuButtonStyle.PRIMARY else VastuButtonStyle.SECONDARY,
+                        style = VastuButtonStyle.SECONDARY,
                         large = false,
                     )
                 }
@@ -1082,9 +1108,34 @@ fun GuidedGridContent(
         // report they came from, because pushing North would stack a second report on the first. The
         // label said "Next — mark North" on that path anyway, so the one control on the screen named
         // a step it never opens and the reader landed somewhere else entirely.
+        //
+        // ⭐⭐ AND THE FRONT DOOR IS A STEP ON THE WAY OUT, not a button to notice. While the plan has
+        // no door, "Next" opens the door step and says so; only once a door is on the plan does it go
+        // to North. The door is still not forced — inside the door step the same button reads "Skip
+        // the door", with the same sentence the photograph path uses for the same choice — but nobody
+        // can now reach a report with its heaviest reading missing without having been asked.
+        val needsDoor = !startInDoorMode && door == null
+        if (doorMode && needsDoor) {
+            VText(
+                "You can carry on without marking the door — we will say so on your score.",
+                style = VastuTheme.type.caption, color = colors.textTertiary,
+            )
+            Spacer(Modifier.height(VastuTheme.spacing.s2))
+        }
         VastuButton(
-            if (startInDoorMode) "Done — back to my report" else "Next — mark North",
-            onClick = onNext,
+            when {
+                startInDoorMode -> "Done — back to my report"
+                doorMode && needsDoor -> "Skip the door — mark North"
+                needsDoor -> "Next — set the front door"
+                else -> "Next — mark North"
+            },
+            onClick = {
+                if (needsDoor && !doorMode) {
+                    doorMode = true; selectedId = null; armedType = null
+                } else {
+                    onNext()
+                }
+            },
             enabled = rooms.isNotEmpty() && !parked,
             modifier = Modifier.testTag("editor.next"),
         )

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
 import com.vastufirst.app.ui.common.label
+import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.newplan.resolveGridResize
@@ -41,6 +42,20 @@ import org.robolectric.annotation.GraphicsMode
 @Config(application = android.app.Application::class)
 class GuidedGridInteractionTest {
 
+    /**
+     * The editor's touches, COUNTED. Haptics are silent in this harness by design, so until this
+     * fake existed "the key buzzes when it cannot act" was a claim only a finger could check — and
+     * the arrows and size steppers in fact did not buzz while the plot keys did.
+     */
+    private class CountingFeedback : EditorFeedback {
+        var rejects = 0
+        var confirms = 0
+        override fun grab() {}
+        override fun tick() {}
+        override fun reject() { rejects++ }
+        override fun confirm() { confirms++ }
+    }
+
     /** A live editor over hoisted state; onGridChange runs the REAL resolveGridResize decision. */
     private class Harness(initialRooms: List<GridRoom>, initialDoor: GridDoor? = null) {
         val rooms = mutableStateOf(initialRooms)
@@ -49,17 +64,20 @@ class GuidedGridInteractionTest {
         val rows = mutableStateOf(8)
         /** How many plot-key presses came back refused — the screen turns each into a "no" buzz. */
         val refusals = mutableStateOf(0)
+        /** Every buzz the screen actually gave, so a refusal is proven to reach the hand. */
+        val feedback = CountingFeedback()
     }
 
     @androidx.compose.runtime.Composable
-    private fun Editor(h: Harness) {
+    private fun Editor(h: Harness, onNext: () -> Unit = {}) {
         VastuTheme {
             GuidedGridContent(
                 rooms = h.rooms.value,
                 door = h.door.value,
                 onRoomsChange = { h.rooms.value = it },
                 onDoorChange = { h.door.value = it },
-                onNext = {},
+                onNext = onNext,
+                feedback = h.feedback,
                 cols = h.cols.value,
                 rows = h.rows.value,
                 // Mirrors NewPlanViewModel.updateGrid, including its Boolean "was this honoured?"
@@ -93,8 +111,12 @@ class GuidedGridInteractionTest {
         onNodeWithText("Pick a room below, then press the plan to place it.").assertExists()
         onNodeWithTag("editor.grid").assertExists()
         onNodeWithTag("editor.next").assertIsNotEnabled()
-        // S4: no dead-end door button on the empty grid (placeDoor is a no-op with no rooms).
+        // The door is now a step of the Next button, which names it even here — but with no room to
+        // hang a wall on it stays off (S4: placeDoor is a no-op with no rooms), and the old
+        // stand-alone door button must not come back as a dead end.
+        onNodeWithText("Next — set the front door").assertIsNotEnabled()
         onNodeWithText("Set the front door").assertDoesNotExist()
+        onNodeWithText("Move the front door").assertDoesNotExist()
     }
 
     @Test
@@ -205,6 +227,32 @@ class GuidedGridInteractionTest {
         tapDesc("Narrower plot")                        // the 5th press cannot act
         assertEquals("still at the minimum", 4, h.cols.value)
         assertEquals("the key that cannot act says so", 1, h.refusals.value)
+        assertEquals("and the screen turned that into a buzz", 1, h.feedback.rejects)
+    }
+
+    // ── the move arrows and size keys say no at a wall, like the plot keys do ────────────────────
+
+    @Test
+    fun `a move arrow pressed against the wall says no instead of doing nothing`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 2, 2)))   // on the west wall
+        setContent { Editor(h) }
+        selectRoom("Bedroom, 2 by 2")
+        tapDesc("Move left")
+        assertEquals("the room stays where it was", 0, h.rooms.value.single().col)
+        assertEquals("and the key says it could not act", 1, h.feedback.rejects)
+        tapDesc("Move right")                           // a key that CAN act stays silent
+        assertEquals(1, h.rooms.value.single().col)
+        assertEquals("no buzz for a key that worked", 1, h.feedback.rejects)
+    }
+
+    @Test
+    fun `a size key pressed against the wall says no instead of doing nothing`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.KITCHEN, 6, 0, 2, 2)))   // flush with the east wall
+        setContent { Editor(h) }
+        selectRoom("Kitchen, 2 by 2")
+        tapDesc("Wider")
+        assertEquals("the room cannot grow past the wall", 2, h.rooms.value.single().w)
+        assertEquals("so the key says no", 1, h.feedback.rejects)
     }
 
     @Test
@@ -314,11 +362,47 @@ class GuidedGridInteractionTest {
     // ── door mode entry (H) ──────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `entering door mode changes the instruction`() = runComposeUiTest {
+    fun `with no door yet, Next opens the door step instead of leaving`() = runComposeUiTest {
         val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)))
-        setContent { Editor(h) }
-        tapText("Set the front door")
+        var left = 0
+        setContent { Editor(h, onNext = { left++ }) }
+        // The button names the step it opens, and the old stand-alone door button is gone with it.
+        onNodeWithText("Set the front door").assertDoesNotExist()
+        onNodeWithText("Move the front door").assertDoesNotExist()
+        tapText("Next — set the front door")
+        assertEquals("Next must not leave the screen while the door is unset", 0, left)
         onNodeWithText("Your home is outlined below. Tap the wall where your front door is.").assertExists()
+        // The way past it is explicit, in the photograph path's own words — never silent.
+        onNodeWithText("You can carry on without marking the door — we will say so on your score.").assertExists()
+        onNodeWithText("Back to my rooms").assertExists()
+        tapText("Skip the door — mark North")
+        assertEquals("skipping is a real, named choice that does leave", 1, left)
+    }
+
+    @Test
+    fun `placing the door is answered in words, and Next then goes to North`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)))
+        var left = 0
+        setContent { Editor(h, onNext = { left++ }) }
+        tapText("Next — set the front door")
+        // A finger on the wall cannot be driven here; the door arrives the way placeDoor hands it over.
+        runOnIdle { h.door.value = GridDoor(DoorSide.N, 1) }
+        waitForIdle()
+        onNodeWithText("Your front door is on the north wall. Tap another wall to move it.").assertExists()
+        onNodeWithText("You can carry on without marking the door — we will say so on your score.").assertDoesNotExist()
+        onNodeWithText("Done placing door").assertExists()
+        tapText("Next — mark North")
+        assertEquals("with a door on the plan, Next leaves for North", 1, left)
+    }
+
+    @Test
+    fun `with a door already set, Next goes straight to North and the door button only moves it`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)), GridDoor(DoorSide.S, 1))
+        var left = 0
+        setContent { Editor(h, onNext = { left++ }) }
+        onNodeWithText("Move the front door").assertExists()
+        tapText("Next — mark North")
+        assertEquals(1, left)
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────

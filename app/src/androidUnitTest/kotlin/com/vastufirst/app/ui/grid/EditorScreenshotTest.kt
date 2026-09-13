@@ -114,13 +114,13 @@ class EditorScreenshotTest {
     }
 
     @Composable
-    private fun MarginHouse(doorStep: Boolean = false) {
+    private fun MarginHouse(doorStep: Boolean = false, withDoor: Boolean = true) {
         GuidedGridContent(
             rooms = listOf(
                 GridRoom("m1", RoomType.LIVING, 3, 3, 3, 2),
                 GridRoom("m2", RoomType.KITCHEN, 6, 3, 2, 2),
             ),
-            door = GridDoor(DoorSide.N, 4),
+            door = if (withDoor) GridDoor(DoorSide.N, 4) else null,
             onRoomsChange = {},
             onDoorChange = {},
             onNext = {},
@@ -142,6 +142,41 @@ class EditorScreenshotTest {
     fun editor_door() {
         captureAcrossMatrix("editor-door") { MarginHouse(doorStep = true) }
         writeManifestAcrossMatrix("editor-door") { MarginHouse(doorStep = true) }
+    }
+
+    /**
+     * ⭐ The door step BEFORE a door exists — the state every hand-drawn home now passes through on
+     * its way out, because "Next" opens it while the plan has no door. It carries copy no other
+     * state has (the "carry on without marking the door" line, "Skip the door", "Back to my rooms"),
+     * so it is photographed on its own rather than assumed to look like the step with a door on it.
+     */
+    @Test
+    fun editor_door_unset() {
+        captureAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false) }
+        writeManifestAcrossMatrix("editor-door-unset") { MarginHouse(doorStep = true, withDoor = false) }
+    }
+
+    /**
+     * ⭐ PLACING a room — a kind armed from the list, the "Placing: Kitchen" bar standing in for the
+     * list, and its own instruction line. Every hand-drawn home passes through this once per room,
+     * and no golden had ever rendered it: a screenshot cannot tap a chip to get there.
+     */
+    @Test
+    fun editor_placing() {
+        captureAcrossMatrix("editor-placing") { Placing() }
+        writeManifestAcrossMatrix("editor-placing") { Placing() }
+    }
+
+    @Composable
+    private fun Placing() {
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            startArmedType = RoomType.KITCHEN,
+        )
     }
 
     /**

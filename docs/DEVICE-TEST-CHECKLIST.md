@@ -98,6 +98,15 @@ buttons and never actually slide a finger.
 - [ ] **B7 · A one-room-deep home.** Draw a single wide room, one cell tall, then tap just above it
       and just below it. You should get a north door and a south door respectively — a thin house used
       to only ever accept a north door. *(v0.3.11)*
+- [ ] **B8 · Select a room that touches a wall, then press the arrow or size key that points into
+      that wall.** Same short "no" buzz as B1. Until now those keys did nothing at all while the plot
+      keys buzzed — the same job on the same screen, answered two different ways. The *decision* is
+      tested; only the buzz needs a finger. *(v0.26.0)*
+- [ ] **B9 · Draw a room, then press the big green button.** It should read "Next — set the front
+      door" and open the door step rather than leaving the screen. Tap a wall: the line under the
+      heading should now say which wall the door is on, and the button should read "Next — mark
+      North". If you press on without tapping a wall, the button says "Skip the door" and the screen
+      says so in words first. *(v0.26.0)*
 
 ## C · How it feels (haptics)
 

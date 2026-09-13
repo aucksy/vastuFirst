@@ -171,6 +171,13 @@ class AccessibilityTest {
                     startSelectedId = sample.rooms.first().id,
                 )
             },
+            // The placing state: the "Placing: Kitchen" bar with its stop control, in place of the list.
+            "editor-placing" to {
+                GuidedGridContent(
+                    sample.rooms, sample.door, {}, {}, {},
+                    startArmedType = com.vastufirst.shared.RoomType.KITCHEN,
+                )
+            },
             "marknorth" to {
                 MarkNorthContent(RenderFixtures.sampleRooms, RenderFixtures.sampleNorth, RenderFixtures.sampleAnalysis, {}, {}, {})
             },
