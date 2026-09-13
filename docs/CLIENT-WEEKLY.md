@@ -101,6 +101,38 @@ developer account.
 
 ## Week of 7–13 September 2026
 
+### Sunday 13 September — you can change the app yourself now, and phones pick it up
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.25.0/vastufirst-v0.25.0.apk
+**This is the one to install.**
+
+**There is now a Control Room for the app, at https://admin.vastufirst.com.** It is a private web
+page with its own sign-in — Aakash has yours. Everything in it used to need a developer.
+
+**You can change a Vastu rule and watch what it does before anybody sees it.** Move a weighting and
+four real homes re-score in front of you, using the very same scoring the phone uses — not an
+approximation of it. If a change would stop the app working, it is refused and told to you in plain
+words rather than reaching anybody. Every change you publish can be put back with one press, and
+nothing is ever deleted from the record.
+
+**And you can now set the plans and the prices.** Each plan has a name, a price, how many homes it
+covers, how many plan readings it includes and how many full reports — plus the words a customer
+reads before deciding. Three are set up to start with: one home at ₹699, three homes at ₹1,499, and
+ten homes at ₹3,999. They are starting numbers and they are yours to change.
+
+**One thing to know about the price, because it is easy to be caught out by.** Google does not allow
+anything except its own checkout for something bought and read inside a Play Store app. So the day
+payments are switched on, the price a customer is actually charged is the one in your Google Play
+listing, and the Control Room cannot change it. What the Control Room sets is what the app **says**
+— which today, with payments switched off, is everything a customer sees. The screen says exactly
+that where you type the price, so it cannot surprise you later.
+
+**The app takes all of it without a new version.** When a phone opens the app it quietly asks whether
+anything has been published, checks that it really came from us, and uses it the next time the app is
+opened. A phone with no signal, or one that is handed something it cannot check, carries on exactly as
+it does today on the rules and the price built into it — there is no way for a change made here to
+stop somebody's home scoring.
+
 ### Tuesday 8 September — the app now reads the walls, so a room's box sits on the room
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.24.0/vastufirst-v0.24.0.apk

@@ -48,10 +48,17 @@ class PlansTest {
 
     @Test
     fun `only the plans on sale are offered`() {
-        val withOneOff = good.replace(""""id": "three-homes", "name": "Three homes", "priceInr": 1499, "planReadings": 10,
-              "fullReports": 10, "homes": 3, "onSale": true""",
-            """"id": "three-homes", "name": "Three homes", "priceInr": 1499, "planReadings": 10,
-              "fullReports": 10, "homes": 3, "onSale": false""")
+        val withOneOff = """
+            {
+              "unlockTierId": "one-home",
+              "tiers": [
+                { "id": "one-home", "name": "One home", "priceInr": 849, "planReadings": 3,
+                  "fullReports": 3, "homes": 1, "onSale": true, "tagline": "", "blurb": "" },
+                { "id": "three-homes", "name": "Three homes", "priceInr": 1499, "planReadings": 10,
+                  "fullReports": 10, "homes": 3, "onSale": false, "tagline": "", "blurb": "" }
+              ]
+            }
+        """.trimIndent()
         val plans = Plans.parse(withOneOff) ?: error("refused")
         assertEquals(1, plans.onSale.size)
         assertEquals(2, plans.tiers.size, "a plan that is off is still known about, just not offered")
@@ -87,9 +94,25 @@ class PlansTest {
 
     @Test
     fun `a plan missing a field is refused rather than half read`() {
-        assertNull(Plans.parse(good.replace(""""priceInr": 849, """, "")))
-        assertNull(Plans.parse(good.replace(""""homes": 1, """, "")))
-        assertNull(Plans.parse(good.replace(""""onSale": true, """, "")))
+        // Spelled out one field at a time rather than cut out of the good one, so each case is
+        // certain to be testing the field it names.
+        fun oneTier(fields: String) = """{ "unlockTierId": "one-home", "tiers": [ { $fields } ] }"""
+
+        assertNull(Plans.parse(oneTier(
+            """"id": "one-home", "name": "One home", "planReadings": 3, "fullReports": 3, "homes": 1, "onSale": true""",
+        )), "no price")
+        assertNull(Plans.parse(oneTier(
+            """"id": "one-home", "name": "One home", "priceInr": 849, "planReadings": 3, "fullReports": 3, "onSale": true""",
+        )), "no homes")
+        assertNull(Plans.parse(oneTier(
+            """"id": "one-home", "name": "One home", "priceInr": 849, "planReadings": 3, "fullReports": 3, "homes": 1""",
+        )), "not said whether it is on sale")
+        assertNull(Plans.parse(oneTier(
+            """"id": "one-home", "priceInr": 849, "planReadings": 3, "fullReports": 3, "homes": 1, "onSale": true""",
+        )), "no name")
+        assertNull(Plans.parse(oneTier(
+            """"name": "One home", "priceInr": 849, "planReadings": 3, "fullReports": 3, "homes": 1, "onSale": true""",
+        )), "no id at all")
     }
 
     @Test
@@ -100,10 +123,19 @@ class PlansTest {
 
     @Test
     fun `words that are not there simply come back empty, and do not lose the plan`() {
-        val noWords = good.replace(""""tagline": "The home you are about to sign for.", "blurb": "Every finding in full." """, "")
+        val noWords = """
+            {
+              "unlockTierId": "one-home",
+              "tiers": [
+                { "id": "one-home", "name": "One home", "priceInr": 849, "planReadings": 3,
+                  "fullReports": 3, "homes": 1, "onSale": true }
+              ]
+            }
+        """.trimIndent()
         val plans = Plans.parse(noWords) ?: error("missing words should not lose the plans")
         assertEquals("", plans.unlockTier?.tagline)
         assertEquals("", plans.unlockTier?.blurb)
+        assertEquals("₹849", plans.unlockPrice, "and the price still arrives")
     }
 
     @Test
@@ -116,7 +148,15 @@ class PlansTest {
 
     @Test
     fun `a plan marked to show but switched off shows nothing, so the app keeps its own price`() {
-        val off = good.replace(""""homes": 1, "onSale": true""", """"homes": 1, "onSale": false""")
+        val off = """
+            {
+              "unlockTierId": "one-home",
+              "tiers": [
+                { "id": "one-home", "name": "One home", "priceInr": 849, "planReadings": 3,
+                  "fullReports": 3, "homes": 1, "onSale": false, "tagline": "", "blurb": "" }
+              ]
+            }
+        """.trimIndent()
         val plans = Plans.parse(off) ?: error("refused")
         assertNull(plans.unlockPrice, "an unlock plan that is not on sale must not set a price")
     }
