@@ -17,3 +17,14 @@
 *.jar binary
 *.keystore binary
 *.jks binary
+
+# ⭐ SIGNED REPLIES FROM THE CONTROL ROOM — never normalise, never touch.
+#
+# A signature is over BYTES. These files are the exact text a phone was served, frozen so the
+# signature check can be proved against the real thing. Changing one byte — a line ending, a
+# trailing newline, anything at all — makes them stop verifying, and the test that fails looks
+# like a bug in the signing code rather than a file that git rewrote on checkout.
+#
+# They contain no newlines today, so `text=auto` happens to leave them alone. Marking them binary
+# means it stays true whoever re-captures them next.
+**/resources/update/*.json binary

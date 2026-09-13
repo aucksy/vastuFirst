@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.testTag
 import com.vastufirst.app.billing.Billing
 import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
-import com.vastufirst.app.billing.FALLBACK_PRICE
 import com.vastufirst.app.billing.PurchaseResult
 import com.vastufirst.app.billing.billingActionLabel
 import com.vastufirst.app.billing.billingNotice
@@ -122,10 +121,13 @@ fun UnlockContent(
         // next to ₹699.00 at the exact moment of purchase. In a FlowRow the caption sits beside
         // the price where it fits, and drops below it as a whole readable phrase where it doesn't.
         FlowRow(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            // ⭐ The STORE'S OWN price string when there is one. It carries the customer's currency
-            // and any local tax, and it is the number Google will actually charge — a hard-coded
-            // figure would be a promise the app is not the one keeping.
-            VText(state.price ?: FALLBACK_PRICE, style = VastuTheme.type.scoreDisplay, color = colors.textPrimary)
+            // ⭐ THE STORE'S OWN price string when there is one — it carries the customer's currency
+            // and any local tax, and it is the number Google will actually charge. Then the price
+            // published from the Control Room, which is what the app SAYS while payments are off.
+            // Then the one built into this build, so a phone with no signal still names a price
+            // rather than a blank. That order is settled in BillingState.shownPrice, in one place,
+            // so no screen can ever put our number where Google's belongs.
+            VText(state.shownPrice, style = VastuTheme.type.scoreDisplay, color = colors.textPrimary)
             VText(
                 // ⭐ WITH PAYMENTS OFF, THE BIGGEST THING ON THE MONEY SCREEN IS A NUMBER NOBODY IS
                 // CHARGED. The small grey notice under the button has always said so, but a reader

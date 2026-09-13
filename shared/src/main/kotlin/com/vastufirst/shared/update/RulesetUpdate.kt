@@ -30,6 +30,11 @@ import java.util.Base64
  *   6. Does it pass the app's OWN twenty start-up checks?
  *
  * Only after all six does anything change.
+ *
+ * ⭐ Prices travel in the same signed bytes, so they pass through every one of those six checks
+ * with the rules. They are the one part that is allowed to be absent or unreadable without the
+ * whole download being thrown away — a rule set published before prices existed has none, and the
+ * app's own prices are always there to fall back on.
  */
 object RulesetUpdate {
 
@@ -40,6 +45,14 @@ object RulesetUpdate {
         val minAppVersion: String,
         /** The eight files, by their bare names, ready for RuleSetLoader.load. */
         val parts: Map<String, String>,
+        /**
+         * The plans and prices that went out with these rules, or null.
+         *
+         * Null is completely ordinary and must never be treated as a failure: every rule set
+         * published before plans existed has none, and a set of plans that cannot be read is
+         * dropped rather than half-used. Either way the app shows the price built into it.
+         */
+        val plans: Plans? = null,
         /** The exact bytes that were signed. Stored so the check can be re-run at next start-up. */
         val payload: String,
         val signature: String,
@@ -126,6 +139,17 @@ object RulesetUpdate {
         if (isOlder(appVersion, minAppVersion)) return Outcome.Keep(Rejected.NEEDS_A_NEWER_APP)
 
         val changeNote = inner["changeNote"]?.jsonPrimitive?.contentOrNullSafe() ?: ""
+
+        // ⭐ The plans ride inside the SAME signed bytes as the rules, so by the time this line is
+        // reached they are as trustworthy as the rules are. They are also entirely optional: a
+        // missing, malformed or half-written set is dropped and the app keeps its own prices. It
+        // must never be a reason to throw the RULES away — the rules are what scores a home.
+        val plans = try {
+            inner["plans"]?.let { Plans.from(it.jsonObject) }
+        } catch (_: Throwable) {
+            null
+        }
+
         val rulesetObject = try {
             inner["ruleset"]!!.jsonObject
         } catch (_: Throwable) {
@@ -144,7 +168,7 @@ object RulesetUpdate {
             return Outcome.Keep(Rejected.REFUSED_BY_THE_APPS_OWN_CHECKS)
         }
 
-        return Outcome.Use(Accepted(version, changeNote, minAppVersion, parts, payload, signature))
+        return Outcome.Use(Accepted(version, changeNote, minAppVersion, parts, plans, payload, signature))
     }
 
     /**

@@ -47,6 +47,45 @@ class SimpleScreensScreenshotTest {
         writeManifestAcrossMatrix("unlock-paid") { UnlockContent(state = paid) }
     }
 
+    /**
+     * ⭐⭐ THE PICTURE THAT PROVES A PRICE TYPED IN THE CONTROL ROOM REACHES A PHONE.
+     *
+     * The number on this screen is not written in this file. It comes out of a real, signed reply
+     * from the Control Room — captured after a real publish at admin.vastufirst.com with the price
+     * set to ₹849 — put through the same signature check, the same version check and the same rule
+     * loader a phone runs. If any of those failed, [ControlRoomFixtures] would refuse the fixture
+     * and this test would not run at all.
+     *
+     * ⚠ AND PAYMENTS ARE STILL OFF IN THIS GOLDEN, deliberately. That is what ships. So the picture
+     * has to show both things at once: the published price in the largest type, and the words
+     * saying plainly that nobody is charged. A published price must never turn an honest screen
+     * into one that looks like it takes money.
+     */
+    @Test
+    fun unlock_publishedPrice() {
+        val published = BillingState(
+            mode = BillingMode.DISABLED,
+            publishedPrice = ControlRoomFixtures.publishedPrice,
+        )
+        captureAcrossMatrix("unlock-published-price") { UnlockContent(state = published) }
+        writeManifestAcrossMatrix("unlock-published-price") { UnlockContent(state = published) }
+    }
+
+    /**
+     * The same published price with payments switched ON but the store not yet answered — the
+     * half-second a real buyer sees. Ours is what shows; the moment Google answers, Google's wins.
+     */
+    @Test
+    fun unlock_publishedPrice_storeNotAnsweredYet() {
+        val waiting = BillingState(
+            mode = BillingMode.READY,
+            price = null,
+            publishedPrice = ControlRoomFixtures.publishedPrice,
+        )
+        captureAcrossMatrix("unlock-published-price-waiting") { UnlockContent(state = waiting) }
+        writeManifestAcrossMatrix("unlock-published-price-waiting") { UnlockContent(state = waiting) }
+    }
+
     /** Payments ON but Google Play unreachable — must never quietly fall back to giving it away. */
     @Test
     fun unlock_unavailable() {

@@ -53,9 +53,28 @@ data class BillingState(
     val mode: BillingMode = BillingMode.DISABLED,
     /** The store's own localised price string ("₹699.00"). Null until the store answers. */
     val price: String? = null,
+    /**
+     * ⭐ The price published from the Control Room, or null.
+     *
+     * THREE PRICES, AND THE ORDER BETWEEN THEM IS THE WHOLE POINT:
+     *
+     *   1. [price] — Google's own, and the only one that is ever CHARGED. It wins whenever there
+     *      is one, because it is the number the customer's card will actually be debited.
+     *   2. this one — what we published from the Control Room. What the app SAYS while payments
+     *      are switched off, and what it shows in the moment before Google answers.
+     *   3. [FALLBACK_PRICE] — built into this build, never deleted, and what a phone with no signal
+     *      has always shown.
+     *
+     * Getting that order the other way round would put OUR number on a screen where Google was
+     * about to charge a different one, which is the one mistake this whole feature must never make.
+     */
+    val publishedPrice: String? = null,
     val owned: Boolean = false,
     val busy: Boolean = false,
-)
+) {
+    /** The price to put on the screen: the store's, then ours, then the one built in. */
+    val shownPrice: String get() = price ?: publishedPrice ?: FALLBACK_PRICE
+}
 
 /**
  * The one product. A single non-consumable unlock, not a subscription — the owner's decision is a
@@ -63,8 +82,14 @@ data class BillingState(
  */
 const val REPORT_PRODUCT_ID = "vastufirst_full_report"
 
-/** The price shown when the store has not answered (or is switched off). Never invented — it is the
- *  owner's decided price, and the store's own string replaces it the moment one arrives. */
+/**
+ * The price built into this build, shown when nothing else can be. Never invented — it is the
+ * owner's decided price.
+ *
+ * ⚠ THIS CONSTANT IS NEVER DELETED AND NEVER STOPS BEING THE LAST RESORT. A published price can
+ * replace what is SHOWN, but a phone that has never reached the Control Room, or that refused what
+ * it was sent, still has to name a price rather than a blank — and this is it. A test pins it.
+ */
 const val FALLBACK_PRICE = "₹699"
 
 /**
@@ -88,7 +113,7 @@ fun billingActionLabel(state: BillingState): String = when {
     state.owned -> "See the full report"
     state.mode == BillingMode.DISABLED -> "Unlock on this device — free"
     state.mode == BillingMode.UNAVAILABLE -> "Try again"
-    else -> "Pay ${state.price ?: FALLBACK_PRICE} and unlock"
+    else -> "Pay ${state.shownPrice} and unlock"
 }
 
 /**
@@ -109,8 +134,13 @@ interface Billing {
  * Payments switched off. It unlocks the report locally and reports exactly that — it does NOT
  * pretend to charge, and the screen's own words come from [billingNotice], which reads this mode.
  */
-class NoBilling : Billing {
-    override val state = BillingState(mode = BillingMode.DISABLED, price = null)
+class NoBilling(publishedPrice: String? = null) : Billing {
+    override val state = BillingState(
+        mode = BillingMode.DISABLED,
+        // Never a price from a store, because there is no store in this mode.
+        price = null,
+        publishedPrice = publishedPrice,
+    )
     override suspend fun purchase(): PurchaseResult = PurchaseResult.Purchased
     override suspend fun restore(): PurchaseResult = PurchaseResult.AlreadyOwned
 }

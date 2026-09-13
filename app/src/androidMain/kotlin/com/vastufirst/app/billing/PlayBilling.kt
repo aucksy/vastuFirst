@@ -31,9 +31,18 @@ import kotlin.coroutines.resume
 class PlayBilling(
     context: Context,
     private val activityProvider: () -> Activity?,
+    /**
+     * What the Control Room published, or null. Shown ONLY while Google has not answered — the
+     * moment the store gives us a price, that one wins, because it is the number actually charged.
+     */
+    publishedPrice: String? = null,
 ) : Billing {
 
-    private var current = BillingState(mode = BillingMode.UNAVAILABLE, price = null)
+    private var current = BillingState(
+        mode = BillingMode.UNAVAILABLE,
+        price = null,
+        publishedPrice = publishedPrice,
+    )
     override val state: BillingState get() = current
 
     private var details: ProductDetails? = null

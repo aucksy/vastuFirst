@@ -4,6 +4,11 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.vastufirst.app.di.appModule
+import com.vastufirst.app.update.RulesUpdater
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -16,10 +21,24 @@ class VastuApp : Application() {
         // knowing about, and installing the recorder after Koin would miss every one of them.
         CrashLog.install(this, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
         registerActivityLifecycleCallbacks(CurrentActivity)
-        startKoin {
+        val koin = startKoin {
             androidLogger()
             androidContext(this@VastuApp)
             modules(appModule)
+        }.koin
+
+        // ⭐ ASK THE CONTROL ROOM WHETHER THERE IS ANYTHING NEWER — and never wait for the answer.
+        //
+        // Off the main thread, after everything else is already running, and the app is already
+        // fully working on the rules built into it before this line is reached. If there is no
+        // signal, if the answer is rubbish, if the phone is in flight mode, nothing at all happens
+        // and nobody is told, because nothing is wrong: their home still scores.
+        //
+        // What it produces is a FILE. The next launch reads it. Nothing on screen changes now —
+        // swapping the rules under a report somebody is reading would move their score while they
+        // were looking at it, with nothing to explain it.
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            runCatching { koin.get<RulesUpdater>().refresh() }
         }
     }
 }

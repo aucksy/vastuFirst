@@ -53,6 +53,32 @@ class ScoreDrivenScreensScreenshotTest {
         writeManifestAcrossMatrix(screen, content)
     }
 
+    /**
+     * ⭐⭐ THE PICTURE THAT PROVES A VASTU RULE CHANGED IN THE CONTROL ROOM CHANGES A SCORE.
+     *
+     * This is the SAME home as every other report golden in this file. The only difference is
+     * which rules scored it: these came out of a real, signed publish in which a serious placement
+     * problem was made to weigh 20 instead of 8. The reply was put through the phone's own
+     * signature check, version check and rule loader before a single number on this screen was
+     * computed — see [ControlRoomFixtures].
+     *
+     * Put this golden beside `report-building`: the same rooms, the same door, the same findings,
+     * a different number. That is what "a rule changed in the panel reaches a phone" looks like,
+     * and nothing except a picture can show it.
+     *
+     * ⚠ The harsher rule was published to a LOCAL copy of the Control Room, never the live one.
+     * Publishing it for real would have moved the score on every phone that has the app.
+     */
+    @Test
+    fun report_underPublishedRules() = render("report-published-rules") {
+        ReportContent(
+            analysis = ControlRoomFixtures.analysisUnderPublishedRules,
+            intent = Intent.BUILDING,
+            rooms = rooms,
+            north = north,
+        )
+    }
+
     @Test
     fun markNorth() = render("marknorth") {
         MarkNorthContent(
