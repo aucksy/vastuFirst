@@ -101,6 +101,33 @@ developer account.
 
 ## Week of 7–13 September 2026
 
+### Sunday 13 September, later — drawing a home by hand now walks you to the front door
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.26.0/vastufirst-v0.26.0.apk
+**This is the one to install.**
+
+**When you draw a home on the grid, the front door is now a step of its own, not a button to spot.**
+The big green button under the plan reads "Next — set the front door" until a door is on the plan,
+and opens the door step. Before this, a home drawn by hand could go straight from the rooms to North
+and on to a report with its heaviest reading — the front door — missing, and nothing had asked. You
+can still carry on without one: inside the door step the button says "Skip the door", and the screen
+says in plain words that the score will note it. That is the same choice, in the same words, that a
+photographed plan already offers when no entrance is printed on it.
+
+**Tapping a wall now answers you in words.** The line under the heading changes to "Your front door is
+on the north wall. Tap another wall to move it." Before, the little mark appeared and the instruction
+kept asking for a tap, as though nothing had happened.
+
+**A key that cannot act now says so.** Select a room that touches a wall and press the arrow or size
+key pointing into that wall: a short "no" buzz, the same one you already get when the plot size is
+pressed past its limit. Those keys used to do nothing at all, which looks exactly like a broken button.
+
+**After you place a room, the screen says how to add the next one** — press Done — because the room
+list steps aside while a room is selected, and nothing had said where it went.
+
+Two states of this screen are now photographed on every build for the first time: placing a room,
+and the door step before a door exists. Anything that breaks there is seen before it reaches you.
+
 ### Sunday 13 September — you can change the app yourself now, and phones pick it up
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.25.0/vastufirst-v0.25.0.apk
