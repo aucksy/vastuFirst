@@ -1378,6 +1378,12 @@ function bestFreeSubRect(cand, blockers, printedRatio) {
 const MERGEABLE_RUN_TYPES = new Set(['BALCONY']);
 const RUN_BAND_SHARE = 0.6;
 const RUN_MAX_GAP = 0.02;
+// ⭐ A run only becomes one room when its sections FILL the rectangle that encloses them, and that
+// rectangle lands on nothing else. An L of two balconies meeting at a corner encloses the whole
+// square — on the owner's own flat that box covered half his living room. Mirrors
+// ScanMapper.RUN_MIN_FILL / RUN_MAX_FOREIGN; the measured table is in the Kotlin.
+const RUN_MIN_FILL = 0.80;
+const RUN_MAX_FOREIGN = 0.40;
 
 const runKey = (label) => String(label).toUpperCase().replace(/\s+/g, ' ').trim();
 
@@ -1395,7 +1401,39 @@ const adjoins = (a, b) =>
   runContinuous(a.y, a.h, b.y, b.h, a.x, a.w, b.x, b.w)
   || runContinuous(a.x, a.w, b.x, b.w, a.y, a.h, b.y, b.h);
 
-function mergeRuns(typed) {
+/** How much of `inner` lies inside `outer`, as a fraction of `inner`'s own area. */
+function containedFraction(outer, inner) {
+  const area = inner.w * inner.h;
+  if (!(area > 0)) return 0;
+  const w = Math.min(outer.x + outer.w, inner.x + inner.w) - Math.max(outer.x, inner.x);
+  const h = Math.min(outer.y + outer.h, inner.y + inner.h) - Math.max(outer.y, inner.y);
+  if (!(w > 0) || !(h > 0)) return 0;
+  return (w * h) / area;
+}
+
+/** Would fusing these sections into the rectangle enclosing them tell the truth? */
+function fusesCleanly(run, all) {
+  const x = Math.min(...run.map((c) => c.box.x));
+  const y = Math.min(...run.map((c) => c.box.y));
+  const box = {
+    x, y,
+    w: Math.max(...run.map((c) => c.box.x + c.box.w)) - x,
+    h: Math.max(...run.map((c) => c.box.y + c.box.h)) - y,
+  };
+  if (!(box.w * box.h > 0)) return false;
+  const inBox = run.map((c) => ({
+    x: (c.box.x - box.x) / box.w, y: (c.box.y - box.y) / box.h,
+    w: c.box.w / box.w, h: c.box.h / box.h,
+  }));
+  if (coverageOf(inBox) < RUN_MIN_FILL) return false;
+  for (const other of all) {
+    if (run.includes(other)) continue;
+    if (containedFraction(box, other.box) > RUN_MAX_FOREIGN) return false;
+  }
+  return true;
+}
+
+function mergeRuns(typed, inject) {
   if (typed.length < 2) return typed;
   const out = [];
   const taken = new Array(typed.length).fill(false);
@@ -1417,8 +1455,10 @@ function mergeRuns(typed) {
         taken[j] = true; run.push(c); queue.push(c);
       }
     }
-    if (run.length === 1) { out.push(seed); continue; }
     const ordered = run.slice().sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+    // `--inject=fuse-any-run` restores the pre-19-Sep behaviour: fuse every run, however shaped.
+    const clean = inject === 'fuse-any-run' ? true : fusesCleanly(run, typed);
+    if (run.length === 1 || !clean) { for (const c of ordered) out.push(c); continue; }
     const x = Math.min(...ordered.map((c) => c.box.x));
     const y = Math.min(...ordered.map((c) => c.box.y));
     const right = Math.max(...ordered.map((c) => c.box.x + c.box.w));
@@ -1804,7 +1844,7 @@ function scanMap(draft, imageAspect, opts = {}) {
   // MERGEABLE_RUN_TYPES note there for the measurement: the owner's sheet captions one continuous
   // balcony three times, so we were making three rooms, and the engine three scored verdicts, out
   // of one strip. FAULT INJECTION 'no-merge-runs' restores the count-the-captions behaviour.
-  const rooms = inject === 'no-merge-runs' ? survivors : mergeRuns(survivors);
+  const rooms = inject === 'no-merge-runs' ? survivors : mergeRuns(survivors, inject);
   if (!rooms.length) return { kind: 'refused', reason: unknown > 0 ? 'NO_LABELS' : 'NO_ROOMS', notes: notes() };
 
   const identified = rooms.slice().sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)

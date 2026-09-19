@@ -1,73 +1,516 @@
 {
-  "_README": [
-    "WHERE EACH ROOM ACTUALLY IS, in fractions of the whole sheet, read off the plan by eye against",
-    "a 5 % grid (exp-truth-boxes.py grid <stem>). This is the only ground truth in the scan tooling:",
-    "everything else scores the review boxes against each other, which cannot answer 'does the box",
-    "sit on the room'. Worth about a percent either way — enough to separate 'on the room' from",
-    "'half on the neighbour', not enough to rank two drawings a point apart.",
-    "Labels are the reader's own captions, so a drawing can be matched to a room. Where a sheet",
-    "hlv9vurn and plan-007 were marked 10 Sep 2026 for the wall snap: the two furnished renders where the snap most often landed on furniture. Open-plan sides with no wall (drawing/dining, living hall/drawing) are marked where the reader put them.",
-    "repeats a caption (three balconies), the match is made on the READER's rectangle, which is the",
-    "same for every drawing being compared, so no drawing can win by claiming a different room.",
-    "ADD A SHEET ONLY BY LOOKING AT IT. Never copy these from a model reply — that is the thing",
-    "being judged."
-  ],
-  "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)": [
-    { "label": "MASTER BEDROOM", "x": 0.154, "y": 0.232, "w": 0.226, "h": 0.208 },
-    { "label": "BEDROOM", "x": 0.386, "y": 0.1525, "w": 0.211, "h": 0.22 },
-    { "label": "BALCONY", "x": 0.420, "y": 0.054, "w": 0.145, "h": 0.091 },
-    { "label": "BALCONY", "x": 0.184, "y": 0.126, "w": 0.168, "h": 0.094 },
-    { "label": "BALCONY", "x": 0.645, "y": 0.280, "w": 0.167, "h": 0.094 },
-    { "label": "MASTER TOILET", "x": 0.160, "y": 0.453, "w": 0.174, "h": 0.099 },
-    { "label": "TOILET", "x": 0.347, "y": 0.453, "w": 0.113, "h": 0.146 },
-    { "label": "LIVING/DINING", "x": 0.406, "y": 0.373, "w": 0.458, "h": 0.227 },
-    { "label": "KITCHEN", "x": 0.539, "y": 0.6125, "w": 0.209, "h": 0.100 },
-    { "label": "SERVICE BALCONY", "x": 0.414, "y": 0.6125, "w": 0.125, "h": 0.100 }
-  ],
-  "greencourt-336-branded": [
-    { "label": "BALCONY", "x": 0.409, "y": 0.156, "w": 0.310, "h": 0.115 },
-    { "label": "BED ROOM", "x": 0.519, "y": 0.273, "w": 0.200, "h": 0.216 },
-    { "label": "WC", "x": 0.410, "y": 0.327, "w": 0.104, "h": 0.065 },
-    { "label": "BATH", "x": 0.410, "y": 0.394, "w": 0.104, "h": 0.075 },
-    { "label": "KITCHEN", "x": 0.410, "y": 0.472, "w": 0.103, "h": 0.143 },
-    { "label": "LOBBY", "x": 0.513, "y": 0.488, "w": 0.204, "h": 0.264 },
-    { "label": "PASSAGE", "x": 0.649, "y": 0.752, "w": 0.068, "h": 0.173 }
-  ],
-  "hlv9vurn": [
-    { "label": "BALCONY", "x": 0.111, "y": 0.125, "w": 0.211, "h": 0.115 },
-    { "label": "MASTER BEDROOM", "x": 0.098, "y": 0.243, "w": 0.154, "h": 0.284 },
-    { "label": "BEDROOM", "x": 0.256, "y": 0.200, "w": 0.158, "h": 0.238 },
-    { "label": "DRESS", "x": 0.214, "y": 0.528, "w": 0.084, "h": 0.112 },
-    { "label": "TOILET", "x": 0.120, "y": 0.528, "w": 0.086, "h": 0.158 },
-    { "label": "TOILET", "x": 0.309, "y": 0.528, "w": 0.108, "h": 0.106 },
-    { "label": "DINING", "x": 0.417, "y": 0.323, "w": 0.113, "h": 0.201 },
-    { "label": "KITCHEN", "x": 0.420, "y": 0.528, "w": 0.116, "h": 0.197 },
-    { "label": "UTILITY BALCONY", "x": 0.343, "y": 0.651, "w": 0.195, "h": 0.149 },
-    { "label": "BALCONY", "x": 0.551, "y": 0.289, "w": 0.143, "h": 0.114 },
-    { "label": "LIVING", "x": 0.530, "y": 0.403, "w": 0.176, "h": 0.317 },
-    { "label": "BALCONY", "x": 0.717, "y": 0.168, "w": 0.134, "h": 0.098 },
-    { "label": "BEDROOM", "x": 0.717, "y": 0.272, "w": 0.143, "h": 0.229 },
-    { "label": "DRESS", "x": 0.715, "y": 0.505, "w": 0.076, "h": 0.118 },
-    { "label": "TOILET", "x": 0.796, "y": 0.505, "w": 0.108, "h": 0.118 },
-    { "label": "ENTRANCE", "x": 0.715, "y": 0.631, "w": 0.200, "h": 0.089 }
-  ],
-  "plan-007": [
-    { "label": "CHILDREN BEDROOM", "x": 0.077, "y": 0.077, "w": 0.352, "h": 0.218 },
-    { "label": "TOILET", "x": 0.438, "y": 0.077, "w": 0.101, "h": 0.144 },
-    { "label": "TOILET", "x": 0.552, "y": 0.077, "w": 0.111, "h": 0.144 },
-    { "label": "GUEST BEDROOM", "x": 0.675, "y": 0.077, "w": 0.289, "h": 0.218 },
-    { "label": "6' WIDE LOBBY", "x": 0.675, "y": 0.295, "w": 0.289, "h": 0.108 },
-    { "label": "LIVING HALL", "x": 0.123, "y": 0.301, "w": 0.210, "h": 0.216 },
-    { "label": "DRAWING", "x": 0.433, "y": 0.221, "w": 0.238, "h": 0.394 },
-    { "label": "BEDROOM", "x": 0.675, "y": 0.412, "w": 0.289, "h": 0.166 },
-    { "label": "TOILET", "x": 0.068, "y": 0.521, "w": 0.098, "h": 0.159 },
-    { "label": "C. TOILET", "x": 0.284, "y": 0.521, "w": 0.136, "h": 0.159 },
-    { "label": "DRESSING", "x": 0.178, "y": 0.521, "w": 0.098, "h": 0.159 },
-    { "label": "DINING", "x": 0.433, "y": 0.615, "w": 0.238, "h": 0.229 },
-    { "label": "POOJA", "x": 0.829, "y": 0.585, "w": 0.135, "h": 0.073 },
-    { "label": "MASTER BEDROOM", "x": 0.068, "y": 0.689, "w": 0.352, "h": 0.204 },
-    { "label": "KITCHEN", "x": 0.675, "y": 0.661, "w": 0.289, "h": 0.173 },
-    { "label": "5' WIDE BALCONY", "x": 0.438, "y": 0.844, "w": 0.301, "h": 0.067 },
-    { "label": "4' WIDE UTILITY", "x": 0.739, "y": 0.834, "w": 0.225, "h": 0.076 }
-  ]
+ "_README": [
+  "WHERE EACH ROOM ACTUALLY IS, in fractions of the whole sheet, read off the plan by eye against",
+  "a 5 % grid (exp-truth-boxes.py grid <stem>). This is the only ground truth in the scan tooling:",
+  "everything else scores the review boxes against each other, which cannot answer 'does the box",
+  "sit on the room'. Worth about a percent either way — enough to separate 'on the room' from",
+  "'half on the neighbour', not enough to rank two drawings a point apart.",
+  "Labels are the reader's own captions, so a drawing can be matched to a room. Where a sheet",
+  "hlv9vurn and plan-007 were marked 10 Sep 2026 for the wall snap: the two furnished renders where the snap most often landed on furniture. Open-plan sides with no wall (drawing/dining, living hall/drawing) are marked where the reader put them.",
+  "repeats a caption (three balconies), the match is made on the READER's rectangle, which is the",
+  "same for every drawing being compared, so no drawing can win by claiming a different room.",
+  "ADD A SHEET ONLY BY LOOKING AT IT. Never copy these from a model reply — that is the thing",
+  "being judged.",
+  "floor-plan-1 (the owner's own flat) was marked 19 Sep 2026 off the 5 % grid, for the fused-balcony defect. The three right/top BALCONY captions are marked as the three separate strips they are; the open living/dining is marked to the walls that do bound it and to the reader's edge where none does."
+ ],
+ "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)": [
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.154,
+   "y": 0.232,
+   "w": 0.226,
+   "h": 0.208
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.386,
+   "y": 0.1525,
+   "w": 0.211,
+   "h": 0.22
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.42,
+   "y": 0.054,
+   "w": 0.145,
+   "h": 0.091
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.184,
+   "y": 0.126,
+   "w": 0.168,
+   "h": 0.094
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.645,
+   "y": 0.28,
+   "w": 0.167,
+   "h": 0.094
+  },
+  {
+   "label": "MASTER TOILET",
+   "x": 0.16,
+   "y": 0.453,
+   "w": 0.174,
+   "h": 0.099
+  },
+  {
+   "label": "TOILET",
+   "x": 0.347,
+   "y": 0.453,
+   "w": 0.113,
+   "h": 0.146
+  },
+  {
+   "label": "LIVING/DINING",
+   "x": 0.406,
+   "y": 0.373,
+   "w": 0.458,
+   "h": 0.227
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.539,
+   "y": 0.6125,
+   "w": 0.209,
+   "h": 0.1
+  },
+  {
+   "label": "SERVICE BALCONY",
+   "x": 0.414,
+   "y": 0.6125,
+   "w": 0.125,
+   "h": 0.1
+  }
+ ],
+ "greencourt-336-branded": [
+  {
+   "label": "BALCONY",
+   "x": 0.409,
+   "y": 0.156,
+   "w": 0.31,
+   "h": 0.115
+  },
+  {
+   "label": "BED ROOM",
+   "x": 0.519,
+   "y": 0.273,
+   "w": 0.2,
+   "h": 0.216
+  },
+  {
+   "label": "WC",
+   "x": 0.41,
+   "y": 0.327,
+   "w": 0.104,
+   "h": 0.065
+  },
+  {
+   "label": "BATH",
+   "x": 0.41,
+   "y": 0.394,
+   "w": 0.104,
+   "h": 0.075
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.41,
+   "y": 0.472,
+   "w": 0.103,
+   "h": 0.143
+  },
+  {
+   "label": "LOBBY",
+   "x": 0.513,
+   "y": 0.488,
+   "w": 0.204,
+   "h": 0.264
+  },
+  {
+   "label": "PASSAGE",
+   "x": 0.649,
+   "y": 0.752,
+   "w": 0.068,
+   "h": 0.173
+  }
+ ],
+ "hlv9vurn": [
+  {
+   "label": "BALCONY",
+   "x": 0.111,
+   "y": 0.125,
+   "w": 0.211,
+   "h": 0.115
+  },
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.098,
+   "y": 0.243,
+   "w": 0.154,
+   "h": 0.284
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.256,
+   "y": 0.2,
+   "w": 0.158,
+   "h": 0.238
+  },
+  {
+   "label": "DRESS",
+   "x": 0.214,
+   "y": 0.528,
+   "w": 0.084,
+   "h": 0.112
+  },
+  {
+   "label": "TOILET",
+   "x": 0.12,
+   "y": 0.528,
+   "w": 0.086,
+   "h": 0.158
+  },
+  {
+   "label": "TOILET",
+   "x": 0.309,
+   "y": 0.528,
+   "w": 0.108,
+   "h": 0.106
+  },
+  {
+   "label": "DINING",
+   "x": 0.417,
+   "y": 0.323,
+   "w": 0.113,
+   "h": 0.201
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.42,
+   "y": 0.528,
+   "w": 0.116,
+   "h": 0.197
+  },
+  {
+   "label": "UTILITY BALCONY",
+   "x": 0.343,
+   "y": 0.651,
+   "w": 0.195,
+   "h": 0.149
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.551,
+   "y": 0.289,
+   "w": 0.143,
+   "h": 0.114
+  },
+  {
+   "label": "LIVING",
+   "x": 0.53,
+   "y": 0.403,
+   "w": 0.176,
+   "h": 0.317
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.717,
+   "y": 0.168,
+   "w": 0.134,
+   "h": 0.098
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.717,
+   "y": 0.272,
+   "w": 0.143,
+   "h": 0.229
+  },
+  {
+   "label": "DRESS",
+   "x": 0.715,
+   "y": 0.505,
+   "w": 0.076,
+   "h": 0.118
+  },
+  {
+   "label": "TOILET",
+   "x": 0.796,
+   "y": 0.505,
+   "w": 0.108,
+   "h": 0.118
+  },
+  {
+   "label": "ENTRANCE",
+   "x": 0.715,
+   "y": 0.631,
+   "w": 0.2,
+   "h": 0.089
+  }
+ ],
+ "plan-007": [
+  {
+   "label": "CHILDREN BEDROOM",
+   "x": 0.077,
+   "y": 0.077,
+   "w": 0.352,
+   "h": 0.218
+  },
+  {
+   "label": "TOILET",
+   "x": 0.438,
+   "y": 0.077,
+   "w": 0.101,
+   "h": 0.144
+  },
+  {
+   "label": "TOILET",
+   "x": 0.552,
+   "y": 0.077,
+   "w": 0.111,
+   "h": 0.144
+  },
+  {
+   "label": "GUEST BEDROOM",
+   "x": 0.675,
+   "y": 0.077,
+   "w": 0.289,
+   "h": 0.218
+  },
+  {
+   "label": "6' WIDE LOBBY",
+   "x": 0.675,
+   "y": 0.295,
+   "w": 0.289,
+   "h": 0.108
+  },
+  {
+   "label": "LIVING HALL",
+   "x": 0.123,
+   "y": 0.301,
+   "w": 0.21,
+   "h": 0.216
+  },
+  {
+   "label": "DRAWING",
+   "x": 0.433,
+   "y": 0.221,
+   "w": 0.238,
+   "h": 0.394
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.675,
+   "y": 0.412,
+   "w": 0.289,
+   "h": 0.166
+  },
+  {
+   "label": "TOILET",
+   "x": 0.068,
+   "y": 0.521,
+   "w": 0.098,
+   "h": 0.159
+  },
+  {
+   "label": "C. TOILET",
+   "x": 0.284,
+   "y": 0.521,
+   "w": 0.136,
+   "h": 0.159
+  },
+  {
+   "label": "DRESSING",
+   "x": 0.178,
+   "y": 0.521,
+   "w": 0.098,
+   "h": 0.159
+  },
+  {
+   "label": "DINING",
+   "x": 0.433,
+   "y": 0.615,
+   "w": 0.238,
+   "h": 0.229
+  },
+  {
+   "label": "POOJA",
+   "x": 0.829,
+   "y": 0.585,
+   "w": 0.135,
+   "h": 0.073
+  },
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.068,
+   "y": 0.689,
+   "w": 0.352,
+   "h": 0.204
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.675,
+   "y": 0.661,
+   "w": 0.289,
+   "h": 0.173
+  },
+  {
+   "label": "5' WIDE BALCONY",
+   "x": 0.438,
+   "y": 0.844,
+   "w": 0.301,
+   "h": 0.067
+  },
+  {
+   "label": "4' WIDE UTILITY",
+   "x": 0.739,
+   "y": 0.834,
+   "w": 0.225,
+   "h": 0.076
+  }
+ ],
+ "floor-plan-1": [
+  {
+   "label": "BALCONY",
+   "x": 0.079,
+   "y": 0.098,
+   "w": 0.283,
+   "h": 0.088
+  },
+  {
+   "label": "GUEST BEDROOM 1",
+   "x": 0.398,
+   "y": 0.102,
+   "w": 0.158,
+   "h": 0.19
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.549,
+   "y": 0.097,
+   "w": 0.292,
+   "h": 0.091
+  },
+  {
+   "label": "JR. MASTER BEDROOM",
+   "x": 0.087,
+   "y": 0.194,
+   "w": 0.183,
+   "h": 0.202
+  },
+  {
+   "label": "GUEST BATH 1",
+   "x": 0.271,
+   "y": 0.194,
+   "w": 0.091,
+   "h": 0.133
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.741,
+   "y": 0.188,
+   "w": 0.1,
+   "h": 0.171
+  },
+  {
+   "label": "LIVING ROOM / DINING AREA",
+   "x": 0.56,
+   "y": 0.188,
+   "w": 0.181,
+   "h": 0.313
+  },
+  {
+   "label": "PWD",
+   "x": 0.749,
+   "y": 0.36,
+   "w": 0.087,
+   "h": 0.057
+  },
+  {
+   "label": "MAIN ENTRY FOYER",
+   "x": 0.749,
+   "y": 0.418,
+   "w": 0.087,
+   "h": 0.082
+  },
+  {
+   "label": "ALL DIRECTION PUJA ROOM / FAMILY LOUNGE",
+   "x": 0.36,
+   "y": 0.3,
+   "w": 0.195,
+   "h": 0.33
+  },
+  {
+   "label": "JR. MASTER BATH 1",
+   "x": 0.089,
+   "y": 0.403,
+   "w": 0.153,
+   "h": 0.074
+  },
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.087,
+   "y": 0.499,
+   "w": 0.233,
+   "h": 0.193
+  },
+  {
+   "label": "DRESSER",
+   "x": 0.338,
+   "y": 0.57,
+   "w": 0.131,
+   "h": 0.061
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.47,
+   "y": 0.514,
+   "w": 0.147,
+   "h": 0.172
+  },
+  {
+   "label": "MASTER BATH",
+   "x": 0.338,
+   "y": 0.633,
+   "w": 0.1,
+   "h": 0.121
+  },
+  {
+   "label": "DRYER WASHER",
+   "x": 0.541,
+   "y": 0.708,
+   "w": 0.042,
+   "h": 0.055
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.079,
+   "y": 0.696,
+   "w": 0.241,
+   "h": 0.065
+  },
+  {
+   "label": "HOME OFFICE / STUDY",
+   "x": 0.58,
+   "y": 0.7,
+   "w": 0.155,
+   "h": 0.099
+  },
+  {
+   "label": "BATH",
+   "x": 0.583,
+   "y": 0.802,
+   "w": 0.152,
+   "h": 0.071
+  },
+  {
+   "label": "PVT. LIFT LOBBY",
+   "x": 0.756,
+   "y": 0.514,
+   "w": 0.086,
+   "h": 0.167
+  }
+ ]
 }

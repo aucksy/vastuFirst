@@ -575,6 +575,114 @@ class ScanMapperTest {
         assertIs<ScanOutcome.Refused>(out, "several units on one page is not one home")
     }
 
+    // ---- one space captioned in sections, and the L that is not one ---------------------------
+    //
+    // ⚠ Until 19 Sep 2026 NOTHING in this file tested the run-fusing at all, which is how the next
+    // defect reached the owner's phone: his north balcony and his east balcony touch at a corner,
+    // the two were fused, and the rectangle enclosing an L is the whole square — the drawn box
+    // covered half his living room, and the engine read one balcony where his home has two, facing
+    // two different directions. See ScanMapper.RUN_MIN_FILL / RUN_MAX_FOREIGN.
+
+    /** Every balcony the mapper gave back, as page-independent rectangles. */
+    private fun balconiesOf(out: ScanOutcome): List<ScanBox> =
+        out.scannedRoomsForTest().filter { it.type == RoomType.BALCONY }.mapNotNull { it.source }
+
+    @Test
+    fun `⭐⭐ three sections of ONE strip are still one balcony — the case fusing exists for`() {
+        // The owner's earlier sheet, 6 Aug 2026: three captions along one continuous bottom balcony
+        // at three printed depths. One space, one room, one verdict. This test is the guard rail on
+        // the corner fix below — it must not be possible to fix the L by abandoning fusing.
+        val out = ScanMapper.map(
+            draft(
+                box("LIVING ROOM", 0.05, 0.05, 0.5, 0.5),
+                box("KITCHEN", 0.6, 0.05, 0.35, 0.3),
+                box("MASTER BEDROOM", 0.05, 0.55, 0.4, 0.2),
+                box("BALCONY", 0.05, 0.78, 0.3, 0.12),
+                box("BALCONY", 0.35, 0.78, 0.3, 0.12),
+                box("BALCONY", 0.65, 0.78, 0.3, 0.12),
+            ),
+        )
+        assertEquals(
+            1, balconiesOf(out).size,
+            "three abutting sections of one strip are ONE balcony: " + balconiesOf(out),
+        )
+    }
+
+    @Test
+    fun `⭐⭐ a balcony on the north wall and one on the east are TWO balconies, not one L`() {
+        // The owner's own flat, 19 Sep 2026, with his reader's real rectangles: a wide strip across
+        // the top and a tall strip down the right, meeting at the corner. Fused, the enclosing
+        // rectangle is 0.641..0.982 × 0.016..0.338 — which is half his living room.
+        val out = ScanMapper.map(
+            draft(
+                box("BALCONY", 0.039, 0.016, 0.341, 0.091),
+                box("GUEST BEDROOM 1", 0.379, 0.018, 0.245, 0.291),
+                box("BALCONY", 0.641, 0.016, 0.341, 0.091),
+                box("LIVING ROOM / DINING AREA", 0.619, 0.111, 0.256, 0.407),
+                box("JR. MASTER BEDROOM", 0.04, 0.112, 0.273, 0.286),
+                box("MASTER BEDROOM", 0.048, 0.487, 0.32, 0.255),
+                box("KITCHEN", 0.494, 0.52, 0.203, 0.228),
+                box("BALCONY", 0.875, 0.107, 0.107, 0.231),
+                box("BALCONY", 0.039, 0.744, 0.296, 0.103),
+            ),
+        )
+        assertEquals(
+            4, balconiesOf(out).size,
+            "the north and east balconies must stay two rooms — they face two directions and the " +
+                "rectangle enclosing both is the corner of the home: " + balconiesOf(out),
+        )
+    }
+
+    @Test
+    fun `⭐ no balcony box may be drawn over a room it does not name`() {
+        // The owner's complaint, stated as the invariant rather than as one sheet's numbers: after
+        // the mapper has run, no balcony's rectangle contains most of another room.
+        val out = ScanMapper.map(
+            draft(
+                box("BALCONY", 0.039, 0.016, 0.341, 0.091),
+                box("BALCONY", 0.641, 0.016, 0.341, 0.091),
+                box("BALCONY", 0.875, 0.107, 0.107, 0.231),
+                box("LIVING ROOM / DINING AREA", 0.619, 0.111, 0.256, 0.407),
+                box("GUEST BEDROOM 1", 0.379, 0.018, 0.245, 0.291),
+                box("MASTER BEDROOM", 0.048, 0.487, 0.32, 0.255),
+                box("KITCHEN", 0.494, 0.52, 0.203, 0.228),
+            ),
+        )
+        val rooms = out.scannedRoomsForTest().mapNotNull { r -> r.source?.let { r.label to it } }
+        for ((label, bal) in rooms.filter { it.first.uppercase().contains("BALCONY") }) {
+            for ((otherLabel, other) in rooms) {
+                if (otherLabel == label) continue
+                if (otherLabel.uppercase().contains("BALCONY")) continue
+                val covered = ScanMapper.containedFraction(bal, other)
+                assertTrue(
+                    covered <= ScanMapper.RUN_MAX_FOREIGN,
+                    "$label's box covers ${(covered * 100).toInt()}% of $otherLabel",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `a run whose enclosing rectangle would swallow a toilet is not fused`() {
+        // plan-005, both prompt versions: three balconies down one wall, the middle one much wider,
+        // so the enclosing column covers the toilets and dressing rooms beside the narrow sections.
+        val out = ScanMapper.map(
+            draft(
+                box("BALCONY", 0.002, 0.039, 0.14, 0.207),
+                box("BALCONY", 0.002, 0.249, 0.227, 0.216),
+                box("BALCONY", 0.002, 0.466, 0.146, 0.492),
+                box("TOILET", 0.15, 0.06, 0.12, 0.16),
+                box("LIVING ROOM", 0.3, 0.05, 0.4, 0.4),
+                box("MASTER BEDROOM", 0.3, 0.5, 0.4, 0.4),
+            ),
+        )
+        assertEquals(
+            3, balconiesOf(out).size,
+            "the column enclosing these three covers the toilet beside the narrow sections: " +
+                balconiesOf(out),
+        )
+    }
+
     @Test
     fun `⭐⭐ a LAYOUT that runs past the bottom of the page is shrunk onto it, never deleted`() {
         // ⚠ The reader routinely returns rooms outside the unit square — it lays out a template and

@@ -352,6 +352,59 @@ object ScanMapper {
     const val RUN_MAX_GAP = 0.02
 
     /**
+     * ⭐⭐ A RUN IS ONLY ONE ROOM WHEN THE SECTIONS FILL THE RECTANGLE THAT ENCLOSES THEM
+     * (owner, 19 Sep 2026, of his own flat: *"balcony detected including the whole living room"*).
+     *
+     * [combineRun] answers a run with the rectangle that encloses every section. That is the right
+     * answer for a strip captioned in pieces along ONE wall — the case the fusing was built for —
+     * and a badly wrong one for two balconies that meet at a CORNER. His sheet prints a balcony
+     * across the north wall and another down the east wall. They touch at the corner, so [adjoins]
+     * joined them, and the enclosing rectangle of an L is the whole square: the drawn box covered
+     * half his living room, and the engine read one balcony where the home has two, in two different
+     * directions.
+     *
+     * So a run must fill its own box. Measured over every recorded reply, the six that fuse at all:
+     *
+     * | recording | fill | verdict |
+     * |---|---|---|
+     * | owner's flat (north + east, an L) | 51 % | refuse |
+     * | plan-005 v4a (three down one wall, middle much wider) | 72 % | refuse |
+     * | plan-003 v4a (two along the bottom, different depths) | 82 % | fuse |
+     * | plan-005 v6 (two down one wall) | 82 % | fuse |
+     * | plan-020 (the three sections the fusing was built for) | 89 % / 90 % | fuse |
+     *
+     * 0.80 sits eight points clear of both the worst kept case and the best refused one.
+     */
+    const val RUN_MIN_FILL = 0.80
+
+    /**
+     * ⭐ …AND THE ENCLOSING RECTANGLE MUST LAND ON NOTHING BUT THE RUN.
+     *
+     * The fill test is intrinsic — it needs no other room to exist — which is what makes it the
+     * dependable half. This one states the harm directly: a balcony's box must not be drawn over a
+     * room it does not name. Worst OTHER room inside the fused rectangle, over every run that fuses
+     * anywhere in the corpus — the recorded replies AND the bundled fixtures, whose rounded
+     * coordinates are not the same numbers:
+     *
+     * | run | worst foreign room | verdict |
+     * |---|---|---|
+     * | plan-020 sized, the bottom strip in three pieces | 33 % of a toilet, clipped at the corner | fuse |
+     * | plan-003 v4a, two along the bottom | 22 % of a bedroom | fuse |
+     * | plan-020 recorded ×2 | 1 % / 0 % | fuse |
+     * | plan-005 v6, a toilet beside the strip | 49 % | refuse |
+     * | owner's flat, the living room | 51 % | refuse |
+     * | plan-005 v4a, a toilet | 54 % | refuse |
+     *
+     * ⚠ 0.40 was chosen AFTER the bundled fixtures were measured, not before: at 0.30 the corner
+     * clip on plan-020 refused the very run this whole feature was built for. Seven points clear of
+     * the worst kept case, nine clear of the best refused one.
+     *
+     * ⚠ Both gates, not either: the fill test cannot see a swallowed room that happens to sit in a
+     * well-filled box, and this one is blind to any room the reader never returned.
+     */
+    const val RUN_MAX_FOREIGN = 0.40
+
+    /**
      * Turn one model reply into an outcome.
      *
      * [imageAspect] is width ÷ height of the SOURCE IMAGE, supplied by the platform layer — the model
@@ -688,9 +741,66 @@ object ScanMapper {
                     queue += c
                 }
             }
-            out += if (run.size == 1) seed else combineRun(run)
+            // ⭐ A run only becomes one room when the sections really do form one rectangle and it
+            // lands on nothing else — see [RUN_MIN_FILL] and [RUN_MAX_FOREIGN]. When they do not,
+            // every section goes back out on its own, in the order the reader listed them, which is
+            // exactly what the app did before fusing existed: more balconies, each drawn on itself.
+            out += if (run.size == 1 || !fusesCleanly(run, typed)) run.sortedWith(SECTION_ORDER)
+            else listOf(combineRun(run))
         }
         return out
+    }
+
+    private val SECTION_ORDER = compareBy<Candidate>({ it.box.y }, { it.box.x })
+
+    /**
+     * Would fusing these sections into the rectangle that encloses them tell the truth?
+     *
+     * Two questions, both of which must answer yes:
+     *  · do the sections fill that rectangle ([RUN_MIN_FILL])? An L does not.
+     *  · does the rectangle stay off every other room ([RUN_MAX_FOREIGN])?
+     */
+    private fun fusesCleanly(run: List<Candidate>, all: List<Candidate>): Boolean {
+        val box = encloseOf(run)
+        val area = box.w * box.h
+        if (area <= 0.0) return false
+        // coverageOf samples the unit square, so measure the parts inside the enclosing rectangle by
+        // mapping that rectangle onto the unit square first. Same lattice, same containment test.
+        val inBox = run.map {
+            ScanBox(
+                label = it.box.label,
+                x = (it.box.x - box.x) / box.w,
+                y = (it.box.y - box.y) / box.h,
+                w = it.box.w / box.w,
+                h = it.box.h / box.h,
+                confidence = it.box.confidence,
+            )
+        }
+        if (coverageOf(inBox) < RUN_MIN_FILL) return false
+        for (other in all) {
+            if (run.any { it === other }) continue
+            if (containedFraction(box, other.box) > RUN_MAX_FOREIGN) return false
+        }
+        return true
+    }
+
+    /** The rectangle that encloses every section of [run]. */
+    private fun encloseOf(run: List<Candidate>): ScanBox {
+        val x = run.minOf { it.box.x }
+        val y = run.minOf { it.box.y }
+        val right = run.maxOf { it.box.x + it.box.w }
+        val bottom = run.maxOf { it.box.y + it.box.h }
+        return ScanBox(label = "", x = x, y = y, w = right - x, h = bottom - y, confidence = 1.0)
+    }
+
+    /** How much of [inner] lies inside [outer], as a fraction of [inner]'s own area. */
+    internal fun containedFraction(outer: ScanBox, inner: ScanBox): Double {
+        val area = inner.w * inner.h
+        if (area <= 0.0) return 0.0
+        val w = min(outer.x + outer.w, inner.x + inner.w) - max(outer.x, inner.x)
+        val h = min(outer.y + outer.h, inner.y + inner.h) - max(outer.y, inner.y)
+        if (w <= 0.0 || h <= 0.0) return 0.0
+        return (w * h) / area
     }
 
     /** Captions compared for fusing: case and spacing are the sheet's, not the room's. */
