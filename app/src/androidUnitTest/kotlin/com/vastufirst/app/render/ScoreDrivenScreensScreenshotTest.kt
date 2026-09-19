@@ -16,6 +16,7 @@ import com.vastufirst.app.ui.report.DisputesSection
 import com.vastufirst.app.ui.report.StructuralSection
 import com.vastufirst.app.ui.report.ReadingProgress
 import com.vastufirst.app.ui.report.ReportContent
+import com.vastufirst.designsystem.components.VastuRevealAll
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
 import com.vastufirst.shared.Zone
@@ -238,6 +239,34 @@ class ScoreDrivenScreensScreenshotTest {
     @Test
     fun report_building() = render("report") {
         ReportContent(analysis = analysis, intent = Intent.BUILDING)
+    }
+
+    /**
+     * ⭐⭐ THE SAME REPORT WITH EVERY **i** OPEN AND EVERY FOLD UNFOLDED (19 Sep 2026).
+     *
+     * ⚠ WITHOUT THIS, THE 19 SEP COPY CHANGE WOULD BE INVISIBLE TO THIS REPO FOREVER. Eleven
+     * sentences moved from the page into notes behind an **i**, and a shut note is not drawn and
+     * not in the semantics tree — so every report golden above now photographs a page those
+     * sentences are absent from, and no picture anywhere would show that they still exist or what
+     * they look like when opened. `docs/UI-POLISH.md` §6.4 already records that a golden is a
+     * viewport; a golden is also only ever ONE STATE, and the state that hides text needs its
+     * opposite photographed beside it.
+     *
+     * Put this beside `report`: the same home, the same findings, every word still there.
+     */
+    @Test
+    fun report_everythingRevealed() = render("report-revealed") {
+        VastuRevealAll { ReportContent(analysis = analysis, intent = Intent.BUILDING, rooms = rooms, north = north) }
+    }
+
+    /**
+     * ⭐ And the two folded lists, opened, where the report's ordinary goldens now show them shut:
+     * the disputes and the "we couldn't check these" list. Rendered through the report so the
+     * headings are photographed in the page they live in, not on their own.
+     */
+    @Test
+    fun report_disputes_revealed() = render("report-disputes-revealed") {
+        VastuRevealAll { DisputesSection(analysis.disputes) }
     }
 
     /**

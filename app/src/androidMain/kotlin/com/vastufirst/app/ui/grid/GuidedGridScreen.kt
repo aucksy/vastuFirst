@@ -96,6 +96,7 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuChip
+import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.RoomType
@@ -1288,17 +1289,28 @@ private fun ShapeSection(
         // lines and the geometry gate reported ten more elements pushed below the fold on this
         // screen — the room palette among them. A caption on the tallest screen in the app is not a
         // free place to explain things.
-        unaskableGap -> VText(
-            "Empty squares between rooms count as part of your home — most homes have passages there.",
-            style = VastuTheme.type.caption, color = colors.textTertiary,
+        unaskableGap -> VastuInfoLine(
+            label = "How we read the empty squares",
+            info = "Empty squares between rooms count as part of your home — most homes have passages there.",
+            style = VastuTheme.type.caption,
+            color = colors.textTertiary,
+            tag = "editor.shape.help",
         )
 
         // Shorter (13 Sep 2026, the owner's own phone): three lines of grey text read as a warning
         // under a plan with nothing wrong. The claim it makes — a full rectangle unless told
         // otherwise, and how to tell us — is intact in two lines.
-        else -> VText(
-            "We score your home as a full rectangle. Missing a corner? Leave it empty — we'll ask.",
-            style = VastuTheme.type.caption, color = colors.textTertiary,
+        //
+        // ⭐ AND BEHIND THE **i** NOW (owner, 19 Sep 2026). Both of these are standing notes
+        // about how the shape is read, not instructions for the step in hand — the live
+        // instruction line at the top of this screen is that, and it is untouched, because a
+        // person mid-task needs it in front of them. A note that never changes is the one to fold.
+        else -> VastuInfoLine(
+            label = "How we read your home's shape",
+            info = "We score your home as a full rectangle. Missing a corner? Leave it empty — we'll ask.",
+            style = VastuTheme.type.caption,
+            color = colors.textTertiary,
+            tag = "editor.shape.help",
         )
     }
 }

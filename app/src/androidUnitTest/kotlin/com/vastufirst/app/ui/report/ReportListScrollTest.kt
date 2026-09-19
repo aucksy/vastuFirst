@@ -6,7 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
@@ -87,9 +87,15 @@ class ReportListScrollTest {
         // wrong thing to measure: opening or closing a room legitimately moves everything BELOW it,
         // so a moving row proves nothing. Nothing below the heading can move the heading — only the
         // page scrolling can.
-        val before = onNodeWithText("Worst first", substring = true).getBoundsInRoot()
+        //
+        // ⚠ ANCHORED ON THE HEADING'S TAG, NOT ITS WORDS (19 Sep 2026). It used to measure the
+        // sentence "Worst first", which now lives behind the heading's **i** and is not drawn at
+        // all until a reader asks for it — so this test would have failed to FIND its reference
+        // point rather than failing its assertion, which reads like a broken test instead of the
+        // real scroll defect it guards.
+        val before = onNodeWithTag("report.rooms.header").getBoundsInRoot()
         onNode(openRow).performClick()
-        val after = onNodeWithText("Worst first", substring = true).getBoundsInRoot()
+        val after = onNodeWithTag("report.rooms.header").getBoundsInRoot()
 
         assertEquals(
             "tapping a room in the list must leave the page exactly where the finger left it",

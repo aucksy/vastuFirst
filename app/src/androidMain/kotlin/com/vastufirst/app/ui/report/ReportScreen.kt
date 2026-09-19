@@ -72,6 +72,10 @@ import com.vastufirst.designsystem.components.ProvenanceTag
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.SectionLabel
+import com.vastufirst.designsystem.components.VastuButtonInline
+import com.vastufirst.designsystem.components.VastuFoldSection
+import com.vastufirst.designsystem.components.VastuInfoLine
+import com.vastufirst.designsystem.components.VastuSectionHeader
 import com.vastufirst.designsystem.components.TagPill
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuCard
@@ -561,7 +565,14 @@ fun ReportContent(
             // would be a control leading to a screen this flow no longer has.
             if (rooms.isNotEmpty() || planImage != null) {
                 Spacer(Modifier.height(VastuTheme.spacing.s6))
-                SectionLabel("Your home, as we read it")
+                VastuSectionHeader(
+                    label = "Your home, as we read it",
+                    // The line that used to sit UNDER the picture, above the two buttons. It
+                    // explains what the buttons are for, so it belongs with the heading, and it is
+                    // read once in a reader's lifetime.
+                    info = "Not right? Change it; your score follows.",
+                    tag = "report.plan.header",
+                )
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
                 // ⭐⭐ THE PHOTOGRAPH WINS WHEN WE HAVE ONE. A scanned home's picture of record is
                 // the sheet the reader photographed — this screen never redraws it — and every room
@@ -607,27 +618,38 @@ fun ReportContent(
                         )
                     }
                 }
+                // ⭐ TWO BUTTONS ON ONE LINE, not two stacked bars (owner, 19 Sep 2026 — decrease
+                // the copy). "Change which way North is" and "Change where the front door is" were
+                // two full-width secondary bars under every report picture: eight words and two
+                // rows of chrome to offer two corrections most readers never make. Same two
+                // actions, same two destinations, one line.
+                //
+                // ⚠ [VastuButtonInline] is not a style choice here — it is the rule at the top of
+                // Buttons.kt. Buttons SIDE BY SIDE hug their own text; a full-width VastuButton in
+                // a Row is what made "Check what we read" end at three different places.
+                //
+                // ⚠ FlowRow, not Row. Two pills that fit side by side at 412 dp are two pills
+                // drawn into each other at 320 dp and at 200 % font scale — both configurations
+                // this build photographs. A FlowRow puts the second on its own line instead,
+                // which is the stacked layout we started from and is correct at that size.
                 Spacer(Modifier.height(VastuTheme.spacing.s4))
-                VText(
-                    "Not right? Change it; your score follows.",
-                    style = VastuTheme.type.bodySm, color = colors.textSecondary,
-                )
-                Spacer(Modifier.height(VastuTheme.spacing.s3))
-                VastuButton(
-                    "Change which way North is",
-                    onClick = onEditNorth,
-                    style = VastuButtonStyle.SECONDARY,
-                    large = false,
-                    modifier = Modifier.testTag("report.edit.north"),
-                )
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-                VastuButton(
-                    "Change where the front door is",
-                    onClick = onEditEntry,
-                    style = VastuButtonStyle.SECONDARY,
-                    large = false,
-                    modifier = Modifier.testTag("report.edit.entry"),
-                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                    verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
+                ) {
+                    VastuButtonInline(
+                        "Change North",
+                        onClick = onEditNorth,
+                        style = VastuButtonStyle.SECONDARY,
+                        modifier = Modifier.testTag("report.edit.north"),
+                    )
+                    VastuButtonInline(
+                        "Change front door",
+                        onClick = onEditEntry,
+                        style = VastuButtonStyle.SECONDARY,
+                        modifier = Modifier.testTag("report.edit.entry"),
+                    )
+                }
             }
 
             // ⭐ START HERE — the one thing to do first. The old report ranked its problems but never
@@ -709,10 +731,17 @@ fun ReportContent(
             // ⚠ The old wording sent the reader to "the score screen" for those extra questions. That
             // screen no longer exists, so the sentence would have pointed at nothing — the button
             // below IS the way there now.
+            // ⚠ THE SENTENCE MOVES BEHIND THE **i**; THE FACT DOES NOT MOVE AT ALL. What the
+            // reading covered is not optional for a paid product, so the heading that carries it
+            // still sits on the page, in its own place, at full size — only the sentence under it
+            // now waits for a tap. The offer to close the gap stays visible, because that is the
+            // part the reader can act on.
             Spacer(Modifier.height(VastuTheme.spacing.s6))
-            SectionLabel("What this covers")
-            Spacer(Modifier.height(VastuTheme.spacing.s2))
-            VText(coverageLine(siteAnswers), style = VastuTheme.type.body, color = colors.textSecondary)
+            VastuSectionHeader(
+                label = "What this covers",
+                info = coverageLine(siteAnswers),
+                tag = "report.coverage.header",
+            )
             // ⭐ SECOND HOME, NOT ONLY HOME (owner, 17 Aug 2026: *"This 'Answer a few more and
             // check more' does not belong on Report screen… we should nudge them to do this as
             // optional below the 'These are my rooms' button — if they choose to skip then we
@@ -1055,16 +1084,22 @@ private fun StartHere(
         SectionLabel("Start here", color = colors.verdictDefect)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(defectTitle(d, rooms, names), style = VastuTheme.type.h3, color = colors.textPrimary)
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            // ⚠ "Of the problems ranked below", NOT "of everything below" — the wider claim is one
-            // this report cannot make. The front door is scored too, at the ENTRANCE weight, which
-            // is the heaviest single weight there is; a defect instead adds a severity penalty. The
-            // engine never puts those two on one scale, so nothing here knows whether an
-            // unfavourable door outranks the worst defect. Ranking only what is actually ranked is
-            // the honest sentence, and it stayed honest when the door moved into this chapter.
-            "Of those ranked below, this moves your score most.",
-            style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        // ⚠ "Of the problems ranked below", NOT "of everything below" — the wider claim is one
+        // this report cannot make. The front door is scored too, at the ENTRANCE weight, which is
+        // the heaviest single weight there is; a defect instead adds a severity penalty. The
+        // engine never puts those two on one scale, so nothing here knows whether an unfavourable
+        // door outranks the worst defect. Ranking only what is actually ranked is the honest
+        // sentence, and it stayed honest when the door moved into this chapter.
+        //
+        // ⚠ IT IS BEHIND THE **i** NOW, AND THE CAREFULNESS IS WHY. The eyebrow above already says
+        // "Start here" and the block below already says "Do this first", so on the page this line
+        // was a third way of saying the same thing. Its real work is the precision above — which
+        // matters to the reader who asks, and to nobody else.
+        Spacer(Modifier.height(VastuTheme.spacing.s1))
+        VastuInfoLine(
+            label = "Why this one first",
+            info = "Of those ranked below, this moves your score most.",
+            tag = "report.starthere.why",
         )
         // ⚠ Was `if (remediesOnly)`, which handed a flat buyer the building's layout change as the
         // very first thing on their report. [noLayoutFor] is the same rule every finding below uses.
@@ -1173,19 +1208,20 @@ private fun RoomsSection(
         .mapIndexed { i, r -> r to (names[r.roomId]?.takeIf { n -> n.isNotBlank() } ?: fallback[i]) }
         .sortedBy { (r, _) -> r.rowStatus().readingOrder() }
 
-    SectionLabel("Your rooms (${rooms.size})")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "Worst first. Tap one for where and why.",
-        style = VastuTheme.type.bodySm, color = colors.textSecondary,
+    // ⭐ BOTH SENTENCES MOVED BEHIND THE **i** (owner, 19 Sep 2026 — see [VastuSectionHeader]).
+    // Neither is gone: "worst first" is how to read the list, and [NOT_RATED_MEANS] is still said
+    // here, once, whenever a room actually carries that word — it was readable only by opening one
+    // of those rooms before, which made the pill look like the app had given up rather than like an
+    // honest boundary of the rule data. One tap from the heading is not less than a grey line
+    // nobody read (CLAUDE.md §2h).
+    val notRated = ordered.any { (r, _) -> r.rowStatus() == VastuRoomStatus.NOT_RATED }
+    VastuSectionHeader(
+        label = "Your rooms",
+        count = rooms.size,
+        info = "Worst first. Tap one for where and why." +
+            if (notRated) "\n\n$NOT_RATED_MEANS" else "",
+        tag = "report.rooms.header",
     )
-    // ⭐ Said here, once, whenever a room actually carries that word — see [NOT_RATED_MEANS]. It
-    // used to be readable only by opening one of those rooms, so the pill looked like the app had
-    // given up rather than like an honest boundary of the rule data.
-    if (ordered.any { (r, _) -> r.rowStatus() == VastuRoomStatus.NOT_RATED }) {
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(NOT_RATED_MEANS, style = VastuTheme.type.bodySm, color = colors.textTertiary)
-    }
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2)) {
         ordered.forEachIndexed { i, (r, name) ->
@@ -1331,7 +1367,11 @@ fun StructuralSection(
     isFlat: Boolean = false,
 ) {
     val colors = VastuTheme.colors
-    SectionLabel("Your home's shape and surroundings")
+    // ⭐ A COUNT, AND NOT A FOLD. These are FINDINGS — the shell's missing corner, its proportions,
+    // the tank, the road — and a finding is the answer this report was bought for, not support for
+    // it. The owner's fold rule is about long supporting lists; folding real problems shut would
+    // be the one reading of it that makes the product worse. The count is new and costs nothing.
+    VastuSectionHeader(label = "Your home's shape and surroundings", count = structural.size)
     Spacer(Modifier.height(VastuTheme.spacing.s3))
     Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
         structural.forEachIndexed { i, d ->
@@ -1354,19 +1394,23 @@ fun StructuralSection(
 @Composable
 private fun NotCheckedSection(notChecked: List<com.vastufirst.shared.NotChecked>) {
     val colors = VastuTheme.colors
-    SectionLabel("We couldn't check these")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "Neither passed nor failed — we lacked details.",
-        style = VastuTheme.type.bodySm, color = colors.textTertiary,
-    )
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
-        notChecked.forEach {
-            VText("· ${notCheckedLine(it)}", style = VastuTheme.type.bodySm, color = colors.textSecondary)
-        }
-        notCheckedHow(notChecked).forEach {
-            VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+    // ⭐ FOLDED, WITH ITS COUNT ON THE OUTSIDE. Four bullets and three paragraphs of explanation
+    // sat open between the findings and the end of the report — the longest stretch of prose on
+    // the page, about the things the reading did NOT cover. It belongs in the report and it is
+    // still whole; it does not belong in the reader's way.
+    VastuFoldSection(
+        label = "We couldn't check these",
+        count = notChecked.size,
+        info = "Neither passed nor failed — we lacked details.",
+        tag = "report.notchecked.header",
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1)) {
+            notChecked.forEach {
+                VText("· ${notCheckedLine(it)}", style = VastuTheme.type.bodySm, color = colors.textSecondary)
+            }
+            notCheckedHow(notChecked).forEach {
+                VText(it, style = VastuTheme.type.bodySm, color = colors.textTertiary)
+            }
         }
     }
 }
@@ -1701,27 +1745,36 @@ private fun IntentBadge(intent: Intent) {
 fun DisputesSection(disputes: List<Dispute>) {
     if (disputes.isEmpty()) return
     val colors = VastuTheme.colors
-    SectionLabel("Where the schools disagree")
-    Spacer(Modifier.height(VastuTheme.spacing.s2))
-    VText(
-        "Both readings, no winner, and which your score follows.",
-        style = VastuTheme.type.bodySm, color = colors.textSecondary,
-    )
-    Spacer(Modifier.height(VastuTheme.spacing.s3))
-    Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-        disputes.forEach { disp ->
-            VastuCard(accent = colors.provenanceDisp, background = colors.surfaceRaised) {
-                VText(disp.title, style = VastuTheme.type.h3, color = colors.textPrimary)
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-                ReadingRow(disp.readingA.label, disp.readingA.text)
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-                ReadingRow(disp.readingB.label, disp.readingB.text)
-                // ⭐ Where the NUMBER stands, on the disputes we have ruled on. Showing both readings
-                // and staying silent about which one moved the score would be a half-truth. Absent on
-                // every dispute the score genuinely skips, so it never claims a position we lack.
-                disp.howWeScore?.let {
+    // ⭐ FOLDED SHUT, WITH ITS COUNT ON THE OUTSIDE (owner's standing rule for a result screen: a
+    // supporting list sits under a highlighted heading that says what it is and how many are in
+    // it). Two disputes opened flat were four screens of prose in the middle of the report, and
+    // every reader scrolled past all of it to reach the rest of their findings.
+    //
+    // ⚠ FOLDING IS NOT DELETING (CLAUDE.md §2h). Both readings and the line saying which one the
+    // score follows are untouched and one tap away, and the heading now tells the reader how many
+    // there are — which the page never did while they were open.
+    VastuFoldSection(
+        label = "Where the schools disagree",
+        count = disputes.size,
+        info = "Both readings, no winner, and which your score follows.",
+        tag = "report.disputes.header",
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
+            disputes.forEach { disp ->
+                VastuCard(accent = colors.provenanceDisp, background = colors.surfaceRaised) {
+                    VText(disp.title, style = VastuTheme.type.h3, color = colors.textPrimary)
                     Spacer(Modifier.height(VastuTheme.spacing.s2))
-                    ReadingRow("What your score uses", it)
+                    ReadingRow(disp.readingA.label, disp.readingA.text)
+                    Spacer(Modifier.height(VastuTheme.spacing.s2))
+                    ReadingRow(disp.readingB.label, disp.readingB.text)
+                    // ⭐ Where the NUMBER stands, on the disputes we have ruled on. Showing both
+                    // readings and staying silent about which one moved the score would be a
+                    // half-truth. Absent on every dispute the score genuinely skips, so it never
+                    // claims a position we lack.
+                    disp.howWeScore?.let {
+                        Spacer(Modifier.height(VastuTheme.spacing.s2))
+                        ReadingRow("What your score uses", it)
+                    }
                 }
             }
         }

@@ -30,6 +30,7 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.theme.VastuTheme
 
 /**
@@ -105,9 +106,18 @@ fun SiteExtrasOffer(
     val colors = VastuTheme.colors
     VastuCard(modifier = modifier, accent = colors.primary) {
         VText(extrasHeadline(answers), style = VastuTheme.type.h3, color = colors.textPrimary)
+        // ⭐ THE REASON MOVES BEHIND THE **i** (owner, 19 Sep 2026 — see [VastuSectionHeader]).
+        // The headline already counts the things ("4 more things could change your score") and the
+        // button already says what tapping it does. The three lines between them named each item
+        // and then explained the offer again — the densest card on the report, for the one thing
+        // on the page that is entirely optional.
+        Spacer(Modifier.height(VastuTheme.spacing.s1))
+        VastuInfoLine(
+            label = "Why we're asking",
+            info = extrasReason(answers),
+            tag = "extras.why",
+        )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(extrasReason(answers), style = VastuTheme.type.bodySm, color = colors.textSecondary)
-        Spacer(Modifier.height(VastuTheme.spacing.s3))
         // Full width inside the card, level with every other button in the column — see the rule on
         // VastuButtonStyle. `large = false` because this is an offer, not the page's own call to
         // action, and the height is what carries that difference rather than the width.

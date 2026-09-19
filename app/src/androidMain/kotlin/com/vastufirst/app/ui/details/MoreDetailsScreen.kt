@@ -22,6 +22,7 @@ import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
 import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
+import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -109,23 +110,26 @@ fun MoreDetailsContent(
             VText("A few more things", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            // Copy cut (4 Aug 2026): 37 words -> 26; the refusal-to-guess claim kept whole.
-            "So far we scored your rooms, front door and shape. Answer these to check more. " +
-                "Skip what you don't know — we say so, we don't guess.",
-            style = VastuTheme.type.body, color = colors.textSecondary,
+        // ⭐ BOTH PARAGRAPHS BEHIND ONE **i** (owner, 19 Sep 2026 — see [VastuSectionHeader]).
+        // Four and a half lines of preamble stood between this screen's title and its first
+        // question, and on a flat it was seven. Every word is kept, including the refusal-to-guess
+        // claim and both halves of the flat note; they now wait for the reader who asks.
+        //
+        // ⚠ The flat note says BOTH halves. "These are the building's" on its own reads as "so
+        // why are you asking me" — the second sentence is what makes the question worth
+        // answering, and it must never be split from the first.
+        VastuInfoLine(
+            label = "What these questions are for",
+            info = "So far we scored your rooms, front door and shape. Answer these to check more. " +
+                "Skip what you don't know — we say so, we don't guess." +
+                if (isFlat) {
+                    "\n\nIn a flat these four belong to the whole building. They still change how " +
+                        "your home reads, so it is worth answering what you know; we will not " +
+                        "suggest moving them."
+                } else "",
+            tag = "details.why",
         )
-        if (isFlat) {
-            Spacer(Modifier.height(VastuTheme.spacing.s3))
-            VText(
-                // ⚠ Says both halves. "These are the building's" on its own reads as "so why are
-                // you asking me" — the second sentence is what makes the question worth answering.
-                "In a flat these four belong to the whole building. They still change how your home "
-                    + "reads, so it is worth answering what you know; we will not suggest moving them.",
-                style = VastuTheme.type.bodySm, color = colors.textTertiary,
-            )
-        }
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
+        Spacer(Modifier.height(VastuTheme.spacing.s4))
 
         SiteItem.entries.forEach { item ->
             SiteQuestion(

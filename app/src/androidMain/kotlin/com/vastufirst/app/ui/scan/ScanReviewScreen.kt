@@ -89,11 +89,12 @@ import com.vastufirst.app.ui.grid.microLabel
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.IconTapButton
-import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.components.VastuInfoLine
+import com.vastufirst.designsystem.components.VastuSectionHeader
 import com.vastufirst.designsystem.components.VastuRoomRow
 import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -429,14 +430,18 @@ fun ScanReviewContent(
             IconTapButton("‹", contentDescription = "Back", onClick = onBack)
             VText("Check what we read", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
+        // ⭐ BEHIND THE **i** (owner, 19 Sep 2026 — see [VastuSectionHeader]). Two lines of
+        // instruction directly under the screen's own title, above a picture that is already
+        // obviously a plan. It is useful once; it is in the way every time after.
+        //
         // ⚠ Not an invitation to tap rooms when there are none. In the lost-reading state the card
         // below already explains what happened, so this line only has to not contradict it.
         if (rooms.isNotEmpty()) {
-            VText(
-                "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
-                style = VastuTheme.type.bodySm,
-                color = colors.textSecondary,
+            Spacer(Modifier.height(VastuTheme.spacing.s1))
+            VastuInfoLine(
+                label = "How to use this screen",
+                info = "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
+                tag = "review.help",
             )
         }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
@@ -500,15 +505,18 @@ fun ScanReviewContent(
         // "0 rooms read from your plan" is not a heading for a list, it is a heading for a hole —
         // the card above already explains it, so the list heading only appears when there is a list.
         if (rooms.isNotEmpty()) {
-            SectionLabel("${rooms.size} rooms read from your plan")
             // ⭐ Said the moment a row on this screen actually carries that word — see
             // [NOT_RATED_MEANS]. This screen has no expandable rows at all, so before this the pill
             // was the reader's ONLY information about it, and it reads like a failure rather than a
-            // stated boundary of what our rule data covers.
-            if (readings.values.any { it.status == VastuRoomStatus.NOT_RATED }) {
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-                VText(NOT_RATED_MEANS, style = VastuTheme.type.bodySm, color = colors.textTertiary)
-            }
+            // stated boundary of what our rule data covers. Behind the **i** on the list's own
+            // heading now, which is where a reader looking at that pill will reach for it.
+            val notRated = readings.values.any { it.status == VastuRoomStatus.NOT_RATED }
+            VastuSectionHeader(
+                // The count is already inside this heading's own words, so it is not added again.
+                label = "${rooms.size} rooms read from your plan",
+                info = if (notRated) NOT_RATED_MEANS else null,
+                tag = "review.rooms.header",
+            )
             Spacer(Modifier.height(VastuTheme.spacing.s2))
         }
 
