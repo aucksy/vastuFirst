@@ -1,5 +1,6 @@
 package com.vastufirst.shared.scan
 
+import com.vastufirst.shared.RoomType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -216,5 +217,77 @@ class GroqWireTest {
         assertNull(GroqWire.durationSeconds("   "))
         assertNull(GroqWire.durationSeconds("soon"))
         assertNull(GroqWire.durationSeconds("-5"))
+    }
+
+    // ---- two reads of one photograph ----------------------------------------------------------
+    //
+    // ⚠ The owner's own flat, 19 Sep 2026, on two paid scans of the identical JPEG with the
+    // identical model and prompt: one read gave 20 rooms including four balconies, the other gave
+    // 14 rooms and no balconies at all — and the thin one looked exactly as confident. A room that
+    // never arrives is not on the check-what-we-read screen, so the user cannot correct it and the
+    // engine scores a home missing a quarter of itself. See GroqWire.fullerOf.
+
+    private val noNotes = ScanNotes(coverage = 0.5, areaVariation = 0.5, modelConfidence = 0.9)
+
+    private fun room(label: String, size: String = "") =
+        ScannedRoom(RoomType.BEDROOM, label, rect = null, printedSize = size)
+
+    private fun placed(n: Int, sized: Int = 0) = ScanResult.Read(
+        ScanOutcome.Placed(
+            cols = 8, rows = 8,
+            rooms = (1..n).map { room("ROOM $it", if (it <= sized) "3.0 X 3.0 m" else "") },
+            notes = noNotes,
+        ),
+    )
+
+    private fun assisted(n: Int) = ScanResult.Read(
+        ScanOutcome.Assisted((1..n).map { room("ROOM $it") }, AssistReason.TOO_MANY_ROOMS, noNotes),
+    )
+
+    private fun refused() =
+        ScanResult.Read(ScanOutcome.Refused(RefusalReason.NO_LABELS, noNotes))
+
+    @Test
+    fun `⭐⭐ the read that found more of the home wins — the owner's 20 rooms over his 14`() {
+        val full = placed(20)
+        val thin = placed(14)
+        assertEquals(full, GroqWire.fullerOf(thin, full), "the fuller read must win from second place")
+        assertEquals(full, GroqWire.fullerOf(full, thin), "…and from first")
+    }
+
+    @Test
+    fun `⭐ more rooms never buys back a worse KIND of answer`() {
+        // An assisted read is a list the user must still arrange; a placed read is a usable home.
+        // This is what stops a read that hallucinated its way past the too-many-rooms gate from
+        // winning on count alone.
+        assertEquals(placed(5), GroqWire.fullerOf(placed(5), assisted(30)))
+        assertEquals(assisted(3), GroqWire.fullerOf(refused(), assisted(3)))
+    }
+
+    @Test
+    fun `an answer always beats no answer`() {
+        assertEquals(refused(), GroqWire.fullerOf(ScanResult.Unavailable, refused()))
+        assertEquals(placed(2), GroqWire.fullerOf(ScanResult.Busy(retryAfterSeconds = 30), placed(2)))
+        // …and two failures stay the first failure rather than silently becoming something else
+        assertEquals(
+            ScanResult.Unavailable,
+            GroqWire.fullerOf(ScanResult.Unavailable, ScanResult.Busy(retryAfterSeconds = 1)),
+        )
+    }
+
+    @Test
+    fun `at equal room counts the read that captured the printed sizes wins`() {
+        // The reader transcribes text at ~95 %, so a read carrying the captions read the sheet more
+        // carefully than one that did not — and those numbers decide which way round a room is drawn.
+        val withSizes = placed(10, sized = 9)
+        val without = placed(10, sized = 0)
+        assertEquals(withSizes, GroqWire.fullerOf(without, withSizes))
+    }
+
+    @Test
+    fun `two identical answers keep the first, every time`() {
+        val a = placed(12, sized = 4)
+        val b = placed(12, sized = 4)
+        assertTrue(GroqWire.fullerOf(a, b) === a, "a tie must be decided the same way on every run")
     }
 }

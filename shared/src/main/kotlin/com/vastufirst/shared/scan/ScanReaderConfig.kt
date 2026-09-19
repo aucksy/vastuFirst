@@ -29,6 +29,17 @@ data class ScanReaderConfig(
      * behaviour.
      */
     val escalationModel: String? = null,
+    /**
+     * ⭐⭐ HOW MANY TIMES ONE PHOTOGRAPH IS READ, and the fuller answer kept. See
+     * [GroqWire.fullerOf] for the measurement: the same JPEG, same model, same prompt, read twice
+     * on 19 Sep 2026, gave 20 rooms one time and 14 the other — the thin read silently dropped four
+     * balconies, a lift lobby and a utility, and looked exactly as confident about it.
+     *
+     * 1 is the old behaviour. 2 doubles the cost of a scan, which is why it is a config value the
+     * owner can turn back down without a release rather than a constant compiled into the app.
+     * The reads are made concurrently, so the user waits for the slower of the two, not for both.
+     */
+    val readsPerScan: Int = 1,
     val temperature: Double = 0.0,
     /** Cloudflare fronts the API and 403s an unrecognised client before it reaches Groq. */
     val userAgent: String = "",
@@ -52,6 +63,16 @@ object ScanReaderConfigLoader {
         val config = runCatching { JSON.decodeFromString<ScanReaderConfig>(raw) }
             .getOrElse { error("Scan reader config is not valid JSON ($resource): ${it.message}") }
 
+        val prompt = text(config.promptResource)
+            ?: error("Scan reader prompt missing from the app: ${config.promptResource}")
+        return validate(config, prompt)
+    }
+
+    /**
+     * Every rule a config must satisfy, separate from where it was read from — so each one can be
+     * tested by handing it a value, rather than by shipping a broken file to find out.
+     */
+    fun validate(config: ScanReaderConfig, prompt: String): PlanReadRecipe {
         require(config.endpoint.startsWith("https://")) {
             "Scan reader endpoint must be https, was '${config.endpoint}'"
         }
@@ -62,9 +83,12 @@ object ScanReaderConfigLoader {
         require(config.connectTimeoutMs > 0 && config.readTimeoutMs > 0) {
             "Scan reader timeouts must be positive"
         }
-
-        val prompt = text(config.promptResource)
-            ?: error("Scan reader prompt missing from the app: ${config.promptResource}")
+        // ⚠ Every read is a paid scan of a customer's plan, so a typo here does not misbehave
+        // quietly — it spends the owner's money once per scan for as long as nobody notices. The
+        // ceiling is deliberately low: nothing measured suggests a third read buys what a second does.
+        require(config.readsPerScan in 1..3) {
+            "Scan reader readsPerScan must be 1, 2 or 3 — was ${config.readsPerScan}, and each one is a paid scan"
+        }
         require(prompt.isNotBlank()) { "Scan reader prompt is empty" }
         return PlanReadRecipe(config, prompt.trim())
     }

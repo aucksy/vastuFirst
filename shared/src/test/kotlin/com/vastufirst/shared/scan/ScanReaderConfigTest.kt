@@ -146,6 +146,35 @@ class ScanReaderConfigTest {
     }
 
     @Test
+    fun `⭐ the shipped config reads every photograph more than once`() {
+        // The owner's decision, 19 Sep 2026, taken with the cost in front of him: the same JPEG read
+        // twice on his own flat gave 20 rooms one time and 14 the other, the thin read having
+        // silently dropped four balconies, a lift lobby and a utility. A room that never arrives is
+        // not on the check-what-we-read screen, so nobody can correct it.
+        //
+        // This test does NOT freeze the number — he can turn it down without a release, which is the
+        // whole reason it is data. It freezes that the file says something deliberate about it.
+        assertTrue(
+            recipe.config.readsPerScan in 1..3,
+            "readsPerScan must be 1, 2 or 3 — each one is a paid scan of a customer's plan",
+        )
+    }
+
+    @Test
+    fun `⚠ a read count outside the allowed range is refused, because every read costs money`() {
+        // A typo here does not misbehave quietly: it spends the owner's money once per scan, per
+        // customer, for as long as it goes unnoticed.
+        for (bad in listOf(0, -1, 4, 50)) {
+            assertFailsWith<IllegalArgumentException>("readsPerScan $bad must be refused") {
+                ScanReaderConfigLoader.validate(
+                    recipe.config.copy(readsPerScan = bad),
+                    prompt = recipe.prompt,
+                )
+            }
+        }
+    }
+
+    @Test
     fun `a broken config fails loudly rather than silently`() {
         // Fail-loud is the ruleset loader's contract too: a config the app cannot use is a
         // programming error we want at startup with a readable message, not requests to nowhere.

@@ -33,6 +33,9 @@ import java.net.URI
 import java.util.Base64
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 class GroqPlanReader(
@@ -47,8 +50,26 @@ class GroqPlanReader(
         if (apiKey.isBlank() || image.isEmpty()) return@withContext ScanResult.Unavailable
 
         val base64 = Base64.getEncoder().encodeToString(image)
-        val primary = postOnce(GroqWire.requestBody(recipe, base64), imageAspect, picture)
-            .attributedTo(recipe.config.model)
+
+        // ⭐ THE SAME PHOTOGRAPH, READ MORE THAN ONCE, AND THE FULLER ANSWER KEPT.
+        // The reader is not deterministic: on the owner's own flat the identical JPEG came back
+        // with 20 rooms one time and 14 the other, the thin read having silently dropped four
+        // balconies. GroqWire.fullerOf carries the measurement and the ordering; the count is
+        // config, not a constant. Concurrently, so the user waits for the slower read and not for
+        // the sum of both.
+        val reads = recipe.config.readsPerScan.coerceIn(1, 3)
+        val primary = if (reads == 1) {
+            postOnce(GroqWire.requestBody(recipe, base64), imageAspect, picture)
+                .attributedTo(recipe.config.model)
+        } else {
+            coroutineScope {
+                (1..reads)
+                    .map { async { postOnce(GroqWire.requestBody(recipe, base64), imageAspect, picture) } }
+                    .awaitAll()
+                    .reduce(GroqWire::fullerOf)
+                    .attributedTo(recipe.config.model)
+            }
+        }
 
         val escalation = recipe.config.escalationModel
         if (escalation.isNullOrBlank() || !refusedAsNot2d(primary)) return@withContext primary

@@ -160,6 +160,66 @@ object GroqWire {
         return ceil(seconds).toInt().coerceIn(1, MAX_WAIT_SECONDS)
     }
 
+    // ---- two reads of one photograph, and which of them to believe ----------------------------
+
+    /**
+     * ⭐⭐ WHY THE SAME PHOTOGRAPH IS READ TWICE (owner, 19 Sep 2026).
+     *
+     * Measured on his own flat, on two paid scans of the very same JPEG, same model, same prompt,
+     * same settings: one read came back with **20 rooms including four balconies**, the other with
+     * **14 rooms and no balconies at all**. It had silently dropped his balconies, his lift lobby
+     * and his utility. The reader is not deterministic and nothing in its reply admits that — the
+     * thin read looks exactly as confident as the full one.
+     *
+     * A room that never arrives is the worst kind of defect this feature has: it is not wrong on
+     * the screen, it is ABSENT from the screen, so the "check what we read" list cannot show it and
+     * the user has nothing to correct. The engine then scores a home missing a quarter of itself.
+     *
+     * So the plan is read [ScanReaderConfig.readsPerScan] times and the fuller answer is kept. It
+     * doubles the per-scan cost — the owner's decision, taken with that number in front of him —
+     * and it is a config value, not a constant, so it can be turned back down without a release.
+     *
+     * ⚠ NOT a retry. Both reads are made regardless; a retry would only fire when the first one
+     * FAILED, and the whole point is that the thin read succeeds.
+     */
+    fun fullerOf(a: ScanResult, b: ScanResult): ScanResult = if (rank(b) > rank(a)) b else a
+
+    /**
+     * How much of a home an answer actually delivers, as one comparable number.
+     *
+     * The order is deliberate and each step earns its place:
+     *  1. an answer beats no answer — a network failure never wins;
+     *  2. a PLACED answer beats an ASSISTED one, which beats a REFUSAL. A placed read is a usable
+     *     home; an assisted read is a list the user must still arrange. More rooms never buys back
+     *     a worse KIND of answer, which is what stops a read that hallucinated its way past the
+     *     too-many-rooms gate from winning on count alone;
+     *  3. then the number of rooms the user will actually see;
+     *  4. then how many of those carry the size the plan PRINTS — the reader transcribes text at
+     *     ~95 %, so a read that captured the captions read the sheet more carefully than one that
+     *     did not.
+     *
+     * Ties keep the FIRST read, so two identical answers are decided the same way every time.
+     */
+    private fun rank(r: ScanResult): Long {
+        val outcome = (r as? ScanResult.Read)?.outcome ?: return 0L
+        val rooms = when (outcome) {
+            is ScanOutcome.Placed -> outcome.rooms
+            is ScanOutcome.Assisted -> outcome.rooms
+            is ScanOutcome.Refused -> emptyList()
+        }
+        val kind = when (outcome) {
+            is ScanOutcome.Placed -> 3L
+            is ScanOutcome.Assisted -> 2L
+            is ScanOutcome.Refused -> 1L
+        }
+        // Clamped, so a model that returns a thousand rooms cannot carry its count up into the
+        // KIND digits and make an assisted answer outrank a placed one.
+        val count = rooms.size.coerceAtMost(999).toLong()
+        val sized = rooms.count { it.printedSize.isNotBlank() }.coerceAtMost(999).toLong()
+        // kind dominates, then rooms, then sized rooms — packed so one comparison decides all three.
+        return kind * 1_000_000L + count * 1_000L + sized
+    }
+
     /** Visible for tests: the request body as JSON, so its shape can be asserted field by field. */
     fun parseObject(json: String): JsonObject = JSON.parseToJsonElement(json).jsonObject
 }

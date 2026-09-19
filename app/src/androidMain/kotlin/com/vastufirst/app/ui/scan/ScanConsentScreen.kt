@@ -35,6 +35,15 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * ⚠ The "Who reads it" fact must match `reader-config.json`. When the reader moved from Groq to
  * OpenRouter (4 Aug 2026) this card was the piece that lagged — and the consent key was bumped to
  * v2 so every earlier yes is asked again, per the key's own contract in [PlanReadingConsent].
+ *
+ * ⚠ 19 Sep 2026 — `readsPerScan` became 2, so the card now says the reader is asked twice. The
+ * consent key was deliberately NOT bumped, and that is a judgement worth stating rather than
+ * leaving implied: nothing NEW leaves the phone and no NEW party receives it. It is the same one
+ * picture, to the same recipient, for the same purpose; only the number of requests changed. A
+ * re-prompt would ask every existing user to agree again to a disclosure that has not materially
+ * changed, which trains people to click through the card — the exact failure this screen exists to
+ * avoid. If the owner reads it differently, bumping the key is a one-line change in
+ * [PlanReadingConsent].
  */
 @Composable
 fun ScanConsentScreen(
@@ -66,8 +75,9 @@ fun ScanConsentScreen(
             Fact("What we send", "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.")
             Fact(
                 "Who reads it",
-                "A relay called OpenRouter passes it to an AI model from OpenAI — and sometimes a " +
-                    "second one from Google for a second opinion. Their computers are abroad.",
+                "A relay called OpenRouter passes it to an AI model from OpenAI, which we ask " +
+                    "twice and keep the fuller reading — and sometimes a second model from Google " +
+                    "for a second opinion. Their computers are abroad.",
             )
             Fact(
                 "What we ask it",
