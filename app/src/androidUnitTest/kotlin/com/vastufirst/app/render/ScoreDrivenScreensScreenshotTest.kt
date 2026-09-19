@@ -264,9 +264,22 @@ class ScoreDrivenScreensScreenshotTest {
      * the disputes and the "we couldn't check these" list. Rendered through the report so the
      * headings are photographed in the page they live in, not on their own.
      */
+    /**
+     * ⚠ THE SCROLLING SCREEN ROOT IS LOAD-BEARING, not copied decoration. The first draft of this
+     * drew the section bare, and the geometry gate reported five elements measuring ZERO HIGH at
+     * 200 % font scale and in landscape — the last card of an unfolded list running off the bottom
+     * of a container that cannot scroll. Nothing was wrong with the section; the harness had given
+     * it nowhere to go. `report-disputes` above has always wrapped it for exactly this reason.
+     */
     @Test
     fun report_disputes_revealed() = render("report-disputes-revealed") {
-        VastuRevealAll { DisputesSection(analysis.disputes) }
+        Column(
+            Modifier.screenRoot(VastuTheme.colors.paper)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VastuTheme.spacing.s6),
+        ) {
+            VastuRevealAll { DisputesSection(analysis.disputes) }
+        }
     }
 
     /**
