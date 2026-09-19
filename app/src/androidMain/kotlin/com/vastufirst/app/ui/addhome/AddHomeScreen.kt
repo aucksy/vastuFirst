@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import com.vastufirst.designsystem.components.SectionLabel
+import com.vastufirst.designsystem.components.VastuSectionHeader
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
@@ -91,16 +92,18 @@ fun AddHomeScreen(
         // ⭐ ASKED BEFORE THE METHOD, not after, because it changes what the report is allowed to
         // tell them and they should see it before they invest any work in the home.
         Spacer(Modifier.height(VastuTheme.spacing.s6))
-        SectionLabel("Is it a house or a flat?")
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            // ⚠ Says WHY, in one line. A question with no stated consequence gets tapped past, and
-            // this one decides whether the reader is offered advice about a building they own a
-            // floor of. It also has to be true of both answers, so it names the difference rather
-            // than describing either one.
-            "A flat cannot move the building's walls, tank or front door. We read those either way, "
-                + "and only offer changes you could actually make.",
-            style = VastuTheme.type.bodySm, color = colors.textSecondary,
+        // ⚠ THE WHY IS BEHIND THE **i**, and the two CHOICES CARRY IT INSTEAD. A question with no
+        // stated consequence gets tapped past, and this one decides whether the reader is offered
+        // advice about a building they own a floor of — so the consequence cannot simply vanish.
+        // It does not: each choice below already has its own subtitle saying what it means ("The
+        // whole building is yours" / "You own one floor of it"), which is the same difference in
+        // the place the finger is going. The fuller sentence, true of both answers, is one tap
+        // away on the question itself.
+        VastuSectionHeader(
+            label = "Is it a house or a flat?",
+            info = "A flat cannot move the building's walls, tank or front door. We read those " +
+                "either way, and only offer changes you could actually make.",
+            tag = "addhome.type.header",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         Row(horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {

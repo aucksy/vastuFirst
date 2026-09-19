@@ -101,6 +101,39 @@ developer account.
 
 ## Week of 14–20 September 2026
 
+### Friday 19 September, evening — a quieter app: less to read, nothing lost
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.30.0/vastufirst-v0.30.0.apk
+**This is the one to install.**
+
+**The app had too much to read on it, so the reading has moved out of the way — without taking a
+single sentence out of the app.**
+
+Almost every section of the app used to print a heading and then a line of instruction under it.
+"Worst first. Tap one for where and why." "Both readings, no winner, and which your score follows."
+"Neither passed nor failed." Each one helps the first time somebody sees it, and each one is in the
+way every time after. There were eleven of them, and together they are what made the report feel
+heavy.
+
+Every one of those lines now sits behind a small **i** beside its own heading. Tap it and the
+sentence appears exactly where it used to be; leave it alone and the page is a page of your own
+home instead of a page of instructions. **Nothing was deleted** — that is checked automatically
+now, on every build, both ways round: a sentence that creeps back onto the page fails the check,
+and so does one that goes missing altogether.
+
+**Two long lists at the end of the report are now closed until you want them.** "Where the schools
+disagree" and "We couldn't check these" used to sit open, and between them they were around three
+screens of text you had to scroll past to reach the end. Each is now a single bar that tells you
+what it is and how many are in it — **Where the schools disagree (2)** — and opens on a tap. Both
+sides of every disagreement, and every line about what we could not check, are untouched inside.
+
+**Smaller things, same idea.** The two buttons under your plan — change which way North is, change
+where the front door is — were two full-width bars stacked on top of each other; they are now two
+small buttons on one line. On a narrow phone, or with large text switched on, they go back to
+stacking, because that is the right shape at that size. The screen that asks the four optional
+questions used to open with four and a half lines of preamble before the first question; on a flat
+it was seven. It opens on the first question now.
+
 ### Friday 19 September, later — every plan is now read twice
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.29.0/vastufirst-v0.29.0.apk

@@ -96,7 +96,6 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuChip
-import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.RoomType
@@ -1289,28 +1288,33 @@ private fun ShapeSection(
         // lines and the geometry gate reported ten more elements pushed below the fold on this
         // screen — the room palette among them. A caption on the tallest screen in the app is not a
         // free place to explain things.
-        unaskableGap -> VastuInfoLine(
-            label = "How we read the empty squares",
-            info = "Empty squares between rooms count as part of your home — most homes have passages there.",
-            style = VastuTheme.type.caption,
-            color = colors.textTertiary,
-            tag = "editor.shape.help",
+        unaskableGap -> VText(
+            "Empty squares between rooms count as part of your home — most homes have passages there.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
         )
 
         // Shorter (13 Sep 2026, the owner's own phone): three lines of grey text read as a warning
         // under a plan with nothing wrong. The claim it makes — a full rectangle unless told
         // otherwise, and how to tell us — is intact in two lines.
         //
-        // ⭐ AND BEHIND THE **i** NOW (owner, 19 Sep 2026). Both of these are standing notes
-        // about how the shape is read, not instructions for the step in hand — the live
-        // instruction line at the top of this screen is that, and it is untouched, because a
-        // person mid-task needs it in front of them. A note that never changes is the one to fold.
-        else -> VastuInfoLine(
-            label = "How we read your home's shape",
-            info = "We score your home as a full rectangle. Missing a corner? Leave it empty — we'll ask.",
-            style = VastuTheme.type.caption,
-            color = colors.textTertiary,
-            tag = "editor.shape.help",
+        // ⛔ THESE TWO CAPTIONS STAY ON THE PAGE — the one place in the app where the 19 Sep 2026
+        // "hide it behind an i" change was tried, MEASURED, and put back.
+        //
+        // An **i** must be tappable, a tap target is 48 dp tall, and these captions are two lines
+        // of the smallest type in the app — about 34 dp. Folding them therefore made the tallest,
+        // tightest screen in the product 14 dp TALLER, and the geometry gate showed exactly what
+        // that bought: the plot-size steppers, already sitting on the very last pixels of a
+        // 915 dp screen, were pushed further off it. The warning directly above about a
+        // three-line caption doing the same thing is the same warning.
+        //
+        // And there was nothing to win. These captions are already the quietest thing here —
+        // smallest size, faintest colour, below the fold of the reader's attention. They were
+        // never part of "too much to read"; the eleven INSTRUCTION sentences were, and those all
+        // moved. Applying a pattern where it costs more than it saves is not a sweep, it is a
+        // habit. See D:\Brain\How I Like Things\hide-standing-copy-behind-an-i.md.
+        else -> VText(
+            "We score your home as a full rectangle. Missing a corner? Leave it empty — we'll ask.",
+            style = VastuTheme.type.caption, color = colors.textTertiary,
         )
     }
 }
