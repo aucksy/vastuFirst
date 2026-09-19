@@ -2,9 +2,11 @@ package com.vastufirst.app.ui.report
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import com.vastufirst.app.render.RenderFixtures
 import com.vastufirst.app.ui.details.MoreDetailsContent
@@ -148,7 +150,13 @@ class QuietCopyTest {
             }
         }
         assertFalse("the note must start shut", has("Worst first"))
-        onNodeWithTag("report.rooms.header").performClick()
+        // ⚠ SCROLL TO IT FIRST, and this is not a formality — it is what the first run of this
+        // test proved. A tap is injected at the node's centre in the window's own coordinates, so
+        // a heading sitting below the fold gets a tap delivered to empty space: the click reports
+        // no error, the note never opens, and the failure reads exactly like a broken control.
+        // Both of these headings are most of a page down a report. ReportListScrollTest already
+        // does the same thing for the same reason.
+        onNodeWithTag("report.rooms.header").performScrollTo().assertIsDisplayed().performClick()
         assertTrue(
             "tapping the rooms heading did not open its note — the i is decoration, and every " +
                 "sentence moved behind one on this screen is unreachable on a real phone",
@@ -163,7 +171,7 @@ class QuietCopyTest {
                 ReportContent(analysis = analysis, intent = Intent.BUILDING, rooms = rooms, north = north)
             }
         }
-        onNodeWithTag("report.disputes.header").performClick()
+        onNodeWithTag("report.disputes.header").performScrollTo().assertIsDisplayed().performClick()
         assertTrue(
             "tapping the disputes heading did not unfold the list",
             has("the worshipper faces East"),
@@ -183,7 +191,7 @@ class QuietCopyTest {
             }
         }
         assertFalse("the preamble is printed again", has("we say so, we don't guess"))
-        onNodeWithTag("details.why").performClick()
+        onNodeWithTag("details.why").performScrollTo().performClick()
         assertTrue("and it must still be reachable", has("we say so, we don't guess"))
     }
 
