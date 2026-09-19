@@ -140,6 +140,23 @@ for (const name of ['greencourt-526', 'greencourt-336-clean', 'greencourt-336-br
   const o = load(`out/live/${name}.json`);
   plans.push({ id: `${name} [live]`, aspect: o.imageSize[0] / o.imageSize[1], reply: o.reply, prompt: o.prompt || 'v3' });
 }
+// ⭐⭐ THE OWNER'S CURRENT FLAT, under the reader the app actually ships (19 Sep 2026).
+//
+// ⚠ It was missing from this corpus until today, and that is exactly why the balcony that covered
+// half his living room could be reported by him and measured as 44 unchanged lines here. The plan
+// he judges every release by contributed NOT ONE NUMBER to these totals. Any list of sheets that
+// leaves out the sheet the complaint is about will always agree with itself.
+{
+  const o = load('out/live/floor-plan-1.openai_gpt-5.6-luna.v6.json');
+  plans.push({ id: 'floor-plan-1 [live v6]', aspect: o.imageSize[0] / o.imageSize[1], reply: o.reply, prompt: o.prompt || 'v6' });
+}
+
+/** ScanMapper.pageSource, for the frame the user actually sees the boxes drawn in. */
+const saneB = (b) => (b && b.w > 0.2 && b.h > 0.2 && b.x > -0.1 && b.y > -0.1 && b.x + b.w < 1.1 && b.y + b.h < 1.1) ? b : null;
+const pageOf = (bld, r) => {
+  const b = saneB(bld);
+  return b ? { x: b.x + r.x * b.w, y: b.y + r.y * b.h, w: r.w * b.w, h: r.h * b.h } : { x: r.x, y: r.y, w: r.w, h: r.h };
+};
 
 // ---- measures ----------------------------------------------------------------------------------
 const cellsOf = (rects) => {
@@ -161,13 +178,35 @@ const INJECT = (process.argv.find((a) => a.startsWith('--inject=')) || '').split
 if (IS_MAIN) {
 if (INJECT) console.log(`⚠ FAULT INJECTED: ${INJECT}`);
 
-let totals = { placed: 0, assisted: 0, refused: 0, orientBad: 0, orientJudged: 0, unknowns: new Map(), drops: new Map(), marginCells: 0, fillPct: 0, fillN: 0 };
+let totals = { placed: 0, assisted: 0, refused: 0, orientBad: 0, orientJudged: 0, unknowns: new Map(), drops: new Map(), marginCells: 0, fillPct: 0, fillN: 0, swallowed: 0, swallowSheets: new Set() };
 for (const plan of plans) {
   const ctx = contextOf((plan.reply.rooms || []).map((b) => b.label));
   const out = scanMap(plan.reply, plan.aspect, { resolveLabel: (raw) => fullResolve(raw, ctx), inject: INJECT });
   const inv = scanInvariants(out);
   totals[out.kind]++;
   const lines = [];
+  // ⭐ THE PAGE-FRAME INVARIANT, and the one number that was missing when the owner's balcony was
+  // drawn over half his living room: every measure above reads the GRID, and the box he actually
+  // sees is drawn in the PAGE frame. A box that contains most of a room it does not name is the
+  // defect, stated directly. See ScanMapper.RUN_MIN_FILL / RUN_MAX_FOREIGN.
+  {
+    // `out.rooms` carries a `box` on a placed plan and the bare rectangle on an assisted one.
+    const drawn = (out.rooms || []).map((r) => r.box || r).filter((b) => b && isFinite(b.w) && isFinite(b.h))
+      .map((b) => ({ label: b.label, b: pageOf(plan.reply.building, b) }));
+    for (const a of drawn) for (const b of drawn) {
+      if (a === b) continue;
+      const area = b.b.w * b.b.h;
+      if (!(area > 0)) continue;
+      const w = Math.min(a.b.x + a.b.w, b.b.x + b.b.w) - Math.max(a.b.x, b.b.x);
+      const h = Math.min(a.b.y + a.b.h, b.b.y + b.b.h) - Math.max(a.b.y, b.b.y);
+      // 0.40 is ScanMapper.RUN_MAX_FOREIGN, deliberately: the gate in the mapper and the measure
+      // here must speak the same language, or a defect the gate refuses is still counted clean.
+      if (w > 0 && h > 0 && (w * h) / area > 0.40) {
+        totals.swallowed++; totals.swallowSheets.add(plan.id);
+        lines.push(`  ⚠ DRAWN OVER: "${a.label}" covers ${Math.round(100 * (w * h) / area)}% of "${b.label}"`);
+      }
+    }
+  }
   const drops = out.notes.dropped || [];
   for (const d of drops) {
     totals.drops.set(d.reason, (totals.drops.get(d.reason) || 0) + 1);
@@ -214,6 +253,8 @@ console.log('\n---- totals ----');
 console.log(`outcomes: ${totals.placed} placed · ${totals.assisted} assisted · ${totals.refused} refused of ${plans.length}`);
 console.log(`final orientation agrees with the printed sheet: ${totals.orientJudged - totals.orientBad}/${totals.orientJudged}`);
 console.log(`grid fill (placed plans): avg ${Math.round(100 * totals.fillPct / Math.max(1, totals.fillN))}% · dead edge cells ${totals.marginCells}`);
+console.log(`boxes drawn over a room they do not name: ${totals.swallowed}` +
+  (totals.swallowSheets.size ? ` on ${[...totals.swallowSheets].join(', ')}` : ' (none)'));
 console.log('drops by reason:', Object.fromEntries(totals.drops));
 console.log('unknown captions:', [...totals.unknowns.keys()].sort().join(' | ') || '(none)');
 } // IS_MAIN
