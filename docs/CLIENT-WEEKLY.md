@@ -101,6 +101,29 @@ developer account.
 
 ## Week of 14–20 September 2026
 
+### Friday 19 September, later — every plan is now read twice
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.29.0/vastufirst-v0.29.0.apk
+**This is the one to install.**
+
+**The app now reads your plan twice and keeps whichever reading found more of your home.**
+
+We found the need for this the hard way. The same photograph of the same flat, read twice a few
+minutes apart with nothing changed, came back two different ways: once with twenty rooms including
+four balconies, and once with fourteen rooms and no balconies at all. The second reading had quietly
+missed them, and nothing about it looked any less certain than the first.
+
+That is the worst way this can go wrong. A room put in the wrong place is on the "Check what we read"
+screen, and you can move it. **A room that was never found is not on the screen at all** — so there
+is nothing to notice and nothing to correct, and the score then gets worked out for a home missing a
+quarter of itself.
+
+So the same picture now goes out twice and the fuller reading wins. The two readings happen at the
+same time, so you do not wait any longer than before.
+
+**The screen that asks your permission now says so.** It already told you what is sent, who receives
+it and that we keep nothing. It now also says we ask twice and keep the fuller reading.
+
 ### Friday 19 September — a balcony no longer reaches across the living room
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.28.0/vastufirst-v0.28.0.apk
