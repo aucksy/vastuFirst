@@ -99,6 +99,37 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 14–20 September 2026
+
+### Friday 19 September — a balcony no longer reaches across the living room
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.28.0/vastufirst-v0.28.0.apk
+**This is the one to install.**
+
+**When you photograph a plan, the balcony we highlight now stays on the balcony.** Many homes have a
+balcony along the top wall and a second one down the side wall, and the two meet at the corner. The
+app was reading them as one long balcony — and it draws a balcony as a single rectangle, so a
+rectangle stretched around both arms of a corner also covers everything between them. On a real four
+bedroom plan that was half the living room: the "Check what we read" screen showed a balcony sitting
+over the sofa and the dining table, and the score counted one balcony where the home has two.
+
+They are two balconies again, facing two different directions, each highlighted on itself and each
+getting its own reading in the report — which matters, because Vastu treats a balcony in the
+north-east and one in the east as two separate things. A balcony that genuinely is one long strip
+labelled in three pieces, which is how most Indian plans dimension them, is still read as one room
+exactly as before.
+
+**How we checked it.** The app keeps every plan it has ever been asked to read. All of them were
+re-read against the new rule without sending a single new photograph anywhere, and the balcony we
+draw is now on the balcony on every one of them. Your own plan was also marked up by hand, room by
+room, so from now on a change can be scored against where the rooms really are rather than against
+an average.
+
+**Still true, and worth saying plainly:** on a photographed plan the highlighted boxes are close but
+not exact. Rooms with four solid walls — bedrooms, bathrooms, balconies — land on themselves.
+An open living-and-dining space that flows into a kitchen has no wall to stop at, so its box can run
+a little long or a little short. That is why the screen asks you to check what we read.
+
 ## Week of 7–13 September 2026
 
 ### Sunday 13 September, evening — the drawing screen is tidier below the plan
