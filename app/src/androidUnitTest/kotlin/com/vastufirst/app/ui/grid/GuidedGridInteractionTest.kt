@@ -36,8 +36,13 @@ import org.robolectric.annotation.GraphicsMode
  * The editor's BUTTON paths driven headlessly (UI-POLISH §6 pattern). These are the WCAG 2.2 SC
  * 2.5.7 single-pointer paths a TalkBack or less phone-literate user relies on — the move arrows, the
  * size steppers, remove, the plot-size steppers, and door-mode entry — so they are proven, not just
- * eyeballed. Raw finger drags / door-cell taps on the canvas are gestures Robolectric can't drive
- * faithfully; those live on the Owner device-test checklist. UAT: A2/A4, C4/C6, D3/D4, E7/E8, F1, G5/G6, H(entry), L2/L3.
+ * eyeballed. UAT: A2/A4, C4/C6, D3/D4, E7/E8, F1, G5/G6, H(entry), L2/L3.
+ *
+ * ⭐ AND, SINCE 27 SEP 2026, A REAL FINGER ON THE PLAN. This header used to say raw finger drags
+ * could not be driven faithfully here; they can — `performTouchInput` with `down`, `moveBy` and
+ * `up` split across calls holds the finger down between assertions — and the very first one caught
+ * a bug no button test could: setting the door while the E was still held shifted the page under a
+ * finger that had not moved. See the front-door tests below.
  *
  * Each test wires GuidedGridContent to hoisted state exactly as a real screen would, so a button tap
  * flows through the real update callbacks and the assertion reads the resulting state.
@@ -528,15 +533,23 @@ class GuidedGridInteractionTest {
     /** The plan's box and its cell size, in the grid node's own pixels. */
     private class GridGeometry(val topLeft: Offset, val cell: Float)
 
+    /**
+     * ⚠ positionInRoot, NEVER boundsInRoot. This page scrolls, and boundsInRoot is CLIPPED to the
+     * window: a grid whose top has scrolled out of view reports the window's edge as its top, and
+     * every position measured against it comes out short. Found the hard way — the E measured 1.96
+     * cells down when it was drawn at 2.5 — after a "Next" tap had scrolled the page.
+     */
     private fun ComposeUiTest.gridGeometry(): GridGeometry {
-        val b = onNodeWithTag("editor.grid").fetchSemanticsNode().boundsInRoot
+        val n = onNodeWithTag("editor.grid").fetchSemanticsNode()
         // The Harness plot is 8 × 8 with square cells.
-        return GridGeometry(topLeft = b.topLeft, cell = b.width / 8f)
+        return GridGeometry(topLeft = n.positionInRoot, cell = n.size.width / 8f)
     }
 
     /** Where the E's node is drawn, relative to the grid — i.e. where a finger lands on it. */
-    private fun ComposeUiTest.eCentreInGrid(g: GridGeometry): Offset =
-        onNodeWithTag(DOOR_MARK_TAG).fetchSemanticsNode().boundsInRoot.center - g.topLeft
+    private fun ComposeUiTest.eCentreInGrid(g: GridGeometry): Offset {
+        val n = onNodeWithTag(DOOR_MARK_TAG).fetchSemanticsNode()
+        return n.positionInRoot + Offset(n.size.width / 2f, n.size.height / 2f) - g.topLeft
+    }
 
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
 

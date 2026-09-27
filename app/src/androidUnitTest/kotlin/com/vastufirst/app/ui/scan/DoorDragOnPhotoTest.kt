@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.toSize
 import com.vastufirst.app.ui.common.DOOR_MARK_TAG
 import com.vastufirst.app.ui.common.DOOR_NOTE_TAG
 import com.vastufirst.app.ui.newplan.DoorSide
@@ -195,12 +196,21 @@ class DoorDragOnPhotoTest {
     private fun ComposeUiTest.pictureNode(descStart: String) =
         onNodeWithContentDescription(descStart, substring = true)
 
-    private fun ComposeUiTest.picture(descStart: String): Rect =
-        pictureNode(descStart).fetchSemanticsNode().boundsInRoot
+    /**
+     * ⚠ positionInRoot and size, never boundsInRoot — which is clipped to the window, so a picture
+     * partly scrolled out of view would report an edge that is not its own and every position
+     * measured against it would come out short (the editor's finger test found that one).
+     */
+    private fun ComposeUiTest.picture(descStart: String): Rect {
+        val n = pictureNode(descStart).fetchSemanticsNode()
+        return Rect(n.positionInRoot, n.size.toSize())
+    }
 
     /** The E's own node — where a finger lands on it, in root coordinates. */
-    private fun ComposeUiTest.eCentre(): Offset =
-        onNodeWithTag(DOOR_MARK_TAG).fetchSemanticsNode().boundsInRoot.center.also {
+    private fun ComposeUiTest.eCentre(): Offset {
+        val n = onNodeWithTag(DOOR_MARK_TAG).fetchSemanticsNode()
+        return (n.positionInRoot + Offset(n.size.width / 2f, n.size.height / 2f)).also {
             assertTrue("the E must be on screen to be touched", it.x > 0f && it.y > 0f)
         }
+    }
 }
