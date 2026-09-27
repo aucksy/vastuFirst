@@ -15,9 +15,13 @@ Claude Code reads this at the start of every session and must follow it.
   - Pure logic modules are **`kotlin("jvm")`** today; flipping them to `multiplatform` is the
     iOS move (a build-file change, not a rewrite — Product PRD §3.1).
   - DI: **Koin** · DB: **SQLDelight** · Serialization: **kotlinx-serialization** ·
-    Async: Coroutines+Flow. Backend: Supabase (Phase 4+). AI: Groq (Phase 4). Payments:
-    Razorpay (Phase 5, `:app` only). Versions are pinned in `gradle/libs.versions.toml`.
-  - Min/Target SDK **26 / 35**.
+    Async: Coroutines+Flow. Backend: Supabase (Phase 4+). AI: the plan reader calls OpenRouter
+    (since 4 Aug 2026); the Phase 4 assistant is not built. Payments: **Google Play Billing**
+    (`:app` only; built, shipped switched off). Razorpay was dropped: Google forbids another
+    payment service for digital goods sold inside a Play app. Versions are pinned in
+    `gradle/libs.versions.toml`.
+  - Min/Target SDK **26 / 35**. ⚠ Google Play has refused a target below 36 since 31 Aug 2026
+    (an extension to 1 Nov 2026 can be asked for in Play Console).
 - **Module graph:** `engine`, `rules`, `shared`, `data` = pure, **zero Android**;
   `designsystem` = Compose UI kit; `app` = Android entry point + all Android-only deps.
 - **Where things live:** `app/` = screens & platform glue · `engine/` = the scoring engine ·
@@ -241,7 +245,9 @@ Then: <what to tell me so I can continue>
 ## 6. Notes for this project
 
 - Identity for git/author: `simpleapps108@gmail.com` (not the harness login).
-- Package: `com.vastufirst.app`. Repo: **private** `aucksy/vastufirst`.
+- Package: `com.vastufirst.app`. Repo: `aucksy/vastufirst`, **PUBLIC** (checked 27 Sep 2026).
+  Anyone can read the code and download every released APK. Never commit anything you would not
+  post publicly. The owner is deciding whether to make it private again.
 - Deadline: **Phase 2 is a client delivery on 4 August 2026.** The eight expert rulings
   (§13) are needed *before* Phase 2 ships, not Phase 4.
 - Phase 1 exit gate: the §15 worked example (`sample-01`) must score **exactly 31**, and a
