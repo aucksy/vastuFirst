@@ -245,6 +245,7 @@ fun ScanDoorContent(
                             val grab = if (onMark) nowAt?.minus(down.position) ?: Offset.Zero else Offset.Zero
                             var dragging = false
                             var scrolled = false
+                            var letGo: Pair<Float, Float>? = null
 
                             while (true) {
                                 val event = awaitPointerEvent()
@@ -271,14 +272,20 @@ fun ScanDoorContent(
                                     frame.x.toFloat(), frame.y.toFloat(),
                                     (frame.x + frame.w).toFloat(), (frame.y + frame.h).toFloat(),
                                 )
-                                draggedDoor = p.x to p.y
-                                // The scored door follows, and is only handed on when it changes.
-                                doorForPhotoTap(p.x, p.y, rooms)?.let { if (it != liveDoor) liveOnDoor(it) }
+                                // ONLY the E moves while the finger is down — see PlanWithRooms'
+                                // note on why the door itself is set on lifting.
+                                letGo = p.x to p.y
+                                draggedDoor = letGo
                                 change.consume()
                             }
 
                             if (dragging) {
-                                // Lifted: the E settles onto the door that is scored.
+                                // Lifted: the door is set where the E was let go, and the E settles
+                                // onto the spot that is scored. Read from this gesture's own record,
+                                // not from composed state, which may be a frame behind a quick flick.
+                                letGo?.let { (x, y) ->
+                                    doorForPhotoTap(x, y, rooms)?.let { if (it != liveDoor) liveOnDoor(it) }
+                                }
                                 draggedDoor = null
                                 return@awaitEachGesture
                             }

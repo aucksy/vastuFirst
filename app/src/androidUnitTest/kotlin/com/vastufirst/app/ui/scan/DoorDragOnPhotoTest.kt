@@ -84,11 +84,11 @@ class DoorDragOnPhotoTest {
             repeat(7) { moveBy(Offset(plan.width * 0.05f, 0f)) }
         }
         waitForIdle()
-        // Page x 0.3125 + 0.35 = 0.6625 → six and a sixth cells along an eight-cell wall: cell 6.
-        assertEquals("the scored door moved while the finger is still down", GridDoor(DoorSide.N, 6), door.value)
+        // Page x 0.3125 + 0.35 = 0.6625. ⭐ Drawn under the finger — NOT at the centre of the cell it
+        // will settle in (0.6875), which is exactly the lag the owner saw.
         val heldX = (eCentre().x - plan.left) / plan.width
-        // ⭐ Drawn under the finger (0.6625), NOT at cell 6's centre (0.6875) — the lag the owner saw.
         assertEquals("the E is drawn where the finger has it", 0.6625f, heldX, 0.01f)
+        assertEquals("the door itself is set on the lift", GridDoor(DoorSide.N, 1), door.value)
 
         // Round the corner: out past the east wall, and down it.
         pictureNode("Your scanned plan").performTouchInput {
@@ -96,11 +96,14 @@ class DoorDragOnPhotoTest {
             repeat(5) { moveBy(Offset(0f, plan.height * 0.05f)) }
         }
         waitForIdle()
-        assertEquals("carried onto the EAST wall", DoorSide.E, door.value?.side)
+        val cornerX = (eCentre().x - plan.left) / plan.width
+        val cornerY = (eCentre().y - plan.top) / plan.height
+        assertEquals("still held, the E is ON the east wall", 0.8f, cornerX, 0.01f)
+        assertEquals("and has come down it with the finger", 0.5f, cornerY, 0.01f)
 
         pictureNode("Your scanned plan").performTouchInput { up() }
         waitForIdle()
-        assertEquals(DoorSide.E, door.value?.side)
+        assertEquals("let go on the east wall, so the door is there", DoorSide.E, door.value?.side)
     }
 
     @Test
@@ -141,17 +144,19 @@ class DoorDragOnPhotoTest {
             repeat(7) { moveBy(Offset(plan.width * 0.05f, 0f)) }
         }
         waitForIdle()
-        assertEquals("follows while held", GridDoor(DoorSide.N, 6), door.value)
         val heldX = (eCentre().x - plan.left) / plan.width
         assertEquals("drawn under the finger, not snapped", 0.6625f, heldX, 0.01f)
+        assertEquals("the door itself is set on the lift", GridDoor(DoorSide.N, 1), door.value)
 
         pictureNode("Your plan.").performTouchInput {
             moveBy(Offset(plan.width * 0.2f, 0f))
             repeat(5) { moveBy(Offset(0f, plan.height * 0.05f)) }
-            up()
         }
         waitForIdle()
-        assertEquals("carried onto the east wall", DoorSide.E, door.value?.side)
+        assertEquals("still held, the E is ON the east wall", 0.8f, (eCentre().x - plan.left) / plan.width, 0.01f)
+        pictureNode("Your plan.").performTouchInput { up() }
+        waitForIdle()
+        assertEquals("let go on the east wall, so the door is there", DoorSide.E, door.value?.side)
     }
 
     @Test

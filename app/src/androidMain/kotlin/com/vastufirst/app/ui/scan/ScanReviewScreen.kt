@@ -492,9 +492,9 @@ fun ScanReviewContent(
                 doorAtPage = doorAtPage,
                 // One thing is explained at a time: opening the E's note puts the room tint away.
                 onTapDoor = { selected = null },
-                // ⭐ The point arrives ALREADY on the outline (see PlanWithRooms), so this only turns
-                // it into the scored door — and only tells anyone when that door actually changed,
-                // which along a wall is once per step rather than once per pixel.
+                // ⭐ The point arrives ALREADY on the outline, once, when the finger lifts (see
+                // PlanWithRooms), so this only turns it into the scored door — and says nothing
+                // when the E was put back where it started.
                 onMoveDoorToPage = { fx, fy ->
                     doorForPhotoTap(fx, fy, rooms)?.let { if (it != door) onDoorChange(it) }
                 },

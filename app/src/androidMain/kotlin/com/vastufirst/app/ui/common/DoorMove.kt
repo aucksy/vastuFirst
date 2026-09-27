@@ -21,8 +21,11 @@
 //   · a finger that lands on the E owns it at once — no tap first, no button;
 //   · while it moves, the E is drawn at the point on the home's outline NEAREST THE FINGER, every
 //     frame, so it glides along a wall and round a corner onto the next one;
-//   · the scored door follows it, and on lifting the E settles onto the exact spot that is scored —
-//     displayed == scored == reloaded, the rule the door has always kept;
+//   · when the finger lifts, the door is set where the E was let go and the E settles onto the
+//     exact spot that is scored — displayed == scored == reloaded, the rule the door has always
+//     kept. (Not while held: setting it changes words elsewhere on a screen, a scrolled page then
+//     shifts, and the plan moves under a finger that has not. While the finger is down, only the E
+//     moves.)
 //   · a tap on the E opens a small note saying what it is. The sentences that used to be printed
 //     round the plan moved INTO that note; nothing was deleted.
 package com.vastufirst.app.ui.common

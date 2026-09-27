@@ -224,8 +224,8 @@ private suspend fun PointerInputScope.planGestures(
             if (!dragging) continue
 
             if (dragsDoor) {
-                // EVERY movement, not only the ones that change the scored door — this is what makes
-                // the E follow the finger rather than catch up with it.
+                // EVERY movement, not only the ones that would change the scored door — this is what
+                // makes the E follow the finger rather than catch up with it.
                 onDoorDrag(moving.position + grab)
                 moving.consume()
             } else if (zoomable && zoom() > 1f) {
@@ -307,8 +307,9 @@ fun PlanWithRooms(
     /** The door was tapped. On the report this reveals its line; where there is a note, it opens. */
     onTapDoor: () -> Unit = {},
     /**
-     * The E was dragged, and is now at this point ON THE HOME'S OUTLINE, in page fractions — already
-     * slid onto the nearest wall, so the caller only has to turn it into the scored door.
+     * The E was dragged and LET GO at this point ON THE HOME'S OUTLINE, in page fractions — already
+     * slid onto the nearest wall, so the caller only has to turn it into the scored door. Called once
+     * per drag, when the finger lifts.
      */
     onMoveDoorToPage: (Float, Float) -> Unit = { _, _ -> },
     /**
@@ -356,7 +357,14 @@ fun PlanWithRooms(
      * Null at rest, and then the E is drawn where the SCORED door is ([doorAtPage]). The two differ
      * only while the finger is down: the scored door moves in whole steps along a wall, the finger
      * does not, and drawing the scored door was exactly why the E used to lag and jump behind the
-     * hand. On lifting, this goes back to null and the E settles onto the spot that is scored.
+     * hand. On lifting, the door is set where the E was let go, this goes back to null, and the E
+     * settles onto the spot that is scored.
+     *
+     * ⚠ THE DOOR ITSELF IS SET ON LIFTING, NOT WHILE HELD — found by the finger test in the editor on
+     * the first build of this. Setting the door changes words elsewhere on a screen (a line about
+     * skipping the door goes away, a wall is named), a screen that is scrolled then shifts, and the
+     * picture moves under a finger that has not moved — so the E jumped to another wall mid-drag.
+     * While the finger is down, only the E moves.
      */
     var draggedDoor by remember(image) { mutableStateOf<Pair<Float, Float>?>(null) }
     /** The E's note — the owner's "pop up", opened by a tap on the E and put away by any other tap. */
@@ -471,12 +479,16 @@ fun PlanWithRooms(
                                             (outline.x + outline.w).toFloat(), (outline.y + outline.h).toFloat(),
                                         )
                                         draggedDoor = p.x to p.y
-                                        liveOnMoveDoor(p.x, p.y)
                                     }
                                 }
                             },
-                            // Lifted: the E settles onto the scored door, which has followed it all along.
-                            onDoorDragEnd = { draggedDoor = null },
+                            // ⭐ LIFTED: the door is set where the E was let go, ONCE, and the E settles
+                            // onto the spot that is scored. See the note on [draggedDoor] for why the
+                            // door is not set while the finger is still down.
+                            onDoorDragEnd = {
+                                draggedDoor?.let { (x, y) -> liveOnMoveDoor(x, y) }
+                                draggedDoor = null
+                            },
                         )
                     }
                     .semantics {

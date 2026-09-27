@@ -746,8 +746,8 @@ fun GuidedGridContent(
                         //     nearest wall under it on touch-down and follows from there;
                         //   · while it moves, the E is on the outline nearest the finger, EVERY
                         //     movement, round corners onto other walls (nearestOnOutline);
-                        //   · the scored door follows it through the one tested [doorForTap], so what
-                        //     is drawn and what is scored name the same wall at every instant.
+                        //   · on the lift the door is set through the one tested [doorForTap], which
+                        //     names the same wall nearestOnOutline drew the E on (DoorMoveTest pins it).
                         val doorNow = doorState.value
                         val restingE = doorNow?.let { d ->
                             val (c, r) = doorMarkerCell(d, current, cols, rows)
@@ -784,6 +784,9 @@ fun GuidedGridContent(
                             } else {
                                 Offset.Zero
                             }
+                            // The door the E is over right now, for the tick — NOT set until the lift.
+                            var over: GridDoor? = doorNow
+                            var letGo: OutlinePoint? = null
                             fun carryTo(fingerPx: Offset) {
                                 // FRACTIONAL cells, deliberately: a 1-cell-deep house's north and south
                                 // walls are only half a cell apart (see doorForTap).
@@ -791,10 +794,17 @@ fun GuidedGridContent(
                                     fingerPx.x / cellPx + grab.x, fingerPx.y / cellPx + grab.y,
                                     fMinC.toFloat(), fMinR.toFloat(), fMaxC.toFloat(), fMaxR.toFloat(),
                                 )
+                                letGo = p
                                 draggedDoor = p
+                                // ⚠ ONLY THE E MOVES WHILE THE FINGER IS DOWN. Setting the door here
+                                // changed the words under the plan (the "carry on without marking the
+                                // door" line goes once there is one), a scrolled page shifted, and the
+                                // plan moved under a finger that had not — the E hopped to another wall
+                                // mid-drag. Found by this screen's own finger test. The door is set on
+                                // the lift, below; a tick still marks each new cell as it passes.
                                 val next = doorForTap(p.x, p.y, current)
-                                if (next != null && next != doorState.value) {
-                                    onDoorChange(next)
+                                if (next != null && next != over) {
+                                    over = next
                                     haptics.tick()
                                 }
                             }
@@ -820,7 +830,10 @@ fun GuidedGridContent(
                                     change.consume()
                                 }
                             }
-                            // Lifted: the E settles into the cell that is scored.
+                            // Lifted: the door is set where the E was let go, and the E settles into
+                            // the cell that is scored.
+                            val landed = letGo?.let { doorForTap(it.x, it.y, current) }
+                            if (landed != null && landed != doorState.value) onDoorChange(landed)
                             draggedDoor = null
                             if (carrying) {
                                 haptics.confirm()
@@ -965,10 +978,15 @@ fun GuidedGridContent(
                     )
                 }
             }
-            door?.let { d ->
+            // While a finger carries it, the E is drawn from the finger — even before a door exists,
+            // because the door step's first touch puts it on the nearest wall at once. The door itself
+            // is set when the finger lifts.
+            val carried = draggedDoor
+            val shownDoor = carried?.let { doorForTap(it.x, it.y, rooms) } ?: door
+            shownDoor?.let { d ->
                 DoorMarker(
                     door = d, rooms = rooms, cell = cell, cols = cols, rows = rows,
-                    carriedAt = draggedDoor,
+                    carriedAt = carried,
                     onMoveTo = ::doorOnWall,
                 )
             }

@@ -436,14 +436,17 @@ class GuidedGridInteractionTest {
             repeat(9) { moveBy(Offset(g.cell * 0.25f, 0f)) }
         }
         waitForIdle()
-        // ⭐ STILL HELD. The door has already moved, and the E is drawn where the finger has it —
-        // between whole cells, not waiting for a lift and not snapped to the cell it will settle in.
-        assertEquals("the scored door follows during the drag", GridDoor(DoorSide.N, 2), h.door.value)
+        // ⭐ STILL HELD. The E is drawn where the finger has it — between whole cells, not waiting
+        // for a lift and not snapped to the cell it will settle in.
         val midX = eCentreInGrid(g).x / g.cell
         assertTrue(
             "the E is drawn under the finger (≈2.75 cells), not in the cell's centre (2.5): was $midX",
             midX > 2.65f && midX < 2.85f,
         )
+        // …and nothing else on the screen has changed yet: the door itself is set on the lift. Set
+        // while held, it changed the words under the plan, a scrolled page shifted, and the plan
+        // moved under the finger — the E hopped walls mid-drag (the first build of this, caught here).
+        assertEquals("the door is set on the lift, not while held", GridDoor(DoorSide.N, 0), h.door.value)
 
         onNodeWithTag("editor.grid").performTouchInput { up() }
         waitForIdle()
@@ -467,10 +470,12 @@ class GuidedGridInteractionTest {
             repeat(6) { moveBy(Offset(0f, g.cell * 0.3f)) }
         }
         waitForIdle()
-        assertEquals("the door is on the EAST wall while still held", DoorSide.E, h.door.value?.side)
+        // Still held: the E itself is already on the EAST wall — named so, and drawn in its column.
+        onNodeWithContentDescription("Front door on the east wall").assertExists()
+        assertEquals("drawn in the east wall's own cells", 3.5f, eCentreInGrid(g).x / g.cell, 0.1f)
         onNodeWithTag("editor.grid").performTouchInput { up() }
         waitForIdle()
-        assertEquals(DoorSide.E, h.door.value?.side)
+        assertEquals("let go on the east wall, so the door is there", DoorSide.E, h.door.value?.side)
         onNodeWithContentDescription("Front door on the east wall").assertExists()
     }
 
@@ -502,12 +507,20 @@ class GuidedGridInteractionTest {
         // Just inside the bottom wall, near the middle — and NOT lifted.
         onNodeWithTag("editor.grid").performTouchInput { down(Offset(g.cell * 1.5f, g.cell * 2.8f)) }
         waitForIdle()
-        assertEquals("placed on touch-down", GridDoor(DoorSide.S, 1), h.door.value)
+        // ⭐ The E is there at once, on the wall under the finger.
+        onNodeWithContentDescription("Front door on the south wall").assertExists()
+        assertEquals("on the bottom wall's own row", 2.5f, eCentreInGrid(g).y / g.cell, 0.1f)
         onNodeWithTag("editor.grid").performTouchInput { moveBy(Offset(g.cell * 2f, 0f)) }
         waitForIdle()
-        assertEquals("and follows while held", GridDoor(DoorSide.S, 3), h.door.value)
+        assertEquals("and it follows while held", 3.5f, eCentreInGrid(g).x / g.cell, 0.1f)
+        // ⚠ The regression this pins: the first build SET the door on touch-down, which took the
+        // "carry on without marking the door" line away under a scrolled page, moved the plan under
+        // the held finger, and read this very drag as the EAST wall. Nothing may change until the lift.
+        onNodeWithText("You can carry on without marking the door — we will say so on your score.").assertExists()
+        assertEquals("nothing is set while held", null, h.door.value)
         onNodeWithTag("editor.grid").performTouchInput { up() }
         waitForIdle()
+        assertEquals("set where it was let go", GridDoor(DoorSide.S, 3), h.door.value)
     }
 
     // ── helpers for the finger tests ─────────────────────────────────────────────────────────────
