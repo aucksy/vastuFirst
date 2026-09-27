@@ -99,6 +99,35 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 21–27 September 2026
+
+### Sunday 27 September — the front door moves with your finger
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.31.0/vastufirst-v0.31.0.apk
+**This is the one to install.**
+
+**Put your finger on the E and drag it. It now follows your finger all the way round your home.**
+
+The E on your plan marks your front door, and it is the single biggest thing in your score. Moving it
+used to be awkward in three ways. It did not move while you dragged it — it jumped to wherever you let
+go. It would not leave the wall it was on. And on some screens it only moved after you had tapped it
+first, or pressed a button.
+
+Now, on every screen where you set the front door — "Check what we read", "Where is your front door?"
+and drawing your home by hand:
+
+- **Press and drag, straight away.** No tap first, and no button.
+- **It moves with your finger the whole time.** It slides along the wall under your finger, and round
+  the corner onto the next wall if you keep going.
+- **When you let go, the door is set right there**, and your score is worked out from it.
+
+**Tap the E to see what it is.** A small note opens: that it is your front door, which wall it is on,
+and — when we read it from your plan — that it came from the entrance your plan prints. The card, the
+extra line and the sentence about the door that used to crowd the "Check what we read" screen are all
+inside that note now, one tap away. Nothing was taken out; it waits until you ask.
+
+**The "Move the front door" button on the drawing screen is gone**, because the E itself moves now.
+
 ## Week of 14–20 September 2026
 
 ### Friday 19 September, evening — a quieter app: less to read, nothing lost
