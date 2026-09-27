@@ -68,7 +68,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +75,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.asImageBitmap
+import com.vastufirst.app.ui.common.DoorNoteText
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
 import com.vastufirst.app.ui.details.SiteAnswers
@@ -92,7 +92,6 @@ import com.vastufirst.designsystem.components.IconTapButton
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
-import com.vastufirst.designsystem.components.VastuCard
 import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.components.VastuSectionHeader
 import com.vastufirst.designsystem.components.VastuRoomRow
@@ -258,6 +257,30 @@ private fun sizeNote(room: ScannedRoom): String = when {
     else -> "no size printed"
 }
 
+/**
+ * ⭐ THE E'S NOTE ON "CHECK WHAT WE READ" — the sentences this screen used to print about the door,
+ * gathered into the one place a reader asks for them (see [DoorNoteText]).
+ *
+ * ⚠ THREE states, not two, since 16 Aug 2026, and the note keeps all three. The door can be moved on
+ * this screen, and the first two sentences both claim WE worked it out; left at two, the screen told
+ * a user who had just placed the door with their own finger that "we read it from your plan's own
+ * entrance" — taking credit for their correction and hiding that it had landed.
+ *
+ * Pure, so every state's words are pinned by a plain test rather than only by a picture.
+ */
+internal fun reviewDoorNote(door: GridDoor, doorFromCaption: String?, doorIsOurs: Boolean): DoorNoteText =
+    DoorNoteText(
+        title = "Your front door",
+        body = when {
+            !doorIsOurs ->
+                "You put it on ${doorSideWords(door.side)}. Drag the E to move it again."
+            doorFromCaption != null ->
+                "Your plan prints \"$doorFromCaption\" on ${doorSideWords(door.side)}, so we put it there. Drag the E to move it."
+            else ->
+                "We read it from your plan's own entrance, on ${doorSideWords(door.side)}. Drag the E to move it."
+        },
+    )
+
 /** The screen as a pure function of its inputs — the seam the render harness draws. */
 @Composable
 fun ScanReviewContent(
@@ -318,10 +341,8 @@ fun ScanReviewContent(
     onAddDetails: () -> Unit = {},
     /** For the harness: pre-select a room so the golden shows the tint. -1 = nothing selected. */
     startSelected: Int = -1,
-    /** For the harness: draw the screen with the door mark selected, so the golden shows that state. */
-    startDoorSelected: Boolean = false,
-    /** For the harness: draw the screen with the "we found your entrance" card already put away. */
-    startDoorHintDismissed: Boolean = false,
+    /** For the harness: draw the screen with the E's note open, so the golden shows that state. */
+    startDoorNoteOpen: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
@@ -369,9 +390,20 @@ fun ScanReviewContent(
      * plan's own entrance"* about a door the user had just placed themselves.
      */
     val doorAtPage = remember(door, rooms) { door?.let { doorMarkerOnPage(it, rooms) } }
-    var doorSelected by remember { mutableStateOf(startDoorSelected) }
-    /** The "we found your entrance" card, put away by the reader — see where it is drawn below. */
-    var doorHintDismissed by rememberSaveable { mutableStateOf(startDoorHintDismissed) }
+    /**
+     * ⭐⭐ WHAT THE E SAYS WHEN IT IS TAPPED (owner, 27 Sep 2026: *"on first tap a pop up can tell them
+     * what it is instead filling the screen with all this info"*).
+     *
+     * Three things used to be printed round this plan about one door: a card announcing that we had
+     * found it, a line under the picture once it was tapped, and a sentence at the foot of the list
+     * saying where it came from. All three are now ONE note on the E itself — the same three-way
+     * wording ([reviewDoorNote]), moved rather than deleted, shown only when somebody asks.
+     */
+    val doorNote = remember(door, doorFromCaption, doorIsOurs) {
+        door?.let { reviewDoorNote(it, doorFromCaption, doorIsOurs) }
+    }
+    /** The home's outline on the picture — what a dragged E slides along. */
+    val doorOutline = remember(rooms, door != null) { if (door != null) homeFrameOnPage(rooms) else null }
 
     /**
      * ⭐⭐ BOTH ENDS STILL SELECT THE SAME ROOM THE SAME WAY. Tapping a room on the picture and
@@ -390,8 +422,6 @@ fun ScanReviewContent(
      */
     fun selectRoom(id: String) {
         selected = if (selected == id) null else id
-        // One thing is explained at a time. Picking a room puts the door's own line away.
-        doorSelected = false
     }
 
     /** Tapping a room ON THE PINNED PICTURE — its row may be below the fold, so reveal it. */
@@ -460,17 +490,20 @@ fun ScanReviewContent(
                 // plan that claimed single-finger drags there would eat the page's own scroll.
                 zoomable = true,
                 doorAtPage = doorAtPage,
-                doorSelected = doorSelected,
-                onTapDoor = {
-                    doorSelected = true
-                    selected = null
-                },
+                // One thing is explained at a time: opening the E's note puts the room tint away.
+                onTapDoor = { selected = null },
+                // ⭐ The point arrives ALREADY on the outline (see PlanWithRooms), so this only turns
+                // it into the scored door — and only tells anyone when that door actually changed,
+                // which along a wall is once per step rather than once per pixel.
                 onMoveDoorToPage = { fx, fy ->
-                    doorForPhotoTap(fx, fy, rooms)?.let {
-                        doorSelected = true
-                        onDoorChange(it)
-                    }
+                    doorForPhotoTap(fx, fy, rooms)?.let { if (it != door) onDoorChange(it) }
                 },
+                doorOutline = doorOutline,
+                doorNote = doorNote,
+                startDoorNoteOpen = startDoorNoteOpen,
+                onMoveDoorToSide = { side -> doorOnWall(side, rooms)?.let(onDoorChange) },
+                doorWallWords = ::doorSideWords,
+                doorDescription = door?.let { "Your front door, on ${doorSideWords(it.side)}" } ?: "Your front door",
             )
         } else {
             // ⚠⚠ CAPPED, NOT SHAPED — found by the geometry gate the moment this state was first
@@ -538,61 +571,11 @@ fun ScanReviewContent(
                 .verticalScroll(listScroll),
             verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
         ) {
-            // ⭐⭐ SAYING THAT WE MARKED IT, ONCE (owner, 17 Aug 2026: *"there need to some message
-            // letting user know that we have auto-detected your main entrance but you can tap the
-            // circle and change its position. This message can be dismissed."*).
-            //
-            // ⚠ Only while the door is still OURS. Once the reader has moved it themselves, telling
-            // them we found it would be taking credit for their correction — the same defect the
-            // three-way sentence at the foot of this list was written to fix.
-            //
-            // ⚠ Dismissal is remembered for the session, not for ever, and that is deliberate: this
-            // sentence is about ONE home's door, and the next plan scanned has a different one.
-            //
-            // ⚠ INSIDE THE SCROLLING LIST, NOT PINNED ABOVE IT — the same rule the line below it
-            // follows, and for the same reason: everything above this point is fixed height, and
-            // this screen has twice lost its last child to zero height at a 200 % font in landscape,
-            // where the fixed parts are together taller than the window before the picture is even
-            // drawn. One more pinned card would have taken the room list itself down with it, and
-            // the geometry gate cannot see that — the layout box stays the right size while the
-            // content is squeezed out of it.
-            if (door != null && doorIsOurs && !doorHintDismissed) {
-                VastuCard(accent = colors.primary) {
-                    VText(
-                        "We found your main entrance and marked it E on your plan, " +
-                            "on ${doorSideWords(door.side)}.",
-                        style = VastuTheme.type.body,
-                        color = colors.textPrimary,
-                    )
-                    Spacer(Modifier.height(VastuTheme.spacing.s2))
-                    VText(
-                        "Wrong wall? Tap the E, then drag it where you come in.",
-                        style = VastuTheme.type.bodySm,
-                        color = colors.textSecondary,
-                    )
-                    Spacer(Modifier.height(VastuTheme.spacing.s3))
-                    // Full width inside its card, like every other stacked button in the app — and
-                    // a bigger target for a reader who is being asked to put a card away rather
-                    // than to aim at it. See the rule on VastuButtonStyle.
-                    VastuButton(
-                        "Got it",
-                        onClick = { doorHintDismissed = true },
-                        style = VastuButtonStyle.SECONDARY,
-                        large = false,
-                    )
-                }
-                Spacer(Modifier.height(VastuTheme.spacing.s2))
-            }
-            if (doorSelected && door != null) {
-                VText(
-                    "This is your main entrance, on ${doorSideWords(door.side)}. Drag the mark to move it.",
-                    style = VastuTheme.type.bodySm,
-                    // ⚠ Not the accent colour. Measured at 2.77:1 against this screen's paper, which
-                    // is under every contrast floor the a11y gate holds — and this is the one
-                    // sentence on the screen a reader has deliberately asked for.
-                    color = colors.textPrimary,
-                )
-            }
+            // ⚠ THE "WE FOUND YOUR MAIN ENTRANCE" CARD AND THE LINE A TAPPED E PRINTED HERE ARE GONE
+            // FROM THE PAGE (owner, 27 Sep 2026: *"on first tap and pop up can tell them what it is
+            // instead filling the screen with all this info"*). What they said lives on in the E's
+            // own note — see [reviewDoorNote] — one tap on the mark away, which is where a reader
+            // who is wondering about the E is already looking.
             planRooms.forEachIndexed { index, pr ->
                 val room = rooms[index]
                 // ⭐ The report's own words for this room, when North is known. Null before that,
@@ -629,29 +612,11 @@ fun ScanReviewContent(
             run {
                 Spacer(Modifier.height(VastuTheme.spacing.s3))
                 // ⭐⭐ WHEN THE PLAN NAMED ITS OWN ENTRANCE, WE DO NOT ASK (owner, 6 Aug 2026: "cant
-                // we do it ourselves when Entry is clearly marked? we ask only if its not"). But not
-                // asking is not the same as not saying: the front door is the heaviest input the
-                // engine weighs, so what we read is stated in one line, with the way to change it.
-                if (door != null) {
-                    VText(
-                        // ⚠ THREE states, not two, since 16 Aug 2026. The door can now be moved on
-                        // this screen by dragging its mark, and the first two sentences both claim
-                        // WE worked it out. Left at two, the screen told a user who had just placed
-                        // the door with their own finger that "we read it from your plan's own
-                        // entrance" — taking credit for their correction and hiding that it landed.
-                        when {
-                            !doorIsOurs ->
-                                "Front door: you put it on ${doorSideWords(door.side)}. Drag the mark on the plan to move it again."
-                            doorFromCaption != null ->
-                                "Front door: your plan prints \"$doorFromCaption\" on ${doorSideWords(door.side)}, so we put it there. Drag the mark on the plan to move it."
-                            else ->
-                                "Front door: we read it from your plan's own entrance, on ${doorSideWords(door.side)}. Drag the mark on the plan to move it."
-                        },
-                        style = VastuTheme.type.bodySm,
-                        color = colors.textSecondary,
-                    )
-                    Spacer(Modifier.height(VastuTheme.spacing.s2))
-                }
+                // we do it ourselves when Entry is clearly marked? we ask only if its not"). Not
+                // asking is still not the same as not saying — the front door is the heaviest input
+                // the engine weighs — and since 27 Sep 2026 the saying is done by the E itself: its
+                // note carries the three-way sentence that used to be printed on this line.
+                //
                 // The button never promises a screen other than the one it opens (audit B2).
                 //
                 // ⚠ It used to say "which way is North?" because North came next. North now comes

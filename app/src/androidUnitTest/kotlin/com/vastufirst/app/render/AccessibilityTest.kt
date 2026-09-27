@@ -145,7 +145,9 @@ class AccessibilityTest {
                     door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
                         com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
                     ),
-                    startDoorSelected = true,
+                    // Since 27 Sep 2026 a tap on the E opens its NOTE, which carries the sentences
+                    // that used to be printed round the plan — so the note is what this pass checks.
+                    startDoorNoteOpen = true,
                 )
             },
             // ⭐ Marking the front door on the photo — a described image that is also the screen's

@@ -335,8 +335,9 @@ class LongScreenBottomScreenshotTest {
     /**
      * "Check what we read", scrolled to its end — the screen that now finishes the scan flow when
      * the plan named its own entrance. What has to be legible: the result and direction pills on the
-     * last rows, the line stating the door we read, and a button that says "read my home" rather
-     * than promising a North step that has already happened.
+     * last rows, and a button that says "read my home" rather than promising a North step that has
+     * already happened. (The line stating the door we read moved into the E's own note on
+     * 27 Sep 2026 — `scan-review-door-tapped` is the picture of it.)
      */
     /**
      * ⚠⚠ THE ANCHOR MOVED DOWN ON 18 AUG 2026, AND THAT IS THE POINT OF THE CHANGE, NOT A DETAIL.

@@ -105,6 +105,27 @@ fun doorMarkerOnPage(door: GridDoor, rooms: List<ScannedRoom>): Pair<Float, Floa
         (frame.y + v.coerceIn(0f, 1f) * frame.h).toFloat()
 }
 
+/**
+ * The front door put in the MIDDLE of one wall — the single-tap way to do what a drag does, for a
+ * screen reader's "move it to the top wall" action and anyone else who cannot drag.
+ *
+ * ⚠ Through [doorForPhotoTap], like every other way a door is set on the photograph: the midpoint of
+ * that side of the home's outline is handed over as if a finger had landed there, so the wall and the
+ * cell are decided by the one tested function and nowhere else.
+ */
+fun doorOnWall(side: DoorSide, rooms: List<ScannedRoom>): GridDoor? {
+    val f = homeFrameOnPage(rooms)
+    val midX = (f.x + f.w / 2.0).toFloat()
+    val midY = (f.y + f.h / 2.0).toFloat()
+    val (x, y) = when (side) {
+        DoorSide.N -> midX to f.y.toFloat()
+        DoorSide.S -> midX to (f.y + f.h).toFloat()
+        DoorSide.W -> f.x.toFloat() to midY
+        DoorSide.E -> (f.x + f.w).toFloat() to midY
+    }
+    return doorForPhotoTap(x, y, rooms)
+}
+
 /** "on the west wall" — the door in the words the rest of the app uses, for a one-line statement. */
 fun doorSideWords(side: DoorSide): String = when (side) {
     DoorSide.N -> "the top wall of your plan"

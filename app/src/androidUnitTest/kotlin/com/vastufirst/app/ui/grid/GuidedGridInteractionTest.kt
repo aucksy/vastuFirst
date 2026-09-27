@@ -1,7 +1,13 @@
 package com.vastufirst.app.ui.grid
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performTouchInput
+import com.vastufirst.app.ui.common.DOOR_MARK_TAG
+import com.vastufirst.app.ui.common.DOOR_NOTE_TAG
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -385,10 +391,10 @@ class GuidedGridInteractionTest {
         var left = 0
         setContent { Editor(h, onNext = { left++ }) }
         tapText("Next — set the front door")
-        // A finger on the wall cannot be driven here; the door arrives the way placeDoor hands it over.
+        // The door arrives the way the plan's gesture reader hands it over.
         runOnIdle { h.door.value = GridDoor(DoorSide.N, 1) }
         waitForIdle()
-        onNodeWithText("Your front door is on the north wall. Tap another wall to move it.").assertExists()
+        onNodeWithText("Your front door is on the north wall. Drag the E to any wall to move it.").assertExists()
         onNodeWithText("You can carry on without marking the door — we will say so on your score.").assertDoesNotExist()
         onNodeWithText("Done placing door").assertExists()
         tapText("Next — mark North")
@@ -396,14 +402,128 @@ class GuidedGridInteractionTest {
     }
 
     @Test
-    fun `with a door already set, Next goes straight to North and the door button only moves it`() = runComposeUiTest {
+    fun `with a door already set, Next goes straight to North and no button stands in front of the E`() = runComposeUiTest {
         val h = Harness(listOf(room("a", RoomType.BEDROOM, 0, 0, 3, 3)), GridDoor(DoorSide.S, 1))
         var left = 0
         setContent { Editor(h, onNext = { left++ }) }
-        onNodeWithText("Move the front door").assertExists()
+        // The owner, 27 Sep 2026: "it should not be locked behind a button". The E itself moves now.
+        onNodeWithText("Move the front door").assertDoesNotExist()
+        onNodeWithTag(DOOR_MARK_TAG).assertExists()
         tapText("Next — mark North")
         assertEquals(1, left)
     }
+
+    // ── the front door moves under the finger (owner, 27 Sep 2026) ───────────────────────────────
+    //
+    // ⭐ The owner's report, driven as a real finger: "its not moving real-time when holding and
+    // dragging it.. currently it follows after you have dragged it.. and I am also not able to move
+    // it to other walls.. its stuck on same wall where you put it.. it should not be locked behind a
+    // button". Each test below FAILED on the build before this change: the E ignored a drag outside
+    // the door step, and inside it the door moved only when the finger lifted.
+
+    @Test
+    fun `the E moves with the finger while it is still held, with no button first`() = runComposeUiTest {
+        // A home 4 wide and 3 deep; the door on the top wall, first cell.
+        val h = Harness(listOf(room("a", RoomType.LIVING, 0, 0, 4, 3)), GridDoor(DoorSide.N, 0))
+        setContent { Editor(h) }
+        val g = gridGeometry()
+        val start = eCentreInGrid(g)
+
+        onNodeWithTag("editor.grid").performTouchInput {
+            down(start)
+            // Two and a quarter cells to the right, in small steps — a finger, not a jump. The
+            // finger ends at 2.75 cells: inside cell 2, and a quarter-cell past that cell's centre.
+            repeat(9) { moveBy(Offset(g.cell * 0.25f, 0f)) }
+        }
+        waitForIdle()
+        // ⭐ STILL HELD. The door has already moved, and the E is drawn where the finger has it —
+        // between whole cells, not waiting for a lift and not snapped to the cell it will settle in.
+        assertEquals("the scored door follows during the drag", GridDoor(DoorSide.N, 2), h.door.value)
+        val midX = eCentreInGrid(g).x / g.cell
+        assertTrue(
+            "the E is drawn under the finger (≈2.75 cells), not in the cell's centre (2.5): was $midX",
+            midX > 2.65f && midX < 2.85f,
+        )
+
+        onNodeWithTag("editor.grid").performTouchInput { up() }
+        waitForIdle()
+        assertEquals("on lifting it stays where it was carried", GridDoor(DoorSide.N, 2), h.door.value)
+        val settledX = eCentreInGrid(g).x / g.cell
+        assertEquals("and settles into that cell's centre", 2.5f, settledX, 0.05f)
+    }
+
+    @Test
+    fun `the E can be carried round the corner onto another wall`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.LIVING, 0, 0, 4, 3)), GridDoor(DoorSide.N, 1))
+        setContent { Editor(h) }
+        val g = gridGeometry()
+        val start = eCentreInGrid(g)
+
+        onNodeWithTag("editor.grid").performTouchInput {
+            down(start)
+            // Along the top towards the east…
+            repeat(8) { moveBy(Offset(g.cell * 0.4f, 0f)) }
+            // …and down the east side.
+            repeat(6) { moveBy(Offset(0f, g.cell * 0.3f)) }
+        }
+        waitForIdle()
+        assertEquals("the door is on the EAST wall while still held", DoorSide.E, h.door.value?.side)
+        onNodeWithTag("editor.grid").performTouchInput { up() }
+        waitForIdle()
+        assertEquals(DoorSide.E, h.door.value?.side)
+        onNodeWithContentDescription("Front door on the east wall").assertExists()
+    }
+
+    @Test
+    fun `a tap on the E opens a note saying what it is, and another tap puts it away`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.LIVING, 0, 0, 4, 3)), GridDoor(DoorSide.N, 1))
+        setContent { Editor(h) }
+        val g = gridGeometry()
+        onNodeWithTag(DOOR_NOTE_TAG).assertDoesNotExist()
+
+        onNodeWithTag("editor.grid").performTouchInput { click(eCentreInGrid(g)) }
+        waitForIdle()
+        onNodeWithTag(DOOR_NOTE_TAG).assertExists()
+        onNodeWithText("On the north wall. Drag the E to any wall to move it.").assertExists()
+        assertEquals("a tap moves nothing", GridDoor(DoorSide.N, 1), h.door.value)
+
+        onNodeWithTag(DOOR_NOTE_TAG).performClick()
+        waitForIdle()
+        onNodeWithTag(DOOR_NOTE_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun `in the door step the E comes to the wall under the finger on touch-down, before any lift`() = runComposeUiTest {
+        val h = Harness(listOf(room("a", RoomType.LIVING, 0, 0, 4, 3)))
+        setContent { Editor(h) }
+        tapText("Next — set the front door")
+        val g = gridGeometry()
+
+        // Just inside the bottom wall, near the middle — and NOT lifted.
+        onNodeWithTag("editor.grid").performTouchInput { down(Offset(g.cell * 1.5f, g.cell * 2.8f)) }
+        waitForIdle()
+        assertEquals("placed on touch-down", GridDoor(DoorSide.S, 1), h.door.value)
+        onNodeWithTag("editor.grid").performTouchInput { moveBy(Offset(g.cell * 2f, 0f)) }
+        waitForIdle()
+        assertEquals("and follows while held", GridDoor(DoorSide.S, 3), h.door.value)
+        onNodeWithTag("editor.grid").performTouchInput { up() }
+        waitForIdle()
+    }
+
+    // ── helpers for the finger tests ─────────────────────────────────────────────────────────────
+
+    /** The plan's box and its cell size, in the grid node's own pixels. */
+    private class GridGeometry(val topLeft: Offset, val cell: Float)
+
+    private fun ComposeUiTest.gridGeometry(): GridGeometry {
+        val b = onNodeWithTag("editor.grid").fetchSemanticsNode().boundsInRoot
+        // The Harness plot is 8 × 8 with square cells.
+        return GridGeometry(topLeft = b.topLeft, cell = b.width / 8f)
+    }
+
+    /** Where the E's node is drawn, relative to the grid — i.e. where a finger lands on it. */
+    private fun ComposeUiTest.eCentreInGrid(g: GridGeometry): Offset =
+        onNodeWithTag(DOOR_MARK_TAG).fetchSemanticsNode().boundsInRoot.center - g.topLeft
 
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
 

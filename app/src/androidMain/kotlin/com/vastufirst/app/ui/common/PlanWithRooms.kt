@@ -27,6 +27,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +49,7 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -150,38 +152,46 @@ const val PLAN_MAX_ZOOM = 5f
  * score. So every gesture this picture understands is decided in one place, at the moment the finger
  * goes down:
  *
- *   · down ON the door marker  → this gesture belongs to the door. Drag moves it; a tap names it.
- *   · a second finger arrives  → pinch to zoom (only when [zoomable]).
- *   · drag while zoomed in     → pan the sheet.
- *   · up without passing slop  → a tap: the door, or the room under the finger.
+ *   · down ON the E, where it can move → this gesture belongs to the door. A drag carries it, from
+ *                                         the first movement past touch slop; a tap opens its note.
+ *   · a second finger arrives           → pinch to zoom (only when [zoomable]).
+ *   · drag while zoomed in              → pan the sheet.
+ *   · up without passing slop           → a tap: the door, or the room under the finger.
+ *
+ * ⭐⭐ THE E NO LONGER HAS TO BE TAPPED BEFORE IT WILL MOVE (owner, 27 Sep 2026: *"it should not be
+ * locked behind a button... user can just tap and drag it"*). It used to be offered for dragging
+ * only once selected, so a reader who simply put a finger on it and pulled saw nothing happen at
+ * all. A finger that lands on the E and moves now means exactly that. Panning is still a drag that
+ * starts anywhere ELSE on the sheet, which is where a finger meaning to shift the picture lands.
  *
  * ⚠ NOTE WHAT IS **NOT** CONSUMED. At zoom 1 with one finger and no door under it, this reader takes
  * nothing and behaves exactly as the old `detectTapGestures` did — which is why no existing golden
  * or test moves. A picture that grabbed single-finger drags at rest would steal the report's own
- * scroll, because there the plan sits inside a scrolling column.
+ * scroll, because there the plan sits inside a scrolling column — and there [doorMovable] is false,
+ * so even a drag that starts on the E is left to the page.
  */
 private suspend fun PointerInputScope.planGestures(
     zoomable: Boolean,
     zoom: () -> Float,
-    doorDragAt: () -> Offset?,
-    doorTapAt: () -> Offset?,
+    doorAt: () -> Offset?,
+    doorMovable: () -> Boolean,
     doorTouchPx: Float,
     onZoomPan: (centroid: Offset, zoomChange: Float, panChange: Offset) -> Unit,
     onTap: (Offset) -> Unit,
     onDoorTap: () -> Unit,
+    onDoorDragStart: () -> Unit,
     onDoorDrag: (Offset) -> Unit,
+    onDoorDragEnd: () -> Unit,
 ) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
-        val near = { at: Offset? -> at != null && (down.position - at).getDistance() <= doorTouchPx }
-        // ⚠ DRAGGING THE DOOR IS ONLY OFFERED ONCE THE DOOR IS SELECTED, and that is a safety rule
-        // rather than a flourish. Any drag beginning within a 48 dp circle would otherwise move the
-        // heaviest single input in the whole score — and once the plan can be panned, a finger
-        // starting on the mark and meaning to shift the picture is an ordinary thing to do. Tapping
-        // the mark first says out loud what it is, and only then does it follow the finger. The
-        // sentence the tap prints is the same sentence that invites the drag, so the two agree.
-        val dragsDoor = near(doorDragAt())
-        val tapsDoor = near(doorTapAt())
+        val markerNow = doorAt()
+        val onDoor = markerNow != null && (down.position - markerNow).getDistance() <= doorTouchPx
+        val dragsDoor = onDoor && doorMovable()
+        // ⭐ THE E KEEPS ITS PLACE UNDER THE FINGER. A finger rarely lands on the exact centre of the
+        // mark; carrying that small offset through the drag means the E does not leap to the
+        // fingertip on the first movement — it simply starts moving with the hand that holds it.
+        val grab = if (dragsDoor) markerNow?.minus(down.position) ?: Offset.Zero else Offset.Zero
         var dragging = false
         var pinching = false
 
@@ -209,11 +219,14 @@ private suspend fun PointerInputScope.planGestures(
             val moving = event.changes.firstOrNull { it.id == down.id } ?: continue
             if (!dragging && (moving.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                 dragging = true
+                if (dragsDoor) onDoorDragStart()
             }
             if (!dragging) continue
 
             if (dragsDoor) {
-                onDoorDrag(moving.position)
+                // EVERY movement, not only the ones that change the scored door — this is what makes
+                // the E follow the finger rather than catch up with it.
+                onDoorDrag(moving.position + grab)
                 moving.consume()
             } else if (zoomable && zoom() > 1f) {
                 onZoomPan(moving.position, 1f, moving.positionChange())
@@ -221,9 +234,13 @@ private suspend fun PointerInputScope.planGestures(
             }
         }
 
+        if (dragging && dragsDoor) {
+            onDoorDragEnd()
+            return@awaitEachGesture
+        }
         if (dragging || pinching) return@awaitEachGesture
         // A tap. The door owns it if the finger came down on the mark.
-        if (tapsDoor) onDoorTap() else onTap(down.position)
+        if (onDoor) onDoorTap() else onTap(down.position)
     }
 }
 
@@ -287,12 +304,29 @@ fun PlanWithRooms(
      * exact inverse of the tap conversion, so the mark lands under the finger that placed it.
      */
     doorAtPage: Pair<Float, Float>? = null,
-    /** True while the door is the thing the user has selected — it is then drawn to be found. */
-    doorSelected: Boolean = false,
-    /** The door was tapped. The screen says what it is. */
+    /** The door was tapped. On the report this reveals its line; where there is a note, it opens. */
     onTapDoor: () -> Unit = {},
-    /** The door was dragged to this point on the picture, in page fractions. */
+    /**
+     * The E was dragged, and is now at this point ON THE HOME'S OUTLINE, in page fractions — already
+     * slid onto the nearest wall, so the caller only has to turn it into the scored door.
+     */
     onMoveDoorToPage: (Float, Float) -> Unit = { _, _ -> },
+    /**
+     * ⭐ The home's outline on the picture, in page fractions — the line a dragged E slides along.
+     * Null where the door cannot be moved: the report passes none, and there a drag that starts on
+     * the E is left to the page's own scroll.
+     */
+    doorOutline: ScanBox? = null,
+    /** What the note on the E says. Null draws no note — the report has its own line for the door. */
+    doorNote: DoorNoteText? = null,
+    /** For the harness: open the E's note on first draw, so a golden can photograph it. */
+    startDoorNoteOpen: Boolean = false,
+    /** One tap per wall for anyone who cannot drag — see [DoorMarkTarget]. Null where it cannot move. */
+    onMoveDoorToSide: ((com.vastufirst.app.ui.newplan.DoorSide) -> Unit)? = null,
+    /** How this screen names a wall aloud, for those actions. */
+    doorWallWords: (com.vastufirst.app.ui.newplan.DoorSide) -> String = { it.name },
+    /** What a screen reader hears on the E itself: a fact, never an instruction to drag. */
+    doorDescription: String = "Your front door",
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
@@ -316,12 +350,27 @@ fun PlanWithRooms(
 
     var zoom by remember(image) { mutableFloatStateOf(1f) }
     var pan by remember(image) { mutableStateOf(Offset.Zero) }
+    /**
+     * ⭐⭐ WHERE THE E IS WHILE A FINGER CARRIES IT — on the outline, under the finger, every frame.
+     *
+     * Null at rest, and then the E is drawn where the SCORED door is ([doorAtPage]). The two differ
+     * only while the finger is down: the scored door moves in whole steps along a wall, the finger
+     * does not, and drawing the scored door was exactly why the E used to lag and jump behind the
+     * hand. On lifting, this goes back to null and the E settles onto the spot that is scored.
+     */
+    var draggedDoor by remember(image) { mutableStateOf<Pair<Float, Float>?>(null) }
+    /** The E's note — the owner's "pop up", opened by a tap on the E and put away by any other tap. */
+    var noteOpen by remember(image) { mutableStateOf(startDoorNoteOpen) }
+    val shownDoor = draggedDoor ?: doorAtPage
     // ⚠ Read LIVE, never used as a pointerInput key. Keying the gesture reader on the door would
     // cancel and restart it the instant a drag moved the door — the finger would stop working after
     // the first pixel. The editor screen carries the same note for the same reason.
-    val liveDoor by rememberUpdatedState(doorAtPage)
-    val liveDoorSelected by rememberUpdatedState(doorSelected)
+    val liveDoor by rememberUpdatedState(shownDoor)
+    val liveOutline by rememberUpdatedState(doorOutline)
     val liveRooms by rememberUpdatedState(rooms)
+    val liveOnMoveDoor by rememberUpdatedState(onMoveDoorToPage)
+    val liveOnTapDoor by rememberUpdatedState(onTapDoor)
+    val liveHasNote by rememberUpdatedState(doorNote != null)
 
     // ⚠⚠ THE HEIGHT CAP MUST BE APPLIED TO THE PICTURE, NOT AROUND IT — found by looking at the
     // render, 10 Aug 2026. Capping a parent box and giving the child an aspect ratio does NOT bound
@@ -339,11 +388,12 @@ fun PlanWithRooms(
         // picture inside a screen is not one — an explicit size says what is meant and keeps that
         // check honest. (Do not spell that modifier's name anywhere in this file, comments included:
         // the gate reads the file as text, exactly like the CI skip markers do.)
-        run {
+        // ⭐ A BOX AROUND THE PICTURE, so the E's own node and its note can sit over it. The picture
+        // still takes the whole box; the two extras draw nothing unless there is a door to name.
+        Box(Modifier.width(drawnWidth).height(drawnHeight)) {
             Canvas(
                 modifier = Modifier
-                    .width(drawnWidth)
-                    .height(drawnHeight)
+                    .matchParentSize()
                     // ⚠⚠ A COMPOSE CANVAS DOES NOT CLIP ITS OWN INK. Without this the magnified
                     // sheet is painted straight over whatever else is on the screen — the room list
                     // below it, the title above it — because `drawImage` is not bounded by the
@@ -363,15 +413,20 @@ fun PlanWithRooms(
                         val markerAt = {
                             liveDoor?.let { (dx, dy) ->
                                 val f = fitNow()
-                                if (f.w > 0f) Offset(f.ox + dx * f.w, f.oy + dy * f.h) else null
+                                if (f.w > 0f) {
+                                    val r = doorMarkRadiusPx(f.w, f.h, doorTouch.toPx())
+                                    doorCentrePx(f, dx, dy, r, size.width.toFloat(), size.height.toFloat(), zoom)
+                                } else {
+                                    null
+                                }
                             }
                         }
                         planGestures(
                             zoomable = zoomable,
                             zoom = { zoom },
-                            // Only a SELECTED door may be dragged — see the note in planGestures.
-                            doorDragAt = { if (liveDoorSelected) markerAt() else null },
-                            doorTapAt = markerAt,
+                            doorAt = markerAt,
+                            // Only where there is an outline to slide along — never on the report.
+                            doorMovable = { liveOutline != null },
                             doorTouchPx = doorTouch.toPx() / 2f,
                             onZoomPan = { centroid, dZoom, dPan ->
                                 val boxW = size.width.toFloat()
@@ -394,16 +449,34 @@ fun PlanWithRooms(
                                 pan = clampPlanPan(wanted, after.w, after.h, boxW, boxH)
                             },
                             onTap = { at ->
+                                // Any other tap puts the note away — one thing is explained at a time.
+                                noteOpen = false
                                 pageOf(at)?.let { (fx, fy) ->
                                     roomAtPoint(liveRooms, fx, fy)?.let { onTapRoom(it.id) }
                                 }
                             },
-                            onDoorTap = onTapDoor,
+                            onDoorTap = {
+                                if (liveHasNote) noteOpen = !noteOpen
+                                liveOnTapDoor()
+                            },
+                            // A drag is not a question about what the E is, so its note goes away.
+                            onDoorDragStart = { noteOpen = false },
                             onDoorDrag = { at ->
+                                val outline = liveOutline
                                 pageOf(at)?.let { (fx, fy) ->
-                                    onMoveDoorToPage(fx.coerceIn(0f, 1f), fy.coerceIn(0f, 1f))
+                                    if (outline != null) {
+                                        val p = nearestOnOutline(
+                                            fx, fy,
+                                            outline.x.toFloat(), outline.y.toFloat(),
+                                            (outline.x + outline.w).toFloat(), (outline.y + outline.h).toFloat(),
+                                        )
+                                        draggedDoor = p.x to p.y
+                                        liveOnMoveDoor(p.x, p.y)
+                                    }
                                 }
                             },
+                            // Lifted: the E settles onto the scored door, which has followed it all along.
+                            onDoorDragEnd = { draggedDoor = null },
                         )
                     }
                     .semantics {
@@ -435,8 +508,9 @@ fun PlanWithRooms(
                     drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
                 }
 
-                // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it.
-                doorAtPage?.let { (dx, dy) ->
+                // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it — and drawn where the finger
+                // has it while it is being carried, not where the scored door last settled.
+                shownDoor?.let { (dx, dy) ->
                     // Proportional between two fixed bounds — see [doorMarkRadiusPx], which is the
                     // one place the entrance mark's size is decided for the whole app.
                     val r = doorMarkRadiusPx(drawn.width, drawn.height, doorTouch.toPx())
@@ -456,19 +530,16 @@ fun PlanWithRooms(
                     // canvas, which is the only case where this does anything at all. While zoomed
                     // the mark is deliberately left alone: pinning it to the screen edge would be
                     // the picture claiming a door is somewhere it is not.
-                    val raw = Offset(origin.x + dx * drawn.width, origin.y + dy * drawn.height)
-                    val at = if (zoom > 1f) raw else Offset(
-                        x = raw.x.coerceIn(r, (size.width - r).coerceAtLeast(r)),
-                        y = raw.y.coerceIn(r, (size.height - r).coerceAtLeast(r)),
-                    )
+                    val at = doorCentrePx(fit, dx, dy, r, size.width, size.height, zoom)
                     // ⭐ ONE DRAWING, SHARED. Collar, disc, letter and the selected ring all come
                     // from [drawDoorMark] so this picture cannot drift away from the front-door
                     // screen, the report or the hand-drawn editor — which is exactly what happened
-                    // when each of the four drew its own.
+                    // when each of the four drew its own. The ring shows while the E is held or its
+                    // note is open: the moments the reader is looking at it on purpose.
                     drawDoorMark(
                         center = at,
                         radius = r,
-                        selected = doorSelected,
+                        selected = noteOpen || draggedDoor != null,
                         colors = colors,
                         strokePx = strokeDp.toPx(),
                         measurer = measurer,
@@ -476,8 +547,65 @@ fun PlanWithRooms(
                     )
                 }
             }
+
+            // ⭐ THE E'S OWN NODE AND ITS NOTE — only where the door can be moved or explained, so the
+            // report's picture (which passes neither) is exactly what it was.
+            val door = shownDoor
+            if (door != null && (doorOutline != null || doorNote != null)) {
+                val density = LocalDensity.current
+                val boxW = with(density) { drawnWidth.toPx() }
+                val boxH = with(density) { drawnHeight.toPx() }
+                val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
+                val r = doorMarkRadiusPx(fit.w, fit.h, with(density) { doorTouch.toPx() })
+                val centre = doorCentrePx(fit, door.first, door.second, r, boxW, boxH, zoom)
+                // A magnified sheet can carry the E out of view; its node goes with it rather than
+                // floating over the screen somewhere the door is not.
+                if (centre.x in 0f..boxW && centre.y in 0f..boxH) {
+                    DoorMarkTarget(
+                        centrePx = centre,
+                        description = doorDescription,
+                        onOpen = {
+                            if (doorNote != null) noteOpen = true
+                            onTapDoor()
+                        },
+                        moveTo = onMoveDoorToSide,
+                        wallWords = doorWallWords,
+                    )
+                }
+                if (noteOpen && doorNote != null) {
+                    DoorNoteOverlay(
+                        note = doorNote,
+                        markerInTopHalf = centre.y < boxH / 2f,
+                        onClose = { noteOpen = false },
+                    )
+                }
+            }
         }
     }
+}
+
+/**
+ * Where the E's centre is drawn, in the picture box's pixels.
+ *
+ * ⭐ ONE FUNCTION FOR THE DRAWING, THE TOUCH TEST AND THE SCREEN-READER NODE, so the three can never
+ * disagree about where the E is. At rest the centre is nudged just inside the box when it would
+ * otherwise sit on the picture's own edge (the no-page-box fallback, where the home frame IS the
+ * sheet); while zoomed it is left exactly where the door is, even off screen.
+ */
+internal fun doorCentrePx(
+    fit: PlanFit,
+    dx: Float,
+    dy: Float,
+    radius: Float,
+    boxW: Float,
+    boxH: Float,
+    zoom: Float,
+): Offset {
+    val raw = Offset(fit.ox + dx * fit.w, fit.oy + dy * fit.h)
+    return if (zoom > 1f) raw else Offset(
+        x = raw.x.coerceIn(radius, (boxW - radius).coerceAtLeast(radius)),
+        y = raw.y.coerceIn(radius, (boxH - radius).coerceAtLeast(radius)),
+    )
 }
 
 /**
@@ -492,11 +620,13 @@ internal fun buildPlanDescription(selectedName: String?, hasDoor: Boolean, zooma
         ?: "Your scanned plan. Tap a room to see roughly where we read it."
     // ⚠ The door sentence STATES a fact and does not issue an instruction. Someone using a screen
     // reader cannot pinch and cannot drag a mark they navigate to by swiping, so telling them to do
-    // either is telling them to do something they cannot. The button lower down the screen sets the
-    // door with a single tap and is the route that works for everybody — it is named here instead.
-    // ⚠ It names the LETTER now, because the mark carries one since 17 Aug 2026. A sighted reader
-    // sees an E on the wall; a screen-reader user hearing only "a mark" cannot ask anybody about it.
-    val door = if (hasDoor) " Your front door is marked E on it. To move it, use \"Put the front door somewhere else\" below." else ""
+    // either is telling them to do something they cannot.
+    // ⚠ It names the LETTER, because the mark carries one since 17 Aug 2026. A sighted reader sees an
+    // E on the wall; a screen-reader user hearing only "a mark" cannot ask anybody about it.
+    // ⚠ It no longer names a button (27 Sep 2026). The E is its own node now, with one action per
+    // wall where the door can be moved, and this picture is also the report's — where the button it
+    // used to name does not exist.
+    val door = if (hasDoor) " Your front door is marked E on it." else ""
     val zoomWords = if (zoomable) " Pinch with two fingers to make the plan bigger." else ""
     return head + door + zoomWords
 }

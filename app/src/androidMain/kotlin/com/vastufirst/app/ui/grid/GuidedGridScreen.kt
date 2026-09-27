@@ -7,7 +7,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,8 +60,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -75,12 +76,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.vastufirst.app.ui.common.ALL_ROOM_TYPES
 import com.vastufirst.app.ui.common.DOOR_MARK_LETTER
+import com.vastufirst.app.ui.common.DOOR_MARK_TAG
+import com.vastufirst.app.ui.common.DoorNoteOverlay
+import com.vastufirst.app.ui.common.DoorNoteText
+import com.vastufirst.app.ui.common.OutlinePoint
+import com.vastufirst.app.ui.common.editorDoorCentre
+import com.vastufirst.app.ui.common.nearestOnOutline
 import com.vastufirst.app.ui.common.RoomTypePicker
 import com.vastufirst.app.ui.common.editorColor
 import com.vastufirst.app.ui.common.label
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.common.spoken
+import com.vastufirst.app.ui.newplan.DoorSide
 import com.vastufirst.app.ui.newplan.GRID
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
@@ -242,8 +250,10 @@ private fun describe(type: RoomType, rect: CellRect, cols: Int, rows: Int): Stri
  * client is paying for (Potter/Weldon/Shneiderman, CHI '88: ~65 % fewer wrong-target errors than
  * commit-on-touch). Overlapping is refused rather than silently accepted.
  *
- * A second mode places the front door on an outer wall — the highest-weighted element the engine
- * scores. Unchanged by this rework.
+ * The front door — the highest-weighted element the engine scores — sits on an outer wall as an E.
+ * Since 27 Sep 2026 a finger on the E carries it round the outline in either mode, with no button
+ * first (owner: *"it should not be locked behind a button... user can just tap and drag it"*); the
+ * door step is where a home WITHOUT a door is asked for one. See DoorMove.kt.
  */
 @Composable
 fun GuidedGridScreen(
@@ -315,6 +325,8 @@ fun GuidedGridContent(
      *  instruction line exist only in that state, and a golden cannot tap a chip to reach it — so
      *  the state every hand-drawn home passes through on every room had never been photographed. */
     startArmedType: RoomType? = null,
+    /** Open with the E's note showing. Same reason again: a golden cannot tap the E. */
+    startDoorNoteOpen: Boolean = false,
     /** The touches the editor answers with. The phone's own by default; a headless test hands in a
      *  counting fake so "a key that cannot act says no" is proven rather than assumed. */
     feedback: EditorFeedback = rememberEditorHaptics(),
@@ -388,6 +400,20 @@ fun GuidedGridContent(
     // Replaced only when the SNAPPED cell changes, never per pointer event — so a drag recomposes
     // a handful of times, not sixty times a second (§4.7).
     var activeDrag by remember { mutableStateOf<ActiveDrag?>(null) }
+    /**
+     * ⭐⭐ THE E WHILE A FINGER CARRIES IT — the point on the home's outline nearest the finger, every
+     * movement. Null at rest, and the E then sits in its scored cell as it always has.
+     *
+     * ⚠ UNLIKE [activeDrag], THIS IS REPLACED ON EVERY MOVEMENT, deliberately. A room snaps to whole
+     * cells because a room IS whole cells; the E does not, and drawing it only when its scored cell
+     * changed is exactly the "it follows after you have dragged it" the owner reported. One small
+     * marker recomposing per frame is cheap; the rooms do not recompose with it.
+     */
+    var draggedDoor by remember { mutableStateOf<OutlinePoint?>(null) }
+    /** The E's note — opened by a tap on the E, put away by any other touch on the plan. */
+    var doorNoteOpen by remember { mutableStateOf(startDoorNoteOpen) }
+    // Read live inside the gesture reader, which is never keyed on the door (see roomsState below).
+    val doorState = rememberUpdatedState(door)
     // Hoisted above the `when` below: created inside it, the palette's scroll position was torn
     // down and reset to the far left every time a room was placed (UI audit item 16).
     val paletteScroll = rememberScrollState()
@@ -447,17 +473,27 @@ fun GuidedGridContent(
     }
 
     /**
-     * A tap in door mode. All the arithmetic is the pure, tested [doorForTap]; this is only the
-     * binding to the live room list — read from [roomsState], never the captured `rooms` param, so a
-     * door placed after adding rooms can't clamp to a stale footprint.
+     * The front door put in the MIDDLE of one wall — the single-tap way to do what a drag does, for a
+     * screen reader's "move it to the north wall" action (WCAG 2.2, dragging movements).
      *
-     * [xCells]/[yCells] are FRACTIONAL cells, deliberately: the wall is chosen by comparing the tap
-     * against the house's wall lines, and a 1-cell-deep house's north and south walls are only half a
-     * cell apart (see doorForTap). The plot size is not passed at all any more — it plays no part in
-     * which wall a tap means (UAT S8).
+     * Through the pure, tested [doorForTap] like every other way a door is set here, and against the
+     * LIVE room list ([roomsState]), never the captured `rooms` param, so it can't clamp to a stale
+     * footprint.
      */
-    fun placeDoor(xCells: Float, yCells: Float) {
-        doorForTap(xCells, yCells, roomsState.value)?.let(onDoorChange)
+    fun doorOnWall(side: DoorSide) {
+        val current = roomsState.value
+        if (current.isEmpty()) return
+        val fMinC = current.minOf { it.col }; val fMaxC = current.maxOf { it.col + it.w }
+        val fMinR = current.minOf { it.row }; val fMaxR = current.maxOf { it.row + it.h }
+        val midX = (fMinC + fMaxC) / 2f
+        val midY = (fMinR + fMaxR) / 2f
+        val (x, y) = when (side) {
+            DoorSide.N -> midX to fMinR.toFloat()
+            DoorSide.S -> midX to fMaxR.toFloat()
+            DoorSide.W -> fMinC.toFloat() to midY
+            DoorSide.E -> fMaxC.toFloat() to midY
+        }
+        doorForTap(x, y, current)?.let(onDoorChange)
     }
 
     /**
@@ -523,9 +559,10 @@ fun GuidedGridContent(
                 // ⭐ Once a door IS on the plan, the line says which wall it landed on. The tap that
                 // placed it gave a buzz and a small green mark, and nothing else changed — the
                 // instruction still read "tap the wall where your front door is", as though the tap
-                // had not registered. Now the screen answers the tap in words, and says how to undo it.
+                // had not registered. Now the screen answers the tap in words, and says how to move
+                // it — by dragging the E itself since 27 Sep 2026.
                 doorMode && door != null ->
-                    "Your front door is on the ${door.side.spoken()} wall. Tap another wall to move it."
+                    "Your front door is on the ${door.side.spoken()} wall. Drag the E to any wall to move it."
                 doorMode -> "Your home is outlined below. Tap the wall where your front door is."
                 // ⭐ "Press Done to add more rooms": a room lands SELECTED, and the selected-room panel
                 // takes the place of the room list — so after placing their first room a reader was
@@ -697,20 +734,104 @@ fun GuidedGridContent(
                         // roomsState.value is always current (see rememberUpdatedState above).
                         val current = roomsState.value
 
-                        // --- front door: unchanged, still a tap (rework §7 out of scope) ---
-                        if (doorMode) {
+                        // --- the front door: a finger on the E carries it, in EITHER mode ---
+                        //
+                        // ⭐⭐ Owner, 27 Sep 2026: *"its not moving real-time when holding and dragging
+                        // it.. currently it follows after you have dragged it.. and I am also not able
+                        // to move it to other walls"*. It was a tap, read on the finger's LIFT, and
+                        // only inside the door step — so holding and dragging moved nothing until the
+                        // hand came off, and then the E jumped. Now:
+                        //   · a finger on the E (anywhere on the plan, any mode) takes it at once;
+                        //   · in the door step, a finger ANYWHERE is an answer — the E comes to the
+                        //     nearest wall under it on touch-down and follows from there;
+                        //   · while it moves, the E is on the outline nearest the finger, EVERY
+                        //     movement, round corners onto other walls (nearestOnOutline);
+                        //   · the scored door follows it through the one tested [doorForTap], so what
+                        //     is drawn and what is scored name the same wall at every instant.
+                        val doorNow = doorState.value
+                        val restingE = doorNow?.let { d ->
+                            val (c, r) = doorMarkerCell(d, current, cols, rows)
+                            Offset((c + 0.5f) * cellPx, (r + 0.5f) * cellPx)
+                        }
+                        val eAt = draggedDoor?.let { p ->
+                            if (current.isEmpty()) null else {
+                                val (ex, ey) = editorDoorCentre(
+                                    p,
+                                    current.minOf { it.col }, current.minOf { it.row },
+                                    current.maxOf { it.col + it.w }, current.maxOf { it.row + it.h },
+                                )
+                                Offset(ex * cellPx, ey * cellPx)
+                            }
+                        } ?: restingE
+                        val onE = eAt != null && (down.position - eAt).getDistance() <= touchPx / 2f
+                        if ((onE || doorMode) && current.isNotEmpty()) {
                             down.consume()
-                            val up = waitForUpOrCancellation()
-                            if (up != null) {
-                                up.consume()
-                                // Fractional cells, NOT cellIndex: doorForTap compares the tap against
-                                // the house's wall lines, and rounding to a whole cell first would make
-                                // a 1-cell-deep house's north and south walls indistinguishable.
-                                placeDoor(up.position.x / cellPx, up.position.y / cellPx)
+                            val fMinC = current.minOf { it.col }; val fMaxC = current.maxOf { it.col + it.w }
+                            val fMinR = current.minOf { it.row }; val fMaxR = current.maxOf { it.row + it.h }
+                            // Grabbed on the E: carry the E's own point on the OUTLINE with the finger,
+                            // so it does not leap to the fingertip — and so a thin house's south door
+                            // is not read as its north one on the first movement (its cell centre is
+                            // equally far from both walls; its outline point is not).
+                            val grab = if (onE && doorNow != null) {
+                                val along = doorNow.cell + 0.5f
+                                val (ox, oy) = when (doorNow.side) {
+                                    DoorSide.N -> along to fMinR.toFloat()
+                                    DoorSide.S -> along to fMaxR.toFloat()
+                                    DoorSide.W -> fMinC.toFloat() to along
+                                    DoorSide.E -> fMaxC.toFloat() to along
+                                }
+                                Offset(ox - down.position.x / cellPx, oy - down.position.y / cellPx)
+                            } else {
+                                Offset.Zero
+                            }
+                            fun carryTo(fingerPx: Offset) {
+                                // FRACTIONAL cells, deliberately: a 1-cell-deep house's north and south
+                                // walls are only half a cell apart (see doorForTap).
+                                val p = nearestOnOutline(
+                                    fingerPx.x / cellPx + grab.x, fingerPx.y / cellPx + grab.y,
+                                    fMinC.toFloat(), fMinR.toFloat(), fMaxC.toFloat(), fMaxR.toFloat(),
+                                )
+                                draggedDoor = p
+                                val next = doorForTap(p.x, p.y, current)
+                                if (next != null && next != doorState.value) {
+                                    onDoorChange(next)
+                                    haptics.tick()
+                                }
+                            }
+                            // In the door step a finger anywhere is an answer, at once.
+                            var carrying = !onE
+                            if (carrying) carryTo(down.position)
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) {
+                                    change.consume()
+                                    break
+                                }
+                                if (!carrying &&
+                                    (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+                                ) {
+                                    carrying = true
+                                    // A drag is not a question about what the E is.
+                                    doorNoteOpen = false
+                                }
+                                if (carrying) {
+                                    carryTo(change.position)
+                                    change.consume()
+                                }
+                            }
+                            // Lifted: the E settles into the cell that is scored.
+                            draggedDoor = null
+                            if (carrying) {
                                 haptics.confirm()
+                            } else {
+                                // A tap on the E: say what it is.
+                                doorNoteOpen = !doorNoteOpen
                             }
                             return@awaitEachGesture
                         }
+                        // Any other touch on the plan puts the E's note away.
+                        doorNoteOpen = false
 
                         // --- take-off placement: the ghost follows the finger, the LIFT commits ---
                         val arming = armedType
@@ -844,7 +965,22 @@ fun GuidedGridContent(
                     )
                 }
             }
-            door?.let { DoorMarker(it, rooms, cell, cols, rows) }
+            door?.let { d ->
+                DoorMarker(
+                    door = d, rooms = rooms, cell = cell, cols = cols, rows = rows,
+                    carriedAt = draggedDoor,
+                    onMoveTo = ::doorOnWall,
+                )
+            }
+            // ⭐ The E's note — the owner's "pop up", over the half of the plan the E is NOT in.
+            if (doorNoteOpen && door != null && rooms.isNotEmpty()) {
+                val (_, eRow) = doorMarkerCell(door, rooms, cols, rows)
+                DoorNoteOverlay(
+                    note = editorDoorNote(door),
+                    markerInTopHalf = eRow < rows / 2f,
+                    onClose = { doorNoteOpen = false },
+                )
+            }
 
             // Ghost + grips are DRAWN, not composed: they are pointer-only affordances (so they
             // carry no semantics — TalkBack reaches every one of these actions through the buttons
@@ -1096,20 +1232,12 @@ fun GuidedGridContent(
                         StepperSpec("$rows deep", "Shallower plot", "Deeper plot", { stepPlot(cols, rows - 1) }, { stepPlot(cols, rows + 1) }),
                     )
                 }
-                // ⭐ Only "Move" lives here now. SETTING the door is the Next button's own job while
-                // there is none (see below): the front door is the highest-weighted thing the engine
-                // scores, and a hand-drawn home could walk straight past it to North and on to a
-                // report with its biggest reading missing — the photograph path has always made the
-                // door a step of its own, and the drawn path now does too. "Move" is a lesser action
-                // than "you still need one", so it stays secondary, and only once a door exists.
-                if (rooms.isNotEmpty() && door != null) {
-                    VastuButton(
-                        text = "Move the front door",
-                        onClick = { doorMode = true; selectedId = null; armedType = null },
-                        style = VastuButtonStyle.SECONDARY,
-                        large = false,
-                    )
-                }
+                // ⚠ "MOVE THE FRONT DOOR" IS GONE FROM HERE (owner, 27 Sep 2026: *"it should not be
+                // locked behind a button... user can just tap and drag it"*). The E on the plan moves
+                // under a finger in this mode now, so the button was a door in front of a door. SETTING
+                // one is still the Next button's job while there is none — the front door is the
+                // highest-weighted thing the engine scores, and the door step makes sure nobody walks
+                // past it to a report with its biggest reading missing.
             }
         }
 
@@ -1448,22 +1576,68 @@ private fun PlacingBar(type: RoomType, onCancel: () -> Unit) {
     }
 }
 
+/**
+ * What the E says when it is tapped in the editor — the answer the door step's own line gives, in the
+ * editor's compass words, available now in every mode (owner, 27 Sep 2026: "a pop up can tell them
+ * what it is").
+ */
+internal fun editorDoorNote(door: GridDoor): DoorNoteText = DoorNoteText(
+    title = "Your front door",
+    body = "On the ${door.side.spoken()} wall. Drag the E to any wall to move it.",
+)
+
 @Composable
-private fun BoxScope.DoorMarker(door: GridDoor, rooms: List<GridRoom>, cell: androidx.compose.ui.unit.Dp, cols: Int, rows: Int) {
+private fun BoxScope.DoorMarker(
+    door: GridDoor,
+    rooms: List<GridRoom>,
+    cell: androidx.compose.ui.unit.Dp,
+    cols: Int,
+    rows: Int,
+    /** Where a finger is carrying the E, on the outline — null at rest. See `draggedDoor`. */
+    carriedAt: OutlinePoint?,
+    /** One action per wall for anyone who cannot drag — see [doorOnWall]. */
+    onMoveTo: (DoorSide) -> Unit,
+) {
     val colors = VastuTheme.colors
     // The door sits on the HOUSE'S outer wall — the rooms' footprint (bounding box) — NOT the plot's
     // outer edge. That is where the engine scores it (buildEnginePlan/doorGeometry use the footprint
-    // edges), where placeDoor clamps it, and where it lands on reopen (the plot collapses to the
+    // edges), where a tap or a drag sets it, and where it lands on reopen (the plot collapses to the
     // footprint). Drawing it on the plot edge instead left the door floating in the empty margin above/
     // beside the rooms whenever the plot was drawn larger than the house — displayed ≠ scored ≠ reloaded.
     // Found by rendering tools/grid-prototype/harness.html and looking (thin + default plans).
-    val (col, row) = doorMarkerCell(door, rooms, cols, rows)
+    //
+    // ⭐ While a finger carries it, it is drawn where the finger has it — the middle of the wall's own
+    // cells, slid continuously along — and on lifting it settles into the cell that is scored.
+    val (restCol, restRow) = doorMarkerCell(door, rooms, cols, rows)
+    val (leftCells, topCells) = if (carriedAt != null && rooms.isNotEmpty()) {
+        val (cx, cy) = editorDoorCentre(
+            carriedAt,
+            rooms.minOf { it.col }, rooms.minOf { it.row },
+            rooms.maxOf { it.col + it.w }, rooms.maxOf { it.row + it.h },
+        )
+        (cx - 0.5f) to (cy - 0.5f)
+    } else {
+        restCol.toFloat() to restRow.toFloat()
+    }
+    val wallName = (carriedAt?.side ?: door.side).spoken()
     Box(
         modifier = Modifier
-            .offset(x = cell * col, y = cell * row)
+            .offset(x = cell * leftCells, y = cell * topCells)
             .size(cell)
             .padding(VastuTheme.spacing.s1)
-            .semantics { contentDescription = "Front door on the ${door.side.spoken()} wall" },
+            .testTag(DOOR_MARK_TAG)
+            .semantics {
+                contentDescription = "Front door on the $wallName wall"
+                // ⚠ ACTIONS, NOT onClick. This node is one cell — 34 dp on a 320 dp phone — and a
+                // CLICKABLE node that small is a touch-target finding. Actions are offered through
+                // the screen reader's own menu and add no target; the finger's tap is read by the
+                // plan's gesture reader, which measures a full 48 dp round the E.
+                customActions = DoorSide.entries.map { side ->
+                    CustomAccessibilityAction("Move the front door to the ${side.spoken()} wall") {
+                        onMoveTo(side); true
+                    }
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         // ⭐⭐ THE SAME MARK AS EVERY OTHER SCREEN (owner, 18 Aug 2026: *"keep the entrance door

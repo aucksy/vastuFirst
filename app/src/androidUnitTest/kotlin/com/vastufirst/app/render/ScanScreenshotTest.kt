@@ -245,9 +245,10 @@ class ScanScreenshotTest {
      * things — the photo, the quiet room outlines and the selected room's tint. The only trace of
      * the front door on this screen was a line of small grey text below a list he was scrolling.
      *
-     * This golden holds the tapped state: the mark drawn at touch size, and the sentence naming it
-     * pinned directly under the picture rather than filed into the list. Both are the answer to
-     * "tapping it should say this is your main entrance", and neither can be checked any other way.
+     * ⭐ Since 27 Sep 2026 the tapped state is the E's NOTE (owner: *"on first tap and pop up can
+     * tell them what it is instead filling the screen with all this info"*) — the card, the tapped
+     * line and the foot-of-list sentence all moved into it. This golden is the only picture of that
+     * note on this screen, at every size and at a 200 % font.
      */
     @Test
     fun scanReviewWithTheDoorMarkTapped() {
@@ -272,7 +273,7 @@ class ScanScreenshotTest {
                 rooms = outcome.rooms,
                 door = door,
                 readings = readings,
-                startDoorSelected = true,
+                startDoorNoteOpen = true,
             )
         }
         captureAcrossMatrix("scan-review-door-tapped", content)
@@ -331,6 +332,31 @@ class ScanScreenshotTest {
         }
         captureAcrossMatrix("scan-door", content)
         writeManifestAcrossMatrix("scan-door", content)
+    }
+
+    /**
+     * ⭐ The same screen with the E's note open (owner, 27 Sep 2026: *"on first tap and pop up can
+     * tell them what it is"*). A golden cannot tap, so without this the note on this screen would be
+     * a thing no picture has ever shown — at 200 % font on a 320 dp phone least of all.
+     */
+    @Test
+    fun scanDoorNoteOpen() {
+        val outcome = ownersPlan()
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
+            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        )
+        // The guard: a fixture that stopped yielding a door would photograph no E and no note.
+        kotlin.test.assertNotNull(door, "this fixture must yield a door, or the golden proves nothing")
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanDoorContent(
+                image = planPhoto(),
+                rooms = outcome.rooms,
+                door = door,
+                startDoorNoteOpen = true,
+            )
+        }
+        captureAcrossMatrix("scan-door-note", content)
+        writeManifestAcrossMatrix("scan-door-note", content)
     }
 
     /** The same screen before anything is marked — the state a plan with no printed entrance opens in. */

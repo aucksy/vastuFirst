@@ -160,6 +160,29 @@ class EditorScreenshotTest {
     }
 
     /**
+     * ⭐ The E's NOTE open in the editor (owner, 27 Sep 2026: *"on first tap and pop up can tell them
+     * what it is"*). The note sits over the half of the plan the E is not in; a golden cannot tap the
+     * E, so this state is opened directly — and it is the only picture of the note on this screen.
+     */
+    @Test
+    fun editor_door_note() {
+        captureAcrossMatrix("editor-door-note") { DoorNoteHouse() }
+        writeManifestAcrossMatrix("editor-door-note") { DoorNoteHouse() }
+    }
+
+    @Composable
+    private fun DoorNoteHouse() {
+        GuidedGridContent(
+            rooms = sample.rooms,
+            door = sample.door,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            startDoorNoteOpen = true,
+        )
+    }
+
+    /**
      * ⭐ PLACING a room — a kind armed from the list, the "Placing: Kitchen" bar standing in for the
      * list, and its own instruction line. Every hand-drawn home passes through this once per room,
      * and no golden had ever rendered it: a screenshot cannot tap a chip to get there.

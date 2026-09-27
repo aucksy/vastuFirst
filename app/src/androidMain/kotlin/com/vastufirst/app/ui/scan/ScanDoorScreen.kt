@@ -14,6 +14,11 @@
 // ENTRY, FOYER, ENTRANCE — `frontDoorFromEntrance` has already read the door off it and the review
 // screen STATES the answer instead of asking the question. This screen is what happens when the plan
 // says nothing, plus the way back in from "change it" when it does.
+//
+// ⭐⭐ AND THE E NOW MOVES UNDER THE FINGER (owner, 27 Sep 2026: *"it should just seamlessly move
+// around realtime when tapping and dragging it"*). This screen used to understand one gesture — a tap
+// on a wall — so a finger that held the E and pulled it moved nothing at all. See DoorMove.kt for
+// the rule every door screen now shares.
 package com.vastufirst.app.ui.scan
 
 import androidx.compose.animation.core.LinearEasing
@@ -23,7 +28,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,20 +56,25 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.vastufirst.app.ui.common.DoorMarkTarget
+import com.vastufirst.app.ui.common.DoorNoteOverlay
+import com.vastufirst.app.ui.common.DoorNoteText
 import com.vastufirst.app.ui.common.doorMarkRadiusPx
 import com.vastufirst.app.ui.common.drawDoorMark
+import com.vastufirst.app.ui.common.nearestOnOutline
 import com.vastufirst.app.ui.common.screenRoot
 import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.designsystem.components.GuidanceState
 import com.vastufirst.designsystem.components.IconTapButton
-import com.vastufirst.designsystem.components.SectionLabel
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
+import com.vastufirst.designsystem.components.VastuInfoLine
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
@@ -90,6 +102,15 @@ private fun fitPhoto(imageW: Int, imageH: Int, boxW: Float, boxH: Float): PhotoF
         height = imageH * scale,
     )
 }
+
+/**
+ * What the E says when it is tapped on this screen — the sentence that used to sit under the plan
+ * as "Your front door: marked on…", moved into the E's own note (owner, 27 Sep 2026).
+ */
+internal fun scanDoorNote(door: GridDoor): DoorNoteText = DoorNoteText(
+    title = "Your front door",
+    body = "Marked on ${doorSideWords(door.side)}. Drag the E along the outline to move it, or tap another wall.",
+)
 
 @Composable
 fun ScanDoorScreen(
@@ -143,6 +164,8 @@ fun ScanDoorContent(
      * actually opens, which is the rule this flag exists to keep.
      */
     returnsToReport: Boolean = false,
+    /** For the harness: open the E's note on first draw, so a golden can photograph it. */
+    startDoorNoteOpen: Boolean = false,
 ) {
     val colors = VastuTheme.colors
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
@@ -153,6 +176,17 @@ fun ScanDoorContent(
     val doorTouch = VastuTheme.sizes.minTouch
     val measurer = rememberTextMeasurer()
     val doorLetterStyle = VastuTheme.type.caption
+    val density = LocalDensity.current
+    val touchRadiusPx = with(density) { doorTouch.toPx() } / 2f
+
+    /** Where the E is while a finger carries it, in page fractions; null at rest. See DoorMove.kt. */
+    var draggedDoor by remember(image) { mutableStateOf<Pair<Float, Float>?>(null) }
+    var noteOpen by remember(image) { mutableStateOf(startDoorNoteOpen) }
+    // ⚠ Read LIVE inside the gesture reader, which is keyed on the picture and never on the door —
+    // re-keying it on the door would cancel the drag the moment the drag moved the door.
+    val liveDoor by rememberUpdatedState(door)
+    val liveDragged by rememberUpdatedState(draggedDoor)
+    val liveOnDoor by rememberUpdatedState(onDoor)
 
     Column(
         Modifier
@@ -169,34 +203,99 @@ fun ScanDoorContent(
             VText("Where is your front door?", style = VastuTheme.type.h2, color = colors.textPrimary)
         }
         Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            "Tap the wall you walk in through. Of everything we read, this changes your score the most.",
-            style = VastuTheme.type.bodySm,
-            color = colors.textSecondary,
+        // ⭐ One instruction, and the reason behind the **i** (owner, 19 and 27 Sep 2026 — decrease
+        // the copy). "Of everything we read, this changes your score the most" is true and worth
+        // saying once; it is not what somebody needs in order to do the task.
+        VastuInfoLine(
+            label = "Tap the wall you walk in through, or drag the E.",
+            info = "Of everything we read, this changes your score the most.",
+            tag = "door.help",
         )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         if (image != null) {
             val marker = door?.let { doorMarkerOnPage(it, rooms) }
+            val shown = draggedDoor ?: marker
             Box(
                 Modifier
                     .fillMaxWidth()
                     .aspectRatio(aspect)
                     .onSizeChanged { boxSize = it }
-                    .pointerInput(rooms, image, boxSize) {
-                        detectTapGestures { at ->
+                    .pointerInput(rooms, image) {
+                        // ⭐⭐ ONE GESTURE READER FOR THE PICTURE — the same shape as the review
+                        // screen's (see planGestures in PlanWithRooms):
+                        //   · down ON the E  → the E is this finger's. Past touch slop it follows,
+                        //                      every movement, along the outline; a tap opens its note.
+                        //   · down elsewhere → a tap places the door on the nearest wall, as it
+                        //                      always has. A drag that starts here is the PAGE's —
+                        //                      nothing is consumed, so the screen still scrolls.
+                        awaitEachGesture {
+                            // ⚠ NOTHING may return from this block before the first down: the block
+                            // re-runs as soon as it returns, and only suspends while a pointer is held.
+                            val down = awaitFirstDown(requireUnconsumed = false)
                             val fit = fitPhoto(
                                 image.width, image.height,
-                                boxSize.width.toFloat(), boxSize.height.toFloat(),
-                            ) ?: return@detectTapGestures
-                            // The tap, as a fraction of the PICTURE — the units every box in a
-                            // reply is written in. Outside the picture entirely is not a wall.
-                            val pageX = (at.x - fit.originX) / fit.width
-                            val pageY = (at.y - fit.originY) / fit.height
-                            if (pageX < 0f || pageX > 1f || pageY < 0f || pageY > 1f) {
-                                return@detectTapGestures
+                                size.width.toFloat(), size.height.toFloat(),
+                            ) ?: return@awaitEachGesture
+                            val frame = homeFrameOnPage(rooms)
+                            val nowAt = (liveDragged ?: liveDoor?.let { doorMarkerOnPage(it, rooms) })
+                                ?.let { (x, y) -> Offset(fit.originX + x * fit.width, fit.originY + y * fit.height) }
+                            val onMark = nowAt != null && (down.position - nowAt).getDistance() <= touchRadiusPx
+                            // The E keeps its place under the finger rather than leaping to the tip.
+                            val grab = if (onMark) nowAt?.minus(down.position) ?: Offset.Zero else Offset.Zero
+                            var dragging = false
+                            var scrolled = false
+
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) break
+                                val travelled = (change.position - down.position).getDistance() >
+                                    viewConfiguration.touchSlop
+                                if (!onMark) {
+                                    // Not ours: a finger that travels, or that the page has taken, was
+                                    // a scroll — and a scroll must never also place a door.
+                                    if (travelled || change.isConsumed) { scrolled = true; break }
+                                    continue
+                                }
+                                if (!dragging && travelled) {
+                                    dragging = true
+                                    // Dragging is not a question about what the E is.
+                                    noteOpen = false
+                                }
+                                if (!dragging) continue
+                                val at = change.position + grab
+                                val p = nearestOnOutline(
+                                    (at.x - fit.originX) / fit.width,
+                                    (at.y - fit.originY) / fit.height,
+                                    frame.x.toFloat(), frame.y.toFloat(),
+                                    (frame.x + frame.w).toFloat(), (frame.y + frame.h).toFloat(),
+                                )
+                                draggedDoor = p.x to p.y
+                                // The scored door follows, and is only handed on when it changes.
+                                doorForPhotoTap(p.x, p.y, rooms)?.let { if (it != liveDoor) liveOnDoor(it) }
+                                change.consume()
                             }
-                            doorForPhotoTap(pageX, pageY, rooms)?.let(onDoor)
+
+                            if (dragging) {
+                                // Lifted: the E settles onto the door that is scored.
+                                draggedDoor = null
+                                return@awaitEachGesture
+                            }
+                            if (scrolled) return@awaitEachGesture
+                            if (onMark) {
+                                noteOpen = !noteOpen
+                                return@awaitEachGesture
+                            }
+                            noteOpen = false
+                            // The tap, as a fraction of the PICTURE — the units every box in a reply is
+                            // written in. Outside the picture entirely is not a wall.
+                            val pageX = (down.position.x - fit.originX) / fit.width
+                            val pageY = (down.position.y - fit.originY) / fit.height
+                            if (pageX < 0f || pageX > 1f || pageY < 0f || pageY > 1f) {
+                                return@awaitEachGesture
+                            }
+                            doorForPhotoTap(pageX, pageY, rooms)?.let(liveOnDoor)
                         }
                     }
                     .semantics {
@@ -207,7 +306,7 @@ fun ScanDoorContent(
             ) {
                 // The travelling hint's position, 0..1 around the outline. Runs only while no door
                 // has been marked, so it stops for good the moment the question is answered.
-                val hintPhase by if (marker == null && hintPulse) {
+                val hintPhase by if (shown == null && hintPulse) {
                     rememberInfiniteTransition(label = "door-hint").animateFloat(
                         initialValue = 0f,
                         targetValue = 1f,
@@ -240,7 +339,7 @@ fun ScanDoorContent(
                     // ⭐ The home's own outline, drawn faintly over the sheet. Without it "tap the
                     // wall" is an instruction with no visible target on a builder's sheet that is
                     // mostly title block and margin — and the outline is exactly the rectangle the
-                    // tap is measured against, so what is shown is what is being asked for.
+                    // tap is measured against, and the line a dragged E slides along.
                     val frame = homeFrameOnPage(rooms)
                     drawRect(
                         color = colors.textTertiary,
@@ -251,7 +350,7 @@ fun ScanDoorContent(
                         size = Size(frame.w.toFloat() * fit.width, frame.h.toFloat() * fit.height),
                         style = Stroke(width = strokeDp.toPx() / 2f),
                     )
-                    if (marker == null) {
+                    if (shown == null) {
                         val fx = frame.x.toFloat(); val fy = frame.y.toFloat()
                         val fw = frame.w.toFloat(); val fh = frame.h.toFloat()
                         // One lap of the perimeter, in fractions of the outline.
@@ -276,30 +375,45 @@ fun ScanDoorContent(
                             style = Stroke(width = strokeDp.toPx() / 2f),
                         )
                     }
-                    if (marker != null) {
+                    if (shown != null) {
                         val at = Offset(
-                            fit.originX + marker.first * fit.width,
-                            fit.originY + marker.second * fit.height,
+                            fit.originX + shown.first * fit.width,
+                            fit.originY + shown.second * fit.height,
                         )
                         // ⭐⭐ THE SAME MARK THE NEXT SCREEN SHOWS (owner, 18 Aug 2026: *"if its not
-                        // auto-detected then it falls back to older circle"*).
-                        //
-                        // ⚠ This screen used to draw its own: a 12 dp dot inside a 20 dp ring, with
-                        // no letter at all. So a reader who could not be auto-detected marked their
-                        // door here, saw a speck, tapped on — and met a disc four times the size,
-                        // lettered E, on the very next screen. Two drawings of one answer, one
-                        // screen apart. There is one drawing now and it lives in [drawDoorMark].
+                        // auto-detected then it falls back to older circle"*). One drawing, in
+                        // [drawDoorMark]; the ring shows while it is held or its note is open.
                         drawDoorMark(
                             center = at,
                             radius = doorMarkRadiusPx(fit.width, fit.height, doorTouch.toPx()),
-                            // Nothing is "selected" here — this screen has one mark and no list to
-                            // pick it out of. Marking it selected would draw a ring that means
-                            // something on the next screen and nothing on this one.
-                            selected = false,
+                            selected = noteOpen || draggedDoor != null,
                             colors = colors,
                             strokePx = strokeDp.toPx(),
                             measurer = measurer,
                             letterStyle = doorLetterStyle,
+                        )
+                    }
+                }
+
+                // ⭐ THE E'S OWN NODE AND ITS NOTE — see DoorMarkTarget and DoorNoteCard.
+                val fitNow = fitPhoto(image.width, image.height, boxSize.width.toFloat(), boxSize.height.toFloat())
+                if (door != null && shown != null && fitNow != null) {
+                    val centre = Offset(
+                        fitNow.originX + shown.first * fitNow.width,
+                        fitNow.originY + shown.second * fitNow.height,
+                    )
+                    DoorMarkTarget(
+                        centrePx = centre,
+                        description = "Your front door, on ${doorSideWords(door.side)}",
+                        onOpen = { noteOpen = true },
+                        moveTo = { side -> doorOnWall(side, rooms)?.let(onDoor) },
+                        wallWords = ::doorSideWords,
+                    )
+                    if (noteOpen) {
+                        DoorNoteOverlay(
+                            note = scanDoorNote(door),
+                            markerInTopHalf = centre.y < boxSize.height / 2f,
+                            onClose = { noteOpen = false },
                         )
                     }
                 }
@@ -328,16 +442,9 @@ fun ScanDoorContent(
             }
         }
 
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
-        SectionLabel("Your front door")
-        Spacer(Modifier.height(VastuTheme.spacing.s2))
-        VText(
-            door?.let { "Marked on ${doorSideWords(it.side)}. Tap somewhere else to move it." }
-                ?: "Not marked yet. Tap your plan where you come in.",
-            style = VastuTheme.type.body,
-            color = if (door != null) colors.textPrimary else colors.textSecondary,
-        )
-
+        // ⚠ The "YOUR FRONT DOOR — Marked on the top wall…" lines that sat here are gone from the page
+        // (owner, 27 Sep 2026: *"instead filling the screen with all this info"*). Where the door is
+        // now answers from the E itself — tap it — and the button below still names the choice.
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         // ⚠ Always available, even with no door marked. Not marking it is a real answer — the score
         // says outright what it could not weigh — and a button that refuses to move is how a person
