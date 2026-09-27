@@ -206,8 +206,11 @@ fun ScanDoorContent(
         // ⭐ One instruction, and the reason behind the **i** (owner, 19 and 27 Sep 2026 — decrease
         // the copy). "Of everything we read, this changes your score the most" is true and worth
         // saying once; it is not what somebody needs in order to do the task.
+        // "or drag the E" only once there IS an E: with no door marked the plan shows none, and the
+        // line would send somebody looking for a mark that is not there.
         VastuInfoLine(
-            label = "Tap the wall you walk in through, or drag the E.",
+            label = if (door != null) "Tap the wall you walk in through, or drag the E."
+            else "Tap the wall you walk in through.",
             info = "Of everything we read, this changes your score the most.",
             tag = "door.help",
         )

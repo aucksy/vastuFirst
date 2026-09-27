@@ -175,6 +175,23 @@ class DoorDragOnPhotoTest {
     }
 
     @Test
+    fun `on the front-door screen the drag hint appears only once there is an E to drag`() = runComposeUiTest {
+        val door = mutableStateOf<GridDoor?>(null)
+        val image = photo()
+        setContent {
+            VastuTheme { ScanDoorContent(image = image, rooms = rooms, door = door.value, onDoor = { door.value = it }) }
+        }
+        // No door yet, so no E on the plan: the line must not send anybody looking for one.
+        onNodeWithText("Tap the wall you walk in through.").assertExists()
+        onNodeWithText("drag the E", substring = true).assertDoesNotExist()
+
+        val plan = picture("Your plan.")
+        pictureNode("Your plan.").performTouchInput { click(Offset(plan.width * 0.4f, plan.height * 0.73f)) }
+        waitForIdle()
+        onNodeWithText("Tap the wall you walk in through, or drag the E.").assertExists()
+    }
+
+    @Test
     fun `on the front-door screen a tap on the E opens its note and moves nothing`() = runComposeUiTest {
         val door = mutableStateOf<GridDoor?>(GridDoor(DoorSide.W, 2))
         val image = photo()
