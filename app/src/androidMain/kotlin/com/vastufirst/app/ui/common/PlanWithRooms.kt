@@ -332,20 +332,25 @@ fun PlanWithRooms(
      * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — what a tapped room shows on this picture.
      *
      * [RoomMarker.BOX], the default, is this component exactly as it was before the trial: quiet
-     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws a dot per room instead, and
-     * the tapped room gets a pin and its direction in words. See RoomMarker.kt.
+     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws a small ring per room
+     * instead, and the tapped room gets a larger ring and its direction in words. See RoomMarker.kt.
      */
     marker: RoomMarker = RoomMarker.BOX,
     /**
      * The engine's own direction words for each room, by room id — the SAME words its row prints.
-     * Only read under [RoomMarker.DIRECTION]. A room missing from it gets its pin and no words: this
+     * Only read under [RoomMarker.DIRECTION]. A room missing from it gets its ring and no words: this
      * picture never works a direction out for itself.
      */
     directions: Map<String, String> = emptyMap(),
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
+    // The direction trial's rings — see the drawing below. Read here: a draw lambda is not a
+    // composable scope and cannot read the theme.
     val dotDp = VastuTheme.sizes.dot
+    val ringWidthDp = VastuTheme.borders.strong
+    val pinWidthDp = VastuTheme.borders.focus
+    val labelClearanceDp = VastuTheme.sizes.dot * 2 + VastuTheme.spacing.s1
     val doorTouch = VastuTheme.sizes.minTouch
     // One string is ever measured here (the door mark's letter), so the default cache is ample.
     val measurer = rememberTextMeasurer()
@@ -554,23 +559,34 @@ fun PlanWithRooms(
                         drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
                     }
                 } else {
-                    // ⭐⭐ THE DIRECTION TRIAL: A DOT PER ROOM, NO BOX AT ALL. The outlines were the
-                    // affordance ("these are tappable"); a quiet dot at the middle of each room keeps
-                    // that without drawing a rectangle we know to be a guess. The tapped room gets a
-                    // pin in its own colour, and its direction in words is laid over it by
-                    // [RoomDirectionLabel]. Each dot sits on a paper-coloured halo so it reads on any
-                    // photograph, dark or light.
+                    // ⭐⭐ THE DIRECTION TRIAL: A RING PER ROOM, NO BOX AT ALL. The outlines were the
+                    // affordance ("these are tappable"); a quiet ring at the middle of each room keeps
+                    // that without drawing a rectangle we know to be a guess. The tapped room's ring
+                    // is larger, in its own colour, lightly filled, and its direction in words is laid
+                    // over it by [RoomDirectionLabel].
+                    //
+                    // ⚠ RINGS, NOT DOTS — found by looking at the first render. The middle of a room's
+                    // box is, on most sheets, exactly where the plan PRINTS the room's name (the reader
+                    // finds rooms by their captions), so solid dots sat on the names and ate letters:
+                    // "LIVING ROOM" came out "ING ROOM", on the one screen whose whole job is checking
+                    // those names. A ring's middle is empty and the name reads straight through it.
+                    // Each ring rides on a paper-coloured halo so it shows on a dark render too.
                     val halo = strokeDp.toPx() / 2f
+                    val quietR = dotDp.toPx()
+                    val quietW = ringWidthDp.toPx()
+                    val pinR = dotDp.toPx() * 2f
+                    val pinW = pinWidthDp.toPx()
                     fun pointOf(c: Pair<Float, Float>) = Offset(origin.x + c.first * drawn.width, origin.y + c.second * drawn.height)
                     rooms.forEach { r ->
                         if (r.id == selectedId) return@forEach
                         val at = r.centreOrNull()?.let(::pointOf) ?: return@forEach
-                        drawCircle(color = colors.paper, radius = dotDp.toPx() / 2f + halo, center = at)
-                        drawCircle(color = colors.textSecondary, radius = dotDp.toPx() / 2f, center = at)
+                        drawCircle(color = colors.paper, radius = quietR, center = at, style = Stroke(width = quietW + 2f * halo))
+                        drawCircle(color = colors.primaryDark, radius = quietR, center = at, style = Stroke(width = quietW))
                     }
                     selected?.centreOrNull()?.let(::pointOf)?.let { at ->
-                        drawCircle(color = colors.paper, radius = dotDp.toPx() + halo, center = at)
-                        drawCircle(color = selectedTint, radius = dotDp.toPx(), center = at)
+                        drawCircle(color = selectedTint.copy(alpha = 0.25f), radius = pinR, center = at)
+                        drawCircle(color = colors.paper, radius = pinR, center = at, style = Stroke(width = pinW + 2f * halo))
+                        drawCircle(color = selectedTint, radius = pinR, center = at, style = Stroke(width = pinW))
                     }
                 }
 
@@ -628,7 +644,15 @@ fun PlanWithRooms(
                     val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
                     val pin = Offset(fit.ox + centre.first * fit.w, fit.oy + centre.second * fit.h)
                     if (pin.x in 0f..boxW && pin.y in 0f..boxH) {
-                        RoomDirectionLabel(text = words, pinPx = pin, boxW = boxW, boxH = boxH)
+                        RoomDirectionLabel(
+                            text = words,
+                            pinPx = pin,
+                            boxW = boxW,
+                            boxH = boxH,
+                            // Clear of the tapped room's ring, so the words never sit on the name
+                            // the ring is drawn round.
+                            clearancePx = with(density) { labelClearanceDp.toPx() },
+                        )
                     }
                 }
             }

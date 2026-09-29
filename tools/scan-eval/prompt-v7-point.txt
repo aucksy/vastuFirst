@@ -1,0 +1,62 @@
+You are looking at an image that is supposed to be a home's floor plan.
+
+FIRST decide what kind of image it is. The ONLY question is the CAMERA ANGLE:
+
+  "2D_PLAN"    - seen from STRAIGHT OVERHEAD. You cannot see the side face of any
+                 wall, and every room reads as a flat shape on the floor. The
+                 correct kind.
+                 It is STILL "2D_PLAN" when the image is coloured, shaded,
+                 textured or fully furnished with beds, sofas, plants and rugs,
+                 and when it is plainly a builder's marketing picture. Furniture,
+                 floor textures, drop shadows and photo-real materials are NOT
+                 evidence of a 3D view. A straight-overhead FURNISHED RENDER is a
+                 "2D_PLAN" and must be read, not refused.
+  "3D_RENDER"  - the view is TILTED: isometric or perspective. You can see the
+                 vertical side faces of walls and furniture, and the home looks
+                 like a doll's house with its roof removed. Room names usually
+                 float outside the building on leader lines.
+  "NOT_A_PLAN" - anything else (elevation, photo, brochure page, site map).
+
+Tie-break: if the room names are printed INSIDE the rooms they name, you are
+looking straight down - answer "2D_PLAN".
+
+ONE SHEET OFTEN CARRIES SEVERAL PICTURES - a tilted showcase view, a flat plan, a
+key plan of the whole floor, an area table, a list of room names. The question
+above is about THE ONE DRAWING YOU MEASURE, never about the sheet as a whole.
+So if a straight-overhead plan of the home is printed anywhere on the sheet,
+answer "2D_PLAN", box THAT drawing, and read its rooms - however large the
+tilted picture beside it happens to be. Answer "3D_RENDER" only when a tilted
+view is the ONLY drawing of the home on the sheet.
+
+
+THEN find the building and read the name of every room.
+
+Return ONLY JSON:
+{"planType":"2D_PLAN|3D_RENDER|NOT_A_PLAN",
+ "hasRoomLabels":<true|false>,
+ "northMarked":<true|false>,
+ "building":{"x":<0..1>,"y":<0..1>,"w":<0..1>,"h":<0..1>},
+ "rooms":[{"label":"<room name exactly as printed>",
+           "size":"<the dimensions printed with that room, copied exactly, e.g.
+                    3.72m X 4.50m or 12'-2\" x 14'-9\" or 2950X4200 - \"\" if none is printed>",
+           "x":<0..1>,"y":<0..1>}],
+ "planConfidence":<0..1>}
+
+"building" is measured on the WHOLE IMAGE: the tightest box around the building's
+OUTER WALL - the drawn walls only. Exclude the page margin, title block, branding,
+dimension text that sits outside the walls, and the north arrow. If several
+detached blocks are drawn, box the one whose rooms you report.
+
+Each room is ONE POINT, not a box. x,y is the middle of that room's printed NAME,
+as fractions of that building box (NOT of the image), origin at the box's top-left.
+Do not trace walls and do not estimate how big the room is - only point at its name.
+If a room is named only in a list or key beside the drawing, point at its number or
+mark INSIDE the drawing, never at the list.
+Most Indian plans print each room's dimensions beside its name. Copy that text into "size"
+character for character. Do not convert it, do not calculate it, and never invent one - leave
+"size" empty if the drawing does not print it.
+Report EVERY named space, including balconies, passages, utilities and lobbies - one entry
+for each name printed inside the building, even when two spaces share a name.
+Do NOT report doors, windows, furniture or dimension text as rooms.
+Report the rooms even when your answer above is "3D_RENDER" - say what you can see and let the
+app decide. Only "NOT_A_PLAN" returns an empty rooms list.

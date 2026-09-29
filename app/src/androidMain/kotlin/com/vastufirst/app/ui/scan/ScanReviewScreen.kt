@@ -368,7 +368,7 @@ fun ScanReviewContent(
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
     val planRooms = remember(rooms) { planRoomsOf(rooms) }
     // ⭐ The direction the trial writes ON a room is the one its row prints — taken from [readings],
-    // never worked out again. Empty before North is known, and then a tapped room shows its pin only.
+    // never worked out again. Empty before North is known, and then a tapped room shows its ring only.
     val directions = remember(readings) { readings.mapValues { it.value.direction } }
     // ⚠ A PLAIN SCROLLING COLUMN, NOT A LAZY LIST — and the original note on this screen was right.
     // A lazy list only composes the rows you can see, so every room below the fold is not in the

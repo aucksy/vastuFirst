@@ -180,11 +180,17 @@ class DirectionTrialMeasureTest {
     }
 
     /**
-     * Every room at the size its plan prints, around its own middle; a room with no printed size in
-     * the one pada its middle falls in. The plan's scale comes from its own sized rooms, so the rebuilt
-     * rooms are drawn in the same units as everything else on it.
+     * Every room at the size its plan prints, around its own middle. A room with no printed size goes
+     * in the one pada its middle falls in — or, with [keepUnsizedBox], keeps the rectangle it has today:
+     * the "keep them another way" variant, where a reader points at every room and draws a rough box
+     * only for a room whose plan prints no size. The plan's scale comes from its own sized rooms, so
+     * the rebuilt rooms are drawn in the same units as everything else on it.
      */
-    private fun asSizedPoints(plan: Plan, printed: Map<String, com.vastufirst.shared.scan.PrintedSize>): Plan {
+    private fun asSizedPoints(
+        plan: Plan,
+        printed: Map<String, com.vastufirst.shared.scan.PrintedSize>,
+        keepUnsizedBox: Boolean = false,
+    ): Plan {
         val rooms = plan.level().rooms
         val sized = rooms.filter { printed[it.id] != null }
         val printedArea = sized.sumOf { printed.getValue(it.id).let { p -> p.widthMm * p.depthMm } }
@@ -196,7 +202,7 @@ class DirectionTrialMeasureTest {
                 val mid = centroid(room.polygon)
                 val p = printed[room.id]
                 if (p == null || unitsPerMm == null) {
-                    room.copy(polygon = frame.padaAround(mid))
+                    if (keepUnsizedBox) room else room.copy(polygon = frame.padaAround(mid))
                 } else {
                     val hw = p.widthMm * unitsPerMm / 2.0
                     val hh = p.depthMm * unitsPerMm / 2.0
@@ -280,6 +286,7 @@ class DirectionTrialMeasureTest {
         val recs = recordings()
         val point = Tally()
         val sized = Tally()
+        val hybrid = Tally()
         var placed = 0
         var roomsSeen = 0
         var roomsUnsized = 0
@@ -300,8 +307,10 @@ class DirectionTrialMeasureTest {
                 val today = engine.analyze(plan)
                 val asPoint = engine.analyze(asPoints(plan))
                 val asSized = engine.analyze(asSizedPoints(plan, printed))
+                val asHybrid = engine.analyze(asSizedPoints(plan, printed, keepUnsizedBox = true))
                 point.add(today, asPoint)
                 sized.add(today, asSized)
+                hybrid.add(today, asHybrid)
                 partialToday += today.roomResults.count { it.verdict == Verdict.DEFECT && it.encroachedShare < 1 - 1e-6 }
                 if (north == 0) {
                     perPlan += rec.id.take(26).padEnd(27) +
@@ -316,16 +325,20 @@ class DirectionTrialMeasureTest {
         say("today's reader (gpt-5.6-luna, prompt v6): $placed of ${recs.size} committed readings place their rooms; scored at Norths $norths")
         say("rooms: $roomsSeen, of which $roomsUnsized print no size of their own (they fall back to a point under SIZE+POINT)")
         say("rooms flagged today only PARTLY over a forbidden zone (the ones partial credit exists for): $partialToday room-readings")
+        val cols = listOf(point, sized, hybrid)
+        fun row(label: String, cell: (Tally) -> String) = say(label.padEnd(26) + cols.joinToString("") { cell(it).padEnd(24) })
+        fun mean(t: Tally) = if (t.plans > 0) (t.sumAbsDelta * 10L / t.plans) / 100.0 else 0.0
         say("")
-        say("                          as a POINT            as SIZE + POINT")
-        say("rooms whose zone changes  ${"${point.zoneChanged} of ${point.rooms} (${point.pct(point.zoneChanged, point.rooms)})".padEnd(22)}${sized.zoneChanged} of ${sized.rooms} (${sized.pct(sized.zoneChanged, sized.rooms)})")
-        say("rooms whose verdict moves ${"${point.verdictChanged} (${point.pct(point.verdictChanged, point.rooms)})".padEnd(22)}${sized.verdictChanged} (${sized.pct(sized.verdictChanged, sized.rooms)})")
-        say("findings today           ${"${point.findingsToday}".padEnd(22)}${sized.findingsToday}")
-        say("findings that VANISH     ${"${point.vanished} (${point.pct(point.vanished, point.findingsToday)})".padEnd(22)}${sized.vanished} (${sized.pct(sized.vanished, sized.findingsToday)})")
-        say("findings that APPEAR     ${"${point.appeared}".padEnd(22)}${sized.appeared}")
-        say("scores that move         ${"${point.scoreMoved} of ${point.plans}".padEnd(22)}${sized.scoreMoved} of ${sized.plans}")
-        say("  up / down              ${"${point.scoreUp} / ${point.scoreDown}".padEnd(22)}${sized.scoreUp} / ${sized.scoreDown}")
-        say("  mean / largest move    ${"${if (point.plans > 0) point.sumAbsDelta / 10.0 / point.plans else 0.0} / ${point.maxAbsDelta / 10.0}".padEnd(22)}${if (sized.plans > 0) sized.sumAbsDelta / 10.0 / sized.plans else 0.0} / ${sized.maxAbsDelta / 10.0}  (out of 10)")
+        row("") { t -> when (t) { point -> "as a POINT"; sized -> "SIZE + POINT"; else -> "SIZE + POINT, box kept" } }
+        row("") { t -> when (t) { point -> "(the room's middle)"; sized -> "(no size: a point)"; else -> "(no size: today's box)" } }
+        row("rooms whose zone changes") { "${it.zoneChanged} of ${it.rooms} (${it.pct(it.zoneChanged, it.rooms)})" }
+        row("rooms whose verdict moves") { "${it.verdictChanged} (${it.pct(it.verdictChanged, it.rooms)})" }
+        row("findings today") { "${it.findingsToday}" }
+        row("findings that VANISH") { "${it.vanished} (${it.pct(it.vanished, it.findingsToday)})" }
+        row("findings that APPEAR") { "${it.appeared}" }
+        row("scores that move") { "${it.scoreMoved} of ${it.plans}" }
+        row("  up / down") { "${it.scoreUp} / ${it.scoreDown}" }
+        row("  mean / largest (of 10)") { "${mean(it)} / ${it.maxAbsDelta / 10.0}" }
         say("self-check, rooms that leaked past one zone (must be 0): point ${point.leaked}")
         say("findings that vanish as a POINT, by rule: ${point.vanishedByRule}")
         say("findings that vanish as a POINT, by room: ${point.vanishedByRoom}")
@@ -333,6 +346,9 @@ class DirectionTrialMeasureTest {
         say("findings that vanish as SIZE+POINT, by rule: ${sized.vanishedByRule}")
         say("findings that vanish as SIZE+POINT, by room: ${sized.vanishedByRoom}")
         say("findings that appear as SIZE+POINT, by rule: ${sized.appearedByRule}")
+        say("findings that vanish as SIZE+POINT with the box kept, by rule: ${hybrid.vanishedByRule}")
+        say("findings that vanish as SIZE+POINT with the box kept, by room: ${hybrid.vanishedByRoom}")
+        say("findings that appear as SIZE+POINT with the box kept, by rule: ${hybrid.appearedByRule}")
         say("")
         say("North 0 per plan        today  point  sized  finds today/point/sized")
         perPlan.forEach { say(it) }
@@ -362,6 +378,20 @@ class DirectionTrialMeasureTest {
         }
     }
 
+    /** Every way a room's direction is worked out, compared against the hand-marked room's. */
+    private val V_TODAY = "today's reader, as the app scores it now:"
+    private val V_POINT = "the same reading, each room reduced to one point:"
+    private val V_SIZED = "the same reading, printed size around each room's middle:"
+    private val V_HYBRID = "…the same, but a room with no printed size keeps today's box:"
+    private val V_PERFECT = "a PERFECT point (the true room's own middle):"
+    private val V_PERFECT_SIZED = "a perfect point + the size the plan prints:"
+    private val V_PERFECT_HYBRID = "…the same, but a room with no printed size keeps its true box:"
+    private val variants = listOf(V_TODAY, V_POINT, V_SIZED, V_HYBRID, V_PERFECT, V_PERFECT_SIZED, V_PERFECT_HYBRID)
+    private val short = mapOf(
+        V_TODAY to "today", V_POINT to "point", V_SIZED to "size+point", V_HYBRID to "size+point|box",
+        V_PERFECT to "perfect point", V_PERFECT_SIZED to "perfect size+point", V_PERFECT_HYBRID to "perfect size+point|box",
+    )
+
     private fun norm(s: String) = s.uppercase().replace(Regex("[^A-Z0-9]+"), " ").trim()
 
     private fun iou(ax: Double, ay: Double, aw: Double, ah: Double, bx: Double, by: Double, bw: Double, bh: Double): Double {
@@ -377,10 +407,7 @@ class DirectionTrialMeasureTest {
         val recs = recordings().associateBy { it.id }
         val sheets = truthSheets()
         var compared = 0
-        var today = 0
-        var readerPoint = 0
-        var perfectPoint = 0
-        var perfectSized = 0
+        val right = variants.associateWith { 0 }.toMutableMap()
         var missed = 0
         val lines = mutableListOf<String>()
 
@@ -433,10 +460,10 @@ class DirectionTrialMeasureTest {
             val grid = toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
             val door = frontDoorFromEntrance(grid)
 
-            var sheetToday = 0
-            var sheetPoint = 0
-            var sheetPerfect = 0
-            var sheetSized = 0
+            // The app's reading may carry rooms no hand-marked room matched; they still share the home.
+            val printedAll = outcome.rooms.withIndex()
+                .mapNotNull { (i, r) -> printedOf(r)?.let { scanRoomId(i) to it } }.toMap()
+            val sheet = variants.associateWith { 0 }.toMutableMap()
             var sheetN = 0
             for (north in norths) {
                 val truePlan = Plan(
@@ -446,39 +473,35 @@ class DirectionTrialMeasureTest {
                     levels = listOf(Level(index = 0, outline = outline, rooms = trueRooms)),
                     northOffsetDegrees = north,
                 )
-                val trueZones = engine.analyze(truePlan).roomResults.associate { it.roomId to it.zone }
-                val perfectZones = engine.analyze(asPoints(truePlan)).roomResults.associate { it.roomId to it.zone }
-                val perfectSizedZones = engine.analyze(asSizedPoints(truePlan, printed)).roomResults.associate { it.roomId to it.zone }
                 val app = buildEnginePlan(grid, door, Intent.BUILDING, PropertyType.FLAT, north, stem) ?: continue
-                val todayZones = engine.analyze(app).roomResults.associate { it.roomId to it.zone }
-                val pointZones = engine.analyze(asPoints(app)).roomResults.associate { it.roomId to it.zone }
+                fun zones(p: Plan) = engine.analyze(p).roomResults.associate { it.roomId to it.zone }
+                val trueZones = zones(truePlan)
+                val zonesBy = mapOf(
+                    V_TODAY to zones(app),
+                    V_POINT to zones(asPoints(app)),
+                    V_SIZED to zones(asSizedPoints(app, printedAll)),
+                    V_HYBRID to zones(asSizedPoints(app, printedAll, keepUnsizedBox = true)),
+                    V_PERFECT to zones(asPoints(truePlan)),
+                    V_PERFECT_SIZED to zones(asSizedPoints(truePlan, printed)),
+                    V_PERFECT_HYBRID to zones(asSizedPoints(truePlan, printed, keepUnsizedBox = true)),
+                )
                 for ((_, i) in pairs) {
                     val id = scanRoomId(i)
                     val truthZone = trueZones[id] ?: continue
                     sheetN++
-                    if (todayZones[id] == truthZone) sheetToday++
-                    if (pointZones[id] == truthZone) sheetPoint++
-                    if (perfectZones[id] == truthZone) sheetPerfect++
-                    if (perfectSizedZones[id] == truthZone) sheetSized++
+                    for ((v, z) in zonesBy) if (z[id] == truthZone) sheet[v] = sheet.getValue(v) + 1
                 }
             }
             compared += sheetN
-            today += sheetToday
-            readerPoint += sheetPoint
-            perfectPoint += sheetPerfect
-            perfectSized += sheetSized
-            lines += stem.take(26).padEnd(27) +
-                "${pairs.size}/${truth.size} rooms matched".padEnd(22) +
-                "today $sheetToday/$sheetN  point $sheetPoint/$sheetN  perfect point $sheetPerfect/$sheetN  perfect point+size $sheetSized/$sheetN"
+            for (v in variants) right[v] = right.getValue(v) + sheet.getValue(v)
+            lines += stem.take(26).padEnd(27) + "${pairs.size}/${truth.size} rooms matched  " +
+                variants.joinToString("  ") { "${short.getValue(it)} ${sheet.getValue(it)}/$sheetN" }
         }
 
         fun pct(n: Int) = if (compared == 0) "-" else "${(1000L * n / compared) / 10.0}%"
         say("")
         say("DIRECTION TRIAL — is a room's DIRECTION right? Against the rooms marked by hand (truth-rooms.json), Norths $norths")
-        say("today's reader, as the app scores it now:          $today of $compared (${pct(today)})")
-        say("the same reading, each room reduced to one point:  $readerPoint of $compared (${pct(readerPoint)})")
-        say("a PERFECT point (the true room's own middle):      $perfectPoint of $compared (${pct(perfectPoint)})")
-        say("a perfect point + the size the plan prints:       $perfectSized of $compared (${pct(perfectSized)})")
+        for (v in variants) say("${v.padEnd(62)}${right.getValue(v)} of $compared (${pct(right.getValue(v))})")
         say("hand-marked rooms the reader never matched: $missed")
         lines.forEach { say(it) }
 

@@ -69,6 +69,11 @@ def main():
             ]}],
             "response_format": {"type": "json_object"},
             "temperature": 0.0,
+            # ⭐ Ask OpenRouter for what it CHARGED (29 Sep 2026). The scoreboard's rupee column used
+            # to be worked out from token counts times a price read once, and prices move: today's
+            # reader was listed at ~Rs 0.09 a read in August and is ~Rs 0.25 at today's list price.
+            # With this, every recording carries the real charge and nothing has to be estimated.
+            "usage": {"include": True},
         }
         headers = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
     else:
@@ -99,7 +104,9 @@ def main():
         reply = json.loads(text)
         u = res.get("usage", {})
         usage = {"promptTokenCount": u.get("prompt_tokens"), "candidatesTokenCount": u.get("completion_tokens"),
-                 "thoughtsTokenCount": (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0)}
+                 "thoughtsTokenCount": (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0),
+                 # US dollars actually charged for this read (present because the request asked).
+                 "costUsd": u.get("cost")}
         model_version = res.get("model", model)
     else:
         parts = res["candidates"][0]["content"]["parts"]
@@ -116,13 +123,15 @@ def main():
     json.dump({"file": name, "imageSize": list(size), "prompt": prompt_id, "model": model,
                "modelVersion": model_version, "usage": usage, "reply": reply},
               open(out_path, "w", encoding="utf-8"), indent=1)
-    print("planType=%s rooms=%d tokens: in=%s out=%s (thoughts=%s)" % (
+    print("planType=%s rooms=%d tokens: in=%s out=%s (thoughts=%s) charged=$%s" % (
         reply.get("planType"), len(reply.get("rooms", [])),
-        usage.get("promptTokenCount"), usage.get("candidatesTokenCount"), usage.get("thoughtsTokenCount", 0)))
+        usage.get("promptTokenCount"), usage.get("candidatesTokenCount"), usage.get("thoughtsTokenCount", 0),
+        usage.get("costUsd")))
     for room in reply.get("rooms", []):
+        # A point-only reply (prompt v7-point, the direction trial) carries no w/h.
         print("  %-24s size=%-22s @ %.2f,%.2f %.2fx%.2f" % (
             room.get("label", "?")[:24], room.get("size", ""), room.get("x", -1),
-            room.get("y", -1), room.get("w", -1), room.get("h", -1)))
+            room.get("y", -1), room.get("w", 0) or 0, room.get("h", 0) or 0))
     print("wrote", out_path)
     return 0
 

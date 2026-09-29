@@ -11,6 +11,16 @@ comparable across rounds:
   (`render-grid.mjs`), scored by `resemblance.mjs` against the hand-checked truth files in `truth/`
 - ⚠ every scan needs the owner's approved COUNT first — CLAUDE.md §2c, hard rule
 
+## ⚠ The rupee column is August's prices (checked 29 Sep 2026)
+
+Prices move and models retire. On 29 Sep 2026 OpenRouter's live list price for `openai/gpt-5.6-luna`
+was **$0.20 in / $1.20 out per million tokens**, and today's reader (prompt v6) measures **~2,080 tokens
+in and ~1,840 out** a read (39 committed v6 recordings, hidden reasoning included). That is **~₹0.25 a
+read at ₹96.07 to the dollar — ~₹0.50 a scan at two reads**, not the ₹0.09 below. `gemini-3.1-pro-preview`
+lists at $2 / $12, ~₹2.7 an escalation. OpenRouter also lists cheaper tiers for the same models, so the
+real charge can be lower; from 29 Sep `scan-candidate.py` asks OpenRouter for the charge and stores it
+in every recording (`usage.costUsd`), so no future row has to be estimated.
+
 ## Overall ranking (after round 2, 4 Aug 2026)
 
 | rank | model | source | quality | same answer twice | ₹/scan (MEASURED) |

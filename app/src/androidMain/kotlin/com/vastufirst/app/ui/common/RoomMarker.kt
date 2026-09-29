@@ -80,10 +80,10 @@ internal fun PlanRoom.centreOrNull(): Pair<Float, Float>? =
  *
  * With the box way the finger aims at an outline it can see, so "the smallest box that contains the
  * tap" ([roomAtPoint]) is right. With the direction way no box is drawn — the finger aims at a room's
- * dot, or at its name printed on the photograph — and smallest-first then picks wrongly exactly where
+ * ring, or at its name printed on the photograph — and smallest-first then picks wrongly exactly where
  * the reader's boxes are worst: a toilet's box spilling over the middle of the living room would take
- * the tap aimed at the LIVING room's own dot. So here the nearest dot wins among the rooms whose box
- * contains the tap; a tap outside every box takes the nearest dot within [maxPx]. Distances are
+ * the tap aimed at the LIVING room's own ring. So here the nearest ring wins among the rooms whose box
+ * contains the tap; a tap outside every box takes the nearest ring within [maxPx]. Distances are
  * measured in drawn pixels ([pxPerX], [pxPerY]), so a tall sheet and a wide one behave the same.
  *
  * Pure, so every case is pinned by a plain test (RoomMarkerTest) rather than by a picture.
@@ -141,28 +141,32 @@ internal fun directionLabelTopLeft(
 /**
  * ⭐ THE ROOM'S DIRECTION, ON THE ROOM — the trial itself.
  *
- * A solid ink pill with paper letters, because it sits on somebody's photograph and has to read on
- * any of them: a white CAD sheet, a coloured brochure, a grey render. The pin under it is drawn by the
- * picture's canvas (see [PlanWithRooms]); this is only the words, placed by [directionLabelTopLeft].
+ * The row's own direction pill, made solid: the same small type as the pill on the room's row, so the
+ * two read as one thing said twice, in ink with paper letters, because it sits on somebody's
+ * photograph and has to read on any of them — a white CAD sheet, a coloured brochure, a grey render.
+ * The ring under it is drawn by the picture's canvas (see [PlanWithRooms]); this is only the words,
+ * placed by [directionLabelTopLeft] [clearancePx] away from the ring's middle.
+ *
+ * ⚠ The row pill's SMALL type, not a heading's. The first render used the label style and, at a 200 %
+ * font, the words were big enough to cover the neighbouring room's printed name.
  *
  * ⚠ NO POINTER INPUT, on purpose. It lies over the picture, and the picture's one gesture reader must
  * still receive every touch — a tap on the label is a tap on that room, which it already is.
  */
 @Composable
-internal fun RoomDirectionLabel(text: String, pinPx: Offset, boxW: Float, boxH: Float) {
+internal fun RoomDirectionLabel(text: String, pinPx: Offset, boxW: Float, boxH: Float, clearancePx: Float) {
     val colors = VastuTheme.colors
-    val gap = VastuTheme.spacing.s2
     Layout(
         content = {
             VText(
                 text = text,
-                style = VastuTheme.type.label,
+                style = VastuTheme.type.caption,
                 color = colors.paper,
                 modifier = Modifier
                     .testTag(ROOM_DIRECTION_TAG)
                     .clip(VastuTheme.shapes.full)
                     .background(colors.textPrimary)
-                    .padding(horizontal = VastuTheme.spacing.s3, vertical = VastuTheme.spacing.s1),
+                    .padding(horizontal = VastuTheme.spacing.s2, vertical = VastuTheme.spacing.s1),
             )
         },
     ) { measurables, constraints ->
@@ -170,7 +174,7 @@ internal fun RoomDirectionLabel(text: String, pinPx: Offset, boxW: Float, boxH: 
         // would run off the side.
         val label = measurables.first().measure(Constraints(maxWidth = constraints.maxWidth.coerceAtLeast(0)))
         layout(constraints.maxWidth, constraints.maxHeight) {
-            val at = directionLabelTopLeft(pinPx.x, pinPx.y, label.width, label.height, boxW, boxH, gap.toPx())
+            val at = directionLabelTopLeft(pinPx.x, pinPx.y, label.width, label.height, boxW, boxH, clearancePx)
             label.place(at.x, at.y)
         }
     }
