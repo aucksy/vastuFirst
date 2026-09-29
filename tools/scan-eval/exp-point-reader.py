@@ -3,9 +3,15 @@ r"""
 THE DIRECTION TRIAL'S READER ROUND (29 Sep 2026): can a CHEAPER model do the easier job — read each
 room's printed name and size, and point at the name — well enough to become the default?
 
-    python tools/scan-eval/exp-point-reader.py plan                 # free: the exact scan list + cost
-    python tools/scan-eval/exp-point-reader.py run --approved=80     # PAID: runs exactly that many
-    python tools/scan-eval/exp-point-reader.py score                # free: every recording vs the truth
+    python tools/scan-eval/exp-point-reader.py plan                        # free: the exact scan list + cost
+    python tools/scan-eval/exp-point-reader.py run --approved=80            # PAID: the point arm only
+    python tools/scan-eval/exp-point-reader.py run --approved=140 --box-arm # PAID: point arm + box arm
+    python tools/scan-eval/exp-point-reader.py score                       # free: every recording vs the truth
+
+TWO ARMS. The POINT arm runs the candidate prompt on every model. The optional BOX arm (--box-arm) runs
+TODAY'S prompt on the cheaper models only, because the free measurement found today's reader's BOXES,
+scored as drawn on the page, already get the direction right 95.5 % of the time on the hand-marked
+rooms: the saving may come from a cheaper model alone, with no change of format at all.
 
 The job is easier than today's on purpose. Today's prompt (v6) asks for a RECTANGLE per room, the one
 thing every vision model does badly (40-70 %). The candidate prompt (prompt-v7-point.txt) asks for the
@@ -34,7 +40,9 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 LIVE = os.path.join(HERE, "out", "live")
 SHEETS_DIR = os.path.join(ROOT, "Documents", "Sample Floor plans")
 PROMPT = os.path.join(HERE, "prompt-v7-point.txt")
-TAGS = ["pt1", "pt2"]  # two reads per model per sheet: one read cannot see the thin-read defect
+APP_PROMPT = os.path.join(ROOT, "shared", "src", "main", "resources", "scan", "plan-read-prompt.txt")
+TAGS = ["pt1", "pt2"]      # two reads per model per sheet: one read cannot see the thin-read defect
+BOX_TAGS = ["bx1", "bx2"]  # the box arm: today's prompt, the same two reads
 USD_INR = 96.07        # open.er-api.com, 29 Sep 2026
 
 # Every sheet with hand-marked truth — and nothing else, because a sheet we cannot score is money
@@ -51,6 +59,9 @@ MODELS = [
     ("qwen/qwen3.8-flash", "a cheap Qwen: that family is trained to point at things on an image"),
     ("google/gemini-3.1-flash-lite", "Google's cheap tier: can it read the furnished render and end the Rs 2.7 escalation?"),
 ]
+
+# The box arm: the cheaper candidates only — today's model on today's prompt is already recorded.
+BOX_MODELS = [m for (m, _) in MODELS if m != "openai/gpt-5.6-luna"]
 
 # Generous per-read token bounds for the cost ceiling. Measured on today's reader (v6, 39 reads):
 # ~2,080 in and ~1,840 out including its hidden reasoning. The point reply is shorter, but a new
@@ -76,8 +87,12 @@ def live_prices():
     return {m["id"]: (float(m["pricing"]["prompt"]), float(m["pricing"]["completion"])) for m in data}
 
 
-def todo():
-    return [(s, m, t) for s in SHEETS for (m, _) in MODELS for t in TAGS if not os.path.exists(rec_path(s, m, t))]
+def todo(box_arm=False):
+    """Every scan still to run, as (sheet, model, tag, prompt) — nothing already recorded is re-run."""
+    jobs = [(s, m, t, PROMPT) for s in SHEETS for (m, _) in MODELS for t in TAGS]
+    if box_arm:
+        jobs += [(s, m, t, APP_PROMPT) for s in SHEETS for m in BOX_MODELS for t in BOX_TAGS]
+    return [j for j in jobs if not os.path.exists(rec_path(j[0], j[1], j[2]))]
 
 
 def cmd_plan():
@@ -85,37 +100,42 @@ def cmd_plan():
     missing = [s for s in SHEETS if not sheet_file(s)]
     if missing:
         print("MISSING SHEETS (fix before running):", missing)
-    jobs = todo()
-    total_ceiling = 0.0
-    print("Scans still to run: %d  (%d sheets x %d models x %d reads, minus any already recorded)"
-          % (len(jobs), len(SHEETS), len(MODELS), len(TAGS)))
-    for (m, why) in MODELS:
-        n = sum(1 for j in jobs if j[1] == m)
-        if m not in prices:
-            print("  %-32s NOT SERVED BY OPENROUTER TODAY - drop or replace it" % m)
-            continue
-        pin, pout = prices[m]
-        per = (CEIL_IN * pin + CEIL_OUT * pout) * USD_INR
-        total_ceiling += n * per
-        print("  %-32s %2d scans  at most Rs %.2f a read -> at most Rs %.1f   (%s)" % (m, n, per, n * per, why))
-    print("At most Rs %.1f in total (list prices, generous token bounds). Each read records what it was actually charged."
-          % total_ceiling)
+    whys = dict(MODELS)
+    for box_arm in (False, True):
+        jobs = todo(box_arm)
+        total_ceiling = 0.0
+        print("%s: %d scans" % ("POINT ARM + BOX ARM (--box-arm)" if box_arm else "POINT ARM ONLY", len(jobs)))
+        for arm, prompt in (("point", PROMPT), ("box", APP_PROMPT)):
+            for (m, _) in MODELS:
+                n = sum(1 for j in jobs if j[1] == m and j[3] == prompt)
+                if n == 0:
+                    continue
+                if m not in prices:
+                    print("  %-5s %-30s NOT SERVED BY OPENROUTER TODAY - drop or replace it" % (arm, m))
+                    continue
+                pin, pout = prices[m]
+                per = (CEIL_IN * pin + CEIL_OUT * pout) * USD_INR
+                total_ceiling += n * per
+                print("  %-5s %-30s %2d scans  at most Rs %.2f a read -> at most Rs %.1f   (%s)"
+                      % (arm, m, n, per, n * per, whys[m] if arm == "point" else "today's prompt, cheaper model"))
+        print("  at most Rs %.1f in total (list prices, generous token bounds)\n" % total_ceiling)
+    print("Each read records what OpenRouter actually charged.")
 
 
-def cmd_run(approved):
-    jobs = todo()
+def cmd_run(approved, box_arm):
+    jobs = todo(box_arm)
     if approved != len(jobs):
         print("REFUSED: %d scans are listed and --approved=%d. The owner approves an exact count (CLAUDE.md 2c)."
               % (len(jobs), approved))
         return 1
     done = 0
-    for (s, m, t) in jobs:
+    for (s, m, t, prompt) in jobs:
         if done >= approved:
             break
         img = sheet_file(s)
         print("[%d/%d] %s  %s  %s" % (done + 1, approved, s, m, t))
         subprocess.call([sys.executable, os.path.join(HERE, "scan-candidate.py"), img,
-                         "--model=" + m, "--tag=" + t, "--prompt=" + PROMPT])
+                         "--model=" + m, "--tag=" + t, "--prompt=" + prompt])
         done += 1  # a failed call that consumed a scan still counts as a scan
     print("ran %d scans" % done)
     return 0
@@ -214,6 +234,8 @@ def cmd_score():
     runs = [("today (gpt-5.6-luna, boxes, v6)", False, lambda s: [os.path.join(LIVE, s + ".openai_gpt-5.6-luna.v6.json")])]
     for (m, _) in MODELS:
         runs.append(("%s (points)" % m, True, lambda s, m=m: [rec_path(s, m, t) for t in TAGS]))
+    for m in BOX_MODELS:
+        runs.append(("%s (boxes, today's prompt)" % m, False, lambda s, m=m: [rec_path(s, m, t) for t in BOX_TAGS]))
     for name, is_point, paths in runs:
         found = of = inroom = rects = sized = rooms = n = 0
         offs, agree, cost, refused = [], [], 0.0, 0
@@ -248,6 +270,6 @@ if __name__ == "__main__":
     if args[0] == "plan":
         cmd_plan()
     elif args[0] == "run":
-        sys.exit(cmd_run(int(opts.get("approved", "-1"))))
+        sys.exit(cmd_run(int(opts.get("approved", "-1")), "--box-arm" in sys.argv))
     else:
         cmd_score()

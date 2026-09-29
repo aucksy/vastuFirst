@@ -234,10 +234,10 @@ internal fun RoomDirectionLabels(labels: List<PlanLabel>, selectedId: String?, b
                         .clip(shapes.full)
                         .background(if (tapped) colors.textPrimary else colors.paper.copy(alpha = 0.9f))
                         .border(if (tapped) borders.focus else borders.strong, zoneColor, shapes.full)
-                        .padding(
-                            horizontal = if (tapped) VastuTheme.spacing.s2 else VastuTheme.spacing.s1,
-                            vertical = VastuTheme.spacing.s1,
-                        ),
+                        // ⚠ The same side padding for both, and twice the top and bottom: with less at
+                        // the sides a one-letter direction ("C", "S") came out as a tall oval in the
+                        // first render. This way one letter sits in a circle and two in a pill.
+                        .padding(horizontal = VastuTheme.spacing.s2, vertical = VastuTheme.spacing.s1),
                 )
             }
         },

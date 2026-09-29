@@ -1735,3 +1735,106 @@ not contain.
 A `NOT_2D` answer from the primary model fires the second opinion — `google/gemini-3.1-pro-preview`,
 about ₹1.4 a call against the primary's ₹0.09. Every scan of a sheet in this class was paying that
 and then *still* showing a refusal. It now costs one primary call and shows the flat.
+
+## 3x. ⭐⭐⭐ THE DIRECTION TRIAL — each room shows its direction on the user's own plan (29 September 2026, v0.32.0)
+
+**The owner's brief:** *"On 'Check what we read', tapping a room draws a box over where the reader
+thinks the room is. Those boxes have never been accurate, because every floor plan is drawn
+differently. But Vastu only needs each room's DIRECTION. So, as a trial: when I tap a room, show its
+direction ON the room, on the plan, instead of drawing a box. Then tune the plan reader for this easier
+job so a cheaper model can do it, and make that cheaper model the default."* A TRIAL: beside the box
+way, one switch, as data. After the first build he set the look himself: *"by default, you're showing
+SW or N or E on the floor plan on that screen. But when you tap on the actual room in the list, then it
+just converts to southwest or north or east ... don't generate a new image. Just use the actual floor
+plan just like we were doing before."*
+
+### What shipped in v0.32.0 (free, no paid scan)
+
+- **The switch:** `directionTrial` in `shared/src/main/resources/scan/reader-config.json`, `true`.
+  `false` = the box way exactly — same drawing, same tap rule, no chooser. Absent = `false`. One
+  `RoomMarkerChoice` (Koin single, not saved) holds it for both screens.
+- **The picture:** `PlanWithRooms`, the one component "Check what we read" and the report both draw,
+  takes `marker` and `directions`. Under `DIRECTION` nothing is drawn on the photograph itself — no box,
+  dot or ring. Every room carries a small label with its short direction (N, NE, SW, C) edged in its
+  zone's colour, just ABOVE the middle of the reader's rectangle, because that middle is where most
+  sheets print the room's name. The tapped room's label (from the list or the plan) glows in its zone's
+  colour and spells the direction out ("South-West"). Solid dots, then rings, were tried first and ate
+  the printed names; the renders caught both.
+- **The words are the engine's.** `RoomDirection(zone, words)`: the short code is `Zone.code()` of the
+  same zone whose `RoomResult.directionWords()` the row prints — one zone, two lengths, never a second
+  calculation.
+- **The tap:** under `DIRECTION` the nearest room middle wins among the boxes that contain the tap
+  (`roomNearestCentre`); the box way's smallest-box rule is untouched.
+- **The chooser:** "Trial — your plan shows: Directions / Boxes", first in the list on "Check what we
+  read" (the pinned header has no room in landscape at 200 %) and under the report's photograph.
+- **Every existing golden re-rendered byte-identical** — the box way really is untouched.
+- **Correcting a room's place:** nothing to preserve. No screen has let a reader move a room on the
+  photograph since the scan flow left the grid editor (6 Aug 2026). Room TYPE is corrected on the scan
+  screen, and the front door drags on the plan, both unchanged. ⚠ The client log of 19 Sep says a room
+  "is on the Check what we read screen, and you can move it" — the app cannot do that.
+- ⚠ **What the label says for a room that crosses a line.** The engine labels a room flagged for
+  crossing into a forbidden zone with THAT zone, not where most of it sits (`RoomEvaluator`, the row
+  pill has always done the same). On a plan this is visible: on `plan-01` the living room, the master
+  bedroom and bedroom 2 all read "C" because each crosses the centre. Across the corpus the label
+  differs from the zone the room's middle sits in for ~15 % of rooms. Put to the owner as a question.
+
+### What was measured, free (`DirectionTrialMeasureTest`, printed under "What real plans score")
+
+Corpus: the 38 committed replies from today's reader (gpt-5.6-luna, prompt v6), 30 of which place;
+381 rooms, 61 of them printing no size; each scored at Norths 0/90/180/270 (1,524 room-readings, 120
+plan-readings), against today:
+
+| | as a POINT | SIZE + POINT | SIZE + POINT, box kept when no size | the reader's boxes on the page |
+|---|---|---|---|---|
+| rooms whose zone changes | 237 (15.5 %) | 89 (5.8 %) | 65 (4.2 %) | 205 (13.4 %) |
+| findings that VANISH (of ~598) | **293 (48.9 %)** | 83 (13.8 %) | 53 (8.8 %) | 79 (13.2 %) |
+| findings that APPEAR | 0 | 22 | 22 | 87 |
+| scores that move (of 120) | 112 (89 up) | 88 (56 up) | 73 (46 up) | 106 (55 up, 51 down) |
+| mean / largest move (of 10) | 0.43 / 2.7 | 0.15 / 0.8 | 0.12 / 0.8 | 0.40 / 2.6 |
+
+(The last column has no front door on either side — the door is placed on the grid.)
+
+Against the rooms marked by hand (`truth-rooms.json`; hlv9vurn does not place with today's reader, so
+4 sheets, 50 rooms x 4 Norths = 200 room-readings) — **is the room's direction right?**
+
+| way of working the room out | right |
+|---|---|
+| today's reader, as the app scores it | 161 (80.5 %) |
+| the same reading, each room one point (its middle) | 154 (77.0 %) |
+| the same reading, printed size around each room's middle | 175 (87.5 %) |
+| …and a room with no printed size keeps today's box | 177 (88.5 %) |
+| **the reader's own boxes, scored on the page — no grid, no reshape** | **191 (95.5 %)** |
+| …each reduced to the middle of its box | 167 (83.5 %) |
+| …printed size around each box's middle, box kept if no size | 189 (94.5 %) |
+| a PERFECT point (the hand-marked room's middle) | 171 (85.5 %) |
+| a perfect point + the printed size | 191 (95.5 %) |
+| …and a room with no printed size keeps its true box | 194 (97.0 %) |
+
+Per sheet, the reader's boxes on the page against today: greencourt-336-branded 28/28 vs 20/28, the
+owner's own flat (floor-plan-1) 68/68 vs 62/68, plan-007 59/64 vs 43/64, aipl-zen 36/40 vs 36/40.
+
+Free, local (`exp-point-reader.py score`): the middle of today's reader's box falls inside the
+hand-marked room **64 of 70** times (91 %), a median 1.7 % of the home's diagonal from its true middle.
+
+**What that means.**
+1. **A point alone is not enough for this engine** — half the findings are about how much of a room
+   crosses a line, and a point crosses nothing. Dead.
+2. **The reader's boxes are good enough for DIRECTION** — scored as drawn, on the page, they get it right
+   95.5 % of the time. Their edges are poor for AREA, but their placement is not the problem.
+3. **Our own grid step loses the accuracy:** squeezing the boxes onto a 10-cell grid and reshaping them
+   from the printed size's corner takes 95.5 % to 80.5 %. The same reading rebuilt as "printed size
+   around the middle" recovers most of it (88.5 %) while keeping 91 % of the findings.
+4. Scoring on the page instead of the grid is a real accuracy gain, but it moves 106 of 120 scores
+   (mean 0.4, both directions) and swaps ~80 findings each way. That is the owner's call, asked.
+   4 sheets is a small yardstick; mark more before changing the scorer.
+
+### The reader round (PAID — waits for the owner's yes)
+
+`tools/scan-eval/exp-point-reader.py plan | run --approved=N | score` with the candidate prompt
+`tools/scan-eval/prompt-v7-point.txt`: the v6 triage, then per room its printed name, its printed size
+and ONE POINT (the middle of the name), plus a rough box ONLY where no size (or one number) is printed.
+Rule S1 checked: no Vastu word in it. Point arm: 10 sheets with hand-marked truth x 4 models x 2 reads
+= 80 scans, at most ~₹22 at list prices. Optional box arm (--box-arm): today's prompt on the 3 cheaper
+models, +60 scans, 140 in all, at most ~₹36 — because of point 2 above, the saving may come from the
+model alone, with no change of format. Every read records what OpenRouter charged; `run` refuses any
+count but the approved one (tried with 1: refused, nothing scanned).
