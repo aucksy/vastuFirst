@@ -84,6 +84,7 @@
   "scan-retype": 0,
   "scan-review": 0,
   "scan-review-direction": 0,
+  "scan-review-direction-crossing": 0,
   "scan-review-direction-rest": 0,
   "scan-review-door": 0,
   "scan-review-door-tapped": 0,
