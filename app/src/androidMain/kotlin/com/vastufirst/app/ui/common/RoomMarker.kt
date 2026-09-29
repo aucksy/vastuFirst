@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +53,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuChip
+import com.vastufirst.designsystem.components.pillShapeFor
+import com.vastufirst.designsystem.components.wrappedLineHeight
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Zone
 import kotlin.math.roundToInt
@@ -86,6 +90,13 @@ class RoomMarkerChoice(trialOn: Boolean) {
 data class RoomDirection(val zone: Zone, val words: String) {
     val code: String get() = zone.code()
 }
+
+/**
+ * The tapped room's words as the PLAN lays them out: its row's very words, with the crossing on a line
+ * of its own — "North-West" over "crosses the centre" — rather than wherever the pill's width happens
+ * to break "North-West · crosses the / centre". Narrower, so it hides less of the plan around it.
+ */
+internal fun tappedLabelText(words: String): String = words.replace(" · ", "\n")
 
 /** The test tag on a room's short direction on the plan ("SW"). One per untapped room. */
 const val ROOM_CODE_TAG = "plan.room.code"
@@ -200,45 +211,54 @@ internal class PlanLabel(val id: String, val direction: RoomDirection, val at: O
 internal fun RoomDirectionLabels(labels: List<PlanLabel>, selectedId: String?, boxW: Float, boxH: Float, gapPx: Float) {
     val colors = VastuTheme.colors
     val borders = VastuTheme.borders
-    val shapes = VastuTheme.shapes
     val glowDp = VastuTheme.spacing.s1
     // The tapped room LAST, so it is drawn over any neighbour its longer words reach.
     val ordered = labels.sortedBy { it.id == selectedId }
+    val padV = VastuTheme.spacing.s1
     Layout(
         content = {
             ordered.forEach { label ->
-                val tapped = label.id == selectedId
-                val zoneColor = label.direction.zone.planColor()
-                VText(
-                    text = if (tapped) label.direction.words else label.direction.code,
-                    style = VastuTheme.type.caption,
-                    color = if (tapped) colors.paper else colors.textPrimary,
-                    modifier = Modifier
-                        .testTag(if (tapped) ROOM_DIRECTION_TAG else ROOM_CODE_TAG)
-                        .then(
-                            if (tapped) {
-                                // The glow: a soft wash of the zone's colour just outside the pill.
-                                Modifier.drawBehind {
-                                    val g = glowDp.toPx()
-                                    drawRoundRect(
-                                        color = zoneColor.copy(alpha = 0.35f),
-                                        topLeft = Offset(-g, -g),
-                                        size = Size(size.width + 2 * g, size.height + 2 * g),
-                                        cornerRadius = CornerRadius((size.height + 2 * g) / 2f),
-                                    )
-                                }
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .clip(shapes.full)
-                        .background(if (tapped) colors.textPrimary else colors.paper.copy(alpha = 0.9f))
-                        .border(if (tapped) borders.focus else borders.strong, zoneColor, shapes.full)
-                        // ⚠ The same side padding for both, and twice the top and bottom: with less at
-                        // the sides a one-letter direction ("C", "S") came out as a tall oval in the
-                        // first render. This way one letter sits in a circle and two in a pill.
-                        .padding(horizontal = VastuTheme.spacing.s2, vertical = VastuTheme.spacing.s1),
-                )
+                key(label.id) {
+                    val tapped = label.id == selectedId
+                    val zoneColor = label.direction.zone.planColor()
+                    // One line keeps its round ends; wrapped words get rounded corners (see pillShapeFor —
+                    // at a 200 % font the round ends cut "North-West" to "orth-West").
+                    var wrappedLine by remember(tapped) { mutableStateOf<Float?>(null) }
+                    val shape = pillShapeFor(wrappedLine, padV)
+                    VText(
+                        text = if (tapped) tappedLabelText(label.direction.words) else label.direction.code,
+                        style = VastuTheme.type.caption,
+                        color = if (tapped) colors.paper else colors.textPrimary,
+                        onTextLayout = { wrappedLine = wrappedLineHeight(it) },
+                        modifier = Modifier
+                            .testTag(if (tapped) ROOM_DIRECTION_TAG else ROOM_CODE_TAG)
+                            .then(
+                                if (tapped) {
+                                    // The glow: a soft wash of the zone's colour just outside the pill,
+                                    // with the pill's own corners grown by the glow.
+                                    Modifier.drawBehind {
+                                        val g = glowDp.toPx()
+                                        val r = wrappedLine?.let { it / 2f + padV.toPx() } ?: (size.height / 2f)
+                                        drawRoundRect(
+                                            color = zoneColor.copy(alpha = 0.35f),
+                                            topLeft = Offset(-g, -g),
+                                            size = Size(size.width + 2 * g, size.height + 2 * g),
+                                            cornerRadius = CornerRadius(r + g),
+                                        )
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            )
+                            .clip(shape)
+                            .background(if (tapped) colors.textPrimary else colors.paper.copy(alpha = 0.9f))
+                            .border(if (tapped) borders.focus else borders.strong, zoneColor, shape)
+                            // ⚠ The same side padding for both, and twice the top and bottom: with less at
+                            // the sides a one-letter direction ("C", "S") came out as a tall oval in the
+                            // first render. This way one letter sits in a circle and two in a pill.
+                            .padding(horizontal = VastuTheme.spacing.s2, vertical = padV),
+                    )
+                }
             }
         },
     ) { measurables, constraints ->

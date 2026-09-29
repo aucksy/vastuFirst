@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,10 +22,16 @@ fun VText(
     modifier: Modifier = Modifier,
     align: TextAlign? = null,
     maxLines: Int = Int.MAX_VALUE,
+    /**
+     * Told how the words were laid out — for a pill that must know when they wrapped (see
+     * [pillShapeFor]). Null, the default, leaves [BasicText] exactly as every other caller has it.
+     */
+    onTextLayout: ((TextLayoutResult) -> Unit)? = null,
 ) = BasicText(
     text = text,
     modifier = modifier,
     style = if (align != null) style.copy(color = color, textAlign = align) else style.copy(color = color),
+    onTextLayout = onTextLayout,
     maxLines = maxLines,
     overflow = TextOverflow.Ellipsis,
 )

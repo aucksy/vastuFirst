@@ -33,6 +33,7 @@ import com.vastufirst.app.ui.common.code
 import com.vastufirst.app.ui.common.directionWords
 import com.vastufirst.app.ui.common.planFit
 import com.vastufirst.app.ui.common.short
+import com.vastufirst.app.ui.common.tappedLabelText
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -153,7 +154,7 @@ class DirectionOnPlanTest {
         onNodeWithText(clean.rooms[i].label, substring = true).performScrollTo().performClick()
 
         // The tapped room's direction, spelled out, IS the words on its row — one engine result.
-        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(readings.getValue(scanRoomId(i)).direction)
+        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(tappedLabelText(readings.getValue(scanRoomId(i)).direction))
         // …and every other room still carries its short form.
         assertEquals(expectedCodes.size - 1, codesOnPlan().size)
     }
@@ -176,7 +177,7 @@ class DirectionOnPlanTest {
         // A finger on the room's own middle, exactly where the picture places it.
         picture.performTouchInput { click(Offset(fit.ox + cx * fit.w, fit.oy + cy * fit.h)) }
 
-        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(readings.getValue(scanRoomId(i)).direction)
+        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(tappedLabelText(readings.getValue(scanRoomId(i)).direction))
     }
 
     /**
@@ -220,11 +221,11 @@ class DirectionOnPlanTest {
         onNodeWithText(labels[index!!], substring = true).performScrollTo().performClick()
 
         val words = r.mainZone.short().replaceFirstChar { it.uppercase() } + " · crosses the " + r.zone.short()
-        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(words)
+        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(tappedLabelText(words))
         // …and its row says the very same words.
         assertTrue(
-            "the row must print the same words as the tapped label",
-            onAllNodesWithText(words).fetchSemanticsNodes().size >= 2,
+            "the row must print the same words as the tapped label (which only puts the crossing on its own line)",
+            onAllNodesWithText(words).fetchSemanticsNodes().isNotEmpty(),
         )
     }
 
@@ -342,6 +343,6 @@ class DirectionOnPlanTest {
         val targetAt = pointOf(target.centreOrNull()!!)
         picture.performTouchInput { click(targetAt) }
 
-        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(results.getValue(target.id).directionWords())
+        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(tappedLabelText(results.getValue(target.id).directionWords()))
     }
 }
