@@ -1872,3 +1872,87 @@ reads agree."* Made exact here, before the numbers exist, so the numbers cannot 
   pass rules 1 and 2. If both do, the trial reader reads once per scan.
 - **Also reported, not part of the rule:** whether it reads plan-007 (the furnished render) as a plan
   on both reads, so the Gemini escalation would not fire.
+
+### The round, run 29 Sep 2026 — no winner; today's reader stays
+
+**What ran.** 74 scans of the 140 approved, **₹9.61 charged in all** (OpenRouter's own `usage.cost`).
+Mid-run the owner narrowed it: *"We have a key to use ChatGPT Luna or Gemini where I should have the
+balance... these are the models we will use in production so I want you to test on Luna only for now...
+and perfect on the same."* Qwen and Gemini Flash-Lite were stopped after 7 and 6 reads (one Qwen call
+was refused "rate-limited upstream" and cost nothing); the rest of the Luna list ran in full. Those 13
+reads are committed as the record of what was spent, and scored nowhere. All 73 recordings are in
+`tools/scan-eval/out/live/*.{pt1,pt2,bx1,bx2}.json`.
+
+**Against the rule** (today: 125 of 125 hand-checked rooms found on its one committed read; direction
+right on the app's path 80.5 %; about ₹0.51 a scan):
+
+| reader | 1. rooms found, per read | 2. direction, app path (page) | 3. two reads agree | findings vs today (lost / new, of 189) | ₹ a scan, 2 reads |
+|---|---|---|---|---|---|
+| gpt-5.6-luna, point prompt | 122 / 125 → **fail** (125 / 125 if a typed "I" for "1" counts) | 83.1 % (84.6 %) pass | 9 of 10 → **fail** (10 of 10 typed-"I" counted) | 25 / 31 | ~₹0.46 |
+| gpt-6-luna, point prompt | 125 / 123 → **fail** (125 / 124) | 75.7 % (83.7 %) **fail** | 10 of 10 pass | 36 / 12, the owner's flat never places | ~₹0.21 |
+| gpt-6-luna, today's box prompt | 123 / 123 → **fail** | 82.5 % (94.2 %) pass | 10 of 10 pass | 9 / 4 | ~₹0.23 |
+
+**No reader passes all three, so there is no winner and the trial keeps today's reader** — the rule's
+own words. Nothing about the reader changed in the app.
+
+What sits under each "fail", so the next attempt starts in the right place:
+- **gpt-6-luna on today's prompt** is the near miss: 55 % cheaper, direction right more often than today,
+  its two reads agree on every sheet, and it loses only 9 of today's 189 findings (4 new appear). It fails on ONE sheet — the
+  owner's own flat — where both reads skip the same two small spaces, "DRYER WASHER" and "PVT. LIFT
+  LOBBY". A miss on both reads is not the thin-read noise two reads protect against; only the words of
+  the request can change it. That is the obvious "perfect on the same" round.
+- **The point prompt does not make a read cheaper.** Luna's hidden reasoning (~1,000 tokens) is most of
+  what a read costs and the point reply shortens the visible answer only: 1,541 against 1,750 tokens
+  out. The saving in the table is the newer model's price per token, not the prompt.
+- **The point prompt makes the reader list more spaces** (23–24 on the owner's flat, against 20): the
+  lift, a Juliet balcony, a dryer/washer nook — most printing no size. That drops the share of sized
+  rooms under two thirds and the mapper refuses to place the plan (`TOO_MANY_ROOMS` → assisted), so
+  the user would arrange the rooms by hand. One of gpt-5.6-luna's two reads did this to his flat;
+  gpt-6-luna did it on both.
+- **A point is a worse anchor than a box's middle.** The middle of a printed NAME sits inside its room
+  92 % of the time, as often as a box's middle, but it lies 3.6 % of the home's diagonal from the room's
+  true middle against 1.3–1.7 % for a box, and the direction follows the middle.
+- **Every Luna reader read plan-007, the furnished render, as a plan on both reads** — the Gemini
+  escalation would not fire for it (nor does it today: prompt v6 already reads that sheet).
+
+**Two measurement traps, both caught before a number was believed:**
+1. **Typing is not missing.** The registered count missed rooms the reader DID read — "GUEST BEDROOM I"
+   (a Roman one) for the sheet's "GUEST BEDROOM 1", "M.BR TOILET" for "MBR TOILET". The rule is judged
+   on the registered count; `exp-point-reader.py score --loose` prints the other count beside it. Even
+   counted that way, no reader passes all three.
+2. **A rebuilt box must not trip the mapper's shrink.** The first cloud run scored both point readers
+   at ~77 % on the app's path and 80.6 % on the page. The measurement's own rebuild (printed size
+   around the point) poked past the building's edge on up to 6 of 7 rooms of a sheet, and the mapper
+   reads two or more rooms past the edge as a layout running long and shrinks the whole home toward
+   one corner (`shrinkToPage`). Trimmed at the edge, the figures in the table are the fair ones.
+
+**Cost, measured fairly.** The two reads of one sheet ran one after the other, so the second got
+OpenRouter's cache discount (~20 % cheaper); in the app both reads leave at once and would not. Every ₹
+figure above uses first reads only, which ran ~5 % over the list price. Today's reader predates stored
+charges: its figure is its recorded tokens at today's list price plus that 5 %.
+
+**The fill factor** (`tools/scan-eval/exp-fill-factor.mjs`, free): on today's 28 readings with a sane
+building box, the rooms cover a median 80 % of it (42–103 %). Taking a plan's scale from that lands a
+median 8 % off the scale its own boxes give, within 20 % on 27 of 28 — the outlier is a tower sheet
+whose building box includes the lift core.
+
+### More sheets marked by hand — the page-versus-grid question, measured again (STOP gate)
+
+Six more sheets were marked by eye off the 5 % grid, each drawn back with `show` and looked at before it
+was kept: greencourt-526, plan-006, plan-010, towerEF-1854, plan-034, plan-008 (69 rooms). With the
+original ones, ten sheets place with today's reader — 117 rooms, 468 room-readings at four Norths:
+
+| way of working the room out | 4 sheets (before) | 10 sheets (now) |
+|---|---|---|
+| today's app: mapper → 10-cell grid → printed-size reshape | 80.5 % | **85.0 %** |
+| the reader's own boxes scored on the page, no grid | 95.5 % | **93.8 %** |
+| printed size around each box's middle, box kept if no size | 94.5 % | 94.4 % |
+
+Per sheet, the page beats the grid on 5, ties on 3 and loses on 2 (plan-034 by 1 reading of 36,
+plan-008 by 2 of 40). The gain is real and smaller than four sheets suggested: about 9 points, not 15.
+**The scorer was not changed** — it moves most scores (106 of 120 plan-readings in the earlier measure)
+and swaps findings both ways, so it is the owner's decision, put to him as a question.
+
+A drift found on the way, not fixed here: the mapper's JavaScript twin places hlv9vurn with today's
+reader while Kotlin hands it back as assisted (`TOO_MANY_ROOMS`, 14 rooms) — the two disagree on that
+gate.
