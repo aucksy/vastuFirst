@@ -1838,3 +1838,37 @@ Rule S1 checked: no Vastu word in it. Point arm: 10 sheets with hand-marked trut
 models, +60 scans, 140 in all, at most ~₹36 — because of point 2 above, the saving may come from the
 model alone, with no change of format. Every read records what OpenRouter charged; `run` refuses any
 count but the approved one (tried with 1: refused, nothing scanned).
+
+**Approved 29 Sep 2026 by the owner: exactly 140 scans (both arms), at most ₹36.4.** `plan` printed
+140 and ₹36.4 at the live list price the same day, all four models served.
+
+### ⭐ The winner rule — written down 29 Sep 2026, BEFORE any trial read was run or looked at
+
+The owner's words: *"the cheapest per scan (real charges) that finds at least as many hand-checked
+rooms as today, gets the direction right at least as often as today on the same path, and whose two
+reads agree."* Made exact here, before the numbers exist, so the numbers cannot shape it:
+
+- **Candidates:** the seven trial readers — four models on the point prompt, three cheaper models on
+  today's prompt. **Today** = `openai/gpt-5.6-luna` on prompt v6, its committed readings (one per
+  sheet).
+- **1. Finds the rooms.** Per read, it finds at least as many hand-checked rooms as today's reading,
+  summed over the 10 sheets (`exp-point-reader.py score`, "found"; its two reads averaged, because
+  today has one committed read per sheet).
+- **2. Direction.** On the app's own path — the reply through the mapper, the grid and the engine,
+  which is what the report scores — the engine's direction for the hand-marked rooms is right at
+  least as often as today's on that same path (80.5 %), over the same 4 sheets, at the same 4 Norths,
+  its two reads pooled. Measured in the cloud by `DirectionTrialMeasureTest`. For a point reply the
+  path starts by rebuilding each room's box from its point and its printed size (the scale from the
+  building box and the printed sizes, with a fill factor measured on today's recordings first). The
+  "on the page" figure is printed beside it but is not part of the rule.
+- **3. Its two reads agree.** On every one of the 10 sheets, the two reads give the same plan type,
+  and the numbers of hand-checked rooms they find differ by at most 1.
+- **Winner:** the cheapest per scan among those that pass all three. Per scan = 2 reads × its mean
+  real charge per read (OpenRouter's `usage.cost`), plus the escalation's list price (₹2.7) for every
+  sheet where neither read answers `2D_PLAN` (the app escalates only then), spread over the 10 sheets.
+- **No candidate passes → no winner.** The trial keeps today's reader, and that is reported as the
+  result, not worked around.
+- **Then, if the winner's two reads agree:** test one read. Read 1 alone and read 2 alone must each
+  pass rules 1 and 2. If both do, the trial reader reads once per scan.
+- **Also reported, not part of the rule:** whether it reads plan-007 (the furnished render) as a plan
+  on both reads, so the Gemini escalation would not fire.

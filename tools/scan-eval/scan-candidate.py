@@ -95,13 +95,29 @@ def main():
         print("HTTP %s: %s" % (e.code, e.read().decode()[:800]))
         return 1
 
+    raw_text = None
     if openrouter:
         if "choices" not in res:
             print("no choices in reply: %s" % json.dumps(res)[:500])
             return 1
-        text = res["choices"][0]["message"]["content"]
+        text = res["choices"][0]["message"]["content"] or ""
         text = re.sub(r"^```(json)?|```$", "", text.strip(), flags=re.M)
-        reply = json.loads(text)
+        # ⚠ A paid read is never thrown away because its wrapping was odd (29 Sep 2026, before the
+        # direction trial's 140-scan round on four models this tool had never met). A reply that is not
+        # bare JSON is cut to its outermost {...}; one that still does not parse is KEPT, raw, with an
+        # empty reply, so it is counted, scored as finding nothing, and can be read by eye later.
+        try:
+            reply = json.loads(text)
+        except ValueError:
+            start, end = text.find("{"), text.rfind("}")
+            try:
+                reply = json.loads(text[start:end + 1]) if 0 <= start < end else None
+            except ValueError:
+                reply = None
+            if reply is None:
+                print("reply is not JSON; kept raw: %r" % text[:300])
+                reply = {"planType": "UNREADABLE", "rooms": []}
+                raw_text = text
         u = res.get("usage", {})
         usage = {"promptTokenCount": u.get("prompt_tokens"), "candidatesTokenCount": u.get("completion_tokens"),
                  "thoughtsTokenCount": (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0),
@@ -120,9 +136,11 @@ def main():
     # ⚠ Was a hard-coded "v3" here too — see the note in scan-live.py. A fingerprint of the words
     # actually sent, so a recording can never claim a prompt it did not use.
     prompt_id = "sha1:" + hashlib.sha1(prompt.encode("utf-8")).hexdigest()[:12]
-    json.dump({"file": name, "imageSize": list(size), "prompt": prompt_id, "model": model,
-               "modelVersion": model_version, "usage": usage, "reply": reply},
-              open(out_path, "w", encoding="utf-8"), indent=1)
+    rec = {"file": name, "imageSize": list(size), "prompt": prompt_id, "model": model,
+           "modelVersion": model_version, "usage": usage, "reply": reply}
+    if raw_text is not None:
+        rec["rawText"] = raw_text
+    json.dump(rec, open(out_path, "w", encoding="utf-8"), indent=1)
     print("planType=%s rooms=%d tokens: in=%s out=%s (thoughts=%s) charged=$%s" % (
         reply.get("planType"), len(reply.get("rooms", [])),
         usage.get("promptTokenCount"), usage.get("candidatesTokenCount"), usage.get("thoughtsTokenCount", 0),
