@@ -386,9 +386,17 @@ class DirectionTrialMeasureTest {
     private val V_PERFECT = "a PERFECT point (the true room's own middle):"
     private val V_PERFECT_SIZED = "a perfect point + the size the plan prints:"
     private val V_PERFECT_HYBRID = "…the same, but a room with no printed size keeps its true box:"
-    private val variants = listOf(V_TODAY, V_POINT, V_SIZED, V_HYBRID, V_PERFECT, V_PERFECT_SIZED, V_PERFECT_HYBRID)
+    private val V_PAGE_BOX = "the reader's boxes as drawn on the page (no grid, no reshape):"
+    private val V_PAGE_POINT = "…each reduced to one point, the middle of its box:"
+    private val V_PAGE_HYBRID = "…printed size around each box's middle, box kept if no size:"
+    private val variants = listOf(
+        V_TODAY, V_POINT, V_SIZED, V_HYBRID,
+        V_PAGE_BOX, V_PAGE_POINT, V_PAGE_HYBRID,
+        V_PERFECT, V_PERFECT_SIZED, V_PERFECT_HYBRID,
+    )
     private val short = mapOf(
         V_TODAY to "today", V_POINT to "point", V_SIZED to "size+point", V_HYBRID to "size+point|box",
+        V_PAGE_BOX to "page box", V_PAGE_POINT to "page point", V_PAGE_HYBRID to "page size+point|box",
         V_PERFECT to "perfect point", V_PERFECT_SIZED to "perfect size+point", V_PERFECT_HYBRID to "perfect size+point|box",
     )
 
@@ -463,6 +471,24 @@ class DirectionTrialMeasureTest {
             // The app's reading may carry rooms no hand-marked room matched; they still share the home.
             val printedAll = outcome.rooms.withIndex()
                 .mapNotNull { (i, r) -> printedOf(r)?.let { scanRoomId(i) to it } }.toMap()
+
+            // THE READER'S OWN HOME, in the SAME pixels as the true one: every room it placed, as the
+            // box it drew on the page (`source`), and the box around all of them as the outline. No
+            // grid and no reshaping — so it compares with the true home frame for frame, and it is
+            // the very frame a point-only reader's answer would be rebuilt in (a point on the page,
+            // the size the plan prints).
+            fun pagePoly(b: com.vastufirst.shared.scan.ScanBox) = listOf(
+                Point(b.x * w, (1 - b.y - b.h) * h), Point((b.x + b.w) * w, (1 - b.y - b.h) * h),
+                Point((b.x + b.w) * w, (1 - b.y) * h), Point(b.x * w, (1 - b.y) * h),
+            )
+            val readerRooms = outcome.rooms.withIndex().mapNotNull { (i, r) ->
+                r.source?.let { Room(id = scanRoomId(i), type = r.type, polygon = pagePoly(it)) }
+            }
+            val rAll = readerRooms.flatMap { it.polygon }
+            val readerOutline = if (rAll.isEmpty()) outline else listOf(
+                Point(rAll.minOf { it.x }, rAll.minOf { it.y }), Point(rAll.maxOf { it.x }, rAll.minOf { it.y }),
+                Point(rAll.maxOf { it.x }, rAll.maxOf { it.y }), Point(rAll.minOf { it.x }, rAll.maxOf { it.y }),
+            )
             val sheet = variants.associateWith { 0 }.toMutableMap()
             var sheetN = 0
             for (north in norths) {
@@ -474,9 +500,16 @@ class DirectionTrialMeasureTest {
                     northOffsetDegrees = north,
                 )
                 val app = buildEnginePlan(grid, door, Intent.BUILDING, PropertyType.FLAT, north, stem) ?: continue
+                val pagePlan = truePlan.copy(
+                    id = "reader-page-$stem",
+                    levels = listOf(Level(index = 0, outline = readerOutline, rooms = readerRooms)),
+                )
                 fun zones(p: Plan) = engine.analyze(p).roomResults.associate { it.roomId to it.zone }
                 val trueZones = zones(truePlan)
                 val zonesBy = mapOf(
+                    V_PAGE_BOX to zones(pagePlan),
+                    V_PAGE_POINT to zones(asPoints(pagePlan)),
+                    V_PAGE_HYBRID to zones(asSizedPoints(pagePlan, printedAll, keepUnsizedBox = true)),
                     V_TODAY to zones(app),
                     V_POINT to zones(asPoints(app)),
                     V_SIZED to zones(asSizedPoints(app, printedAll)),

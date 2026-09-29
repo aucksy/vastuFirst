@@ -252,6 +252,24 @@ jobs:
               print('  (no score report in this run)')
           PY
 
+      # Which APP tests ran, class by class (29 Sep 2026). The render step runs every test under
+      # app/src/androidUnitTest — the tap tests, the direction trial's tests, the measurements — and
+      # Gradle prints only failures, so a test class that silently stopped being picked up looked
+      # exactly like one that passed. Same shape as the pure-module summary above.
+      - name: App test summary (what actually ran in the render step)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          total = fails = skips = 0
+          for f in sorted(glob.glob('app/build/test-results/**/*.xml', recursive=True)):
+              s = ET.parse(f).getroot()
+              t, fl, er, sk = (int(s.get(k, 0)) for k in ('tests', 'failures', 'errors', 'skipped'))
+              total += t; fails += fl + er; skips += sk
+              print(f"  {t:4d} tests  {fl + er:2d} failed  {sk:2d} skipped   {s.get('name', '?')}")
+          print(f"APP TOTAL: {total} tests, {fails} failed, {skips} skipped")
+          PY
+
       # Runs on any push (implicit success() — a gate regression fails the job first and skips this).
       # The porcelain check no-ops when nothing changed, so this also persists a baseline the gate
       # adopted on a verify-pass run where no record happened.

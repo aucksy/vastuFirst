@@ -146,14 +146,22 @@ def load_truth():
     return out
 
 
-def points_of(rec):
-    """Every room in a recording as (label, size, page-x, page-y) — a box's middle for box replies."""
+def points_of(rec, is_point_reply):
+    """Every room in a recording as (label, size, page-x, page-y).
+
+    A box reply (prompt v6) gives each room's top-left corner, so its point is the box's middle. A
+    point reply (prompt v7-point) gives the point itself, even on the rooms where it also gives a
+    rough w/h because no size is printed — those are drawn AROUND the point, never from it.
+    """
     rep = rec.get("reply") or {}
     b = rep.get("building") or {"x": 0, "y": 0, "w": 1, "h": 1}
     pts = []
     for r in rep.get("rooms", []):
-        x = r.get("x", 0) + (r.get("w") or 0) / 2
-        y = r.get("y", 0) + (r.get("h") or 0) / 2
+        if is_point_reply:
+            x, y = r.get("x", 0), r.get("y", 0)
+        else:
+            x = r.get("x", 0) + (r.get("w") or 0) / 2
+            y = r.get("y", 0) + (r.get("h") or 0) / 2
         pts.append((r.get("label", ""), r.get("size", ""), b["x"] + x * b["w"], b["y"] + y * b["h"]))
     return pts, rep.get("planType")
 
@@ -178,9 +186,9 @@ def match(truth, pts, aspect):
     return pairs
 
 
-def score_one(truth, rec):
+def score_one(truth, rec, is_point_reply):
     aspect = rec["imageSize"][0] / float(rec["imageSize"][1])
-    pts, ptype = points_of(rec)
+    pts, ptype = points_of(rec, is_point_reply)
     pairs = match(truth, pts, aspect)
     xs = [t["cx"] * aspect for t in truth]
     ys = [t["cy"] for t in truth]
@@ -203,22 +211,22 @@ def score_one(truth, rec):
 
 def cmd_score():
     truth = load_truth()
-    runs = [("today (gpt-5.6-luna, boxes, v6)", lambda s: [os.path.join(LIVE, s + ".openai_gpt-5.6-luna.v6.json")])]
+    runs = [("today (gpt-5.6-luna, boxes, v6)", False, lambda s: [os.path.join(LIVE, s + ".openai_gpt-5.6-luna.v6.json")])]
     for (m, _) in MODELS:
-        runs.append(("%s (points)" % m, lambda s, m=m: [rec_path(s, m, t) for t in TAGS]))
-    for name, paths in runs:
+        runs.append(("%s (points)" % m, True, lambda s, m=m: [rec_path(s, m, t) for t in TAGS]))
+    for name, is_point, paths in runs:
         found = of = inroom = rects = sized = rooms = n = 0
         offs, agree, cost, refused = [], [], 0.0, 0
         for s in SHEETS:
             recs = [json.load(open(p, encoding="utf-8")) for p in paths(s) if os.path.exists(p)]
             for r in recs:
-                sc = score_one(truth[s], r)
+                sc = score_one(truth[s], r, is_point)
                 n += 1
                 found += sc["found"]; of += sc["of"]; inroom += sc["inroom"]; rects += sc["rects"]
                 sized += sc["sized"]; rooms += sc["rooms"]; offs += sc["offs"]; cost += sc["cost"]
                 refused += sc["type"] != "2D_PLAN"
             if len(recs) == 2:
-                a, b = score_one(truth[s], recs[0])["labels"], score_one(truth[s], recs[1])["labels"]
+                a, b = score_one(truth[s], recs[0], is_point)["labels"], score_one(truth[s], recs[1], is_point)["labels"]
                 agree.append(len(a & b) / float(len(a | b) or 1))
         if n == 0:
             print("%-44s no recordings yet" % name)

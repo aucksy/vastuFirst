@@ -39,7 +39,8 @@ Return ONLY JSON:
  "rooms":[{"label":"<room name exactly as printed>",
            "size":"<the dimensions printed with that room, copied exactly, e.g.
                     3.72m X 4.50m or 12'-2\" x 14'-9\" or 2950X4200 - \"\" if none is printed>",
-           "x":<0..1>,"y":<0..1>}],
+           "x":<0..1>,"y":<0..1>,
+           "w":<0..1, ONLY when "size" is not two numbers>,"h":<0..1, same>}],
  "planConfidence":<0..1>}
 
 "building" is measured on the WHOLE IMAGE: the tightest box around the building's
@@ -49,7 +50,10 @@ detached blocks are drawn, box the one whose rooms you report.
 
 Each room is ONE POINT, not a box. x,y is the middle of that room's printed NAME,
 as fractions of that building box (NOT of the image), origin at the box's top-left.
-Do not trace walls and do not estimate how big the room is - only point at its name.
+For a room whose printed size gives BOTH its width and its length, do not trace walls and do not
+estimate how big it is - the printed size is the size. ONLY for a room whose drawing prints no size,
+or only ONE number (a strip such as 5'-11" WIDE), also give "w" and "h": its rough width and height
+as fractions of the building box. Leave "w" and "h" out otherwise.
 If a room is named only in a list or key beside the drawing, point at its number or
 mark INSIDE the drawing, never at the list.
 Most Indian plans print each room's dimensions beside its name. Copy that text into "size"

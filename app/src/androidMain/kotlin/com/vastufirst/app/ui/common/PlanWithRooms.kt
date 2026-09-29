@@ -565,13 +565,14 @@ fun PlanWithRooms(
                     // is larger, in its own colour, lightly filled, and its direction in words is laid
                     // over it by [RoomDirectionLabel].
                     //
-                    // ⚠ RINGS, NOT DOTS — found by looking at the first render. The middle of a room's
-                    // box is, on most sheets, exactly where the plan PRINTS the room's name (the reader
-                    // finds rooms by their captions), so solid dots sat on the names and ate letters:
-                    // "LIVING ROOM" came out "ING ROOM", on the one screen whose whole job is checking
-                    // those names. A ring's middle is empty and the name reads straight through it.
-                    // Each ring rides on a paper-coloured halo so it shows on a dark render too.
-                    val halo = strokeDp.toPx() / 2f
+                    // ⚠ THIN RINGS, NOT DOTS, AND NO WHITE HALO — both found by looking at renders. The
+                    // middle of a room's box is, on most sheets, exactly where the plan PRINTS the
+                    // room's name (the reader finds rooms by their captions). Solid dots sat on the
+                    // names and ate letters ("LIVING ROOM" came out "ING ROOM"), and a paper-coloured
+                    // halo round each ring wiped out every letter it crossed ("G ROOM") — on the one
+                    // screen whose whole job is checking those names. So: an empty middle, a thin line,
+                    // no halo, and the quiet rings half see-through. The tapped room's ring is its own
+                    // colour over a light see-through fill, so its name still reads through it.
                     val quietR = dotDp.toPx()
                     val quietW = ringWidthDp.toPx()
                     val pinR = dotDp.toPx() * 2f
@@ -580,12 +581,10 @@ fun PlanWithRooms(
                     rooms.forEach { r ->
                         if (r.id == selectedId) return@forEach
                         val at = r.centreOrNull()?.let(::pointOf) ?: return@forEach
-                        drawCircle(color = colors.paper, radius = quietR, center = at, style = Stroke(width = quietW + 2f * halo))
-                        drawCircle(color = colors.primaryDark, radius = quietR, center = at, style = Stroke(width = quietW))
+                        drawCircle(color = colors.primaryDark.copy(alpha = 0.7f), radius = quietR, center = at, style = Stroke(width = quietW))
                     }
                     selected?.centreOrNull()?.let(::pointOf)?.let { at ->
-                        drawCircle(color = selectedTint.copy(alpha = 0.25f), radius = pinR, center = at)
-                        drawCircle(color = colors.paper, radius = pinR, center = at, style = Stroke(width = pinW + 2f * halo))
+                        drawCircle(color = selectedTint.copy(alpha = 0.2f), radius = pinR, center = at)
                         drawCircle(color = selectedTint, radius = pinR, center = at, style = Stroke(width = pinW))
                     }
                 }
