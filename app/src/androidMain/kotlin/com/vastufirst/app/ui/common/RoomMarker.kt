@@ -51,6 +51,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.pillShapeFor
@@ -232,6 +233,10 @@ internal fun RoomDirectionLabels(labels: List<PlanLabel>, selectedId: String?, b
                         onTextLayout = { wrappedLine = wrappedLineHeight(it) },
                         modifier = Modifier
                             .testTag(if (tapped) ROOM_DIRECTION_TAG else ROOM_CODE_TAG)
+                            // ⚠ ON TOP BY RULE, not by order. Placing the tapped label last used to be
+                            // enough; once each label kept its own wrap state (the key above) a neighbour's
+                            // "NE" was drawn over the tapped label's glow on a 320 dp phone. zIndex says it.
+                            .zIndex(if (tapped) 1f else 0f)
                             .then(
                                 if (tapped) {
                                     // The glow: a soft wash of the zone's colour just outside the pill,
