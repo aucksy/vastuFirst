@@ -99,6 +99,29 @@ developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
+## Week of 28 September – 4 October 2026
+
+### Tuesday 29 September — tap a room to see which direction it is in
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.32.0/vastufirst-v0.32.0.apk
+**This is the one to install.**
+
+**Tap a room on your plan, and it now tells you which direction that room is in — right on the room.**
+
+On "Check what we read", and on the photograph in your report, tapping a room — on the plan or in the
+list below it — used to draw a box over the part of the picture where we read it. Those boxes were
+never exact: every builder draws a plan a little differently, and our reading of where one room ends
+and the next begins is the least reliable thing we do. But Vastu does not need the box. It needs to
+know which direction each room is in.
+
+So this version tries it the other way. Tap a room and a circle marks it on your plan, with its
+direction written just above it — **"North-East"**, **"South-West"**, **"Centre"** — in exactly the words its
+row and your report use. Every other room carries a small circle, so you can see what you can tap.
+
+**This is a trial, and you can compare the two.** Just under the plan there is a choice marked
+**Trial**: "Its direction" or "Its box". Flip it and tap the same room again to see the old box on the
+same plan. Nothing about your score changes either way — only what a tapped room shows you.
+
 ## Week of 21–27 September 2026
 
 ### Sunday 27 September — the front door moves with your finger
