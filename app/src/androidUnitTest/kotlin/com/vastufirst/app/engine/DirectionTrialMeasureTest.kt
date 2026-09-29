@@ -674,12 +674,33 @@ class DirectionTrialMeasureTest {
             known.map { it.first }.sorted()[known.size / 2],
             known.map { it.second }.sorted()[known.size / 2],
         )
+        // ⚠ TRIMMED AT THE BUILDING'S EDGE (found on the first cloud run, 29 Sep 2026). A box rebuilt
+        // around a name near an outer wall pokes past it whenever the scale runs a little large, and
+        // the mapper treats two or more rooms past the edge as a layout running long: it SHRINKS THE
+        // WHOLE HOME toward one corner (ScanMapper.shrinkToPage). Every point reading was squashed
+        // that way — page direction 80.6 % against 95.5 % for boxes, and the owner's flat did not
+        // place. The rebuilt box is our construction, not the reader's layout, so it is trimmed to
+        // the building box and the reader's point stays exactly where it was read.
         val rooms = d.rooms.mapIndexed { i, r ->
             val (w, h) = built[i] ?: fallback
-            r.copy(x = r.x - w / 2.0, y = r.y - h / 2.0, w = w, h = h)
+            rebuiltRooms++
+            val px = r.x.coerceIn(0.0, 1.0)
+            val py = r.y.coerceIn(0.0, 1.0)
+            val x0 = max(0.0, px - w / 2.0)
+            val y0 = max(0.0, py - h / 2.0)
+            val x1 = min(1.0, px + w / 2.0)
+            val y1 = min(1.0, py + h / 2.0)
+            if (x0 > px - w / 2.0 + 1e-9 || y0 > py - h / 2.0 + 1e-9 || x1 < px + w / 2.0 - 1e-9 || y1 < py + h / 2.0 - 1e-9) {
+                trimmedRooms++
+            }
+            r.copy(x = x0, y = y0, w = max(x1 - x0, 0.01), h = max(y1 - y0, 0.01))
         }
         return Recording(rec.id, d.copy(rooms = rooms), rec.imageW, rec.imageH)
     }
+
+    /** How many rebuilt rooms ran past the building's edge and were trimmed — printed per reader. */
+    private var rebuiltRooms = 0
+    private var trimmedRooms = 0
 
     private fun outcomeOf(rec: Recording): ScanOutcome = ScanMapper.map(rec.draft, imageAspect = rec.imageW / rec.imageH)
 
@@ -837,13 +858,16 @@ class DirectionTrialMeasureTest {
         val todayAnalyses = roundSheets.associateWith { s -> todayRecs[s]?.let(::appAnalyses) }
         var readsSeen = 0
         for (c in candidates) {
+            rebuiltRooms = 0
+            trimmedRooms = 0
             val reads = c.tags.associateWith { tag ->
                 roundSheets.associateWith { s -> recordingAt(s, "${c.file}.$tag")?.let { if (c.point) pointsToBoxes(it) else it } }
             }
             val n = reads.values.sumOf { m -> m.values.count { it != null } }
             readsSeen += n
             say("")
-            say("— ${c.name}: $n readings on file")
+            say("— ${c.name}: $n readings on file" +
+                if (c.point) "; rooms rebuilt from a point $rebuiltRooms, of which trimmed at the building's edge $trimmedRooms" else "")
             if (n == 0) continue
 
             // Rule 2: direction on the rule's 4 sheets, the two reads POOLED; and each read alone.

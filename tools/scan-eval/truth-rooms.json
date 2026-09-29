@@ -12,7 +12,7 @@
   "ADD A SHEET ONLY BY LOOKING AT IT. Never copy these from a model reply — that is the thing",
   "being judged.",
   "floor-plan-1 (the owner's own flat) was marked 19 Sep 2026 off the 5 % grid, for the fused-balcony defect. The three right/top BALCONY captions are marked as the three separate strips they are; the open living/dining is marked to the walls that do bound it and to the reader's edge where none does.",
-  "greencourt-526, plan-006, plan-010, towerEF-1854 and plan-034 were marked 29 Sep 2026 off the 5 % grid (direction trial: more sheets behind 'score on the page, not the grid'). Each room to its own walls; an open side (a kitchen or lobby open to its dining space) where the printed size puts it. Every sheet was drawn back with `show` and looked at before it was kept. Captions only were taken from the reader, so a drawing can be matched to a room; no position was."
+  "greencourt-526, plan-006, plan-010, towerEF-1854, plan-034 and plan-008 were marked 29 Sep 2026 off the 5 % grid (direction trial: more sheets behind 'score on the page, not the grid'). Each room to its own walls; an open side (a kitchen or lobby open to its dining space) where the printed size puts it. Every sheet was drawn back with `show` and looked at before it was kept. Captions only were taken from the reader, so a drawing can be matched to a room; no position was."
  ],
  "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)": [
   {
@@ -921,6 +921,92 @@
    "y": 0.621,
    "w": 0.222,
    "h": 0.221
+  }
+ ],
+ "plan-008": [
+  {
+   "label": "TOILET",
+   "x": 0.205,
+   "y": 0.094,
+   "w": 0.105,
+   "h": 0.058
+  },
+  {
+   "label": "DRESS",
+   "x": 0.314,
+   "y": 0.094,
+   "w": 0.106,
+   "h": 0.061
+  },
+  {
+   "label": "DRESS",
+   "x": 0.427,
+   "y": 0.094,
+   "w": 0.125,
+   "h": 0.061
+  },
+  {
+   "label": "TOILET",
+   "x": 0.556,
+   "y": 0.094,
+   "w": 0.117,
+   "h": 0.061
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.205,
+   "y": 0.155,
+   "w": 0.215,
+   "h": 0.158
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.427,
+   "y": 0.158,
+   "w": 0.246,
+   "h": 0.155
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.498,
+   "y": 0.315,
+   "w": 0.175,
+   "h": 0.158
+  },
+  {
+   "label": "LIVING HALL",
+   "x": 0.205,
+   "y": 0.315,
+   "w": 0.285,
+   "h": 0.315
+  },
+  {
+   "label": "TOILET",
+   "x": 0.498,
+   "y": 0.478,
+   "w": 0.121,
+   "h": 0.067
+  },
+  {
+   "label": "TOILET",
+   "x": 0.498,
+   "y": 0.548,
+   "w": 0.121,
+   "h": 0.074
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.498,
+   "y": 0.628,
+   "w": 0.175,
+   "h": 0.141
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.146,
+   "y": 0.633,
+   "w": 0.18,
+   "h": 0.136
   }
  ]
 }
