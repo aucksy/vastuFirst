@@ -87,6 +87,14 @@ val appModule = module {
     // The on-photo scan review (owner request, 4 Aug 2026): the Settings toggle that picks the
     // confirmation surface, and the one-field handover slot the scan writes before navigating.
     single { ScanReviewHandover() }
+    // ⭐ The direction trial (owner, 29 Sep 2026): what a tapped room shows on the photograph. ONE
+    // holder for both screens that draw it, switched by `directionTrial` in the reader's config — the
+    // one line of data that turns the trial off and gives back the box way, untouched.
+    single {
+        com.vastufirst.app.ui.common.RoomMarkerChoice(
+            trialOn = get<com.vastufirst.shared.scan.PlanReadRecipe>().config.directionTrial,
+        )
+    }
 
     // ⭐ The ₹699 checkout. Built in full, SWITCHED OFF by a build flag — and the "off" path is a
     // real, honest implementation rather than a disabled button: NoBilling unlocks locally and the

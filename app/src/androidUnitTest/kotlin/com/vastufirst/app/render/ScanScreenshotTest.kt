@@ -198,6 +198,42 @@ class ScanScreenshotTest {
     }
 
     /**
+     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — a tapped room showing its DIRECTION on the room,
+     * where every other golden on this screen shows the box.
+     *
+     * ⚠ ON A REAL PLAN, NOT A BLANK STAND-IN. Every other photo on this screen's goldens is a flat
+     * beige rectangle, which is honest for geometry but cannot show whether a label lands ON the room
+     * it names. `plan-01` is the one plan whose picture lives in the repository (a synthetic sheet,
+     * `tools/scan-eval/fixtures/plan-01.png`) AND whose recorded reply is bundled — so here the label
+     * can be seen sitting on the kitchen the sheet draws.
+     *
+     * ⚠ That reply predates the building box, which [PlanSheet] supplies — see its note.
+     */
+    @Test
+    fun scanReviewDirection() {
+        val picture = PlanSheet.bitmap()
+        val outcome = PlanSheet.outcome()
+        val readings = readingsFor(outcome)
+        val kitchen = outcome.rooms.indexOfFirst { it.label == "KITCHEN" }
+        check(kitchen >= 0 && readings[com.vastufirst.app.ui.scan.scanRoomId(kitchen)] != null) {
+            "The kitchen must be read and scored, or this golden photographs a pin with no words on it."
+        }
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = picture.asImageBitmap(),
+                rooms = outcome.rooms,
+                readings = readings,
+                startSelected = kitchen,
+                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
+                // The trial's chooser, as the build he installs shows it.
+                onRoomMarkerChange = {},
+            )
+        }
+        captureAcrossMatrix("scan-review-direction", content)
+        writeManifestAcrossMatrix("scan-review-direction", content)
+    }
+
+    /**
      * ⭐⭐ THE CHECK SCREEN AFTER ANDROID RECLAIMED THE APP — a real state, and one no picture has
      * ever contained.
      *

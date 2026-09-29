@@ -154,6 +154,58 @@ class LongScreenBottomScreenshotTest {
         captureBottom("report-scanned", "rooms_font2_0", hasTestTag(TAG_ROOMS_END), 2.0f, content = content)
     }
 
+    /**
+     * ⭐⭐ THE DIRECTION TRIAL ON THE REPORT'S PHOTOGRAPH (owner, 29 Sep 2026) — the other half of the
+     * sweep. The report draws the same picture "Check what we read" draws, through the same component,
+     * so a room tapped here shows the same kind of marker; this is the only picture of it.
+     *
+     * ⚠ A SCROLLED capture, because the report's picture sits below its verdict and the matrix
+     * goldens start at the top: anchored on the trial's chooser, which sits directly under the plan,
+     * so the plan, the tapped room's words and the chooser are all in frame. The three sizes the
+     * owner asked to see: normal, large text, and the narrowest phone.
+     *
+     * ⚠ On the real plan-01 sheet with its building box supplied — see [PlanSheet] for why.
+     */
+    @Test
+    fun report_plan_direction() {
+        val picture = PlanSheet.bitmap()
+        val outcome = PlanSheet.outcome()
+        val grid =com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid)
+        val analysis = com.vastufirst.engine.VastuEngine().analyze(
+            com.vastufirst.app.ui.newplan.buildEnginePlan(
+                rooms = grid,
+                door = door,
+                intent = Intent.BUILDING,
+                propertyType = com.vastufirst.shared.PropertyType.FLAT,
+                north = 0,
+                planId = "golden-report-direction",
+            )!!,
+        )
+        val planRooms = com.vastufirst.app.ui.scan.planRoomsOf(outcome.rooms)
+        val kitchen = planRooms.first { it.name == "KITCHEN" }.id
+        val content: @Composable () -> Unit = {
+            ReportContent(
+                analysis = analysis,
+                intent = Intent.BUILDING,
+                rooms = grid,
+                north = 0,
+                cols = outcome.cols,
+                rows = outcome.rows,
+                planImage = picture.asImageBitmap(),
+                planRooms = planRooms,
+                doorAtPage = door?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, outcome.rooms) },
+                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
+                onRoomMarkerChange = {},
+                startOpenRoomId = kitchen,
+            )
+        }
+        val anchor = hasTestTag(com.vastufirst.app.ui.common.ROOM_MARKER_CHOICE_TAG)
+        captureBottom("report", "plan_direction", anchor, 1.0f, content = content)
+        captureBottom("report", "plan_direction_font2_0", anchor, 2.0f, content = content)
+        captureBottom("report", "plan_direction_w320", anchor, 1.0f, "+w320dp-h711dp-port-xhdpi", content)
+    }
+
     /** The remedies-only branch ends on the same elements but gets there through different cards. */
     @Test
     fun report_living_bottom() = captureBottomPair("report-living", anchor = hasText("Done — see all my plans")) {

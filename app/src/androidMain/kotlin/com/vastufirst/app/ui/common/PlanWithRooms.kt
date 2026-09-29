@@ -328,9 +328,24 @@ fun PlanWithRooms(
     doorWallWords: (com.vastufirst.app.ui.newplan.DoorSide) -> String = { it.name },
     /** What a screen reader hears on the E itself: a fact, never an instruction to drag. */
     doorDescription: String = "Your front door",
+    /**
+     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — what a tapped room shows on this picture.
+     *
+     * [RoomMarker.BOX], the default, is this component exactly as it was before the trial: quiet
+     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws a dot per room instead, and
+     * the tapped room gets a pin and its direction in words. See RoomMarker.kt.
+     */
+    marker: RoomMarker = RoomMarker.BOX,
+    /**
+     * The engine's own direction words for each room, by room id — the SAME words its row prints.
+     * Only read under [RoomMarker.DIRECTION]. A room missing from it gets its pin and no words: this
+     * picture never works a direction out for itself.
+     */
+    directions: Map<String, String> = emptyMap(),
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
+    val dotDp = VastuTheme.sizes.dot
     val doorTouch = VastuTheme.sizes.minTouch
     // One string is ever measured here (the door mark's letter), so the default cache is ample.
     val measurer = rememberTextMeasurer()
@@ -376,6 +391,9 @@ fun PlanWithRooms(
     val liveDoor by rememberUpdatedState(shownDoor)
     val liveOutline by rememberUpdatedState(doorOutline)
     val liveRooms by rememberUpdatedState(rooms)
+    // ⚠ Read live for the same reason as the door: the gesture reader is keyed on the picture, and
+    // flipping the trial's chooser must change what the NEXT tap means without restarting it.
+    val liveMarker by rememberUpdatedState(marker)
     val liveOnMoveDoor by rememberUpdatedState(onMoveDoorToPage)
     val liveOnTapDoor by rememberUpdatedState(onTapDoor)
     val liveHasNote by rememberUpdatedState(doorNote != null)
@@ -460,7 +478,16 @@ fun PlanWithRooms(
                                 // Any other tap puts the note away — one thing is explained at a time.
                                 noteOpen = false
                                 pageOf(at)?.let { (fx, fy) ->
-                                    roomAtPoint(liveRooms, fx, fy)?.let { onTapRoom(it.id) }
+                                    // ⭐ The box way aims at outlines it can see; the direction way aims
+                                    // at dots — see [roomNearestCentre] for why the two need different
+                                    // arithmetic. The box way's is untouched.
+                                    val hit = if (liveMarker == RoomMarker.DIRECTION) {
+                                        val f = fitNow()
+                                        roomNearestCentre(liveRooms, fx, fy, f.w, f.h, doorTouch.toPx())
+                                    } else {
+                                        roomAtPoint(liveRooms, fx, fy)
+                                    }
+                                    hit?.let { onTapRoom(it.id) }
                                 }
                             },
                             onDoorTap = {
@@ -492,7 +519,13 @@ fun PlanWithRooms(
                         )
                     }
                     .semantics {
-                        contentDescription = buildPlanDescription(selected?.name, doorAtPage != null, zoomable)
+                        contentDescription = buildPlanDescription(
+                            selected?.name,
+                            doorAtPage != null,
+                            zoomable,
+                            marker = marker,
+                            selectedDirection = selected?.let { directions[it.id] },
+                        )
                     },
             ) {
                 val fit = planFit(size.width, size.height, image.width, image.height, zoom, pan)
@@ -507,17 +540,38 @@ fun PlanWithRooms(
                     Offset(origin.x + b.x.toFloat() * drawn.width, origin.y + b.y.toFloat() * drawn.height) to
                         Size(b.w.toFloat() * drawn.width, b.h.toFloat() * drawn.height)
 
-                // The quiet ones first, so the selected room's outline is never drawn under another's.
-                rooms.forEach { r ->
-                    if (r.id == selectedId) return@forEach
-                    val b = r.box ?: return@forEach
-                    val (tl, area) = rectOf(b)
-                    drawRect(color = quiet, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 4f))
-                }
-                selected?.box?.let { b ->
-                    val (tl, area) = rectOf(b)
-                    drawRect(color = selectedTint.copy(alpha = 0.28f), topLeft = tl, size = area)
-                    drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
+                if (marker == RoomMarker.BOX) {
+                    // The quiet ones first, so the selected room's outline is never drawn under another's.
+                    rooms.forEach { r ->
+                        if (r.id == selectedId) return@forEach
+                        val b = r.box ?: return@forEach
+                        val (tl, area) = rectOf(b)
+                        drawRect(color = quiet, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 4f))
+                    }
+                    selected?.box?.let { b ->
+                        val (tl, area) = rectOf(b)
+                        drawRect(color = selectedTint.copy(alpha = 0.28f), topLeft = tl, size = area)
+                        drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
+                    }
+                } else {
+                    // ⭐⭐ THE DIRECTION TRIAL: A DOT PER ROOM, NO BOX AT ALL. The outlines were the
+                    // affordance ("these are tappable"); a quiet dot at the middle of each room keeps
+                    // that without drawing a rectangle we know to be a guess. The tapped room gets a
+                    // pin in its own colour, and its direction in words is laid over it by
+                    // [RoomDirectionLabel]. Each dot sits on a paper-coloured halo so it reads on any
+                    // photograph, dark or light.
+                    val halo = strokeDp.toPx() / 2f
+                    fun pointOf(c: Pair<Float, Float>) = Offset(origin.x + c.first * drawn.width, origin.y + c.second * drawn.height)
+                    rooms.forEach { r ->
+                        if (r.id == selectedId) return@forEach
+                        val at = r.centreOrNull()?.let(::pointOf) ?: return@forEach
+                        drawCircle(color = colors.paper, radius = dotDp.toPx() / 2f + halo, center = at)
+                        drawCircle(color = colors.textSecondary, radius = dotDp.toPx() / 2f, center = at)
+                    }
+                    selected?.centreOrNull()?.let(::pointOf)?.let { at ->
+                        drawCircle(color = colors.paper, radius = dotDp.toPx() + halo, center = at)
+                        drawCircle(color = selectedTint, radius = dotDp.toPx(), center = at)
+                    }
                 }
 
                 // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it — and drawn where the finger
@@ -557,6 +611,25 @@ fun PlanWithRooms(
                         measurer = measurer,
                         letterStyle = doorLetterStyle,
                     )
+                }
+            }
+
+            // ⭐⭐ THE DIRECTION TRIAL — the tapped room's direction, in the engine's own words, laid
+            // over the room. Drawn BEFORE the E's node and note, so the door's note is never hidden
+            // under a label. A magnified sheet can carry the room out of view; its label goes with
+            // it rather than floating somewhere the room is not.
+            if (marker == RoomMarker.DIRECTION) {
+                val words = selected?.let { directions[it.id] }
+                val centre = selected?.centreOrNull()
+                if (words != null && centre != null) {
+                    val density = LocalDensity.current
+                    val boxW = with(density) { drawnWidth.toPx() }
+                    val boxH = with(density) { drawnHeight.toPx() }
+                    val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
+                    val pin = Offset(fit.ox + centre.first * fit.w, fit.oy + centre.second * fit.h)
+                    if (pin.x in 0f..boxW && pin.y in 0f..boxH) {
+                        RoomDirectionLabel(text = words, pinPx = pin, boxW = boxW, boxH = boxH)
+                    }
                 }
             }
 
@@ -626,10 +699,26 @@ internal fun doorCentrePx(
  * Kept out of the composable so the sentence can be read and changed without going near the drawing,
  * and so every branch of it is exercised by a plain unit test rather than only by a screenshot.
  */
-internal fun buildPlanDescription(selectedName: String?, hasDoor: Boolean, zoomable: Boolean): String {
-    val head = selectedName
-        ?.let { "Your plan, showing roughly where $it was read" }
-        ?: "Your scanned plan. Tap a room to see roughly where we read it."
+internal fun buildPlanDescription(
+    selectedName: String?,
+    hasDoor: Boolean,
+    zoomable: Boolean,
+    /** The direction trial says the room's direction, where the box way said where it was read. */
+    marker: RoomMarker = RoomMarker.BOX,
+    selectedDirection: String? = null,
+): String {
+    val head = if (marker == RoomMarker.DIRECTION) {
+        when {
+            selectedName == null -> "Your scanned plan. Tap a room to see which direction it is in."
+            // The same words the room's row prints, so a screen-reader user hears what everyone sees.
+            selectedDirection != null -> "Your plan. $selectedName is in the $selectedDirection."
+            else -> "Your plan, with a pin where $selectedName was read."
+        }
+    } else {
+        selectedName
+            ?.let { "Your plan, showing roughly where $it was read" }
+            ?: "Your scanned plan. Tap a room to see roughly where we read it."
+    }
     // ⚠ The door sentence STATES a fact and does not issue an instruction. Someone using a screen
     // reader cannot pinch and cannot drag a mark they navigate to by swiping, so telling them to do
     // either is telling them to do something they cannot.

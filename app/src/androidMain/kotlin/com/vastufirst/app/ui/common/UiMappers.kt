@@ -147,6 +147,16 @@ fun Zone.short(): String = when (this) {
     Zone.BRAHMASTHAN -> "centre"
 }
 
+/**
+ * ⭐ A ROOM'S DIRECTION AS A LABEL — "North-East", "Centre" — the ONE place it is spelled.
+ *
+ * Its row on "Check what we read", its row in the report and (under the direction trial) the words
+ * laid over the room on the photograph all print this, so the three can never call one room two
+ * different things. Capitalised here and not in [short], because [short] also feeds running prose
+ * where "the centre" has to stay lowercase; a label is not a sentence.
+ */
+fun com.vastufirst.shared.RoomResult.directionWords(): String = zone.short().replaceFirstChar { it.uppercase() }
+
 fun Zone.code(): String = when (this) {
     Zone.BRAHMASTHAN -> "C"; else -> name
 }

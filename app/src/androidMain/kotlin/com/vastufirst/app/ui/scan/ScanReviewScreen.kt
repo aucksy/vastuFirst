@@ -78,6 +78,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.DoorNoteText
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
+import com.vastufirst.app.ui.common.RoomMarker
+import com.vastufirst.app.ui.common.RoomMarkerChooser
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.details.SiteExtrasOffer
 import com.vastufirst.app.ui.details.siteItemsLeft
@@ -99,7 +101,7 @@ import com.vastufirst.designsystem.components.VastuRoomStatus
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.app.ui.common.NOT_RATED_MEANS
 import com.vastufirst.app.ui.common.rowStatus
-import com.vastufirst.app.ui.common.short
+import com.vastufirst.app.ui.common.directionWords
 import com.vastufirst.shared.Analysis
 import com.vastufirst.shared.scan.ScannedRoom
 import kotlinx.coroutines.launch
@@ -190,9 +192,10 @@ fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
             // DOOR and stamping "Not rated" on it here said the opposite of the sentence at the foot
             // of this very screen, which names the wall we read it on.
             status = r.rowStatus(),
-            // ⚠ Capitalised HERE and nowhere deeper, exactly as the report does it: [short] also
-            // feeds running prose where "the centre" has to stay lowercase. A pill is a label.
-            direction = r.zone.short().replaceFirstChar { it.uppercase() },
+            // ⚠ [directionWords] — the ONE spelling of a room's direction as a label, shared with the
+            // report's rows and with the direction trial's words on the plan. [short] alone also feeds
+            // running prose where "the centre" has to stay lowercase. A pill is a label.
+            direction = r.directionWords(),
         )
     }
 
@@ -218,6 +221,9 @@ fun ScanReviewScreen(
     /** The optional extras already answered, and the way into the rest — see [ScanReviewContent]. */
     siteAnswers: SiteAnswers = SiteAnswers(),
     onAddDetails: () -> Unit = {},
+    /** What a tapped room shows — the direction trial. See the same parameters on [ScanReviewContent]. */
+    roomMarker: RoomMarker = RoomMarker.BOX,
+    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
 ) {
     val data = handover.data
     val image = remember(data) { data?.decodeImage() }
@@ -234,6 +240,8 @@ fun ScanReviewScreen(
         onBack = onBack,
         siteAnswers = siteAnswers,
         onAddDetails = onAddDetails,
+        roomMarker = roomMarker,
+        onRoomMarkerChange = onRoomMarkerChange,
     )
 }
 
@@ -343,10 +351,25 @@ fun ScanReviewContent(
     startSelected: Int = -1,
     /** For the harness: draw the screen with the E's note open, so the golden shows that state. */
     startDoorNoteOpen: Boolean = false,
+    /**
+     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PLAN — the direction trial (owner, 29 Sep 2026).
+     *
+     * [RoomMarker.BOX], the default, is this screen exactly as it was. [RoomMarker.DIRECTION] shows
+     * the room's direction on the room, in the words on its own row — see RoomMarker.kt.
+     */
+    roomMarker: RoomMarker = RoomMarker.BOX,
+    /**
+     * Flips [roomMarker] from the trial's chooser. Null draws no chooser, and null is what the app
+     * passes whenever the trial's switch in the data is off.
+     */
+    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
 ) {
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
     val planRooms = remember(rooms) { planRoomsOf(rooms) }
+    // ⭐ The direction the trial writes ON a room is the one its row prints — taken from [readings],
+    // never worked out again. Empty before North is known, and then a tapped room shows its pin only.
+    val directions = remember(readings) { readings.mapValues { it.value.direction } }
     // ⚠ A PLAIN SCROLLING COLUMN, NOT A LAZY LIST — and the original note on this screen was right.
     // A lazy list only composes the rows you can see, so every room below the fold is not in the
     // semantics tree at all: the geometry gate cannot measure it, the accessibility checker cannot
@@ -470,7 +493,12 @@ fun ScanReviewContent(
             Spacer(Modifier.height(VastuTheme.spacing.s1))
             VastuInfoLine(
                 label = "How to use this screen",
-                info = "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it.",
+                // ⚠ The sentence says what a tap will actually show, so it follows the trial's marker.
+                info = if (roomMarker == RoomMarker.DIRECTION) {
+                    "Your plan, as you scanned it. Tap a room — here or below — to see which direction it is in."
+                } else {
+                    "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it."
+                },
                 tag = "review.help",
             )
         }
@@ -504,6 +532,8 @@ fun ScanReviewContent(
                 onMoveDoorToSide = { side -> doorOnWall(side, rooms)?.let(onDoorChange) },
                 doorWallWords = ::doorSideWords,
                 doorDescription = door?.let { "Your front door, on ${doorSideWords(it.side)}" } ?: "Your front door",
+                marker = roomMarker,
+                directions = directions,
             )
         } else {
             // ⚠⚠ CAPPED, NOT SHAPED — found by the geometry gate the moment this state was first
@@ -576,6 +606,15 @@ fun ScanReviewContent(
             // instead filling the screen with all this info"*). What they said lives on in the E's
             // own note — see [reviewDoorNote] — one tap on the mark away, which is where a reader
             // who is wondering about the E is already looking.
+            //
+            // ⭐ THE TRIAL'S CHOOSER, first in the list and NOT in the pinned header. The header is
+            // the plan's, and in landscape at a 200 % font every dp of it is already spoken for — a
+            // pinned row here would squeeze the list toward nothing, the zero-height class this screen
+            // has shipped once. Here it scrolls like a row, sits directly under the list's heading at
+            // rest, and is gone entirely when the trial's switch is off.
+            if (onRoomMarkerChange != null && rooms.isNotEmpty()) {
+                RoomMarkerChooser(current = roomMarker, onChange = onRoomMarkerChange)
+            }
             planRooms.forEachIndexed { index, pr ->
                 val room = rooms[index]
                 // ⭐ The report's own words for this room, when North is known. Null before that,

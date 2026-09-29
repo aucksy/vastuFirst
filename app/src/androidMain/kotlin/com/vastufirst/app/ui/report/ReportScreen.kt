@@ -45,6 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
+import com.vastufirst.app.ui.common.RoomMarker
+import com.vastufirst.app.ui.common.RoomMarkerChooser
+import com.vastufirst.app.ui.common.directionWords
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
 import com.vastufirst.app.ui.common.editorColor
@@ -160,6 +163,9 @@ fun ReportScreen(
      * slower than it is.
      */
     introMillis: Long = READING_MILLIS,
+    /** What a tapped room shows on the photograph — the direction trial. See [ReportContent]. */
+    roomMarker: RoomMarker = RoomMarker.BOX,
+    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
@@ -183,6 +189,8 @@ fun ReportScreen(
         planRooms = planRooms,
         doorAtPage = doorAtPage,
         introMillis = introMillis,
+        roomMarker = roomMarker,
+        onRoomMarkerChange = onRoomMarkerChange,
     )
 }
 
@@ -289,6 +297,21 @@ fun ReportContent(
     onEditEntry: () -> Unit = {},
     onAddDetails: () -> Unit = {},
     onRestart: () -> Unit = {},
+    /**
+     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PHOTOGRAPH — the direction trial (owner, 29 Sep 2026).
+     *
+     * The report draws the SAME picture "Check what we read" draws, through the same component, so it
+     * shows the same kind of marker: [RoomMarker.BOX], the default, is this report exactly as it was;
+     * [RoomMarker.DIRECTION] shows the tapped room's direction on the room, in the words its row prints.
+     */
+    roomMarker: RoomMarker = RoomMarker.BOX,
+    /** Flips [roomMarker] from the trial's chooser under the photograph. Null draws no chooser. */
+    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
+    /**
+     * For the harness: open this room on first draw, so a golden can photograph a tapped room on the
+     * picture. Null — the default, and what the app always passes — keeps the report's own opening.
+     */
+    startOpenRoomId: String? = null,
 ) {
     val colors = VastuTheme.colors
     val resolvedIntent = intent ?: Intent.BUILDING
@@ -403,7 +426,14 @@ fun ReportContent(
      * ⚠ rememberSaveable: an open room must survive a rotation and a brief process reclaim, or the
      * reader loses their place mid-report — the same reason the old finding cards used it.
      */
-    var openRoomId by rememberSaveable { mutableStateOf<String?>(null) }
+    var openRoomId by rememberSaveable { mutableStateOf(startOpenRoomId) }
+
+    /**
+     * ⭐ The direction the trial writes ON a room in the photograph — the very words that room's row
+     * prints below it ([directionWords], one spelling for both), never worked out again from where
+     * the room sits in the picture.
+     */
+    val planDirections = remember(a) { a.roomResults.associate { it.roomId to it.directionWords() } }
 
     /**
      * Where each room's row currently sits, so tapping the room ON THE PICTURE can bring its row
@@ -607,7 +637,17 @@ fun ReportContent(
                         // and it is a few lines below.
                         doorAtPage = doorAtPage,
                         onTapDoor = { revealDoor = true },
+                        // ⭐ THE DIRECTION TRIAL, the same marker "Check what we read" shows — the
+                        // two pictures are one component and must not show two kinds of answer.
+                        marker = roomMarker,
+                        directions = planDirections,
                     )
+                    // The trial's chooser, only under the PHOTOGRAPH: a home drawn by hand shows its
+                    // zone map, which has no reader's box to compare against.
+                    if (onRoomMarkerChange != null) {
+                        Spacer(Modifier.height(VastuTheme.spacing.s3))
+                        RoomMarkerChooser(current = roomMarker, onChange = onRoomMarkerChange)
+                    }
                 } else {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         ZoneMap(
@@ -1234,9 +1274,10 @@ private fun RoomsSection(
                 name = name,
                 code = r.type.microLabel(),
                 codeColor = r.type.editorColor(),
-                // ⚠ Capitalised HERE, not in [short], which also feeds running prose where "the
-                // centre" must stay lowercase ("Toilet — centre"). A pill is a label, not a sentence.
-                direction = r.zone.short().replaceFirstChar { it.uppercase() },
+                // ⚠ [directionWords], not [short] — short also feeds running prose where "the centre"
+                // must stay lowercase ("Toilet — centre"). A pill is a label, not a sentence. The same
+                // function spells the words the direction trial lays on the room in the photograph.
+                direction = r.directionWords(),
                 // ⚠ [rowStatus], not the bare verdict — the entrance is scored as the front door and
                 // must not be stamped "Not rated" on the page that judges it.
                 status = r.rowStatus(),

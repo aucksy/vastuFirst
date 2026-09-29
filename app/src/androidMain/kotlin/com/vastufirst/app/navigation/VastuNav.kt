@@ -275,6 +275,8 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
             composable(Routes.SCAN_REVIEW) { entry ->
                 val planVm = sharedVm(nav, entry)
                 val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                // ⭐ The direction trial — the same holder the report reads, so both pictures agree.
+                val marker = koinInject<com.vastufirst.app.ui.common.RoomMarkerChoice>()
                 // ⭐ The live reading, so every row can carry the report's own one-word result and
                 // the direction the room sits in. It exists by now because North was marked on the
                 // screen before this one — which is exactly why that step was moved in front of it.
@@ -336,6 +338,10 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // "Done" there returns HERE, so the flag stays false and its button says so.
                     siteAnswers = planVm.siteAnswers,
                     onAddDetails = { nav.go(Routes.MORE_DETAILS) },
+                    roomMarker = marker.current,
+                    // No chooser at all unless the trial's switch in the data is on.
+                    onRoomMarkerChange = { m: com.vastufirst.app.ui.common.RoomMarker -> marker.current = m }
+                        .takeIf { marker.offered },
                 )
             }
 
@@ -548,6 +554,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // and loading one would pull a different home over the draft already on screen.
                 val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
                 val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val reportMarker = koinInject<com.vastufirst.app.ui.common.RoomMarkerChoice>()
                 LaunchedEffect(planId) {
                     if (planId != null) {
                         vm.loadById(planId)
@@ -615,6 +622,11 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // moment: the home was read days ago, and replaying the bar every time makes
                     // the app feel slower than it is. An id means "opened from the list".
                     introMillis = if (planId != null) 0L else READING_MILLIS,
+                    // ⭐ The direction trial: the report's photograph shows the same kind of marker
+                    // "Check what we read" does, from the same holder, and offers the same chooser.
+                    roomMarker = reportMarker.current,
+                    onRoomMarkerChange = { m: com.vastufirst.app.ui.common.RoomMarker -> reportMarker.current = m }
+                        .takeIf { reportMarker.offered },
                 )
             }
         }

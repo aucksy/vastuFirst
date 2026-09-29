@@ -46,6 +46,27 @@ data class ScanReaderConfig(
     val promptResource: String = "",
     val connectTimeoutMs: Int = 20_000,
     val readTimeoutMs: Int = 90_000,
+    /**
+     * ⭐⭐ THE DIRECTION TRIAL'S ONE SWITCH (owner, 29 Sep 2026).
+     *
+     * *"Those boxes have never been accurate, because every floor plan is drawn differently. But Vastu
+     * only needs each room's DIRECTION. So, as a trial: when I tap a room, show its direction ON the
+     * room, on the plan, instead of drawing a box."*
+     *
+     * `true` = the trial: a room tapped on "Check what we read" or on the report's photograph shows
+     * the engine's own direction words on the room, and a small chooser under the plan lets the reader
+     * flip back to the box to compare the two on the same plan. `false` = everything exactly as it was
+     * before 29 Sep 2026: the box, and no chooser. **Nothing of the box way was deleted** — this is a
+     * trial, built beside today's behaviour, and going back is this one value.
+     *
+     * Absent means `false`. A config written before the trial therefore keeps the old behaviour
+     * rather than silently acquiring a new one.
+     *
+     * ⚠ It chooses how a room is SHOWN, never how it is SCORED. The words on the room are the ones on
+     * its row and in the report, from the same engine result; the reader is still asked only for text
+     * and where things are, never for a direction (plan doc §3i, rule S1).
+     */
+    val directionTrial: Boolean = false,
 )
 
 /** A config plus the prompt text it names — everything needed to build one request. */
