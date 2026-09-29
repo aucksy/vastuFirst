@@ -83,6 +83,7 @@
   "scan-refused-labels": 0,
   "scan-retype": 0,
   "scan-review": 0,
+  "scan-review-direction": 0,
   "scan-review-door": 0,
   "scan-review-door-tapped": 0,
   "scan-review-lost": 0,
