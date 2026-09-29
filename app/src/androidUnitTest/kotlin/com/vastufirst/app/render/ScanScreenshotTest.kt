@@ -234,6 +234,32 @@ class ScanScreenshotTest {
     }
 
     /**
+     * ⭐⭐ THE DIRECTION TRIAL AT REST — nothing tapped, every room carrying its short direction.
+     *
+     * The owner, 29 Sep 2026: *"by default, you're showing SW or N or E on the floor plan on that
+     * screen"*. [scanReviewDirection] photographs a tapped room; this is the screen as it OPENS, which
+     * is the state every reader sees first and the one where eight labels share one small picture.
+     */
+    @Test
+    fun scanReviewDirectionAtRest() {
+        val picture = PlanSheet.bitmap()
+        val outcome = PlanSheet.outcome()
+        val readings = readingsFor(outcome)
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = picture.asImageBitmap(),
+                rooms = outcome.rooms,
+                readings = readings,
+                startSelected = -1,
+                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
+                onRoomMarkerChange = {},
+            )
+        }
+        captureAcrossMatrix("scan-review-direction-rest", content)
+        writeManifestAcrossMatrix("scan-review-direction-rest", content)
+    }
+
+    /**
      * ⭐⭐ THE CHECK SCREEN AFTER ANDROID RECLAIMED THE APP — a real state, and one no picture has
      * ever contained.
      *

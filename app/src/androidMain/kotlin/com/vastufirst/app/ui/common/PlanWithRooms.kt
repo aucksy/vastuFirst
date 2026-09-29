@@ -329,28 +329,25 @@ fun PlanWithRooms(
     /** What a screen reader hears on the E itself: a fact, never an instruction to drag. */
     doorDescription: String = "Your front door",
     /**
-     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — what a tapped room shows on this picture.
+     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — what this picture shows about each room.
      *
      * [RoomMarker.BOX], the default, is this component exactly as it was before the trial: quiet
-     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws a small ring per room
-     * instead, and the tapped room gets a larger ring and its direction in words. See RoomMarker.kt.
+     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws no box at all: every room
+     * carries its short direction ("SW") on the photograph, and the tapped room's lights up and spells
+     * itself out ("South-West"). See RoomMarker.kt.
      */
     marker: RoomMarker = RoomMarker.BOX,
     /**
-     * The engine's own direction words for each room, by room id — the SAME words its row prints.
-     * Only read under [RoomMarker.DIRECTION]. A room missing from it gets its ring and no words: this
-     * picture never works a direction out for itself.
+     * The engine's own direction for each room, by room id — the SAME zone and words its row prints.
+     * Only read under [RoomMarker.DIRECTION]. A room missing from it shows nothing: this picture never
+     * works a direction out for itself.
      */
-    directions: Map<String, String> = emptyMap(),
+    directions: Map<String, RoomDirection> = emptyMap(),
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
-    // The direction trial's rings — see the drawing below. Read here: a draw lambda is not a
-    // composable scope and cannot read the theme.
-    val dotDp = VastuTheme.sizes.dot
-    val ringWidthDp = VastuTheme.borders.strong
-    val pinWidthDp = VastuTheme.borders.focus
-    val labelClearanceDp = VastuTheme.sizes.dot * 2 + VastuTheme.spacing.s1
+    // How far above a room's middle its direction sits — see [directionLabelTopLeft] for why above.
+    val labelGapDp = VastuTheme.spacing.s1
     val doorTouch = VastuTheme.sizes.minTouch
     // One string is ever measured here (the door mark's letter), so the default cache is ample.
     val measurer = rememberTextMeasurer()
@@ -529,7 +526,7 @@ fun PlanWithRooms(
                             doorAtPage != null,
                             zoomable,
                             marker = marker,
-                            selectedDirection = selected?.let { directions[it.id] },
+                            selectedDirection = selected?.let { directions[it.id]?.words },
                         )
                     },
             ) {
@@ -558,36 +555,12 @@ fun PlanWithRooms(
                         drawRect(color = selectedTint.copy(alpha = 0.28f), topLeft = tl, size = area)
                         drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
                     }
-                } else {
-                    // ⭐⭐ THE DIRECTION TRIAL: A RING PER ROOM, NO BOX AT ALL. The outlines were the
-                    // affordance ("these are tappable"); a quiet ring at the middle of each room keeps
-                    // that without drawing a rectangle we know to be a guess. The tapped room's ring
-                    // is larger, in its own colour, lightly filled, and its direction in words is laid
-                    // over it by [RoomDirectionLabel].
-                    //
-                    // ⚠ THIN RINGS, NOT DOTS, AND NO WHITE HALO — both found by looking at renders. The
-                    // middle of a room's box is, on most sheets, exactly where the plan PRINTS the
-                    // room's name (the reader finds rooms by their captions). Solid dots sat on the
-                    // names and ate letters ("LIVING ROOM" came out "ING ROOM"), and a paper-coloured
-                    // halo round each ring wiped out every letter it crossed ("G ROOM") — on the one
-                    // screen whose whole job is checking those names. So: an empty middle, a thin line,
-                    // no halo, and the quiet rings half see-through. The tapped room's ring is its own
-                    // colour over a light see-through fill, so its name still reads through it.
-                    val quietR = dotDp.toPx()
-                    val quietW = ringWidthDp.toPx()
-                    val pinR = dotDp.toPx() * 2f
-                    val pinW = pinWidthDp.toPx()
-                    fun pointOf(c: Pair<Float, Float>) = Offset(origin.x + c.first * drawn.width, origin.y + c.second * drawn.height)
-                    rooms.forEach { r ->
-                        if (r.id == selectedId) return@forEach
-                        val at = r.centreOrNull()?.let(::pointOf) ?: return@forEach
-                        drawCircle(color = colors.primaryDark.copy(alpha = 0.7f), radius = quietR, center = at, style = Stroke(width = quietW))
-                    }
-                    selected?.centreOrNull()?.let(::pointOf)?.let { at ->
-                        drawCircle(color = selectedTint.copy(alpha = 0.2f), radius = pinR, center = at)
-                        drawCircle(color = selectedTint, radius = pinR, center = at, style = Stroke(width = pinW))
-                    }
                 }
+                // ⭐⭐ THE DIRECTION TRIAL DRAWS NOTHING ON THE PHOTOGRAPH ITSELF — no box, no dot, no
+                // ring. The owner, after seeing rings: *"the directions will just show on the floor
+                // plan"*. Each room's direction is a small label laid over the picture by
+                // [RoomDirectionLabels], just above the room's middle so the name the plan prints
+                // there stays readable; the photograph underneath is exactly the one scanned.
 
                 // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it — and drawn where the finger
                 // has it while it is being carried, not where the scored door last settled.
@@ -629,31 +602,28 @@ fun PlanWithRooms(
                 }
             }
 
-            // ⭐⭐ THE DIRECTION TRIAL — the tapped room's direction, in the engine's own words, laid
-            // over the room. Drawn BEFORE the E's node and note, so the door's note is never hidden
-            // under a label. A magnified sheet can carry the room out of view; its label goes with
-            // it rather than floating somewhere the room is not.
-            if (marker == RoomMarker.DIRECTION) {
-                val words = selected?.let { directions[it.id] }
-                val centre = selected?.centreOrNull()
-                if (words != null && centre != null) {
-                    val density = LocalDensity.current
-                    val boxW = with(density) { drawnWidth.toPx() }
-                    val boxH = with(density) { drawnHeight.toPx() }
-                    val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
-                    val pin = Offset(fit.ox + centre.first * fit.w, fit.oy + centre.second * fit.h)
-                    if (pin.x in 0f..boxW && pin.y in 0f..boxH) {
-                        RoomDirectionLabel(
-                            text = words,
-                            pinPx = pin,
-                            boxW = boxW,
-                            boxH = boxH,
-                            // Clear of the tapped room's ring, so the words never sit on the name
-                            // the ring is drawn round.
-                            clearancePx = with(density) { labelClearanceDp.toPx() },
-                        )
-                    }
+            // ⭐⭐ THE DIRECTION TRIAL — every room's direction, in the engine's own words, laid over the
+            // user's own photograph; the tapped room's spelled out and lit. Drawn BEFORE the E's node
+            // and note, so the door's note is never hidden under a label. A magnified sheet can carry a
+            // room out of view; its label goes with it rather than floating somewhere the room is not.
+            if (marker == RoomMarker.DIRECTION && directions.isNotEmpty()) {
+                val density = LocalDensity.current
+                val boxW = with(density) { drawnWidth.toPx() }
+                val boxH = with(density) { drawnHeight.toPx() }
+                val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
+                val labels = rooms.mapNotNull { r ->
+                    val d = directions[r.id] ?: return@mapNotNull null
+                    val (cx, cy) = r.centreOrNull() ?: return@mapNotNull null
+                    val at = Offset(fit.ox + cx * fit.w, fit.oy + cy * fit.h)
+                    if (at.x in 0f..boxW && at.y in 0f..boxH) PlanLabel(r.id, d, at) else null
                 }
+                RoomDirectionLabels(
+                    labels = labels,
+                    selectedId = selectedId,
+                    boxW = boxW,
+                    boxH = boxH,
+                    gapPx = with(density) { labelGapDp.toPx() },
+                )
             }
 
             // ⭐ THE E'S OWN NODE AND ITS NOTE — only where the door can be moved or explained, so the
@@ -732,10 +702,10 @@ internal fun buildPlanDescription(
 ): String {
     val head = if (marker == RoomMarker.DIRECTION) {
         when {
-            selectedName == null -> "Your scanned plan. Tap a room to see which direction it is in."
+            selectedName == null -> "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full."
             // The same words the room's row prints, so a screen-reader user hears what everyone sees.
             selectedDirection != null -> "Your plan. $selectedName is in the $selectedDirection."
-            else -> "Your plan, with a pin where $selectedName was read."
+            else -> "Your plan, showing where $selectedName was read."
         }
     } else {
         selectedName

@@ -104,6 +104,20 @@ class RoomMarkerTest {
         assertTrue("inside vertically", corner.y in 0..370)
     }
 
+    /**
+     * The owner: *"by default ... SW or N or E on the floor plan ... when you tap ... it converts to
+     * southwest or north or east"*. The short form and the long one must come from ONE zone, so a room
+     * can never read "SW" on the plan and "North-West" when tapped.
+     */
+    @Test
+    fun `the short direction on the plan and the spelled-out one come from the same zone`() {
+        assertEquals("SW", RoomDirection(com.vastufirst.shared.Zone.SW, "South-West").code)
+        assertEquals("NE", RoomDirection(com.vastufirst.shared.Zone.NE, "North-East").code)
+        assertEquals("N", RoomDirection(com.vastufirst.shared.Zone.N, "North").code)
+        // The middle of the home is the one zone with no compass letters.
+        assertEquals("C", RoomDirection(com.vastufirst.shared.Zone.BRAHMASTHAN, "Centre").code)
+    }
+
     @Test
     fun `a screen reader hears the room's direction in the same words the row prints`() {
         assertEquals(
@@ -111,7 +125,7 @@ class RoomMarkerTest {
             buildPlanDescription("Kitchen", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION, selectedDirection = "North-East"),
         )
         assertEquals(
-            "Your scanned plan. Tap a room to see which direction it is in.",
+            "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full.",
             buildPlanDescription(null, hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION),
         )
         // The box way's words are untouched.

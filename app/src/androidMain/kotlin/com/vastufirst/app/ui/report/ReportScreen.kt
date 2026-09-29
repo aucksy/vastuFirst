@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
+import com.vastufirst.app.ui.common.RoomDirection
 import com.vastufirst.app.ui.common.RoomMarker
 import com.vastufirst.app.ui.common.RoomMarkerChooser
 import com.vastufirst.app.ui.common.directionWords
@@ -433,7 +434,9 @@ fun ReportContent(
      * prints below it ([directionWords], one spelling for both), never worked out again from where
      * the room sits in the picture.
      */
-    val planDirections = remember(a) { a.roomResults.associate { it.roomId to it.directionWords() } }
+    val planDirections = remember(a) {
+        a.roomResults.associate { it.roomId to RoomDirection(it.zone, it.directionWords()) }
+    }
 
     /**
      * Where each room's row currently sits, so tapping the room ON THE PICTURE can bring its row

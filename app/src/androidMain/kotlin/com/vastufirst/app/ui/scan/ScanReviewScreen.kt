@@ -78,6 +78,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.DoorNoteText
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
+import com.vastufirst.app.ui.common.RoomDirection
 import com.vastufirst.app.ui.common.RoomMarker
 import com.vastufirst.app.ui.common.RoomMarkerChooser
 import com.vastufirst.app.ui.details.SiteAnswers
@@ -176,7 +177,15 @@ fun planRoomsOf(rooms: List<ScannedRoom>): List<PlanRoom> {
  * North" — is how one room comes to be called two different things two screens apart, which is the
  * defect the plan's printed name already had to be fixed for once.
  */
-data class RoomReading(val status: VastuRoomStatus, val direction: String)
+data class RoomReading(
+    val status: VastuRoomStatus,
+    val direction: String,
+    /**
+     * The engine's zone the [direction] words spell — carried so the direction trial can write the
+     * SHORT form ("SW") on the plan from the same zone. Null only where a reading was built by hand.
+     */
+    val zone: com.vastufirst.shared.Zone? = null,
+)
 
 /**
  * Every scored room's reading, keyed by the id [toGridRooms] gave it — see [scanRoomId], the one
@@ -196,6 +205,7 @@ fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
             // report's rows and with the direction trial's words on the plan. [short] alone also feeds
             // running prose where "the centre" has to stay lowercase. A pill is a label.
             direction = r.directionWords(),
+            zone = r.zone,
         )
     }
 
@@ -367,9 +377,12 @@ fun ScanReviewContent(
     val colors = VastuTheme.colors
     var selected by remember { mutableStateOf(if (startSelected >= 0) scanRoomId(startSelected) else null) }
     val planRooms = remember(rooms) { planRoomsOf(rooms) }
-    // ⭐ The direction the trial writes ON a room is the one its row prints — taken from [readings],
-    // never worked out again. Empty before North is known, and then a tapped room shows its ring only.
-    val directions = remember(readings) { readings.mapValues { it.value.direction } }
+    // ⭐ The direction the trial writes ON each room is the one its row prints — the same zone, the same
+    // words, taken from [readings] and never worked out again. Empty before North is known, and then
+    // the plan simply shows no directions yet.
+    val directions = remember(readings) {
+        readings.mapNotNull { (id, r) -> r.zone?.let { id to RoomDirection(it, r.direction) } }.toMap()
+    }
     // ⚠ A PLAIN SCROLLING COLUMN, NOT A LAZY LIST — and the original note on this screen was right.
     // A lazy list only composes the rows you can see, so every room below the fold is not in the
     // semantics tree at all: the geometry gate cannot measure it, the accessibility checker cannot
@@ -495,7 +508,7 @@ fun ScanReviewContent(
                 label = "How to use this screen",
                 // ⚠ The sentence says what a tap will actually show, so it follows the trial's marker.
                 info = if (roomMarker == RoomMarker.DIRECTION) {
-                    "Your plan, as you scanned it. Tap a room — here or below — to see which direction it is in."
+                    "Your plan, as you scanned it, with each room's direction on it. Tap a room — here or below — to see its direction in full."
                 } else {
                     "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it."
                 },

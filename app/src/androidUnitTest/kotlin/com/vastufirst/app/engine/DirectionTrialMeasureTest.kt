@@ -130,6 +130,18 @@ class DirectionTrialMeasureTest {
         return abs(s) / 2.0
     }
 
+    /** A box in fractions of the sheet, as a polygon in the sheet's own pixels with North up. */
+    private fun pagePolyOf(b: com.vastufirst.shared.scan.ScanBox, w: Double, h: Double): List<Point> = listOf(
+        Point(b.x * w, (1 - b.y - b.h) * h), Point((b.x + b.w) * w, (1 - b.y - b.h) * h),
+        Point((b.x + b.w) * w, (1 - b.y) * h), Point(b.x * w, (1 - b.y) * h),
+    )
+
+    /** The upright rectangle around a set of points — a home's outline when all we have is its rooms. */
+    private fun boxAround(points: List<Point>): List<Point> = listOf(
+        Point(points.minOf { it.x }, points.minOf { it.y }), Point(points.maxOf { it.x }, points.minOf { it.y }),
+        Point(points.maxOf { it.x }, points.maxOf { it.y }), Point(points.minOf { it.x }, points.maxOf { it.y }),
+    )
+
     /** VastuEngine.runCore, steps 1–2: rotate by North about the outline's centroid; 9 × 9 padas on the result's box. */
     private class EngineFrame(outline: List<Point>, north: Int, origin: Point) {
         private val o = origin
@@ -287,6 +299,11 @@ class DirectionTrialMeasureTest {
         val point = Tally()
         val sized = Tally()
         val hybrid = Tally()
+        // ⭐ The reader's own boxes, scored in the page's pixels with no grid step at all. Against the
+        // hand-marked rooms this got the direction right 95.5 % of the time where today's pipeline got
+        // 80.5 % — so what would it do to the scores and the findings? Neither side has a front door
+        // here (the door is placed on the grid, and the question is about the ROOMS).
+        val pageBox = Tally()
         var placed = 0
         var roomsSeen = 0
         var roomsUnsized = 0
@@ -302,6 +319,9 @@ class DirectionTrialMeasureTest {
                 .mapNotNull { (i, r) -> printedOf(r)?.let { scanRoomId(i) to it } }.toMap()
             roomsSeen += outcome.rooms.size
             roomsUnsized += outcome.rooms.size - printed.size
+            val pageRooms = outcome.rooms.withIndex().mapNotNull { (i, r) ->
+                r.source?.let { Room(id = scanRoomId(i), type = r.type, polygon = pagePolyOf(it, rec.imageW, rec.imageH)) }
+            }
             for (north in norths) {
                 val plan = buildEnginePlan(grid, door, Intent.BUILDING, PropertyType.FLAT, north, rec.id) ?: continue
                 val today = engine.analyze(plan)
@@ -311,6 +331,17 @@ class DirectionTrialMeasureTest {
                 point.add(today, asPoint)
                 sized.add(today, asSized)
                 hybrid.add(today, asHybrid)
+                if (pageRooms.isNotEmpty()) {
+                    val todayNoDoor = buildEnginePlan(grid, null, Intent.BUILDING, PropertyType.FLAT, north, rec.id)
+                    val onPage = Plan(
+                        id = "page-${rec.id}",
+                        propertyType = PropertyType.FLAT,
+                        intent = Intent.BUILDING,
+                        levels = listOf(Level(index = 0, outline = boxAround(pageRooms.flatMap { it.polygon }), rooms = pageRooms)),
+                        northOffsetDegrees = north,
+                    )
+                    if (todayNoDoor != null) pageBox.add(engine.analyze(todayNoDoor), engine.analyze(onPage))
+                }
                 partialToday += today.roomResults.count { it.verdict == Verdict.DEFECT && it.encroachedShare < 1 - 1e-6 }
                 if (north == 0) {
                     perPlan += rec.id.take(26).padEnd(27) +
@@ -325,12 +356,12 @@ class DirectionTrialMeasureTest {
         say("today's reader (gpt-5.6-luna, prompt v6): $placed of ${recs.size} committed readings place their rooms; scored at Norths $norths")
         say("rooms: $roomsSeen, of which $roomsUnsized print no size of their own (they fall back to a point under SIZE+POINT)")
         say("rooms flagged today only PARTLY over a forbidden zone (the ones partial credit exists for): $partialToday room-readings")
-        val cols = listOf(point, sized, hybrid)
+        val cols = listOf(point, sized, hybrid, pageBox)
         fun row(label: String, cell: (Tally) -> String) = say(label.padEnd(26) + cols.joinToString("") { cell(it).padEnd(24) })
         fun mean(t: Tally) = if (t.plans > 0) (t.sumAbsDelta * 10L / t.plans) / 100.0 else 0.0
         say("")
-        row("") { t -> when (t) { point -> "as a POINT"; sized -> "SIZE + POINT"; else -> "SIZE + POINT, box kept" } }
-        row("") { t -> when (t) { point -> "(the room's middle)"; sized -> "(no size: a point)"; else -> "(no size: today's box)" } }
+        row("") { t -> when (t) { point -> "as a POINT"; sized -> "SIZE + POINT"; hybrid -> "SIZE + POINT, box kept"; else -> "READER'S BOXES ON PAGE" } }
+        row("") { t -> when (t) { point -> "(the room's middle)"; sized -> "(no size: a point)"; hybrid -> "(no size: today's box)"; else -> "(no grid; no door either)" } }
         row("rooms whose zone changes") { "${it.zoneChanged} of ${it.rooms} (${it.pct(it.zoneChanged, it.rooms)})" }
         row("rooms whose verdict moves") { "${it.verdictChanged} (${it.pct(it.verdictChanged, it.rooms)})" }
         row("findings today") { "${it.findingsToday}" }
@@ -349,6 +380,9 @@ class DirectionTrialMeasureTest {
         say("findings that vanish as SIZE+POINT with the box kept, by rule: ${hybrid.vanishedByRule}")
         say("findings that vanish as SIZE+POINT with the box kept, by room: ${hybrid.vanishedByRoom}")
         say("findings that appear as SIZE+POINT with the box kept, by rule: ${hybrid.appearedByRule}")
+        say("findings that vanish with the READER'S BOXES ON THE PAGE, by rule: ${pageBox.vanishedByRule}")
+        say("findings that vanish with the READER'S BOXES ON THE PAGE, by room: ${pageBox.vanishedByRoom}")
+        say("findings that appear with the READER'S BOXES ON THE PAGE, by rule: ${pageBox.appearedByRule}")
         say("")
         say("North 0 per plan        today  point  sized  finds today/point/sized")
         perPlan.forEach { say(it) }
