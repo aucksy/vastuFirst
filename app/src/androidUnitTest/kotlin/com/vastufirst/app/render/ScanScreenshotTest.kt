@@ -234,6 +234,38 @@ class ScanScreenshotTest {
     }
 
     /**
+     * ⭐⭐ A TAPPED ROOM THAT CROSSES A LINE (owner's label decision, 29 Sep 2026). The living room on
+     * this sheet is flagged for crossing into the centre, although most of it lies in the North-West.
+     * It used to read "C"; it now reads where most of it is, and tapped it spells the crossing out —
+     * the longest words a label on this plan can carry, which is exactly why it is photographed at
+     * every size in the matrix.
+     */
+    @Test
+    fun scanReviewDirectionCrossing() {
+        val picture = PlanSheet.bitmap()
+        val outcome = PlanSheet.outcome()
+        val readings = readingsFor(outcome)
+        val living = outcome.rooms.indexOfFirst { it.label == "LIVING ROOM" }
+        val words = readings[com.vastufirst.app.ui.scan.scanRoomId(living)]?.direction.orEmpty()
+        check(living >= 0 && words.contains("crosses")) {
+            "The living room must be read, scored and crossing a line, or this golden photographs an ordinary " +
+                "label and proves nothing about the long one (it read '$words')."
+        }
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = picture.asImageBitmap(),
+                rooms = outcome.rooms,
+                readings = readings,
+                startSelected = living,
+                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
+                onRoomMarkerChange = {},
+            )
+        }
+        captureAcrossMatrix("scan-review-direction-crossing", content)
+        writeManifestAcrossMatrix("scan-review-direction-crossing", content)
+    }
+
+    /**
      * ⭐⭐ THE DIRECTION TRIAL AT REST — nothing tapped, every room carrying its short direction.
      *
      * The owner, 29 Sep 2026: *"by default, you're showing SW or N or E on the floor plan on that
