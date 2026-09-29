@@ -101,6 +101,29 @@ developer account.
 
 ## Week of 28 September – 4 October 2026
 
+### Tuesday 29 September, later — a room that crosses a line shows where most of it is
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.33.0/vastufirst-v0.33.0.apk
+**This is the one to install.**
+
+**A room that reaches a little way into the next direction now shows the direction most of it is
+in.**
+
+Plenty of rooms sit mostly in one direction and cross a short way into another — very often into the
+centre of the home, which Vastu keeps clear. Until now the label on your plan named the part the room
+crosses into: on our sample plan the living room and both bedrooms all read **C**, although most of
+each is somewhere else entirely. Now each one shows where most of it is — the living room reads
+**NW** — and when you tap it, it says both: **"North-West · crosses the centre"**. The room's row, on
+"Check what we read" and in your report, says the same words.
+
+Your score does not change, and the report still tells you about the part that crosses the line — only
+the label moved. The sentence on the North screen that helps you check which way North is ("your
+kitchen is in the south-east") now names where most of each room is, too.
+
+**A correction to 19 September:** we wrote that a room put in the wrong place can be moved on "Check
+what we read" — it cannot; that screen lets you change what kind of room it is and move your front
+door, but a room stays where we read it.
+
 ### Tuesday 29 September — every room shows its direction on your plan
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.32.0/vastufirst-v0.32.0.apk
