@@ -70,8 +70,12 @@ internal class RoomEvaluator(
         val share = if (flagged.isEmpty()) 1.0 else encroachedShare(flagged, overlaps, roomArea)
         val points = scoreFor(verdict, baseVerdict, flagged.isNotEmpty(), share)
 
+        // [RoomResult.mainZone]: where most of the room sits, which differs from [zone] only when the
+        // room is flagged for crossing into a zone it may not occupy. A label for the plan and the
+        // rows — the finding, its reason and its points all still come from [zone].
         return RoomResult(
             room.id, room.type, zone, verdict, points, rule.weight, rule, overlaps.perPada, share,
+            mainZone = positiveZone,
         ) to flagged.toList()
     }
 

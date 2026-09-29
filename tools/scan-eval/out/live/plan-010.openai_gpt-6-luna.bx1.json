@@ -1,0 +1,165 @@
+{
+ "file": "plan-010.webp",
+ "imageSize": [
+  646,
+  1400
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 1969,
+  "candidatesTokenCount": 2461,
+  "thoughtsTokenCount": 1619,
+  "costUsd": 0.00147655
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.045,
+   "y": 0.096,
+   "w": 0.867,
+   "h": 0.771
+  },
+  "rooms": [
+   {
+    "label": "BEDROOM-01",
+    "size": "3.72m X 4.50m",
+    "x": 0.048,
+    "y": 0.01,
+    "w": 0.388,
+    "h": 0.241,
+    "confidence": 0.94
+   },
+   {
+    "label": "BALCONY",
+    "size": "2.00m X 1.94m",
+    "x": 0.448,
+    "y": 0.01,
+    "w": 0.214,
+    "h": 0.105,
+    "confidence": 0.97
+   },
+   {
+    "label": "BEDROOM-02",
+    "size": "3.75m X 3.60m",
+    "x": 0.454,
+    "y": 0.122,
+    "w": 0.388,
+    "h": 0.202,
+    "confidence": 0.94
+   },
+   {
+    "label": "PASSAGE",
+    "size": "2.07m X 1.20m",
+    "x": 0.048,
+    "y": 0.251,
+    "w": 0.386,
+    "h": 0.069,
+    "confidence": 0.87
+   },
+   {
+    "label": "TOILET-01",
+    "size": "2.55m X 1.55m",
+    "x": 0.048,
+    "y": 0.319,
+    "w": 0.271,
+    "h": 0.091,
+    "confidence": 0.96
+   },
+   {
+    "label": "VESTIBULE",
+    "size": "2.21m X 1.55m",
+    "x": 0.334,
+    "y": 0.319,
+    "w": 0.239,
+    "h": 0.095,
+    "confidence": 0.95
+   },
+   {
+    "label": "COMMON TOILET",
+    "size": "2.55m X 1.55m",
+    "x": 0.573,
+    "y": 0.319,
+    "w": 0.268,
+    "h": 0.092,
+    "confidence": 0.96
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "7.23m X 4.30m",
+    "x": 0.048,
+    "y": 0.415,
+    "w": 0.757,
+    "h": 0.236,
+    "confidence": 0.92
+   },
+   {
+    "label": "BALCONY",
+    "size": "1.50m X 4.30m",
+    "x": 0.805,
+    "y": 0.417,
+    "w": 0.148,
+    "h": 0.235,
+    "confidence": 0.96
+   },
+   {
+    "label": "MBR TOILET",
+    "size": "(2.10mX1.45m)+(1.19mX1.05m)",
+    "x": 0.048,
+    "y": 0.656,
+    "w": 0.221,
+    "h": 0.134,
+    "confidence": 0.84
+   },
+   {
+    "label": "DRESS & PASSAGE",
+    "size": "2.24m X 2.66m",
+    "x": 0.27,
+    "y": 0.656,
+    "w": 0.25,
+    "h": 0.168,
+    "confidence": 0.9
+   },
+   {
+    "label": "KITCHEN",
+    "size": "4.07m X 2.50m",
+    "x": 0.52,
+    "y": 0.652,
+    "w": 0.445,
+    "h": 0.138,
+    "confidence": 0.95
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "4.50m X 3.30m",
+    "x": 0.048,
+    "y": 0.795,
+    "w": 0.471,
+    "h": 0.186,
+    "confidence": 0.96
+   },
+   {
+    "label": "UTILITY",
+    "size": "(3.17mX0.90m)+(1.51mX0.40m)",
+    "x": 0.53,
+    "y": 0.792,
+    "w": 0.418,
+    "h": 0.09,
+    "confidence": 0.83
+   },
+   {
+    "label": "BALCONY",
+    "size": "(2.00mX1.64m)+(1.50mX0.60m)",
+    "x": 0.53,
+    "y": 0.887,
+    "w": 0.225,
+    "h": 0.09,
+    "confidence": 0.82
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

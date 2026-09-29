@@ -435,7 +435,8 @@ fun ReportContent(
      * the room sits in the picture.
      */
     val planDirections = remember(a) {
-        a.roomResults.associate { it.roomId to RoomDirection(it.zone, it.directionWords()) }
+        // mainZone, not zone: where most of the room is — the zone its row's words lead with.
+        a.roomResults.associate { it.roomId to RoomDirection(it.mainZone, it.directionWords()) }
     }
 
     /**

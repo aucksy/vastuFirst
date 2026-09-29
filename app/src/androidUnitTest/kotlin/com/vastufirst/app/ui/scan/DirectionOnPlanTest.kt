@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,6 +32,7 @@ import com.vastufirst.app.ui.common.centreOrNull
 import com.vastufirst.app.ui.common.code
 import com.vastufirst.app.ui.common.directionWords
 import com.vastufirst.app.ui.common.planFit
+import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
@@ -79,8 +81,8 @@ class DirectionOnPlanTest {
     private val clean: ScanOutcome.Placed =
         ScanMapper.map(RecordedScans.load(RecordedScans.CLEAN)!!.reply) as ScanOutcome.Placed
 
-    /** The rows' readings worked out the way the app works them out — North marked at 0. */
-    private val readings: Map<String, RoomReading> = run {
+    /** The engine's reading of the sample plan, the way the app works it out — North marked at 0. */
+    private val analysis: com.vastufirst.shared.Analysis = run {
         val grid = toGridRooms(clean.rooms, clean.cols, clean.rows)
         val plan = com.vastufirst.app.ui.newplan.buildEnginePlan(
             rooms = grid,
@@ -90,8 +92,11 @@ class DirectionOnPlanTest {
             north = 0,
             planId = "direction-trial-test",
         )!!
-        roomReadings(com.vastufirst.engine.VastuEngine().analyze(plan))
+        com.vastufirst.engine.VastuEngine().analyze(plan)
     }
+
+    /** The rows' readings worked out the way the app works them out. */
+    private val readings: Map<String, RoomReading> = roomReadings(analysis)
 
     private fun photo() =
         android.graphics.Bitmap.createBitmap(1400, 990, android.graphics.Bitmap.Config.ARGB_8888)
@@ -172,6 +177,55 @@ class DirectionOnPlanTest {
         picture.performTouchInput { click(Offset(fit.ox + cx * fit.w, fit.oy + cy * fit.h)) }
 
         onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(readings.getValue(scanRoomId(i)).direction)
+    }
+
+    /**
+     * ⭐ THE OWNER'S LABEL DECISION (29 Sep 2026). A room flagged for crossing into a zone it may not
+     * occupy was labelled with THAT zone: on this sample plan three of eight rooms read "C" for crossing
+     * the centre, although most of each lies elsewhere. The label now shows where MOST of the room is,
+     * and a tap spells the crossing out — "North-West · crosses the centre" — in the same words as its
+     * row. The finding itself still names the zone crossed into; only the label moved.
+     */
+    @Test
+    fun `a room crossing into another zone is labelled where most of it is, and a tap says what it crosses`() = runComposeUiTest {
+        phoneSized()
+        val crossing = analysis.roomResults.filter { it.zone != it.mainZone }
+        assertTrue("the sample plan must have a room crossing into another zone, or this proves nothing", crossing.isNotEmpty())
+        for (r in crossing) {
+            assertTrue(
+                "the finding for ${r.roomId} must still name the zone it crosses into",
+                analysis.defects.any { it.roomId == r.roomId && it.zone == r.zone },
+            )
+        }
+        val image = photo()
+        setContent {
+            VastuTheme {
+                ScanReviewContent(image = image, rooms = clean.rooms, readings = readings, roomMarker = RoomMarker.DIRECTION)
+            }
+        }
+        // Every label on the plan is where most of its room is.
+        val expected = analysis.roomResults.filter { readings.containsKey(it.roomId) }.map { it.mainZone.code() }.sorted()
+        assertEquals("each room's label must name where most of it is", expected, codesOnPlan())
+
+        // A crossing room whose caption is on no other row, tapped by its row.
+        val labels = clean.rooms.map { it.label }
+        val index = clean.rooms.indices.firstOrNull { i ->
+            val l = labels[i]
+            val r = analysis.roomResults.firstOrNull { it.roomId == scanRoomId(i) }
+            r != null && r.zone != r.mainZone && l.isNotBlank() &&
+                labels.count { it == l } == 1 && labels.none { it != l && it.contains(l) }
+        }
+        assertTrue("a crossing room with a caption of its own is needed to tap", index != null)
+        val r = analysis.roomResults.first { it.roomId == scanRoomId(index!!) }
+        onNodeWithText(labels[index!!], substring = true).performScrollTo().performClick()
+
+        val words = r.mainZone.short().replaceFirstChar { it.uppercase() } + " · crosses the " + r.zone.short()
+        onNodeWithTag(ROOM_DIRECTION_TAG).assertTextEquals(words)
+        // …and its row says the very same words.
+        assertTrue(
+            "the row must print the same words as the tapped label",
+            onAllNodesWithText(words).fetchSemanticsNodes().size >= 2,
+        )
     }
 
     @Test
@@ -275,8 +329,8 @@ class DirectionOnPlanTest {
             results[pr.id] != null && at.x in 0f..size.width.toFloat() && at.y in 0f..size.height.toFloat()
         }
         assertEquals(
-            "the report's photograph must carry every room's short direction",
-            onPicture.map { results.getValue(it.id).zone.code() }.sorted(),
+            "the report's photograph must carry every room's short direction — where most of it is",
+            onPicture.map { results.getValue(it.id).mainZone.code() }.sorted(),
             codesOnPlan(),
         )
         val door = RenderFixtures.scannedDoorAtPage

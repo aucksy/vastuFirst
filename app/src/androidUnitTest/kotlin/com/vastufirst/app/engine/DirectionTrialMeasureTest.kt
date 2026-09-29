@@ -14,6 +14,7 @@ import com.vastufirst.shared.PropertyType
 import com.vastufirst.shared.Room
 import com.vastufirst.shared.Verdict
 import com.vastufirst.shared.scan.RoomDimensions
+import com.vastufirst.shared.scan.ScanBox
 import com.vastufirst.shared.scan.ScanDraft
 import com.vastufirst.shared.scan.ScanMapper
 import com.vastufirst.shared.scan.ScanOutcome
@@ -573,5 +574,367 @@ class DirectionTrialMeasureTest {
         lines.forEach { say(it) }
 
         assertTrue(compared >= 40, "only $compared room-readings compared against the hand-marked rooms — too few to mean anything")
+    }
+
+    // ---------------------------------------------------------------- the paid reader round, 29 Sep 2026
+
+    /**
+     * ⭐⭐ THE READER ROUND — the owner-approved paid recordings (plan doc §3x, "The winner rule"), scored
+     * the way today's baselines were scored above.
+     *
+     *  · Against the hand-marked rooms: is each room's DIRECTION right — on the app's own path (reply →
+     *    mapper → grid → engine, what the report scores) and on the page (the boxes as drawn, no grid).
+     *  · Against TODAY's reader on the same ten sheets, at four Norths: which findings are kept, lost or
+     *    new, and which scores move — using the read the app would keep ([fullerOf], as GroqWire does).
+     *
+     * A POINT reply (prompt v7-point) has no box for a room whose plan prints its size, so each room is
+     * first rebuilt around its point ([pointsToBoxes]) and then goes down exactly the same path.
+     *
+     * The owner narrowed the round to Luna mid-run (*"test on Luna only for now"*): the candidates are
+     * the two Luna models. Measures and prints; asserts only that the round was genuinely read.
+     */
+    private class Candidate(val name: String, val file: String, val tags: List<String>, val point: Boolean)
+
+    private val candidates = listOf(
+        Candidate("gpt-5.6-luna, POINT prompt", "openai_gpt-5.6-luna", listOf("pt1", "pt2"), point = true),
+        Candidate("gpt-6-luna, POINT prompt", "openai_gpt-6-luna", listOf("pt1", "pt2"), point = true),
+        Candidate("gpt-6-luna, today's BOX prompt", "openai_gpt-6-luna", listOf("bx1", "bx2"), point = false),
+    )
+
+    /** The round's ten sheets — every sheet with hand-checked rooms (exp-point-reader.py SHEETS). */
+    private val roundSheets = listOf(
+        "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)", "greencourt-336-branded", "greencourt-336-clean",
+        "greencourt-526", "hlv9vurn", "plan-006", "plan-007", "plan-010", "towerEF-1854", "floor-plan-1",
+    )
+
+    /** One recording by its file suffix — `<model>.<tag>` — or null when it is absent or unreadable. */
+    private fun recordingAt(stem: String, suffix: String): Recording? {
+        val f = File(scanEval(), "out/live/$stem.$suffix.json")
+        if (!f.isFile) return null
+        return runCatching {
+            val root = json.parseToJsonElement(f.readText()).jsonObject
+            val reply = root.getValue("reply")
+            val size = root.getValue("imageSize").jsonArray.map { it.jsonPrimitive.double }
+            Recording(stem, json.decodeFromJsonElement(ScanDraft.serializer(), reply), size[0], size[1])
+        }.getOrNull()
+    }
+
+    /**
+     * The share of the building box that a plan's rooms cover, every room counted — the median over
+     * today's 28 readings with a sane building box (`tools/scan-eval/exp-fill-factor.mjs`, 29 Sep 2026:
+     * range 42–103 %; predicting each plan's scale from it lands a median 8 % off its own boxes' scale,
+     * within 20 % on 27 of 28). [FILL_SIZED] is the same measurement over sized rooms only, the fallback.
+     */
+    private val FILL_ALL = 0.80
+    private val FILL_SIZED = 0.75
+
+    /** ScanMapper.saneBuilding, mirrored (it is internal to `shared`). */
+    private fun saneBuildingOf(b: ScanBox?): ScanBox? {
+        b ?: return null
+        if (!b.x.isFinite() || !b.y.isFinite() || !b.w.isFinite() || !b.h.isFinite()) return null
+        val ok = b.w > 0.05 && b.h > 0.05 && b.w <= 1.0 && b.h <= 1.0 &&
+            b.x >= -0.02 && b.y >= -0.02 && b.x + b.w <= 1.05 && b.y + b.h <= 1.05
+        return if (ok) b else null
+    }
+
+    /**
+     * ⭐ A POINT reply as boxes. Each room's x,y is the middle of its printed NAME (fractions of the
+     * building box). A room printing BOTH its sizes becomes a box of that printed size, centred on the
+     * point, first number across the page — the same orientation rule the mapper's reshape already
+     * uses (agreement 140/148 on the corpus). A room printing no pair came with its own rough w,h, drawn
+     * AROUND the point. The scale: rooms cover [FILL_ALL] of the building box, so
+     * pixels-per-mm² = (FILL_ALL × building − the rough rooms) ÷ the printed area.
+     */
+    private fun pointsToBoxes(rec: Recording): Recording {
+        val d = rec.draft
+        val b = saneBuildingOf(d.building) ?: ScanBox(x = 0.0, y = 0.0, w = 1.0, h = 1.0)
+        val bw = b.w * rec.imageW
+        val bh = b.h * rec.imageH
+        val sizes = d.rooms.map { RoomDimensions.of(it) }
+        val printedArea = sizes.filterNotNull().sumOf { it.area }
+        val roughPx = d.rooms.indices
+            .filter { sizes[it] == null && d.rooms[it].w > 0.0 && d.rooms[it].h > 0.0 }
+            .sumOf { d.rooms[it].w * bw * d.rooms[it].h * bh }
+        val free = FILL_ALL * bw * bh - roughPx
+        val pxPerMm = when {
+            printedArea <= 0.0 -> null
+            free > 0.0 -> sqrt(free / printedArea)
+            else -> sqrt(FILL_SIZED * bw * bh / printedArea)
+        }
+        val built = d.rooms.mapIndexed { i, r ->
+            val p = sizes[i]
+            when {
+                p != null && pxPerMm != null -> Pair(p.widthMm * pxPerMm / bw, p.depthMm * pxPerMm / bh)
+                r.w > 0.0 && r.h > 0.0 -> Pair(r.w, r.h)
+                else -> null
+            }
+        }
+        val known = built.filterNotNull()
+        val fallback = if (known.isEmpty()) Pair(0.1, 0.1) else Pair(
+            known.map { it.first }.sorted()[known.size / 2],
+            known.map { it.second }.sorted()[known.size / 2],
+        )
+        val rooms = d.rooms.mapIndexed { i, r ->
+            val (w, h) = built[i] ?: fallback
+            r.copy(x = r.x - w / 2.0, y = r.y - h / 2.0, w = w, h = h)
+        }
+        return Recording(rec.id, d.copy(rooms = rooms), rec.imageW, rec.imageH)
+    }
+
+    private fun outcomeOf(rec: Recording): ScanOutcome = ScanMapper.map(rec.draft, imageAspect = rec.imageW / rec.imageH)
+
+    /** GroqWire.rank, mirrored: placed beats assisted beats refused, then rooms, then sized rooms. */
+    private fun rankOf(rec: Recording): Long {
+        val o = outcomeOf(rec)
+        val rooms = when (o) {
+            is ScanOutcome.Placed -> o.rooms
+            is ScanOutcome.Assisted -> o.rooms
+            is ScanOutcome.Refused -> emptyList()
+        }
+        val kind = when (o) {
+            is ScanOutcome.Placed -> 3L
+            is ScanOutcome.Assisted -> 2L
+            is ScanOutcome.Refused -> 1L
+        }
+        return kind * 1_000_000L + rooms.size.coerceAtMost(999) * 1_000L + rooms.count { it.printedSize.isNotBlank() }.coerceAtMost(999)
+    }
+
+    /** The read the app would keep of several — ties keep the first, as GroqWire.fullerOf does. */
+    private fun fullerOf(reads: List<Recording>): Recording? = reads.fold(null as Recording?) { best, r ->
+        if (best == null || rankOf(r) > rankOf(best)) r else best
+    }
+
+    private class TruthScore {
+        var app = 0
+        var page = 0
+        var n = 0
+        var matched = 0
+        var placed = 0
+        fun add(o: TruthScore) { app += o.app; page += o.page; n += o.n; matched += o.matched; placed += o.placed }
+    }
+
+    /**
+     * One reading of one hand-marked sheet: how often each matched room's engine zone equals the zone
+     * of its hand-marked room, on the app's path and on the page. The matching and both paths are the
+     * baseline test's, line for line — [the self-check] replays today's readings through this and must
+     * land on the baseline's own figures.
+     */
+    private fun directionOnTruth(stem: String, truth: List<TruthRoom>, rec: Recording): TruthScore {
+        val out = TruthScore()
+        val outcome = outcomeOf(rec) as? ScanOutcome.Placed ?: return out
+        out.placed = 1
+        val taken = mutableSetOf<Int>()
+        val pairs = mutableListOf<Pair<TruthRoom, Int>>()
+        val cands = truth.flatMap { t ->
+            outcome.rooms.withIndex().filter { (_, r) ->
+                val a = norm(r.label)
+                val b = norm(t.label)
+                a.isNotEmpty() && (a == b || a.contains(b) || b.contains(a))
+            }.map { (i, r) ->
+                val s = r.source
+                Triple(t, i, if (s == null) 0.0 else iou(t.x, t.y, t.w, t.h, s.x, s.y, s.w, s.h))
+            }
+        }.sortedByDescending { it.third }
+        val placedTruth = mutableSetOf<TruthRoom>()
+        for ((t, i, _) in cands) {
+            if (t in placedTruth || i in taken) continue
+            pairs += t to i
+            placedTruth += t
+            taken += i
+        }
+        out.matched = pairs.size
+        if (pairs.isEmpty()) return out
+        val w = rec.imageW
+        val h = rec.imageH
+        fun poly(t: TruthRoom) = listOf(
+            Point(t.x * w, (1 - t.y - t.h) * h), Point((t.x + t.w) * w, (1 - t.y - t.h) * h),
+            Point((t.x + t.w) * w, (1 - t.y) * h), Point(t.x * w, (1 - t.y) * h),
+        )
+        val all = truth.flatMap(::poly)
+        val trueRooms = pairs.map { (t, i) -> Room(id = scanRoomId(i), type = outcome.rooms[i].type, polygon = poly(t)) }
+        val grid = toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val door = frontDoorFromEntrance(grid)
+        val readerRooms = outcome.rooms.withIndex().mapNotNull { (i, r) ->
+            r.source?.let { Room(id = scanRoomId(i), type = r.type, polygon = pagePolyOf(it, w, h)) }
+        }
+        val readerOutline = if (readerRooms.isEmpty()) boxAround(all) else boxAround(readerRooms.flatMap { it.polygon })
+        for (north in norths) {
+            val truePlan = Plan(
+                id = "truth-$stem",
+                propertyType = PropertyType.FLAT,
+                intent = Intent.BUILDING,
+                levels = listOf(Level(index = 0, outline = boxAround(all), rooms = trueRooms)),
+                northOffsetDegrees = north,
+            )
+            val app = buildEnginePlan(grid, door, Intent.BUILDING, PropertyType.FLAT, north, stem) ?: continue
+            val pagePlan = truePlan.copy(id = "reader-page-$stem", levels = listOf(Level(index = 0, outline = readerOutline, rooms = readerRooms)))
+            fun zones(p: Plan) = engine.analyze(p).roomResults.associate { it.roomId to it.zone }
+            val trueZones = zones(truePlan)
+            val appZones = zones(app)
+            val pageZones = zones(pagePlan)
+            for ((_, i) in pairs) {
+                val id = scanRoomId(i)
+                val tz = trueZones[id] ?: continue
+                out.n++
+                if (appZones[id] == tz) out.app++
+                if (pageZones[id] == tz) out.page++
+            }
+        }
+        return out
+    }
+
+    /** One analysis per North on the app's own path, or null when the reading does not place. */
+    private fun appAnalyses(rec: Recording): List<Analysis>? {
+        val outcome = outcomeOf(rec) as? ScanOutcome.Placed ?: return null
+        val grid = toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val door = frontDoorFromEntrance(grid)
+        return norths.map { n -> engine.analyze(buildEnginePlan(grid, door, Intent.BUILDING, PropertyType.FLAT, n, rec.id) ?: return null) }
+    }
+
+    /**
+     * Findings as a multiset of "rule | room kind | zone". Two different readings number their rooms
+     * differently, so a finding is matched across them by WHAT it is, not by a room id.
+     */
+    private fun findingsOf(a: Analysis): Map<String, Int> {
+        val kind = a.roomResults.associate { it.roomId to it.type.name }
+        return a.defects.groupingBy { "${it.id}|${it.roomId?.let(kind::get) ?: "-"}|${it.zone}" }.eachCount()
+    }
+
+    @Test
+    fun `the reader round — Luna on the point prompt and on today's prompt, against the hand-marked rooms and against today`() {
+        // The five sheets marked by hand when the rule was written. PINNED BY NAME: sheets marked later
+        // join the other measurements, but must not move the rule the round was judged by.
+        val truth = truthSheets().filterKeys {
+            it in setOf("aipl-zen-residences-gurgaon_2bhk-1262sqft (1)", "greencourt-336-branded", "hlv9vurn", "plan-007", "floor-plan-1")
+        }
+        // The four of them today's reader places — the rule's "same 4 sheets" (hlv9vurn does not place).
+        val todayRecs = roundSheets.associateWith { recordingAt(it, "openai_gpt-5.6-luna.v6") }
+        val rule4 = truth.keys.filter { s -> todayRecs[s]?.let { outcomeOf(it) is ScanOutcome.Placed } == true }
+
+        say("")
+        say("READER ROUND (paid, owner-approved; Luna only) — plan doc §3x, the winner rule")
+        say("the rule's sheets (hand-marked, placed by today's reader): $rule4")
+        // Why a marked sheet is NOT placed — the JavaScript mirror places hlv9vurn, so say what Kotlin did.
+        for (s in truth.keys - rule4.toSet()) {
+            val why = when (val o = todayRecs[s]?.let(::outcomeOf)) {
+                is ScanOutcome.Placed -> "placed"
+                is ScanOutcome.Assisted -> "assisted (${o.reason}), ${o.rooms.size} rooms"
+                is ScanOutcome.Refused -> "refused (${o.reason})"
+                null -> "no recording"
+            }
+            say("  $s with today's reader: $why")
+        }
+
+        // Self-check: today's readings through this code must give the baseline's own figures.
+        val todayScore = TruthScore()
+        for (s in rule4) todayScore.add(directionOnTruth(s, truth.getValue(s), todayRecs.getValue(s)!!))
+        fun pct(n: Int, of: Int) = if (of == 0) "-" else "${(1000L * n / of) / 10.0}%"
+        say("TODAY (gpt-5.6-luna, box prompt v6, 1 read): direction right, app path ${todayScore.app} of ${todayScore.n} " +
+            "(${pct(todayScore.app, todayScore.n)}), on the page ${todayScore.page} of ${todayScore.n} (${pct(todayScore.page, todayScore.n)}) " +
+            "— must equal the baseline above")
+
+        // Today's analyses on all ten sheets, for the findings and the scores.
+        val todayAnalyses = roundSheets.associateWith { s -> todayRecs[s]?.let(::appAnalyses) }
+        var readsSeen = 0
+        for (c in candidates) {
+            val reads = c.tags.associateWith { tag ->
+                roundSheets.associateWith { s -> recordingAt(s, "${c.file}.$tag")?.let { if (c.point) pointsToBoxes(it) else it } }
+            }
+            val n = reads.values.sumOf { m -> m.values.count { it != null } }
+            readsSeen += n
+            say("")
+            say("— ${c.name}: $n readings on file")
+            if (n == 0) continue
+
+            // Rule 2: direction on the rule's 4 sheets, the two reads POOLED; and each read alone.
+            val pooled = TruthScore()
+            val perTag = c.tags.associateWith { TruthScore() }
+            val perTagAll5 = c.tags.associateWith { TruthScore() }
+            val sheetLines = mutableListOf<String>()
+            for ((s, t) in truth) {
+                val cells = c.tags.map { tag ->
+                    val r = reads.getValue(tag)[s]
+                    val sc = if (r == null) TruthScore() else directionOnTruth(s, t, r)
+                    perTagAll5.getValue(tag).add(sc)
+                    if (s in rule4) { pooled.add(sc); perTag.getValue(tag).add(sc) }
+                    "$tag ${if (r == null) "none" else if (sc.placed == 0) "not placed" else "${sc.matched}/${t.size} rooms, app ${sc.app}/${sc.n}, page ${sc.page}/${sc.n}"}"
+                }
+                sheetLines += "   ${s.take(26).padEnd(27)}${cells.joinToString("  |  ")}"
+            }
+            say("  direction right, app path, rule's 4 sheets, reads pooled: ${pooled.app} of ${pooled.n} (${pct(pooled.app, pooled.n)})   [today ${pct(todayScore.app, todayScore.n)}]")
+            say("  direction right, on the page, same:                      ${pooled.page} of ${pooled.n} (${pct(pooled.page, pooled.n)})   [today ${pct(todayScore.page, todayScore.n)}]")
+            for (tag in c.tags) {
+                val t = perTag.getValue(tag)
+                val a = perTagAll5.getValue(tag)
+                say("  $tag alone: app ${t.app}/${t.n} (${pct(t.app, t.n)}), page ${t.page}/${t.n} (${pct(t.page, t.n)}), hand-marked rooms matched ${t.matched}; " +
+                    "all 5 marked sheets: app ${pct(a.app, a.n)} of ${a.n}, sheets placed ${a.placed}/5")
+            }
+            sheetLines.forEach { say(it) }
+
+            // Findings and scores against today, with the read the app would keep, on all ten sheets.
+            var findingsToday = 0
+            var kept = 0
+            var lost = 0
+            var appeared = 0
+            var plans = 0
+            var moved = 0
+            var up = 0
+            var down = 0
+            var sumAbs = 0
+            var maxAbs = 0
+            var notPlaced = 0
+            val lostByRule = sortedMapOf<String, Int>()
+            val perSheet = mutableListOf<String>()
+            for (s in roundSheets) {
+                val today = todayAnalyses[s] ?: continue
+                val kept2 = fullerOf(c.tags.mapNotNull { reads.getValue(it)[s] })
+                val cand = kept2?.let(::appAnalyses)
+                if (cand == null) {
+                    notPlaced++
+                    val gone = today.sumOf { a -> a.defects.size }
+                    findingsToday += gone
+                    lost += gone
+                    perSheet += "   ${s.take(26).padEnd(27)}not placed — all $gone of today's findings lost"
+                    continue
+                }
+                var sheetLost = 0
+                var sheetNew = 0
+                val scores = mutableListOf<String>()
+                for (i in norths.indices) {
+                    val ft = findingsOf(today[i])
+                    val fc = findingsOf(cand[i])
+                    for ((k, v) in ft) {
+                        findingsToday += v
+                        val keep = min(v, fc[k] ?: 0)
+                        kept += keep
+                        lost += v - keep
+                        sheetLost += v - keep
+                        if (v > keep) lostByRule[k.substringBefore('|')] = (lostByRule[k.substringBefore('|')] ?: 0) + (v - keep)
+                    }
+                    for ((k, v) in fc) {
+                        val extra = v - min(v, ft[k] ?: 0)
+                        appeared += extra
+                        sheetNew += extra
+                    }
+                    plans++
+                    val dlt = cand[i].score - today[i].score
+                    if (dlt != 0) moved++
+                    if (dlt > 0) up++
+                    if (dlt < 0) down++
+                    sumAbs += abs(dlt)
+                    maxAbs = max(maxAbs, abs(dlt))
+                    scores += "${today[i].score / 10.0}->${cand[i].score / 10.0}"
+                }
+                perSheet += "   ${s.take(26).padEnd(27)}lost $sheetLost, new $sheetNew; scores at N0/90/180/270: ${scores.joinToString(" ")}"
+            }
+            say("  vs TODAY on the ten sheets (the read the app keeps, 4 Norths): findings today $findingsToday, kept $kept, " +
+                "LOST $lost (${pct(lost, findingsToday)}), new $appeared; sheets not placed $notPlaced")
+            say("  scores moved $moved of $plans (up $up / down $down), mean ${if (plans > 0) (sumAbs * 10L / plans) / 100.0 else 0.0} / largest ${maxAbs / 10.0} (of 10)")
+            say("  findings lost, by rule: $lostByRule")
+            perSheet.forEach { say(it) }
+        }
+
+        assertTrue(todayScore.n >= 40, "only ${todayScore.n} room-readings from today's reader — the baseline is not being read")
+        assertTrue(readsSeen >= 20, "only $readsSeen trial readings found — the round's recordings are not committed")
     }
 }

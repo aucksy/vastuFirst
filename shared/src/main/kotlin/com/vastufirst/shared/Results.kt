@@ -58,6 +58,19 @@ data class RoomResult(
      * never heard of partial credit keeps the old, harshest arithmetic.
      */
     val encroachedShare: Double = 1.0,
+    /**
+     * ⭐ Where MOST of the room is — the zone its largest share sits in, the one that earns its
+     * positive verdict (the engine's `positiveZone`).
+     *
+     * The same as [zone] for every room but one: a room FLAGGED for crossing into a zone it may not
+     * occupy. There [zone] names the zone it crosses into, because the finding is about that zone,
+     * and this names where the room actually sits. On the sample plan three of eight rooms were
+     * labelled "C" for crossing the centre although most of each lay elsewhere.
+     *
+     * Owner's decision, 29 Sep 2026: the plan's label and the room rows show THIS zone, and say the
+     * crossing in words. Additive: nothing scores from it, and every finding still names [zone].
+     */
+    val mainZone: Zone = zone,
 )
 
 data class DoorResult(

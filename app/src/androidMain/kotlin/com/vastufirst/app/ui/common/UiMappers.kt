@@ -154,8 +154,18 @@ fun Zone.short(): String = when (this) {
  * laid over the room on the photograph all print this, so the three can never call one room two
  * different things. Capitalised here and not in [short], because [short] also feeds running prose
  * where "the centre" has to stay lowercase; a label is not a sentence.
+ *
+ * ⭐ WHERE MOST OF THE ROOM IS, AND THE CROSSING IN WORDS (owner's decision, 29 Sep 2026). A room
+ * flagged for crossing into a zone it may not occupy used to be labelled with THAT zone — on the sample
+ * plan the living room and both bedrooms all read "Centre", although most of each lay elsewhere. It
+ * now names where most of it sits, [RoomResult.mainZone], and says the crossing: "North-West · crosses
+ * the centre". Every other room reads exactly as before. The finding itself still names the zone it
+ * crosses into; only the label moved.
  */
-fun com.vastufirst.shared.RoomResult.directionWords(): String = zone.short().replaceFirstChar { it.uppercase() }
+fun com.vastufirst.shared.RoomResult.directionWords(): String {
+    val main = mainZone.short().replaceFirstChar { it.uppercase() }
+    return if (mainZone == zone) main else "$main · crosses the ${zone.short()}"
+}
 
 fun Zone.code(): String = when (this) {
     Zone.BRAHMASTHAN -> "C"; else -> name
@@ -296,8 +306,10 @@ fun buildZoneMapModel(
 
         val verdictById: Map<String, VastuVerdict> =
             analysis?.roomResults?.associate { it.roomId to it.verdict.toVastu() } ?: emptyMap()
+        // mainZone: where MOST of the room is, the same zone its row and the photograph's label name
+        // ([directionWords]). A room flagged for crossing a line still wears the defect glyph.
         val zoneById: Map<String, Zone> =
-            analysis?.roomResults?.associate { it.roomId to it.zone } ?: emptyMap()
+            analysis?.roomResults?.associate { it.roomId to it.mainZone } ?: emptyMap()
 
         val rooms = gridRooms.map { r ->
             val v = verdictById[r.id]

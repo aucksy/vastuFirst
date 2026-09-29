@@ -1,0 +1,74 @@
+{
+ "file": "greencourt-526.png",
+ "imageSize": [
+  691,
+  954
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 1810,
+  "candidatesTokenCount": 771,
+  "thoughtsTokenCount": 516,
+  "costUsd": 0.00040387
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.051,
+   "y": 0.222,
+   "w": 0.676,
+   "h": 0.701
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "1525 WIDE",
+    "x": 0.824,
+    "y": 0.054,
+    "w": 0.848,
+    "h": 0.156
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3285X3350",
+    "x": 0.445,
+    "y": 0.202
+   },
+   {
+    "label": "TOILET",
+    "size": "2485X1525",
+    "x": 0.804,
+    "y": 0.202
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2485X2390",
+    "x": 0.804,
+    "y": 0.436
+   },
+   {
+    "label": "W.C.",
+    "size": "1500X1950",
+    "x": 0.355,
+    "y": 0.536
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3200X3050",
+    "x": 0.235,
+    "y": 0.739
+   },
+   {
+    "label": "LOBBY",
+    "size": "3135X4535",
+    "x": 0.674,
+    "y": 0.754
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

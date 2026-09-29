@@ -87,11 +87,24 @@ def live_prices():
     return {m["id"]: (float(m["pricing"]["prompt"]), float(m["pricing"]["completion"])) for m in data}
 
 
+def model_filter():
+    """--models=luna (comma-separated, matched inside the model id): run only those models.
+
+    Added 29 Sep 2026 when the owner narrowed the round mid-run: *"test on Luna only for now"* — the
+    models his production key is for. Qwen and Gemini Flash-Lite were stopped after 7 and 6 reads.
+    """
+    f = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--models=")]
+    return [k for k in f[0].split(",") if k] if f else None
+
+
 def todo(box_arm=False):
     """Every scan still to run, as (sheet, model, tag, prompt) — nothing already recorded is re-run."""
     jobs = [(s, m, t, PROMPT) for s in SHEETS for (m, _) in MODELS for t in TAGS]
     if box_arm:
         jobs += [(s, m, t, APP_PROMPT) for s in SHEETS for m in BOX_MODELS for t in BOX_TAGS]
+    keep = model_filter()
+    if keep:
+        jobs = [j for j in jobs if any(k in j[1] for k in keep)]
     return [j for j in jobs if not os.path.exists(rec_path(j[0], j[1], j[2]))]
 
 
@@ -150,7 +163,10 @@ def norm(s):
 def load_truth():
     """stem -> list of rooms {label, cx, cy, rect|None} in fractions of the SHEET."""
     out = {}
-    rects = json.load(open(os.path.join(HERE, "truth-rooms.json"), encoding="utf-8"))
+    # --truth=<file>: score against a named copy of the hand-marked rooms — e.g. the one the winner
+    # rule was written against (29 Sep 2026), after more sheets have been marked since.
+    named = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--truth=")]
+    rects = json.load(open(named[0] if named else os.path.join(HERE, "truth-rooms.json"), encoding="utf-8"))
     for stem, rooms in rects.items():
         if stem.startswith("_"):
             continue
@@ -186,12 +202,24 @@ def points_of(rec, is_point_reply):
     return pts, rep.get("planType")
 
 
+ROMAN = {"I": "1", "II": "2", "III": "3", "IV": "4"}
+
+
+def loose(s):
+    """A caption with its TYPING differences removed — found 29 Sep 2026 in the first Luna reads,
+    where two rooms the reader DID read counted as missed: "GUEST BEDROOM I" (a Roman one) for the
+    sheet's "GUEST BEDROOM 1", and "M.BR TOILET" for "MBR TOILET". Standalone Roman numerals become
+    digits and spaces go. Used only by the `--loose` count, reported BESIDE the registered one."""
+    return "".join(ROMAN.get(t, t) for t in norm(s).split())
+
+
 def match(truth, pts, aspect):
     """Greedy: same caption first (or one containing the other), nearest point wins a repeated caption."""
     cands = []
+    fold = loose if "--loose" in sys.argv else norm
     for ti, t in enumerate(truth):
         for pi, p in enumerate(pts):
-            a, b = norm(t["label"]), norm(p[0])
+            a, b = fold(t["label"]), fold(p[0])
             if a and b and (a == b or a in b or b in a):
                 d = math.hypot((p[2] - t["cx"]) * aspect, p[3] - t["cy"])
                 cands.append((d, ti, pi))
@@ -236,6 +264,9 @@ def cmd_score():
         runs.append(("%s (points)" % m, True, lambda s, m=m: [rec_path(s, m, t) for t in TAGS]))
     for m in BOX_MODELS:
         runs.append(("%s (boxes, today's prompt)" % m, False, lambda s, m=m: [rec_path(s, m, t) for t in BOX_TAGS]))
+    keep = model_filter()
+    if keep:
+        runs = runs[:1] + [r for r in runs[1:] if any(k in r[0] for k in keep)]
     for name, is_point, paths in runs:
         found = of = inroom = rects = sized = rooms = n = 0
         offs, agree, cost, refused = [], [], 0.0, 0
@@ -259,6 +290,74 @@ def cmd_score():
               "same x2 %s | not-2D %d | charged Rs %.2f"
               % (name, n, found, of, inroom, rects, med, sized, rooms,
                  ("%.0f%%" % (100 * sum(agree) / len(agree))) if agree else "-", refused, cost))
+    rule_check(truth)
+
+
+ESCALATION_RS = 2.7  # the Gemini second opinion at list price (reader-prices-move-record-the-charge)
+
+
+def rule_check(truth):
+    """The winner rule's free parts (plan doc §3x): rule 1 (rooms found, per read, against today),
+    rule 3 (the two reads agree on every sheet) and the real cost per scan. Rule 2 — the DIRECTION —
+    is the engine's and is scored in the cloud (DirectionTrialMeasureTest), never here."""
+    today = {s: json.load(open(os.path.join(LIVE, s + ".openai_gpt-5.6-luna.v6.json"), encoding="utf-8")) for s in SHEETS}
+    today_found = sum(score_one(truth[s], today[s], False)["found"] for s in SHEETS)
+    # Today's reads predate stored charges: its recorded tokens at today's live list price.
+    try:
+        pin, pout = live_prices()["openai/gpt-5.6-luna"]
+        per = [((r.get("usage") or {}).get("promptTokenCount") or 0) * pin +
+               ((r.get("usage") or {}).get("candidatesTokenCount") or 0) * pout for r in today.values()]
+        today_read = sum(per) / len(per) * USD_INR
+        today_line = "Rs %.3f a read (recorded tokens x live list price), Rs %.2f a scan at 2 reads" % (today_read, 2 * today_read)
+    except Exception as e:  # offline: say so rather than print a number
+        today_line = "(live price unavailable: %s)" % e
+    print("\nTHE WINNER RULE, free parts — today (gpt-5.6-luna, box prompt v6, 1 read a sheet): "
+          "found %d hand-checked rooms; cost %s" % (today_found, today_line))
+    keep = model_filter()
+    arms = [(m, TAGS, True, "POINT prompt") for (m, _) in MODELS] + [(m, BOX_TAGS, False, "today's BOX prompt") for m in BOX_MODELS]
+    for (m, tags, is_point, arm) in arms:
+        if keep and not any(k in m for k in keep):
+            continue
+        recs = {s: [json.load(open(rec_path(s, m, t), encoding="utf-8")) if os.path.exists(rec_path(s, m, t)) else None
+                    for t in tags] for s in SHEETS}
+        if not any(r for rs in recs.values() for r in rs):
+            continue
+        found = [0 for _ in tags]
+        disagree, missing, esc, charges = [], [], 0, []
+        p007 = []
+        for s in SHEETS:
+            scs = [score_one(truth[s], r, is_point) if r else None for r in recs[s]]
+            for i, sc in enumerate(scs):
+                if sc is None:
+                    missing.append("%s %s" % (s, tags[i]))
+                    continue
+                found[i] += sc["found"]
+                charges.append(sc["cost"])
+            if all(scs):
+                a, b = scs
+                if a["type"] != b["type"] or abs(a["found"] - b["found"]) > 1:
+                    disagree.append("%s (%s %d, %s %d)" % (s, a["type"], a["found"], b["type"], b["found"]))
+                if a["type"] != "2D_PLAN" and b["type"] != "2D_PLAN":
+                    esc += 1
+            if s == "plan-007":
+                p007 = [sc["type"] if sc else "none" for sc in scs]
+        avg = sum(found) / float(len(tags))
+        per_read = sum(charges) / len(charges) if charges else float("nan")
+        per_scan = 2 * per_read + ESCALATION_RS * esc / float(len(SHEETS))
+        print("\n%s on the %s" % (m, arm))
+        print("  rule 1, rooms found per read: %s, average %.1f vs today %d -> %s; each read alone: %s"
+              % (" / ".join(str(f) for f in found), avg, today_found, "PASS" if avg >= today_found else "FAIL",
+                 " / ".join("PASS" if f >= today_found else "FAIL" for f in found)))
+        print("  rule 3, two reads agree (same plan type, found within 1) on %d of %d sheets -> %s%s"
+              % (len(SHEETS) - len(disagree) - len({x.split(' ')[0] for x in missing}), len(SHEETS),
+                 "PASS" if not disagree and not missing else "FAIL",
+                 ("; disagree: " + "; ".join(disagree)) if disagree else ""))
+        if missing:
+            print("  MISSING reads: %s" % ", ".join(missing))
+        print("  cost: Rs %.3f a read (real charges, %d reads) -> Rs %.3f a scan at 2 reads, incl. %d sheet(s) that would escalate"
+              % (per_read, len(charges), per_scan, esc))
+        print("  plan-007 (the furnished render): %s -> %s" % (" / ".join(p007), "read as a plan on both reads, no escalation"
+              if p007 and all(t == "2D_PLAN" for t in p007) else "would need the escalation on a read"))
 
 
 if __name__ == "__main__":

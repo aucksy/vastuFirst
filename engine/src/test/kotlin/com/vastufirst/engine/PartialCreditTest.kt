@@ -79,6 +79,25 @@ class PartialCreditTest {
         assertTrue(living.encroachedShare < 0.2, "only a small share of this room is over the line")
     }
 
+    /**
+     * ⭐ WHERE MOST OF THE ROOM IS (owner's label decision, 29 Sep 2026). The clipping living room is
+     * flagged for the centre it crosses into — [RoomResult.zone] and its finding say so — but most of
+     * it is in the East, and that is what the plan's label and the rows now show. A room wholly inside
+     * its zone reads the same both ways.
+     */
+    @Test
+    fun `a clipping room says where most of it is, beside the zone it crosses into`() {
+        val living = room("living")
+        assertEquals(com.vastufirst.shared.Zone.BRAHMASTHAN, living.zone, "the finding is about the centre it crosses into")
+        assertEquals(com.vastufirst.shared.Zone.E, living.mainZone, "most of the living room is in the East")
+        assertTrue(
+            analysis.defects.any { it.roomId == "living" && it.zone == com.vastufirst.shared.Zone.BRAHMASTHAN },
+            "the finding must still name the centre",
+        )
+        val toilet = room("toilet")
+        assertEquals(toilet.zone, toilet.mainZone, "a room wholly inside its zone reads the same both ways")
+    }
+
     @Test
     fun `a room wholly inside a forbidden zone still scores the floor`() {
         val toilet = room("toilet")

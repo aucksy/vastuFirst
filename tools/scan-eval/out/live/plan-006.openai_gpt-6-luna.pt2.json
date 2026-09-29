@@ -1,0 +1,126 @@
+{
+ "file": "plan-006.webp",
+ "imageSize": [
+  800,
+  1280
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 2218,
+  "candidatesTokenCount": 2156,
+  "thoughtsTokenCount": 1723,
+  "costUsd": 0.00110045
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.124,
+   "y": 0.292,
+   "w": 0.739,
+   "h": 0.635
+  },
+  "rooms": [
+   {
+    "label": "PORTICO",
+    "size": "",
+    "x": 0.337,
+    "y": 0.044,
+    "w": 0.99,
+    "h": 0.13
+   },
+   {
+    "label": "STEPS",
+    "size": "",
+    "x": 0.884,
+    "y": 0.068,
+    "w": 0.15,
+    "h": 0.12
+   },
+   {
+    "label": "POOJA",
+    "size": "",
+    "x": 0.179,
+    "y": 0.236,
+    "w": 0.255,
+    "h": 0.197
+   },
+   {
+    "label": "Bedroom",
+    "size": "",
+    "x": 0.172,
+    "y": 0.449,
+    "w": 0.255,
+    "h": 0.305
+   },
+   {
+    "label": "LIVING ROOM",
+    "size": "",
+    "x": 0.512,
+    "y": 0.454,
+    "w": 0.403,
+    "h": 0.642
+   },
+   {
+    "label": "Kitchen",
+    "size": "",
+    "x": 0.84,
+    "y": 0.254,
+    "w": 0.255,
+    "h": 0.216
+   },
+   {
+    "label": "DINING",
+    "size": "",
+    "x": 0.869,
+    "y": 0.408,
+    "w": 0.255,
+    "h": 0.209
+   },
+   {
+    "label": "Bath",
+    "size": "",
+    "x": 0.86,
+    "y": 0.631,
+    "w": 0.255,
+    "h": 0.085
+   },
+   {
+    "label": "Bedroom",
+    "size": "",
+    "x": 0.173,
+    "y": 0.807,
+    "w": 0.255,
+    "h": 0.301
+   },
+   {
+    "label": "Bath",
+    "size": "",
+    "x": 0.435,
+    "y": 0.881,
+    "w": 0.201,
+    "h": 0.202
+   },
+   {
+    "label": "Bath",
+    "size": "",
+    "x": 0.621,
+    "y": 0.881,
+    "w": 0.189,
+    "h": 0.202
+   },
+   {
+    "label": "Master Bedroom",
+    "size": "",
+    "x": 0.861,
+    "y": 0.779,
+    "w": 0.253,
+    "h": 0.301
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

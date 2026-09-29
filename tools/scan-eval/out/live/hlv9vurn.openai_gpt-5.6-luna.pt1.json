@@ -1,0 +1,134 @@
+{
+ "file": "hlv9vurn.jpg",
+ "imageSize": [
+  1080,
+  793
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 2038,
+  "candidatesTokenCount": 1610,
+  "thoughtsTokenCount": 1034,
+  "costUsd": 0.00244135
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.09,
+   "y": 0.126,
+   "w": 0.827,
+   "h": 0.679
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "1.8 m WIDE",
+    "x": 0.095,
+    "y": 0.095,
+    "w": 0.263,
+    "h": 0.182
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "3.3 x 4.3 m",
+    "x": 0.113,
+    "y": 0.502
+   },
+   {
+    "label": "TOILET",
+    "size": "1.8 x 2.4 m",
+    "x": 0.094,
+    "y": 0.745
+   },
+   {
+    "label": "DRESS",
+    "size": "1.7 x 1.7 m",
+    "x": 0.202,
+    "y": 0.692
+   },
+   {
+    "label": "BEDROOM",
+    "size": "3.3 x 3.6 m",
+    "x": 0.304,
+    "y": 0.137
+   },
+   {
+    "label": "TOILET",
+    "size": "2.4 x 1.7 m",
+    "x": 0.344,
+    "y": 0.623
+   },
+   {
+    "label": "UTILITY BALCONY",
+    "size": "1.2 m WIDE",
+    "x": 0.422,
+    "y": 0.931,
+    "w": 0.235,
+    "h": 0.229
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2.4 x 3.0 m",
+    "x": 0.469,
+    "y": 0.721
+   },
+   {
+    "label": "DINING",
+    "size": "2.4 x 3.0 m",
+    "x": 0.503,
+    "y": 0.498
+   },
+   {
+    "label": "BALCONY",
+    "size": "1.8 m WIDE",
+    "x": 0.638,
+    "y": 0.329,
+    "w": 0.175,
+    "h": 0.184
+   },
+   {
+    "label": "LIVING",
+    "size": "3.7 x 4.8 m",
+    "x": 0.644,
+    "y": 0.658
+   },
+   {
+    "label": "BALCONY",
+    "size": "1.7 m WIDE",
+    "x": 0.841,
+    "y": 0.15,
+    "w": 0.161,
+    "h": 0.154
+   },
+   {
+    "label": "BEDROOM",
+    "size": "3.1 x 3.6 m",
+    "x": 0.85,
+    "y": 0.256
+   },
+   {
+    "label": "DRESS",
+    "size": "1.6 x 1.5 m",
+    "x": 0.799,
+    "y": 0.641
+   },
+   {
+    "label": "TOILET",
+    "size": "2.2 x 1.5 m",
+    "x": 0.922,
+    "y": 0.628
+   },
+   {
+    "label": "ENTRANCE",
+    "size": "1.9 x 1.5 m",
+    "x": 0.754,
+    "y": 0.799
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

@@ -1,0 +1,120 @@
+{
+ "file": "plan-010.webp",
+ "imageSize": [
+  646,
+  1400
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 2126,
+  "candidatesTokenCount": 2002,
+  "thoughtsTokenCount": 1284,
+  "costUsd": 0.001266675
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.045,
+   "y": 0.097,
+   "w": 0.866,
+   "h": 0.771
+  },
+  "rooms": [
+   {
+    "label": "BEDROOM-01",
+    "size": "3.72m X 4.50m (12'-2\u00bd\" x 14'-9\")",
+    "x": 0.204,
+    "y": 0.135
+   },
+   {
+    "label": "BALCONY",
+    "size": "2.00m X 1.94m (6'-6\u00bd\" X 6'-4\u00bd\")",
+    "x": 0.55,
+    "y": 0.046
+   },
+   {
+    "label": "BEDROOM-02",
+    "size": "3.75m X 3.60m (12'-3\u00bd\" x 11'-9\u00bd\")",
+    "x": 0.659,
+    "y": 0.21
+   },
+   {
+    "label": "PASSAGE",
+    "size": "2.07m X 1.20m (6'-9\u00bd\" x 3'-11\u00bd\")",
+    "x": 0.279,
+    "y": 0.268
+   },
+   {
+    "label": "TOILET-01",
+    "size": "2.55m X 1.55m (8'-4\u00bd\" x 5'-1\")",
+    "x": 0.177,
+    "y": 0.334
+   },
+   {
+    "label": "VESTIBULE",
+    "size": "2.21m X 1.55m (7'-3\" x 5'-1\")",
+    "x": 0.445,
+    "y": 0.352
+   },
+   {
+    "label": "COMMON TOILET",
+    "size": "2.55m X 1.55m (8'-4\u00bd\" x 5'-1\")",
+    "x": 0.709,
+    "y": 0.338
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "7.23m X 4.30m (23'-9\" x 14'-1\u00bd\")",
+    "x": 0.482,
+    "y": 0.554
+   },
+   {
+    "label": "BALCONY",
+    "size": "1.50m X 4.30m (4'-11\" x 14'-1\u00bd\")",
+    "x": 0.891,
+    "y": 0.549
+   },
+   {
+    "label": "MBR TOILET",
+    "size": "(2.10mX1.45m)+(1.19mX1.05m)",
+    "x": 0.143,
+    "y": 0.697
+   },
+   {
+    "label": "DRESS & PASSAGE",
+    "size": "2.24m X 2.66m (7'-4\" x 8'-8\u00bd\")",
+    "x": 0.393,
+    "y": 0.724
+   },
+   {
+    "label": "KITCHEN",
+    "size": "4.07m X 2.50m (13'-4\u00bd\" x 8'-2\u00bd\")",
+    "x": 0.752,
+    "y": 0.695
+   },
+   {
+    "label": "UTILITY",
+    "size": "(3.17mX0.90m)+(1.51mX0.40m)",
+    "x": 0.757,
+    "y": 0.81
+   },
+   {
+    "label": "BALCONY",
+    "size": "(2.00mX1.64m)+(1.50mX0.60m)",
+    "x": 0.639,
+    "y": 0.898
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "4.50m X 3.30m (14'-9\" x 10'-10\")",
+    "x": 0.273,
+    "y": 0.852
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

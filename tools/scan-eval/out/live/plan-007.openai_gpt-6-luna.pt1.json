@@ -1,0 +1,154 @@
+{
+ "file": "plan-007.jpg",
+ "imageSize": [
+  736,
+  1016
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 1901,
+  "candidatesTokenCount": 2147,
+  "thoughtsTokenCount": 1452,
+  "costUsd": 0.00131105
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.019,
+   "y": 0.073,
+   "w": 0.96,
+   "h": 0.887
+  },
+  "rooms": [
+   {
+    "label": "CHILDREN BEDROOM",
+    "size": "15'-0\" X 12'-6\"",
+    "x": 0.252,
+    "y": 0.086
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-0\" X 8'-0\"",
+    "x": 0.476,
+    "y": 0.04
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-0\" X 8'-0\"",
+    "x": 0.62,
+    "y": 0.04
+   },
+   {
+    "label": "GUEST BEDROOM",
+    "size": "12'-3\" X 12'-6\"",
+    "x": 0.847,
+    "y": 0.098
+   },
+   {
+    "label": "LEDGE",
+    "size": "",
+    "x": 0.818,
+    "y": 0.278,
+    "w": 0.147,
+    "h": 0.03
+   },
+   {
+    "label": "LOBBY",
+    "size": "6' WIDE",
+    "x": 0.857,
+    "y": 0.331,
+    "w": 0.31,
+    "h": 0.107
+   },
+   {
+    "label": "LIVING HALL",
+    "size": "13'-3\" X 13'-3\"",
+    "x": 0.276,
+    "y": 0.375
+   },
+   {
+    "label": "DRAWING",
+    "size": "10'-7\u00bd\" X 15'-0\"",
+    "x": 0.548,
+    "y": 0.449
+   },
+   {
+    "label": "BEDROOM",
+    "size": "12'-0\" X 10'-0\"",
+    "x": 0.864,
+    "y": 0.425
+   },
+   {
+    "label": "TOILET",
+    "size": "4'-3\u00bd\" X 9'-4\u00bd\"",
+    "x": 0.096,
+    "y": 0.539
+   },
+   {
+    "label": "C. TOILET",
+    "size": "6'-0\" X 6'-0\"",
+    "x": 0.336,
+    "y": 0.544
+   },
+   {
+    "label": "DRESSING",
+    "size": "4'-4\" X 9'-4\u00bd\"",
+    "x": 0.346,
+    "y": 0.62
+   },
+   {
+    "label": "DINING",
+    "size": "10'-7\u00bd\" X 10'-0\"",
+    "x": 0.548,
+    "y": 0.643
+   },
+   {
+    "label": "POOJA",
+    "size": "5'-3\" X 5'-3\"",
+    "x": 0.889,
+    "y": 0.641
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "15'-4\u00bd\" X 12'-11\u00bd\"",
+    "x": 0.282,
+    "y": 0.761
+   },
+   {
+    "label": "KITCHEN",
+    "size": "10'-0\" X 10'-0\"",
+    "x": 0.858,
+    "y": 0.79
+   },
+   {
+    "label": "5' WIDE BALCONY",
+    "size": "5' WIDE",
+    "x": 0.567,
+    "y": 0.954,
+    "w": 0.268,
+    "h": 0.1
+   },
+   {
+    "label": "4' WIDE UTILITY",
+    "size": "4' WIDE",
+    "x": 0.849,
+    "y": 0.953,
+    "w": 0.313,
+    "h": 0.085
+   },
+   {
+    "label": "5' wide Balcony",
+    "size": "5' wide",
+    "x": 0.079,
+    "y": 0.476,
+    "w": 0.11,
+    "h": 0.26
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

@@ -124,6 +124,14 @@ class RoomMarkerTest {
             "Your plan. Kitchen is in the North-East.",
             buildPlanDescription("Kitchen", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION, selectedDirection = "North-East"),
         )
+        // A room crossing into another zone: the row's middle dot is said as words, never read out.
+        assertEquals(
+            "Your plan. Living is in the North-West, and crosses the centre.",
+            buildPlanDescription(
+                "Living", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION,
+                selectedDirection = "North-West · crosses the centre",
+            ),
+        )
         assertEquals(
             "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full.",
             buildPlanDescription(null, hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION),

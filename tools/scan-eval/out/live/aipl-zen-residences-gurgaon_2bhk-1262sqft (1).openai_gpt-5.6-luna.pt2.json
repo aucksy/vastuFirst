@@ -1,0 +1,98 @@
+{
+ "file": "aipl-zen-residences-gurgaon_2bhk-1262sqft (1).webp",
+ "imageSize": [
+  1207,
+  1400
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 3024,
+  "candidatesTokenCount": 942,
+  "thoughtsTokenCount": 516,
+  "costUsd": 0.00119142
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.146,
+   "y": 0.054,
+   "w": 0.726,
+   "h": 0.707
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.167,
+    "y": 0.2,
+    "w": 0.239,
+    "h": 0.14
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.47,
+    "y": 0.107,
+    "w": 0.209,
+    "h": 0.14
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.82,
+    "y": 0.382,
+    "w": 0.252,
+    "h": 0.139
+   },
+   {
+    "label": "BEDROOM",
+    "size": "10' 0\" X 12' 0\"",
+    "x": 0.466,
+    "y": 0.377
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "11' 0\" X 12' 3\"",
+    "x": 0.148,
+    "y": 0.48
+   },
+   {
+    "label": "MASTER TOILET",
+    "size": "8' 6\" X 5' 5\"",
+    "x": 0.119,
+    "y": 0.624
+   },
+   {
+    "label": "TOILET",
+    "size": "8' 0\" X 5' 5\"",
+    "x": 0.362,
+    "y": 0.742
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "19' 0\" X 12' 1\"",
+    "x": 0.74,
+    "y": 0.749
+   },
+   {
+    "label": "SERVICE BALCONY",
+    "size": "4' 11\" WIDE",
+    "x": 0.453,
+    "y": 0.874,
+    "w": 0.148,
+    "h": 0.13
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11' 0\" X 7' 0\"",
+    "x": 0.695,
+    "y": 0.863
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

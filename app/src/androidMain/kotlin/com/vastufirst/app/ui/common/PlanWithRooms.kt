@@ -703,8 +703,10 @@ internal fun buildPlanDescription(
     val head = if (marker == RoomMarker.DIRECTION) {
         when {
             selectedName == null -> "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full."
-            // The same words the room's row prints, so a screen-reader user hears what everyone sees.
-            selectedDirection != null -> "Your plan. $selectedName is in the $selectedDirection."
+            // The same words the room's row prints, so a screen-reader user hears what everyone sees —
+            // with the row's middle dot said as words: "…in the North-West, and crosses the centre."
+            selectedDirection != null ->
+                "Your plan. $selectedName is in the ${selectedDirection.replace(" · ", ", and ")}."
             else -> "Your plan, showing where $selectedName was read."
         }
     } else {

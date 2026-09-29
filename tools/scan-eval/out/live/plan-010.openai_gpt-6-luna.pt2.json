@@ -1,0 +1,120 @@
+{
+ "file": "plan-010.webp",
+ "imageSize": [
+  646,
+  1400
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 2126,
+  "candidatesTokenCount": 1916,
+  "thoughtsTokenCount": 1343,
+  "costUsd": 0.00097953
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.045,
+   "y": 0.097,
+   "w": 0.867,
+   "h": 0.771
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "2.00m X 1.94m",
+    "x": 0.545,
+    "y": 0.045
+   },
+   {
+    "label": "BEDROOM-01",
+    "size": "3.72m X 4.50m",
+    "x": 0.221,
+    "y": 0.135
+   },
+   {
+    "label": "PASSAGE",
+    "size": "2.07m X 1.20m",
+    "x": 0.269,
+    "y": 0.267
+   },
+   {
+    "label": "TOILET-01",
+    "size": "2.55m X 1.55m",
+    "x": 0.176,
+    "y": 0.332
+   },
+   {
+    "label": "VESTIBULE",
+    "size": "2.21m X 1.55m",
+    "x": 0.441,
+    "y": 0.343
+   },
+   {
+    "label": "BEDROOM-02",
+    "size": "3.75m X 3.60m",
+    "x": 0.651,
+    "y": 0.211
+   },
+   {
+    "label": "COMMON TOILET",
+    "size": "2.55m X 1.55m",
+    "x": 0.711,
+    "y": 0.34
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "7.23m X 4.30m",
+    "x": 0.483,
+    "y": 0.553
+   },
+   {
+    "label": "BALCONY",
+    "size": "1.50m X 4.30m",
+    "x": 0.884,
+    "y": 0.547
+   },
+   {
+    "label": "M.BR TOILET",
+    "size": "(2.10mX1.45m)+(1.19mX1.05m)",
+    "x": 0.16,
+    "y": 0.697
+   },
+   {
+    "label": "DRESS & PASSAGE",
+    "size": "2.24m X 2.66m",
+    "x": 0.392,
+    "y": 0.725
+   },
+   {
+    "label": "KITCHEN",
+    "size": "4.07m X 2.50m",
+    "x": 0.751,
+    "y": 0.695
+   },
+   {
+    "label": "UTILITY",
+    "size": "(3.17mX0.90m)+(1.51mX0.40m)",
+    "x": 0.747,
+    "y": 0.812
+   },
+   {
+    "label": "BALCONY",
+    "size": "(2.00mX1.64m)+(1.50mX0.60m)",
+    "x": 0.642,
+    "y": 0.876
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "4.50m X 3.30m",
+    "x": 0.271,
+    "y": 0.854
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

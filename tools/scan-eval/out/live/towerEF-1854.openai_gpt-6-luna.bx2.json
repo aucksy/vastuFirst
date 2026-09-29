@@ -1,0 +1,174 @@
+{
+ "file": "towerEF-1854.jpg",
+ "imageSize": [
+  1280,
+  695
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 1917,
+  "candidatesTokenCount": 2153,
+  "thoughtsTokenCount": 1320,
+  "costUsd": 0.00109594
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.017,
+   "y": 0.141,
+   "w": 0.963,
+   "h": 0.695
+  },
+  "rooms": [
+   {
+    "label": "M.TOILET",
+    "size": "9'-0\"X5'-6\"",
+    "x": 0.011,
+    "y": 0.066,
+    "w": 0.125,
+    "h": 0.197,
+    "confidence": 0.96
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "12'0\" X 15'3\"",
+    "x": 0.011,
+    "y": 0.263,
+    "w": 0.171,
+    "h": 0.553,
+    "confidence": 0.97
+   },
+   {
+    "label": "BATH RM",
+    "size": "8'-0\" X 5'-6\"",
+    "x": 0.41,
+    "y": 0.066,
+    "w": 0.113,
+    "h": 0.197,
+    "confidence": 0.96
+   },
+   {
+    "label": "STORE/PUJA",
+    "size": "5'-0\" X6'-9\"",
+    "x": 0.522,
+    "y": 0.025,
+    "w": 0.079,
+    "h": 0.247,
+    "confidence": 0.95
+   },
+   {
+    "label": "DRAWING",
+    "size": "13'-0\" X 22'-1\"",
+    "x": 0.601,
+    "y": 0.025,
+    "w": 0.184,
+    "h": 0.787,
+    "confidence": 0.97
+   },
+   {
+    "label": "LOBBY",
+    "size": "",
+    "x": 0.305,
+    "y": 0.267,
+    "w": 0.17,
+    "h": 0.19,
+    "confidence": 0.82
+   },
+   {
+    "label": "E.LOBBY",
+    "size": "8'-0\"X5'-0\"",
+    "x": 0.786,
+    "y": 0.263,
+    "w": 0.119,
+    "h": 0.17,
+    "confidence": 0.92
+   },
+   {
+    "label": "OTHER BEDROOM",
+    "size": "12'-0\" X 13'-2\"",
+    "x": 0.183,
+    "y": 0.54,
+    "w": 0.168,
+    "h": 0.393,
+    "confidence": 0.96
+   },
+   {
+    "label": "BATHROOM",
+    "size": "5'-0\" X 9'-4\"",
+    "x": 0.351,
+    "y": 0.455,
+    "w": 0.075,
+    "h": 0.348,
+    "confidence": 0.95
+   },
+   {
+    "label": "OTHER BEDROOM",
+    "size": "12'-0\" X 14'-8\"",
+    "x": 0.425,
+    "y": 0.406,
+    "w": 0.176,
+    "h": 0.53,
+    "confidence": 0.96
+   },
+   {
+    "label": "BALCONY",
+    "size": "7'10\"X4'6\"",
+    "x": 0.041,
+    "y": 0.816,
+    "w": 0.108,
+    "h": 0.184,
+    "confidence": 0.94
+   },
+   {
+    "label": "KITCHEN",
+    "size": "8'-0\" X10'-0\"",
+    "x": 0.786,
+    "y": 0.433,
+    "w": 0.119,
+    "h": 0.379,
+    "confidence": 0.96
+   },
+   {
+    "label": "MAIDS RM",
+    "size": "5'-0\" X 7'-2\"",
+    "x": 0.905,
+    "y": 0.439,
+    "w": 0.084,
+    "h": 0.37,
+    "confidence": 0.92
+   },
+   {
+    "label": "BALCONY",
+    "size": "7'4\"X4'6\"",
+    "x": 0.656,
+    "y": 0.81,
+    "w": 0.1,
+    "h": 0.184,
+    "confidence": 0.93
+   },
+   {
+    "label": "UTILITY",
+    "size": "7'-9\" X 3'-3\"",
+    "x": 0.829,
+    "y": 0.811,
+    "w": 0.11,
+    "h": 0.139,
+    "confidence": 0.91
+   },
+   {
+    "label": "BATH.RM",
+    "size": "3'-3\"X5'-9\"",
+    "x": 0.939,
+    "y": 0.807,
+    "w": 0.056,
+    "h": 0.145,
+    "confidence": 0.92
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

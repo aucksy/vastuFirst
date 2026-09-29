@@ -205,7 +205,10 @@ fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
             // report's rows and with the direction trial's words on the plan. [short] alone also feeds
             // running prose where "the centre" has to stay lowercase. A pill is a label.
             direction = r.directionWords(),
-            zone = r.zone,
+            // Where MOST of the room is — the zone the words above lead with. Differs from the
+            // engine's `zone` only for a room crossing into a zone it may not occupy (see
+            // [directionWords]), and the plan's short label must name the same zone as its row.
+            zone = r.mainZone,
         )
     }
 

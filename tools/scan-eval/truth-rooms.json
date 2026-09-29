@@ -11,7 +11,8 @@
   "same for every drawing being compared, so no drawing can win by claiming a different room.",
   "ADD A SHEET ONLY BY LOOKING AT IT. Never copy these from a model reply — that is the thing",
   "being judged.",
-  "floor-plan-1 (the owner's own flat) was marked 19 Sep 2026 off the 5 % grid, for the fused-balcony defect. The three right/top BALCONY captions are marked as the three separate strips they are; the open living/dining is marked to the walls that do bound it and to the reader's edge where none does."
+  "floor-plan-1 (the owner's own flat) was marked 19 Sep 2026 off the 5 % grid, for the fused-balcony defect. The three right/top BALCONY captions are marked as the three separate strips they are; the open living/dining is marked to the walls that do bound it and to the reader's edge where none does.",
+  "greencourt-526, plan-006, plan-010, towerEF-1854 and plan-034 were marked 29 Sep 2026 off the 5 % grid (direction trial: more sheets behind 'score on the page, not the grid'). Each room to its own walls; an open side (a kitchen or lobby open to its dining space) where the printed size puts it. Every sheet was drawn back with `show` and looked at before it was kept. Captions only were taken from the reader, so a drawing can be matched to a room; no position was."
  ],
  "aipl-zen-residences-gurgaon_2bhk-1262sqft (1)": [
   {
@@ -511,6 +512,415 @@
    "y": 0.514,
    "w": 0.086,
    "h": 0.167
+  }
+ ],
+ "greencourt-526": [
+  {
+   "label": "BALCONY",
+   "x": 0.152,
+   "y": 0.223,
+   "w": 0.572,
+   "h": 0.103
+  },
+  {
+   "label": "BED ROOM",
+   "x": 0.162,
+   "y": 0.333,
+   "w": 0.308,
+   "h": 0.237
+  },
+  {
+   "label": "TOILET",
+   "x": 0.48,
+   "y": 0.333,
+   "w": 0.236,
+   "h": 0.105
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.48,
+   "y": 0.443,
+   "w": 0.236,
+   "h": 0.165
+  },
+  {
+   "label": "W.C",
+   "x": 0.22,
+   "y": 0.571,
+   "w": 0.142,
+   "h": 0.134
+  },
+  {
+   "label": "BED ROOM",
+   "x": 0.061,
+   "y": 0.704,
+   "w": 0.304,
+   "h": 0.21
+  },
+  {
+   "label": "LOBBY",
+   "x": 0.369,
+   "y": 0.603,
+   "w": 0.298,
+   "h": 0.311
+  }
+ ],
+ "plan-006": [
+  {
+   "label": "POOJA",
+   "x": 0.163,
+   "y": 0.383,
+   "w": 0.187,
+   "h": 0.123
+  },
+  {
+   "label": "LIVING ROOM",
+   "x": 0.363,
+   "y": 0.381,
+   "w": 0.287,
+   "h": 0.407
+  },
+  {
+   "label": "Kitchen",
+   "x": 0.663,
+   "y": 0.383,
+   "w": 0.187,
+   "h": 0.134
+  },
+  {
+   "label": "DINING",
+   "x": 0.663,
+   "y": 0.525,
+   "w": 0.187,
+   "h": 0.135
+  },
+  {
+   "label": "Bath",
+   "x": 0.663,
+   "y": 0.666,
+   "w": 0.187,
+   "h": 0.054
+  },
+  {
+   "label": "Master Bedroom",
+   "x": 0.663,
+   "y": 0.728,
+   "w": 0.187,
+   "h": 0.192
+  },
+  {
+   "label": "Bedroom",
+   "x": 0.163,
+   "y": 0.514,
+   "w": 0.187,
+   "h": 0.206
+  },
+  {
+   "label": "Bedroom",
+   "x": 0.163,
+   "y": 0.728,
+   "w": 0.187,
+   "h": 0.192
+  },
+  {
+   "label": "Bath",
+   "x": 0.363,
+   "y": 0.795,
+   "w": 0.14,
+   "h": 0.125
+  },
+  {
+   "label": "Bath",
+   "x": 0.515,
+   "y": 0.795,
+   "w": 0.135,
+   "h": 0.125
+  }
+ ],
+ "plan-010": [
+  {
+   "label": "BALCONY",
+   "x": 0.433,
+   "y": 0.105,
+   "w": 0.168,
+   "h": 0.08
+  },
+  {
+   "label": "BEDROOM-01",
+   "x": 0.087,
+   "y": 0.105,
+   "w": 0.333,
+   "h": 0.188
+  },
+  {
+   "label": "BEDROOM-02",
+   "x": 0.433,
+   "y": 0.19,
+   "w": 0.342,
+   "h": 0.15
+  },
+  {
+   "label": "PASSAGE",
+   "x": 0.233,
+   "y": 0.295,
+   "w": 0.185,
+   "h": 0.05
+  },
+  {
+   "label": "TOILET-01",
+   "x": 0.087,
+   "y": 0.343,
+   "w": 0.227,
+   "h": 0.06
+  },
+  {
+   "label": "VESTIBULE",
+   "x": 0.33,
+   "y": 0.345,
+   "w": 0.199,
+   "h": 0.065
+  },
+  {
+   "label": "COMMON TOILET",
+   "x": 0.542,
+   "y": 0.346,
+   "w": 0.233,
+   "h": 0.065
+  },
+  {
+   "label": "LIVING/DINING",
+   "x": 0.087,
+   "y": 0.415,
+   "w": 0.65,
+   "h": 0.181
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.75,
+   "y": 0.415,
+   "w": 0.127,
+   "h": 0.181
+  },
+  {
+   "label": "MBR TOILET",
+   "x": 0.087,
+   "y": 0.603,
+   "w": 0.203,
+   "h": 0.105
+  },
+  {
+   "label": "DRESS & PASSAGE",
+   "x": 0.293,
+   "y": 0.6,
+   "w": 0.2,
+   "h": 0.112
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.504,
+   "y": 0.6,
+   "w": 0.365,
+   "h": 0.104
+  },
+  {
+   "label": "UTILITY",
+   "x": 0.504,
+   "y": 0.71,
+   "w": 0.292,
+   "h": 0.045
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.507,
+   "y": 0.753,
+   "w": 0.192,
+   "h": 0.096
+  },
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.087,
+   "y": 0.711,
+   "w": 0.404,
+   "h": 0.139
+  }
+ ],
+ "towerEF-1854": [
+  {
+   "label": "M.TOILET",
+   "x": 0.027,
+   "y": 0.187,
+   "w": 0.124,
+   "h": 0.133
+  },
+  {
+   "label": "MASTER BEDROOM",
+   "x": 0.027,
+   "y": 0.331,
+   "w": 0.161,
+   "h": 0.378
+  },
+  {
+   "label": "LOBBY",
+   "x": 0.188,
+   "y": 0.331,
+   "w": 0.413,
+   "h": 0.089
+  },
+  {
+   "label": "OTHER BEDROOM",
+   "x": 0.193,
+   "y": 0.417,
+   "w": 0.16,
+   "h": 0.376
+  },
+  {
+   "label": "BATHROOM",
+   "x": 0.359,
+   "y": 0.466,
+   "w": 0.066,
+   "h": 0.231
+  },
+  {
+   "label": "OTHER BEDROOM",
+   "x": 0.432,
+   "y": 0.43,
+   "w": 0.161,
+   "h": 0.363
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.055,
+   "y": 0.722,
+   "w": 0.105,
+   "h": 0.11
+  },
+  {
+   "label": "BATH RM",
+   "x": 0.413,
+   "y": 0.187,
+   "w": 0.106,
+   "h": 0.133
+  },
+  {
+   "label": "STORE/PUJA",
+   "x": 0.525,
+   "y": 0.156,
+   "w": 0.068,
+   "h": 0.167
+  },
+  {
+   "label": "DRAWING",
+   "x": 0.601,
+   "y": 0.16,
+   "w": 0.17,
+   "h": 0.54
+  },
+  {
+   "label": "E.LOBBY",
+   "x": 0.78,
+   "y": 0.324,
+   "w": 0.108,
+   "h": 0.124
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.776,
+   "y": 0.452,
+   "w": 0.108,
+   "h": 0.248
+  },
+  {
+   "label": "MAIDS RM",
+   "x": 0.889,
+   "y": 0.452,
+   "w": 0.08,
+   "h": 0.184
+  },
+  {
+   "label": "UTILITY",
+   "x": 0.815,
+   "y": 0.716,
+   "w": 0.104,
+   "h": 0.08
+  },
+  {
+   "label": "BATH.RM",
+   "x": 0.924,
+   "y": 0.652,
+   "w": 0.045,
+   "h": 0.143
+  },
+  {
+   "label": "BALCONY",
+   "x": 0.654,
+   "y": 0.717,
+   "w": 0.093,
+   "h": 0.114
+  }
+ ],
+ "plan-034": [
+  {
+   "label": "BEDROOM",
+   "x": 0.26,
+   "y": 0.063,
+   "w": 0.24,
+   "h": 0.225
+  },
+  {
+   "label": "WASH AREA",
+   "x": 0.51,
+   "y": 0.063,
+   "w": 0.222,
+   "h": 0.066
+  },
+  {
+   "label": "KITCHEN",
+   "x": 0.51,
+   "y": 0.138,
+   "w": 0.222,
+   "h": 0.158
+  },
+  {
+   "label": "PUJA",
+   "x": 0.51,
+   "y": 0.242,
+   "w": 0.065,
+   "h": 0.05
+  },
+  {
+   "label": "LIVING ROOM",
+   "x": 0.26,
+   "y": 0.296,
+   "w": 0.372,
+   "h": 0.225
+  },
+  {
+   "label": "TOILET",
+   "x": 0.642,
+   "y": 0.333,
+   "w": 0.09,
+   "h": 0.14
+  },
+  {
+   "label": "TOILET",
+   "x": 0.588,
+   "y": 0.533,
+   "w": 0.144,
+   "h": 0.08
+  },
+  {
+   "label": "PARKING",
+   "x": 0.321,
+   "y": 0.533,
+   "w": 0.182,
+   "h": 0.315
+  },
+  {
+   "label": "BEDROOM",
+   "x": 0.51,
+   "y": 0.621,
+   "w": 0.222,
+   "h": 0.221
   }
  ]
 }

@@ -1,0 +1,128 @@
+{
+ "file": "towerEF-1854.jpg",
+ "imageSize": [
+  1280,
+  695
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 2074,
+  "candidatesTokenCount": 1715,
+  "thoughtsTokenCount": 1156,
+  "costUsd": 0.001116675
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": true,
+  "building": {
+   "x": 0.016,
+   "y": 0.141,
+   "w": 0.963,
+   "h": 0.695
+  },
+  "rooms": [
+   {
+    "label": "M.TOILET",
+    "size": "9'-0\"X5'-6\"",
+    "x": 0.086,
+    "y": 0.168
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "12'0\" X 15'3\"",
+    "x": 0.095,
+    "y": 0.362
+   },
+   {
+    "label": "BATH RM",
+    "size": "8'-0\" X 5'-6\"",
+    "x": 0.462,
+    "y": 0.168
+   },
+   {
+    "label": "STORE/PUJA",
+    "size": "5'-0\"X6'-9\"",
+    "x": 0.556,
+    "y": 0.17
+   },
+   {
+    "label": "DRAWING",
+    "size": "13'-0\" X 22'-1\"",
+    "x": 0.705,
+    "y": 0.302
+   },
+   {
+    "label": "E.LOBBY",
+    "size": "8'-0\"X5'-0\"",
+    "x": 0.844,
+    "y": 0.364
+   },
+   {
+    "label": "LOBBY",
+    "size": "",
+    "x": 0.384,
+    "y": 0.366,
+    "w": 0.44,
+    "h": 0.2
+   },
+   {
+    "label": "OTHER BEDROOM",
+    "size": "12'-0\" X 13'-2\"",
+    "x": 0.268,
+    "y": 0.615
+   },
+   {
+    "label": "BATHROOM",
+    "size": "5'-0\" X 9'-4\"",
+    "x": 0.389,
+    "y": 0.532
+   },
+   {
+    "label": "OTHER BEDROOM",
+    "size": "12'-0\" X 14'-8\"",
+    "x": 0.531,
+    "y": 0.586
+   },
+   {
+    "label": "KITCHEN",
+    "size": "8'-0\" X 10'-0\"",
+    "x": 0.845,
+    "y": 0.574
+   },
+   {
+    "label": "MAIDS RM",
+    "size": "5'-0\" X 7'-2\"",
+    "x": 0.964,
+    "y": 0.564
+   },
+   {
+    "label": "BALCONY",
+    "size": "7'10\"X4'6\"",
+    "x": 0.096,
+    "y": 0.913
+   },
+   {
+    "label": "BALCONY",
+    "size": "7'4\"X4'6\"",
+    "x": 0.689,
+    "y": 0.895
+   },
+   {
+    "label": "UTILITY",
+    "size": "7'-9\" X 3'-3\"",
+    "x": 0.878,
+    "y": 0.88
+   },
+   {
+    "label": "BATH.RM",
+    "size": "3'-3\" X 5'-9\"",
+    "x": 0.967,
+    "y": 0.868
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}

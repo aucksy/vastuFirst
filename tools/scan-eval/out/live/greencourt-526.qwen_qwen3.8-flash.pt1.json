@@ -1,0 +1,72 @@
+{
+ "file": "greencourt-526.png",
+ "imageSize": [
+  691,
+  954
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "qwen/qwen3.8-flash",
+ "modelVersion": "qwen/qwen3.8-flash",
+ "usage": {
+  "promptTokenCount": 1768,
+  "candidatesTokenCount": 1386,
+  "thoughtsTokenCount": 1074,
+  "costUsd": 0.000796556
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.05,
+   "y": 0.21,
+   "w": 0.67,
+   "h": 0.71
+  },
+  "rooms": [
+   {
+    "label": "BALCONY",
+    "size": "1525 WIDE",
+    "x": 0.6046,
+    "y": 0.1207
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3285X3350",
+    "x": 0.3379,
+    "y": 0.2665
+   },
+   {
+    "label": "TOILET",
+    "size": "2485X1525",
+    "x": 0.6106,
+    "y": 0.2617
+   },
+   {
+    "label": "KITCHEN",
+    "size": "2485X2390",
+    "x": 0.6076,
+    "y": 0.4278
+   },
+   {
+    "label": "W.C",
+    "size": "1500X1950",
+    "x": 0.2746,
+    "y": 0.5168
+   },
+   {
+    "label": "BED ROOM",
+    "size": "3200X3050",
+    "x": 0.1661,
+    "y": 0.6493
+   },
+   {
+    "label": "LOBBY",
+    "size": "3135X4535",
+    "x": 0.5205,
+    "y": 0.6594
+   }
+  ],
+  "planConfidence": 0.95
+ }
+}

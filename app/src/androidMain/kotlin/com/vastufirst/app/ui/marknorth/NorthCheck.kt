@@ -57,10 +57,13 @@ object NorthCheck {
         val seen = HashSet<RoomType>()
         for (type in TELLING_ROOMS) {
             if (out.size >= limit) break
-            val room = analysis.roomResults.firstOrNull { it.type == type && it.zone != Zone.BRAHMASTHAN }
+            // mainZone: where MOST of the room is. A room flagged for crossing a line used to be
+            // placed "in" the zone it only crosses into (owner's decision, 29 Sep 2026 — see
+            // [directionWords]).
+            val room = analysis.roomResults.firstOrNull { it.type == type && it.mainZone != Zone.BRAHMASTHAN }
                 ?: continue
             if (!seen.add(type)) continue
-            out += "your ${type.label().lowercase()} is in the ${room.zone.short().lowercase()}"
+            out += "your ${type.label().lowercase()} is in the ${room.mainZone.short().lowercase()}"
         }
         return out.take(limit)
     }

@@ -1,0 +1,146 @@
+{
+ "file": "plan-007.jpg",
+ "imageSize": [
+  736,
+  1016
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 1901,
+  "candidatesTokenCount": 2104,
+  "thoughtsTokenCount": 1423,
+  "costUsd": 0.00256336
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.014,
+   "y": 0.075,
+   "w": 0.963,
+   "h": 0.914
+  },
+  "rooms": [
+   {
+    "label": "CHILDREN BEDROOM",
+    "size": "15'-0\" X 12'-6\"",
+    "x": 0.289,
+    "y": 0.086
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-0\" X 8'-0\"",
+    "x": 0.48,
+    "y": 0.031
+   },
+   {
+    "label": "TOILET",
+    "size": "5'-0\" X 8'-0\"",
+    "x": 0.619,
+    "y": 0.031
+   },
+   {
+    "label": "GUEST BEDROOM",
+    "size": "12'-3\" X 12'-6\"",
+    "x": 0.838,
+    "y": 0.097
+   },
+   {
+    "label": "LEDGE",
+    "size": "",
+    "x": 0.824,
+    "y": 0.274,
+    "w": 0.215,
+    "h": 0.035
+   },
+   {
+    "label": "6' WIDE LOBBY",
+    "size": "6' WIDE",
+    "x": 0.835,
+    "y": 0.327,
+    "w": 0.31,
+    "h": 0.12
+   },
+   {
+    "label": "LIVING HALL",
+    "size": "13'-3\" X 13'-3\"",
+    "x": 0.258,
+    "y": 0.366
+   },
+   {
+    "label": "DRAWING",
+    "size": "10'-7 1/2\" X 15'-0\"",
+    "x": 0.582,
+    "y": 0.442
+   },
+   {
+    "label": "BEDROOM",
+    "size": "12'-0\" X 10'-0\"",
+    "x": 0.848,
+    "y": 0.422
+   },
+   {
+    "label": "TOILET",
+    "size": "4'-3 1/2\" X 9'-4 1/2\"",
+    "x": 0.106,
+    "y": 0.532
+   },
+   {
+    "label": "TOILET",
+    "size": "6'-0\" X 6'-0\"",
+    "x": 0.347,
+    "y": 0.57
+   },
+   {
+    "label": "DRESSING",
+    "size": "4'-4\" X 9'-4 1/2\"",
+    "x": 0.224,
+    "y": 0.666
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "15'-4 1/2\" X 12'-11 1/2\"",
+    "x": 0.257,
+    "y": 0.75
+   },
+   {
+    "label": "DINING",
+    "size": "10'-7 1/2\" X 10'-0\"",
+    "x": 0.582,
+    "y": 0.635
+   },
+   {
+    "label": "POOJA",
+    "size": "5'-3\" X 5'-3\"",
+    "x": 0.874,
+    "y": 0.662
+   },
+   {
+    "label": "KITCHEN",
+    "size": "10'-0\" X 10'-0\"",
+    "x": 0.861,
+    "y": 0.789
+   },
+   {
+    "label": "5' WIDE BALCONY",
+    "size": "5' WIDE",
+    "x": 0.594,
+    "y": 0.944,
+    "w": 0.31,
+    "h": 0.1
+   },
+   {
+    "label": "4' WIDE UTILITY",
+    "size": "4' WIDE",
+    "x": 0.871,
+    "y": 0.946,
+    "w": 0.245,
+    "h": 0.1
+   }
+  ],
+  "planConfidence": 0.99
+ }
+}

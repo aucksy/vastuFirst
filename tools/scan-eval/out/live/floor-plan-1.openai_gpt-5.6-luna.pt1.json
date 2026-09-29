@@ -1,0 +1,192 @@
+{
+ "file": "floor-plan-1.jpg",
+ "imageSize": [
+  1224,
+  1400
+ ],
+ "prompt": "sha1:bd55a951127a",
+ "model": "openai/gpt-5.6-luna",
+ "modelVersion": "openai/gpt-5.6-luna",
+ "usage": {
+  "promptTokenCount": 3077,
+  "candidatesTokenCount": 2677,
+  "thoughtsTokenCount": 1661,
+  "costUsd": 0.0039815
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.069,
+   "y": 0.094,
+   "w": 0.925,
+   "h": 0.812
+  },
+  "rooms": [
+   {
+    "label": "Juliet BALCONY",
+    "size": "",
+    "x": 0.442,
+    "y": 0.0,
+    "w": 0.105,
+    "h": 0.035
+   },
+   {
+    "label": "BALCONY",
+    "size": "6' WIDE / 1.8 m WIDE",
+    "x": 0.221,
+    "y": 0.08,
+    "w": 0.245,
+    "h": 0.103
+   },
+   {
+    "label": "GUEST BEDROOM I",
+    "size": "15' X 11' / 4.6 X 3.3 m",
+    "x": 0.421,
+    "y": 0.055
+   },
+   {
+    "label": "BALCONY",
+    "size": "6' WIDE / 1.8 m WIDE",
+    "x": 0.634,
+    "y": 0.08,
+    "w": 0.246,
+    "h": 0.103
+   },
+   {
+    "label": "GUEST BATH I",
+    "size": "9'2 X 5'2 / 2.8 X 1.6 m",
+    "x": 0.283,
+    "y": 0.161
+   },
+   {
+    "label": "JR. MASTER BEDROOM",
+    "size": "14'5 X 11' / 4.4 X 3.3 m",
+    "x": 0.134,
+    "y": 0.325
+   },
+   {
+    "label": "Juliet BALCONY",
+    "size": "",
+    "x": 0.029,
+    "y": 0.337,
+    "w": 0.042,
+    "h": 0.075
+   },
+   {
+    "label": "JR. MASTER BATH I",
+    "size": "9' X 5'6 / 2.7 X 1.6 m",
+    "x": 0.103,
+    "y": 0.423
+   },
+   {
+    "label": "Juliet BALCONY",
+    "size": "",
+    "x": 0.03,
+    "y": 0.507,
+    "w": 0.041,
+    "h": 0.075
+   },
+   {
+    "label": "LIVING ROOM / DINING AREA",
+    "size": "21'11 X 11' / 6.7 X 3.4 m",
+    "x": 0.633,
+    "y": 0.359
+   },
+   {
+    "label": "PWD",
+    "size": "5' X 5' / 1.4 X 1.6 m",
+    "x": 0.781,
+    "y": 0.397
+   },
+   {
+    "label": "MAIN ENTRY FOYER",
+    "size": "5'10 X 5'5 / 1.8 X 1.6 m",
+    "x": 0.783,
+    "y": 0.48
+   },
+   {
+    "label": "ALL DIRECTION PUJA ROOM / FAMILY LOUNGE",
+    "size": "12'6 X 11'4 / 3.8 X 3.4 m",
+    "x": 0.439,
+    "y": 0.45
+   },
+   {
+    "label": "MASTER BEDROOM",
+    "size": "14'10 X 13'8 / 4.5 X 4.1 m",
+    "x": 0.169,
+    "y": 0.694
+   },
+   {
+    "label": "BALCONY",
+    "size": "6' WIDE / 1.8 m WIDE",
+    "x": 0.146,
+    "y": 0.806,
+    "w": 0.248,
+    "h": 0.096
+   },
+   {
+    "label": "DRESSER",
+    "size": "4' X 8' / 1.2 X 2.4 m",
+    "x": 0.372,
+    "y": 0.64
+   },
+   {
+    "label": "MASTER BATH",
+    "size": "5'6 X 8'6 / 1.7 X 2.6 m",
+    "x": 0.372,
+    "y": 0.742
+   },
+   {
+    "label": "KITCHEN",
+    "size": "12' X 8'6 / 3.6 X 2.5 m",
+    "x": 0.517,
+    "y": 0.649
+   },
+   {
+    "label": "DRYER WASHER",
+    "size": "",
+    "x": 0.513,
+    "y": 0.783,
+    "w": 0.105,
+    "h": 0.073
+   },
+   {
+    "label": "HOME OFFICE / STUDY",
+    "size": "10'9 X 10'2 / 3.3 X 2.8 m",
+    "x": 0.645,
+    "y": 0.797
+   },
+   {
+    "label": "BATH",
+    "size": "4'7 X 8'6 / 1.4 X 2.6 m",
+    "x": 0.646,
+    "y": 0.918
+   },
+   {
+    "label": "PVT. LIFT LOBBY",
+    "size": "6'10 X 5'10 / 2.1 X 1.8 m",
+    "x": 0.703,
+    "y": 0.645
+   },
+   {
+    "label": "LIFT",
+    "size": "",
+    "x": 0.677,
+    "y": 0.649,
+    "w": 0.145,
+    "h": 0.159
+   },
+   {
+    "label": "LIFT",
+    "size": "",
+    "x": 0.911,
+    "y": 0.667,
+    "w": 0.145,
+    "h": 0.159
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}

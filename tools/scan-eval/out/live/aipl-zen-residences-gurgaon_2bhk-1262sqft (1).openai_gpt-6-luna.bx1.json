@@ -1,0 +1,120 @@
+{
+ "file": "aipl-zen-residences-gurgaon_2bhk-1262sqft (1).webp",
+ "imageSize": [
+  1207,
+  1400
+ ],
+ "prompt": "sha1:31e8a4ee5052",
+ "model": "openai/gpt-6-luna",
+ "modelVersion": "openai/gpt-6-luna",
+ "usage": {
+  "promptTokenCount": 2867,
+  "candidatesTokenCount": 1071,
+  "thoughtsTokenCount": 515,
+  "costUsd": 0.0008938
+ },
+ "reply": {
+  "planType": "2D_PLAN",
+  "hasRoomLabels": true,
+  "northMarked": false,
+  "building": {
+   "x": 0.146,
+   "y": 0.053,
+   "w": 0.724,
+   "h": 0.689
+  },
+  "rooms": [
+   {
+    "label": "MASTER BEDROOM",
+    "size": "11' 0\" X 12' 3\"",
+    "x": 0.019,
+    "y": 0.244,
+    "w": 0.307,
+    "h": 0.342,
+    "confidence": 0.94
+   },
+   {
+    "label": "BEDROOM",
+    "size": "10' 0\" X 12' 0\"",
+    "x": 0.323,
+    "y": 0.139,
+    "w": 0.301,
+    "h": 0.34,
+    "confidence": 0.95
+   },
+   {
+    "label": "MASTER TOILET",
+    "size": "8' 6\" X 5' 5\"",
+    "x": 0.019,
+    "y": 0.576,
+    "w": 0.262,
+    "h": 0.168,
+    "confidence": 0.94
+   },
+   {
+    "label": "TOILET",
+    "size": "8' 0\" X 5' 5\"",
+    "x": 0.256,
+    "y": 0.576,
+    "w": 0.188,
+    "h": 0.233,
+    "confidence": 0.94
+   },
+   {
+    "label": "LIVING/DINING",
+    "size": "19' 0\" X 12' 1\"",
+    "x": 0.33,
+    "y": 0.465,
+    "w": 0.67,
+    "h": 0.472,
+    "confidence": 0.92
+   },
+   {
+    "label": "KITCHEN",
+    "size": "11' 0\" X 7' 0\"",
+    "x": 0.44,
+    "y": 0.792,
+    "w": 0.43,
+    "h": 0.208,
+    "confidence": 0.94
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.048,
+    "y": 0.106,
+    "w": 0.243,
+    "h": 0.153,
+    "confidence": 0.94
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.373,
+    "y": 0,
+    "w": 0.217,
+    "h": 0.15,
+    "confidence": 0.94
+   },
+   {
+    "label": "BALCONY",
+    "size": "5' 5\" WIDE",
+    "x": 0.691,
+    "y": 0.326,
+    "w": 0.259,
+    "h": 0.148,
+    "confidence": 0.94
+   },
+   {
+    "label": "SERVICE BALCONY",
+    "size": "4' 11\" WIDE",
+    "x": 0.366,
+    "y": 0.819,
+    "w": 0.176,
+    "h": 0.138,
+    "confidence": 0.92
+   }
+  ],
+  "planConfidence": 0.98
+ }
+}
