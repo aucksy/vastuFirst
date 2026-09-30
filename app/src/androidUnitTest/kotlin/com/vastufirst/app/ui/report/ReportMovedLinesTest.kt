@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.runComposeUiTest
 import com.vastufirst.app.render.RenderFixtures
 import com.vastufirst.app.ui.newplan.DoorSide
@@ -59,7 +60,11 @@ class ReportMovedLinesTest {
             "the free-tier line is printed in the verdict again; it belongs behind the i on \"Your rooms\"",
             has("below in full, free"),
         )
-        onNodeWithTag("report.rooms.header").performScrollTo().performClick()
+        // ⚠ The heading's own action, not a tap: on a free report the pay bar floats over the foot of
+        // the window, and a heading scrolled just into view sits under it — a tap there lands on the
+        // bar. The action is what a screen reader uses, so it is still a real way in.
+        onNodeWithTag("report.rooms.header").performScrollTo()
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         assertTrue(
             "the free-tier line has been DELETED, not moved — CLAUDE.md §2h",
             has("Entrance, kitchen and toilets are below in full, free."),

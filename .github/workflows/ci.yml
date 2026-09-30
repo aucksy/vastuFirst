@@ -269,8 +269,6 @@ jobs:
                           (totals if '|TOTAL|' in line else rows).append(line[8:])
                       elif line.startswith('JOURNEY-WARN|'):
                           warns.append(line[13:])
-                      elif line.startswith('NAVTEST|'):
-                          warns.append('real-navigation scan test: ' + line[8:])
           if not rows:
               print('  (no journey report in this run)')
           last = None
