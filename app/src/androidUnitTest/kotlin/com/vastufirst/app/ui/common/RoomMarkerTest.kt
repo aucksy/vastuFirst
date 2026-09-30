@@ -142,4 +142,25 @@ class RoomMarkerTest {
             buildPlanDescription("Kitchen", hasDoor = false, zoomable = false),
         )
     }
+
+    /**
+     * ⭐ THE OWNER'S PLACEMENT (30 Sep 2026): *"improve the placement of direction short form to be in
+     * center of the room"*. One label shows at a time now and its card names the room, so it no longer
+     * has to keep clear of the name the plan prints at the middle.
+     */
+    @Test
+    fun `the label's centre sits on the room's middle`() {
+        val at = directionLabelTopLeft(200f, 200f, 100, 30, 400f, 400f, 4f)
+        assertEquals("centred across the room's middle", 200f, at.x + 100 / 2f, 0.5f)
+        assertEquals("centred on the room's middle, not above it", 200f, at.y + 30 / 2f, 0.5f)
+    }
+
+    /** At rest nothing is written on the plan any more, so the sentence must stop saying there is. */
+    @Test
+    fun `at rest a screen reader hears that a tap gives a room's direction, not that every room carries one`() {
+        assertEquals(
+            "Your scanned plan. Tap a room to hear its direction.",
+            buildPlanDescription(null, hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION),
+        )
+    }
 }
