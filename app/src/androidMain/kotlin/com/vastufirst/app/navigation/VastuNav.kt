@@ -458,8 +458,13 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // the ViewModel confirms it holds that same home. What it must never become is "draw
                 // whatever picture is lying around", which is how one plan ended up under another
                 // home's heading in v0.12.0.
-                val planImage = remember(fromScan, northDraftId, scanHandover.data) {
-                    if (fromScan || northDraftId != null) scanHandover.data?.decodeImage() else null
+                val fromReportForPhoto = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
+                val planImage = remember(fromScan, fromReportForPhoto, northDraftId, scanHandover.data) {
+                    if (northShowsPhoto(fromReport = fromReportForPhoto, fromDraft = northDraftId != null, fromScan = fromScan)) {
+                        scanHandover.data?.decodeImage()
+                    } else {
+                        null
+                    }
                 }
                 // ⚠ Which way out, and there are now three answers.
                 //
@@ -632,6 +637,16 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
         }
     }
 }
+
+/**
+ * ⭐ MAY THE NORTH DIAL DRAW THIS HOME'S OWN PHOTOGRAPH? — the rule, in one place so a test can hold it.
+ *
+ * The photograph comes from the one hand-over slot, and every door into a DIFFERENT home empties that
+ * slot (starting a home, opening a saved one, resuming an unfinished one), so whatever is in it
+ * belongs to the home on screen. This decides only which ways into the dial are allowed to draw it.
+ */
+internal fun northShowsPhoto(fromReport: Boolean, fromDraft: Boolean, fromScan: Boolean = false): Boolean =
+    fromScan || fromDraft
 
 /** Navigate, debounced: a fast double-tap can't push two copies of the same destination (§B6). */
 private fun NavHostController.go(route: String) = navigate(route) { launchSingleTop = true }

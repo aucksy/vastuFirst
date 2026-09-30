@@ -252,6 +252,39 @@ jobs:
               print('  (no score report in this run)')
           PY
 
+      # What each journey costs a first-time reader, screen by screen (JourneyMeasureTest, 30 Sep
+      # 2026): the words on each first screenful, the choices, the taps to the report. Printed on
+      # every run so "shorter" is a number in the log, not an impression. The pictures of each
+      # journey, as one strip each, are in the screenshots artifact under build/journeys.
+      - name: What each journey costs (screens, taps, words, choices)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          rows, totals, warns = [], [], []
+          for f in sorted(glob.glob('app/build/test-results/**/*.xml', recursive=True)):
+              for out in ET.parse(f).getroot().iter('system-out'):
+                  for line in (out.text or '').splitlines():
+                      if line.startswith('JOURNEY|'):
+                          (totals if '|TOTAL|' in line else rows).append(line[8:])
+                      elif line.startswith('JOURNEY-WARN|'):
+                          warns.append(line[13:])
+          if not rows:
+              print('  (no journey report in this run)')
+          last = None
+          for r in rows:
+              p = r.split('|')
+              if p[1] != last:
+                  print(''); print('  ' + p[1]); last = p[1]
+              print('    %2s. %-46s %s' % (p[2], p[3][:46], '  '.join(p[4:])))
+          print(''); print('  TOTALS')
+          for t in totals:
+              p = t.split('|')
+              print('    %-40s %s' % (p[1][:40], '  '.join(p[3:])))
+          for w in warns:
+              print('  warning: ' + w)
+          PY
+
       # Which APP tests ran, class by class (29 Sep 2026). The render step runs every test under
       # app/src/androidUnitTest — the tap tests, the direction trial's tests, the measurements — and
       # Gradle prints only failures, so a test class that silently stopped being picked up looked
@@ -311,6 +344,7 @@ jobs:
             app/build/outputs/roborazzi/**
             app/build/render-manifest/**
             app/build/a11y-manifest/**
+            app/build/journeys/**
           if-no-files-found: warn
           # These are review copies with a short useful life: the diffs matter while THIS build is
           # being looked at, not a month later. Without this they inherit the 90-day account default
