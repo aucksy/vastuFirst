@@ -101,6 +101,38 @@ developer account.
 
 ## Week of 28 September – 4 October 2026
 
+### Wednesday 30 September, late — directions stay, and a shorter privacy screen
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.36.0/vastufirst-v0.36.0.apk
+**This is the one to install.**
+
+**The direction trial has ended. Directions stay, and they are now the only way your plan shows a
+room.**
+
+The "Directions / Boxes" choice under your report's plan is gone, and the old boxes with it. Nothing
+else about the plan changes: it opens clear, the room you pick shows its direction in short in the
+middle of the room — **NE**, **SW**, **C** — and its full name is in that room's card below. Nothing
+about your score changes either.
+
+The label has not moved. It still sits in the middle of the room, and covers the room's name printed
+on your plan while that room is picked; where it should sit is still being decided.
+
+**The privacy screen before your first scan is much shorter.** "Your plan leaves this phone" used to
+show five paragraphs before you reached the button — what we send, who reads it, what we ask it, what
+we keep, and who works out your score. They are now folded under one line, **"What happens to your
+plan (5)"**, and one tap opens them, word for word as before. The headline, the **"I agree — read my
+plan"** button, the note that you can turn it off in Settings, and the choice to draw on a grid instead
+all stay on the page. Nothing new leaves your phone, so nobody who already agreed is asked again.
+
+**Counted, not guessed:** that screen used to show 172 words before any scrolling; it now shows 80,
+and its button is on the first screen even with double-size text. A first scan of a plan that prints
+its entrance now has about 370 words to read across its six screens, down from about 460. Your report
+has two fewer buttons.
+
+**The website says the same thing now.** Its line "You check every room before anything is scored"
+described the checking screen that went in the last build. It now reads **"You can correct any room
+before your score."**
+
 ### Wednesday 30 September, evening — fewer screens between your plan and your report
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.35.0/vastufirst-v0.35.0.apk
