@@ -137,8 +137,8 @@ fun RoomStatusPill(status: VastuRoomStatus, modifier: Modifier = Modifier) =
  * opens the room's reasoning — so there is exactly one target, one outcome, and nothing to learn.
  * Tapping the same room on the plan selects the identical room, so the two ends cannot drift apart.
  *
- * ⚠ AMENDED 16 AUG 2026, on the scan review screen only. The plan's handler there additionally
- * scrolls the list; this row's does not. Both still SELECT identically, which is the promise. Only
+ * ⚠ AMENDED 16 AUG 2026. The plan's handler additionally scrolls the list (on the report today);
+ * this row's does not. Both still SELECT identically, which is the promise. Only
  * the plan can select a row that is off the screen, and a row the user has just touched needs no
  * revealing — scrolling it moved the thing under their finger, which the owner reported as the list
  * jumping. Do not "restore consistency" by making a row tap scroll again.
@@ -196,9 +196,9 @@ fun VastuRoomRow(
                 if (onTap == null) Modifier else Modifier.clickableTap(
                     role = Role.Button,
                     // ⚠ The promise has to match the screen. On the report a row opens its whole
-                    // reasoning, so "read why" is true. On "Check what we read" there is no [body]
-                    // at all — tapping only marks the room on the photograph — and a screen reader
-                    // was announcing reasoning that never arrives. Sighted readers can see there is
+                    // reasoning, so "read why" is true. A row with no [body] (the removed checking
+                    // screen had them) only marks the room on the photograph, and a screen reader
+                    // must not announce reasoning that never arrives. Sighted readers can see there is
                     // no chevron; a TalkBack user only has this sentence.
                     onClickLabel = when {
                         body == null -> "show this room on the plan"

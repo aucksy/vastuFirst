@@ -3,7 +3,7 @@
 // ⭐⭐ WHY THIS EXISTS (owner, 8 Sep 2026: "check bedroom detection, it's incorrect… I want this to
 // be automatically accurate"). The reader transcribes text at ~95 % and guesses rectangles at
 // 40–70 %: on his furnished render its bedroom box ran a fifth of the room's height past the
-// bottom wall, over the balcony. Everything downstream — the tint on "Check what we read", the
+// bottom wall, over the balcony. Everything downstream — the tint on the photograph, the
 // grid, the score — was built from that guess, while the one thing on the sheet that says exactly
 // where a room ends, its wall, was carried along only to be shown.
 //

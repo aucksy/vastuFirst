@@ -15,7 +15,7 @@ import com.vastufirst.app.ui.scan.ImageDecoder
 import com.vastufirst.app.ui.scan.AndroidReaderChoice
 import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ReaderChoice
-import com.vastufirst.app.ui.scan.ScanReviewHandover
+import com.vastufirst.app.ui.scan.ScanPictureSlot
 import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.data.PlanRepository
 import com.vastufirst.shared.scan.GroqPlanReader
@@ -84,12 +84,11 @@ val appModule = module {
     single<ImageDecoder> { AndroidImageDecoder(androidContext()) }
     single<PlanReadingConsent> { AndroidPlanReadingConsent(androidContext()) }
     single<ReaderChoice> { AndroidReaderChoice(androidContext()) }
-    // The on-photo scan review (owner request, 4 Aug 2026): the Settings toggle that picks the
-    // confirmation surface, and the one-field handover slot the scan writes before navigating.
-    single { ScanReviewHandover() }
-    // ⭐ The direction trial (owner, 29 Sep 2026): what a tapped room shows on the photograph. ONE
-    // holder for both screens that draw it, switched by `directionTrial` in the reader's config — the
-    // one line of data that turns the trial off and gives back the box way, untouched.
+    // The one-field slot that carries a scan's photograph and its rooms to the screens after it.
+    single { ScanPictureSlot() }
+    // ⭐ The direction trial (owner, 29 Sep 2026): what a tapped room shows on the report's photograph,
+    // switched by `directionTrial` in the reader's config — the one line of data that turns the trial
+    // off and gives back the box way, untouched.
     single {
         com.vastufirst.app.ui.common.RoomMarkerChoice(
             trialOn = get<com.vastufirst.shared.scan.PlanReadRecipe>().config.directionTrial,

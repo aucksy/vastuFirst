@@ -50,6 +50,7 @@ class ScanScreenshotTest {
         openRow: Int = -1,
         noCamera: Boolean = false,
         readingElapsedMillis: Long = 0L,
+        north: com.vastufirst.app.ui.scan.NorthOnResult = com.vastufirst.app.ui.scan.NorthOnResult(),
     ): @androidx.compose.runtime.Composable () -> Unit = {
         ScanScreen(
             state = state,
@@ -58,38 +59,39 @@ class ScanScreenshotTest {
             startOpenRow = openRow,
             cameraUnavailable = noCamera,
             readingElapsedMillis = readingElapsedMillis,
+            north = north,
         )
     }
 
     /**
-     * ⭐⭐ THE ROWS' ONE-WORD RESULT AND DIRECTION, worked out exactly the way the app works them
-     * out (owner's original list, built 11 Aug 2026): the scan's rooms through the real grid
-     * conversion, through the real front-door read, through the real engine.
-     *
-     * ⚠ Faking a map of pretty verdicts here would photograph a row that cannot happen. The whole
-     * risk this golden carries is a row with a circle, a name, a result pill, a direction pill and a
-     * printed size on it at 200 % font on a 320 dp phone — so the words in those pills have to be the
-     * real ones, at their real lengths ("Already right", "South-West").
+     * ⭐⭐ NORTH ON THE RESULT ITSELF (30 Sep 2026) — the home a placed read has just become, worked out
+     * exactly the way the app works it out: the scan's rooms through the real grid conversion, the
+     * real front-door read and the real engine, with North at 0. The "Is this right?" card under the
+     * dial quotes this analysis, so a faked one would photograph claims no reader could get.
      */
-    private fun readingsFor(outcome: ScanOutcome.Placed): Map<String, com.vastufirst.app.ui.scan.RoomReading> {
+    private fun northFor(
+        outcome: ScanOutcome.Placed,
+        photo: androidx.compose.ui.graphics.ImageBitmap,
+    ): com.vastufirst.app.ui.scan.NorthOnResult {
         val grid = com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid)
         val plan = com.vastufirst.app.ui.newplan.buildEnginePlan(
             rooms = grid,
-            door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid),
-            intent = com.vastufirst.shared.Intent.BUILDING,
+            door = door,
+            intent = com.vastufirst.shared.Intent.BUYING,
             propertyType = com.vastufirst.shared.PropertyType.FLAT,
             north = 0,
-            planId = "golden-scan-review",
+            planId = "golden-scan-result",
         )
-        val readings = com.vastufirst.app.ui.scan.roomReadings(
-            plan?.let { com.vastufirst.engine.VastuEngine().analyze(it) },
+        return com.vastufirst.app.ui.scan.NorthOnResult(
+            rooms = grid,
+            north = 0,
+            analysis = plan?.let { com.vastufirst.engine.VastuEngine().analyze(it) },
+            cols = outcome.cols,
+            rows = outcome.rows,
+            planImage = photo,
+            doorKnown = door != null,
         )
-        check(readings.isNotEmpty()) {
-            "No room on this fixture came back with a reading, so this golden would photograph the " +
-                "pill-less row the screen drew BEFORE North moved in front of it — a picture of the " +
-                "very thing this change is supposed to have fixed."
-        }
-        return readings
     }
 
     /** The clean render: measured 8/8 rooms right — the read that gets its geometry trusted. */
@@ -114,31 +116,6 @@ class ScanScreenshotTest {
     }
 
     /**
-     * ⭐ The ON-PHOTO review (owner request, 4 Aug 2026): the scanned picture with one room's
-     * reading tinted over it, and the room list beneath. Driven by the real recorded clean read
-     * through the real mapper, so the list is what a user would actually be checking; the "photo"
-     * is a flat stand-in bitmap (the harness has no real photograph, and the overlay geometry —
-     * the thing this golden guards — is the same over any pixels).
-     */
-    @Test
-    fun scanReview() {
-        val placedOutcome = placed() as com.vastufirst.shared.scan.ScanOutcome.Placed
-        val photo = android.graphics.Bitmap.createBitmap(1400, 990, android.graphics.Bitmap.Config.ARGB_8888)
-            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
-        val readings = readingsFor(placedOutcome)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = photo.asImageBitmap(),
-                rooms = placedOutcome.rooms,
-                readings = readings,
-                startSelected = 2,
-            )
-        }
-        captureAcrossMatrix("scan-review", content)
-        writeManifestAcrossMatrix("scan-review", content)
-    }
-
-    /**
      * ⭐⭐ The owner's OWN plan, on the two screens his 6 Aug 2026 notes are about — driven by the
      * recorded reply for it (`plan-020`), so these goldens are literally the pictures he was
      * looking at when he wrote them.
@@ -158,254 +135,6 @@ class ScanScreenshotTest {
         android.graphics.Bitmap.createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
             .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
             .asImageBitmap()
-
-    /**
-     * ⭐⭐ A TINTED BOX ON A PLAN THAT ACTUALLY PRINTS ITS SIZES — the picture that was missing.
-     *
-     * [scanReview] is the only other golden that shows a tint, and it is driven by `plan-01`, which
-     * is the one fixture family in the whole corpus printing **no room sizes at all**. So every
-     * change to how a sized room is drawn has been invisible to this gate: the goldens verified
-     * clean and the picture was never taken. That is the same blind spot as a golden that never
-     * scrolls and a gate that measures boxes rather than glyphs.
-     *
-     * So this photographs the owner's own flat, every one of whose fifteen rooms prints a size, with
-     * a DIMENSIONED room selected — the case where the caption and the drawing can disagree, and
-     * therefore the only case this picture is worth taking for. It fails loudly if no such room
-     * exists, because a golden that quietly falls back to an unsized room is a picture of nothing.
-     */
-    @Test
-    fun scanReviewPrintedSizes() {
-        val flat = ScanMapper.map(RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply)
-            as ScanOutcome.Placed
-        val corrected = flat.rooms.indexOfFirst {
-            com.vastufirst.shared.scan.RoomDimensions.parse(it.printedSize.ifBlank { it.label }) != null
-        }
-        check(corrected >= 0) {
-            "No room on the owner's own flat states a printed size, so this golden would " +
-                "photograph an unsized room and prove nothing. This fixture stopped printing sizes."
-        }
-        val readings = readingsFor(flat)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = planPhoto(),
-                rooms = flat.rooms,
-                readings = readings,
-                startSelected = corrected,
-            )
-        }
-        captureAcrossMatrix("scan-review-printed", content)
-        writeManifestAcrossMatrix("scan-review-printed", content)
-    }
-
-    /**
-     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026; redrawn by him 30 Sep) — a tapped room showing its
-     * SHORT direction on the middle of the room, where every other golden on this screen shows the box.
-     * Its full name is in its card below, which this picture also shows.
-     *
-     * ⚠ ON A REAL PLAN, NOT A BLANK STAND-IN. Every other photo on this screen's goldens is a flat
-     * beige rectangle, which is honest for geometry but cannot show whether a label lands ON the room
-     * it names. `plan-01` is the one plan whose picture lives in the repository (a synthetic sheet,
-     * `tools/scan-eval/fixtures/plan-01.png`) AND whose recorded reply is bundled — so here the label
-     * can be seen sitting on the kitchen the sheet draws.
-     *
-     * ⚠ That reply predates the building box, which [PlanSheet] supplies — see its note.
-     */
-    @Test
-    fun scanReviewDirection() {
-        val picture = PlanSheet.bitmap()
-        val outcome = PlanSheet.outcome()
-        val readings = readingsFor(outcome)
-        val kitchen = outcome.rooms.indexOfFirst { it.label == "KITCHEN" }
-        check(kitchen >= 0 && readings[com.vastufirst.app.ui.scan.scanRoomId(kitchen)] != null) {
-            "The kitchen must be read and scored, or this golden photographs a pin with no words on it."
-        }
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = picture.asImageBitmap(),
-                rooms = outcome.rooms,
-                readings = readings,
-                startSelected = kitchen,
-                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
-                // The trial's chooser, as the build he installs shows it.
-                onRoomMarkerChange = {},
-            )
-        }
-        captureAcrossMatrix("scan-review-direction", content)
-        writeManifestAcrossMatrix("scan-review-direction", content)
-    }
-
-    /**
-     * ⭐⭐ A TAPPED ROOM THAT CROSSES A LINE (owner's label decision, 29 Sep 2026). The living room on
-     * this sheet is flagged for crossing into the centre, although most of it lies in the North-West.
-     * Tapped, the plan shows "NW" — where most of it is — and its card spells the crossing out,
-     * "North-West · crosses the centre": the longest words a room's card carries, which is exactly why
-     * it is photographed at every size in the matrix.
-     */
-    @Test
-    fun scanReviewDirectionCrossing() {
-        val picture = PlanSheet.bitmap()
-        val outcome = PlanSheet.outcome()
-        val readings = readingsFor(outcome)
-        val living = outcome.rooms.indexOfFirst { it.label == "LIVING ROOM" }
-        val words = readings[com.vastufirst.app.ui.scan.scanRoomId(living)]?.direction.orEmpty()
-        check(living >= 0 && words.contains("crosses")) {
-            "The living room must be read, scored and crossing a line, or this golden photographs an ordinary " +
-                "label and proves nothing about the long one (it read '$words')."
-        }
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = picture.asImageBitmap(),
-                rooms = outcome.rooms,
-                readings = readings,
-                startSelected = living,
-                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
-                onRoomMarkerChange = {},
-            )
-        }
-        captureAcrossMatrix("scan-review-direction-crossing", content)
-        writeManifestAcrossMatrix("scan-review-direction-crossing", content)
-    }
-
-    /**
-     * ⭐⭐ THE DIRECTION TRIAL AT REST — nothing tapped, so nothing on the plan.
-     *
-     * The owner, 30 Sep 2026: *"it should not show any short or long form direction until tapped on a
-     * room bellow in the list"*. [scanReviewDirection] photographs a tapped room; this is the screen as
-     * it OPENS, which is the state every reader sees first.
-     */
-    @Test
-    fun scanReviewDirectionAtRest() {
-        val picture = PlanSheet.bitmap()
-        val outcome = PlanSheet.outcome()
-        val readings = readingsFor(outcome)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = picture.asImageBitmap(),
-                rooms = outcome.rooms,
-                readings = readings,
-                startSelected = -1,
-                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
-                onRoomMarkerChange = {},
-            )
-        }
-        captureAcrossMatrix("scan-review-direction-rest", content)
-        writeManifestAcrossMatrix("scan-review-direction-rest", content)
-    }
-
-    /**
-     * ⭐⭐ THE CHECK SCREEN AFTER ANDROID RECLAIMED THE APP — a real state, and one no picture has
-     * ever contained.
-     *
-     * Everything this screen draws comes from a single in-memory slot that does not survive the OS
-     * killing the app; the back stack does survive, so a reader comes back to this destination with
-     * no photograph and no rooms. Until 11 Aug 2026 the green button still read "These are my
-     * rooms", offering to confirm a reading of zero rooms and score an empty home. It now offers the
-     * only honest thing — reading the plan again — and that swap is exactly the kind of change a
-     * golden must hold, because nothing else in the harness can reach this state.
-     */
-    @Test
-    fun scanReviewAfterProcessDeath() {
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(image = null, rooms = emptyList())
-        }
-        captureAcrossMatrix("scan-review-lost", content)
-        writeManifestAcrossMatrix("scan-review-lost", content)
-    }
-
-    @Test
-    fun scanReviewWithDoorReadFromThePlan() {
-        val outcome = ownersPlan()
-        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
-            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
-        )
-        val readings = readingsFor(outcome)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = planPhoto(),
-                rooms = outcome.rooms,
-                door = door,
-                readings = readings,
-                startSelected = -1,
-            )
-        }
-        captureAcrossMatrix("scan-review-door", content)
-        writeManifestAcrossMatrix("scan-review-door", content)
-    }
-
-    /**
-     * ⭐⭐ THE DOOR MARK, TAPPED — the state that answers "where does the app think my door is?".
-     *
-     * The owner, 16 Aug 2026: *"Today I cannot tell where the app thinks my door is."* He was right;
-     * until now nothing drew it. The picture had no door parameter at all and its canvas drew three
-     * things — the photo, the quiet room outlines and the selected room's tint. The only trace of
-     * the front door on this screen was a line of small grey text below a list he was scrolling.
-     *
-     * ⭐ Since 27 Sep 2026 the tapped state is the E's NOTE (owner: *"on first tap and pop up can
-     * tell them what it is instead filling the screen with all this info"*) — the card, the tapped
-     * line and the foot-of-list sentence all moved into it. This golden is the only picture of that
-     * note on this screen, at every size and at a 200 % font.
-     */
-    @Test
-    fun scanReviewWithTheDoorMarkTapped() {
-        val outcome = ownersPlan()
-        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
-            com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
-        )
-        // ⚠ The guard on the picture. `frontDoorFromEntrance` refuses more often than it answers —
-        // it is null for eleven of the twenty-four recorded plans that place their rooms. If this
-        // fixture ever stopped producing a door, the golden would quietly photograph a screen with
-        // NO door mark and no sentence, under a name that says it has both, and go green forever.
-        kotlin.test.assertNotNull(door, "this fixture must yield a door, or the golden proves nothing")
-        // …and the marker must actually be placeable on the picture, which is a separate question.
-        kotlin.test.assertNotNull(
-            com.vastufirst.app.ui.scan.doorMarkerOnPage(door, outcome.rooms),
-            "the door must have a point on the page, or nothing is drawn",
-        )
-        val readings = readingsFor(outcome)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = planPhoto(),
-                rooms = outcome.rooms,
-                door = door,
-                readings = readings,
-                startDoorNoteOpen = true,
-            )
-        }
-        captureAcrossMatrix("scan-review-door-tapped", content)
-        writeManifestAcrossMatrix("scan-review-door-tapped", content)
-    }
-
-    /**
-     * ⭐⭐ A PORTRAIT SHEET ON THE CHECK SCREEN — the shape the whole harness was blind to.
-     *
-     * The owner, 16 Aug 2026: *"vertical plans come out too small… a tall plan is shrunk to fit a
-     * wide box and I cannot see anything."*
-     *
-     * ⚠ EVERY photographed plan in this file was landscape or square — 1400 × 990 and 1399 × 1389 —
-     * and the two states that pass no image at all draw no plan. So the one shape the complaint is
-     * about had never appeared in a single picture, on any screen, at any configuration. A defect
-     * that no golden can contain is a defect no golden can catch, which is why this shipped.
-     *
-     * The size here is a real sheet's: 1256 × 2760, the proportions of a builder's portrait page.
-     */
-    @Test
-    fun scanReviewWithATallPlan() {
-        val placedOutcome = placed() as com.vastufirst.shared.scan.ScanOutcome.Placed
-        val tall = android.graphics.Bitmap.createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
-            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
-            .asImageBitmap()
-        val readings = readingsFor(placedOutcome)
-        val content: @androidx.compose.runtime.Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = tall,
-                rooms = placedOutcome.rooms,
-                readings = readings,
-                startSelected = 2,
-            )
-        }
-        captureAcrossMatrix("scan-review-tall", content)
-        writeManifestAcrossMatrix("scan-review-tall", content)
-    }
 
     /**
      * ⭐ Marking the front door ON THE PHOTO — the screen that replaced the hop into the grid editor.
@@ -527,37 +256,61 @@ class ScanScreenshotTest {
         writeManifestAcrossMatrix("scan-unavailable", screen(ScanUiState.Unavailable))
     }
 
+    /**
+     * ⭐⭐ A PLACED READ: "We read N rooms", the rooms folded shut under it, and North asked on the
+     * reader's own plan (30 Sep 2026). The dial draws `plan-01`, the repository's one real plan
+     * picture — a SAMPLE sheet, not anybody's home — so the picture shows a plan inside the compass,
+     * not a blank stand-in.
+     */
     @Test
     fun scanPlaced() {
-        val s = ScanUiState.Done(placed(), readBy = models.firstOrNull())
-        captureAcrossMatrix("scan-placed", screen(s))
-        writeManifestAcrossMatrix("scan-placed", screen(s))
+        val outcome = PlanSheet.outcome()
+        val s = ScanUiState.Done(outcome, readBy = models.firstOrNull())
+        val content = screen(s, north = northFor(outcome, PlanSheet.bitmap().asImageBitmap()))
+        captureAcrossMatrix("scan-placed", content)
+        writeManifestAcrossMatrix("scan-placed", content)
     }
 
     /**
-     * ⭐⭐ THE OWNER'S OWN FLAT — and the only screen that shows the SIZE the plan printed.
+     * ⭐ The same screen with its folded room list OPEN — the one place a room's kind is corrected. Every
+     * fold and every i on the screen is opened by the photography seam, because a golden cannot tap.
      *
-     * ⚠ Every other fixture predates that field and carries its dimensions inside the caption, so
-     * nothing here would have photographed the new line at all. It is the one line on this screen
-     * whose numbers now decide each room's shape — and therefore its Vastu direction — so a person
-     * confirming their plan is checking exactly this against their own paper.
-     *
-     * What the picture has to show: fifteen rooms, each with its name AND its printed size, on one
-     * caption line, with the button still reachable at 200 % font on a 320 dp phone. His sheet prints
-     * every size twice (metric then imperial); if the repeat is back, this row is several lines tall
-     * and the button is gone.
+     * It is the owner's own sheet (`plan-020`), which carries the two things this list must show that no
+     * other fixture does: rooms the reader was unsure of (the CHECK pill, and "4 to check" on the
+     * heading), and a balcony his sheet dimensions in three pieces, printed as "one space: A + B + C" —
+     * the job "Check what we read" used to do alone.
+     */
+    @Test
+    fun scanPlacedRoomsOpen() {
+        val outcome = ownersPlan()
+        val s = ScanUiState.Done(outcome, readBy = models.firstOrNull())
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.designsystem.components.VastuRevealAll {
+                screen(s, north = northFor(outcome, planPhoto()))()
+            }
+        }
+        captureAcrossMatrix("scan-placed-open", content)
+        writeManifestAcrossMatrix("scan-placed-open", content)
+    }
+
+    /**
+     * ⭐⭐ THE OWNER'S OWN FLAT — fifteen rooms, every one with its printed size, and a tall sheet in the
+     * dial. With the list folded, what the picture has to show is the heading's count and the compass
+     * on a portrait page, with the button still reachable at 200 % font on a 320 dp phone.
      */
     @Test
     fun scanPlacedOwnerFlat() {
-        val s = ScanUiState.Done(
-            ScanMapper.map(
-                RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply,
-                imageAspect = 646.0 / 1400.0,
-            ),
-            readBy = models.firstOrNull(),
-        )
-        captureAcrossMatrix("scan-placed-sizes", screen(s))
-        writeManifestAcrossMatrix("scan-placed-sizes", screen(s))
+        val outcome = ScanMapper.map(
+            RecordedScans.load(RecordedScans.OWNER_FLAT)!!.reply,
+            imageAspect = 646.0 / 1400.0,
+        ) as ScanOutcome.Placed
+        val tall = android.graphics.Bitmap.createBitmap(646, 1400, android.graphics.Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+            .asImageBitmap()
+        val s = ScanUiState.Done(outcome, readBy = models.firstOrNull())
+        val content = screen(s, north = northFor(outcome, tall))
+        captureAcrossMatrix("scan-placed-sizes", content)
+        writeManifestAcrossMatrix("scan-placed-sizes", content)
     }
 
     @Test

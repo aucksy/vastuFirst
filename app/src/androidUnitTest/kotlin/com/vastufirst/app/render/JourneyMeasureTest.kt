@@ -25,14 +25,12 @@ import com.vastufirst.app.ui.newplan.frontDoorRead
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanDoorContent
-import com.vastufirst.app.ui.scan.ScanReviewContent
 import com.vastufirst.app.ui.scan.ScanScreen
 import com.vastufirst.app.ui.scan.ScanUiState
 import com.vastufirst.app.ui.scan.doorMarkerOnPage
 import com.vastufirst.app.ui.scan.doorOnWall
 import com.vastufirst.app.ui.scan.gridForOutcome
 import com.vastufirst.app.ui.scan.planRoomsOf
-import com.vastufirst.app.ui.scan.roomReadings
 import com.vastufirst.app.ui.scan.scannedRooms
 import com.vastufirst.app.ui.scan.toGridRooms
 import com.vastufirst.app.ui.settings.SettingsContent
@@ -71,7 +69,7 @@ class JourneyMeasureTest {
 
     @Test
     fun whatEachJourneyCosts() {
-        measureJourneys("now", JourneyFixtures.journeys())
+        measureJourneys("after", JourneyFixtures.journeys())
     }
 }
 
@@ -97,7 +95,7 @@ internal class ReadHome(
             planId = "journey",
         )!!,
     )
-    /** What the check screen and the dial see BEFORE a door is tapped — the plan as it was read. */
+    /** What the scan result and its dial see BEFORE a door is tapped — the plan as it was read. */
     val analysisAsRead: Analysis = VastuEngine().analyze(
         buildEnginePlan(
             rooms = grid,
@@ -146,7 +144,7 @@ internal object JourneyFixtures {
 
     // --- the screens, each one a pure render of its real content -----------------------------------
 
-    private val welcome = JourneyStep("Welcome", 2, "pick why you are here · Continue") {
+    private val welcome = JourneyStep("Welcome", 1, "tap why you are here") {
         WelcomeContent(intent = null, onIntentChange = {}, onContinue = {})
     }
 
@@ -154,49 +152,45 @@ internal object JourneyFixtures {
         AddHomeScreen(onDrawGrid = {}, onScan = {}, onSample = {})
     }
 
-    private val consent = JourneyStep("Your plan leaves this phone (first scan only)", 1, "I agree") {
+    private val consent = JourneyStep(
+        "Your plan leaves this phone (first scan only)", 2, "I agree · pick the file in the phone's own picker",
+    ) {
         ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {})
     }
 
-    private fun scan(state: ScanUiState, screen: String, taps: Int, how: String) = JourneyStep(screen, taps, how) {
+    private fun scan(
+        state: ScanUiState,
+        screen: String,
+        taps: Int,
+        how: String,
+        north: com.vastufirst.app.ui.scan.NorthOnResult = com.vastufirst.app.ui.scan.NorthOnResult(),
+    ) = JourneyStep(screen, taps, how) {
         ScanScreen(
             state = state,
             onPickImage = {}, onTakePhoto = {}, onRetry = {},
             onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
+            north = north,
         )
     }
 
-    private val upload = scan(ScanUiState.Idle, "Upload your plan", 2, "Choose a PDF or picture · pick the file")
     private val reading = scan(ScanUiState.Reading, "Reading your plan", 0, "wait")
 
+    /** The result of a placed read, with North asked on the reader's own plan (30 Sep 2026). */
     private fun result(home: ReadHome) = scan(
-        ScanUiState.Done(home.outcome), "We read ${home.outcome.rooms.size} rooms", 1, "Next — which way is North?",
+        ScanUiState.Done(home.outcome),
+        "We read ${home.outcome.rooms.size} rooms, and which way is North",
+        2,
+        if (home.readDoor == null) "turn the dial · Yes — next, your front door" else "turn the dial · Yes — read my home",
+        north = com.vastufirst.app.ui.scan.NorthOnResult(
+            rooms = home.grid,
+            north = 0,
+            analysis = home.analysisAsRead,
+            cols = home.outcome.cols,
+            rows = home.outcome.rows,
+            planImage = home.photo,
+            doorKnown = home.readDoor != null,
+        ),
     )
-
-    private fun northOnPhoto(home: ReadHome) = JourneyStep("Which way is North? (on the photo)", 2, "turn the dial · Yes") {
-        MarkNorthContent(
-            rooms = home.grid, north = 0, analysis = home.analysisAsRead,
-            onNorthChange = {}, onRead = {}, onBack = {},
-            cols = home.outcome.cols, rows = home.outcome.rows,
-            planImage = home.photo, nextIsCheck = true,
-        )
-    }
-
-    private fun checkStep(home: ReadHome) = JourneyStep(
-        "Check what we read" + if (home.readDoor == null) " (no entrance)" else "",
-        1,
-        if (home.readDoor == null) "These are my rooms — set the front door" else "These are my rooms — read my home",
-    ) {
-        ScanReviewContent(
-            image = home.photo,
-            rooms = home.outcome.rooms,
-            door = home.readDoor,
-            doorFromCaption = home.doorFromCaption,
-            readings = roomReadings(home.analysisAsRead),
-            roomMarker = RoomMarker.DIRECTION,
-            onRoomMarkerChange = {},
-        )
-    }
 
     private fun doorAsked(home: ReadHome) = JourneyStep("Where is your front door?", 2, "tap your door's wall · Read my home") {
         ScanDoorContent(image = home.photo, rooms = home.outcome.rooms, door = null)
@@ -293,16 +287,16 @@ internal object JourneyFixtures {
         return listOf(
             Journey(
                 "Scan, plan names its entrance",
-                listOf(welcome, addHome(1, "Upload a plan"), consent, upload, reading, result(e), northOnPhoto(e), checkStep(e), report(e)),
+                listOf(welcome, addHome(1, "Upload a plan"), consent, reading, result(e), report(e)),
             ),
             Journey(
                 "Scan, plan names no entrance",
-                listOf(welcome, addHome(1, "Upload a plan"), consent, upload, reading, result(n), northOnPhoto(n), checkStep(n), doorAsked(n), report(n)),
+                listOf(welcome, addHome(1, "Upload a plan"), consent, reading, result(n), doorAsked(n), report(n)),
             ),
             Journey(
                 "Scan that cannot be placed",
                 listOf(
-                    welcome, addHome(1, "Upload a plan"), consent, upload, reading,
+                    welcome, addHome(1, "Upload a plan"), consent, reading,
                     scan(ScanUiState.Done(unplaced), "We found ${(unplaced as ScanOutcome.Assisted).rooms.size} rooms", 1, "Place them on the grid"),
                     gridUnplaced, gridDoor, northDrawn, drawnReport,
                 ),
@@ -310,7 +304,7 @@ internal object JourneyFixtures {
             Journey(
                 "Scan that is refused",
                 listOf(
-                    welcome, addHome(1, "Upload a plan"), consent, upload, reading,
+                    welcome, addHome(1, "Upload a plan"), consent, reading,
                     scan(
                         ScanUiState.Done(ScanOutcome.Refused(RefusalReason.NOT_2D, ScanNotes(0.0, 0.0, 0.0))),
                         "This looks like a tilted 3D view", 1, "Draw it on a grid instead",
@@ -332,13 +326,15 @@ internal object JourneyFixtures {
                 "Change North",
                 listOf(
                     reportStart(e, 1, "Change North"),
-                    JourneyStep("Which way is North? (from the report)", 2, "turn the dial · Yes — read my home") {
+                    JourneyStep("Which way is North? (from the report)", 2, "turn the dial · Yes — back to my report") {
                         MarkNorthContent(
                             rooms = e.grid, north = 0, analysis = e.analysis,
                             onNorthChange = {}, onRead = {}, onBack = {},
                             cols = e.outcome.cols, rows = e.outcome.rows,
-                            // What ships today: opened from the report, the dial is NOT given the photo.
-                            planImage = null,
+                            // Since 30 Sep 2026, opened from a scanned home's report, the dial is
+                            // given that home's own photograph (NorthPhotoRuleTest).
+                            planImage = e.photo,
+                            returnsToReport = true,
                         )
                     },
                     report(e),

@@ -66,8 +66,8 @@ class ScanViewModel(
     private var lastSource: Any? = null
 
     /**
-     * ⭐ The decoded picture the reply was read FROM, kept for the on-photo review screen — which
-     * shows the user their own plan with our reading tinted over it. Never persisted, never logged
+     * ⭐ The decoded picture the reply was read FROM, kept so the screens after the read can draw the
+     * user's own plan: the dial on the scan result, the front-door screen and the report. Never persisted, never logged
      * (same privacy rule as the reader); it lives exactly as long as this one-shot ViewModel.
      */
     var lastImage: DecodedImage? = null

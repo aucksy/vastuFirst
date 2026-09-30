@@ -40,12 +40,28 @@ import java.io.File
  * There is deliberately no third door. Two clear choices beat three on a screen whose reader may be
  * older, less phone-literate, and standing in daylight.
  */
+/** Which door "Add a home" opened this screen through — the picker or the camera. */
+enum class ScanStart { PICK, CAMERA }
+
 @Composable
 fun ScanRoute(
     vm: ScanViewModel,
     onUseRooms: (com.vastufirst.shared.scan.ScanOutcome) -> Unit,
     onDrawInstead: () -> Unit,
     onBack: () -> Unit,
+    /**
+     * ⭐⭐ OPEN THE PICKER STRAIGHT AWAY (30 Sep 2026). "Upload a plan" on Add a home used to open an
+     * upload screen that asked the same question again — PDF or photo — with a card of tips and a
+     * second offer to draw on the grid. Now the card's own tap opens the phone's picker (or camera)
+     * the moment this screen appears, and the reader's next sight is "Reading your plan…". The upload
+     * screen stays as the fallback for a cancelled retry and a phone with no camera app.
+     *
+     * Null opens on the upload screen as before — nothing in the app does that now, but it keeps this
+     * route honest if a new door into it forgets to say which picker it means.
+     */
+    startWith: ScanStart? = null,
+    /** North, set on the result itself for a placed read — see [NorthOnResult]. */
+    north: NorthOnResult = NorthOnResult(),
 ) {
     val context = LocalContext.current
     // Which way in the user last chose, so "try a different picture" reopens the same one.
@@ -58,18 +74,33 @@ fun ScanRoute(
     // says so in one line rather than the button doing nothing — the defect this release fixes.
     var cameraUnavailable by rememberSaveable { mutableStateOf(false) }
 
+    // ⭐ SAVEABLE, like the photo above: true once this screen has opened the picker by itself, so a
+    // screen rebuilt after the picker (or after Android reclaimed the app while it was open) never
+    // opens it a second time.
+    var autoOpened by rememberSaveable { mutableStateOf(false) }
+    // True until the first pick of an automatic opening comes back. A reader who cancels THAT pick
+    // meant "not now" and goes back to Add a home, instead of landing on an upload screen they never
+    // asked for.
+    var awaitingFirstPick by rememberSaveable { mutableStateOf(false) }
+
+    fun picked(uri: Uri?) {
+        val cancelledTheFirst = awaitingFirstPick && uri == null
+        awaitingFirstPick = false
+        if (cancelledTheFirst) onBack() else vm.scan(uri)
+    }
+
     val documentPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri: Uri? -> vm.scan(uri) }
+    ) { uri: Uri? -> picked(uri) }
 
     val camera = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture(),
     ) { saved: Boolean ->
         // `saved` is false when the user backed out of the camera without keeping the shot. That is
-        // a decision, not a failure: return to the ask, and never read a zero-byte file.
+        // a decision, not a failure, and never a zero-byte file to read.
         val uri = pendingPhoto?.let(Uri::parse)
         pendingPhoto = null
-        vm.scan(if (saved) uri else null)
+        picked(if (saved) uri else null)
     }
 
     val pickDocument = remember(documentPicker) {
@@ -91,7 +122,19 @@ fun ScanRoute(
                 pendingPhoto = uri.toString()
                 camera.launch(uri)
             }.isSuccess
-            if (!started) { pendingPhoto = null; cameraUnavailable = true }
+            if (!started) { pendingPhoto = null; cameraUnavailable = true; awaitingFirstPick = false }
+        }
+    }
+
+    // ⭐ The automatic opening itself — once, only while there is nothing on screen to lose, and never
+    // in a build that cannot read plans (that build says so on its own screen instead).
+    LaunchedEffect(Unit) {
+        if (startWith == null || autoOpened || vm.state != ScanUiState.Idle) return@LaunchedEffect
+        autoOpened = true
+        awaitingFirstPick = true
+        when (startWith) {
+            ScanStart.PICK -> pickDocument()
+            ScanStart.CAMERA -> takePhoto()
         }
     }
 
@@ -139,9 +182,10 @@ fun ScanRoute(
         onDrawInstead = onDrawInstead,
         onBack = onBack,
         // ⛔ NOTHING ON THIS SCREEN NAMES A MODEL any more (owner, 11 Aug 2026). The reader is picked
-        // in Settings, where a named pick also survives a retry — see the note above `RoomsBody`.
+        // in Settings, where a named pick also survives a retry.
         // The 2D gate's escape hatch — no scan, no network, just the reading we already had.
         onReadAnyway = vm::readAnyway,
+        north = north,
     )
 }
 

@@ -53,8 +53,9 @@ data class ScanReaderConfig(
      * only needs each room's DIRECTION. So, as a trial: when I tap a room, show its direction ON the
      * room, on the plan, instead of drawing a box."*
      *
-     * `true` = the trial, as the owner redrew it on 30 Sep 2026: on "Check what we read" and on the
-     * report's photograph the plan shows no direction until a room is tapped, then that room's SHORT
+     * `true` = the trial, as the owner redrew it on 30 Sep 2026: on the report's photograph (the only
+     * picture that shows it since "Check what we read" was removed the same day) the plan shows no
+     * direction until a room is tapped, then that room's SHORT
      * direction on the middle of the room — the engine's own zone — with its full name only in its
      * card; a small chooser under the plan lets the reader flip back to the box to compare the two on
      * the same plan. `false` = the plan exactly as it was before 29 Sep 2026: the box, and no chooser.

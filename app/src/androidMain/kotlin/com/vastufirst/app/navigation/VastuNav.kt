@@ -36,6 +36,7 @@ import com.vastufirst.app.ui.report.ReportScreen
 import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ScanConsentScreen
 import com.vastufirst.app.ui.scan.ScanRoute
+import com.vastufirst.app.ui.scan.ScanStart
 import com.vastufirst.app.ui.scan.ScanViewModel
 import com.vastufirst.app.ui.settings.SettingsScreen
 import com.vastufirst.app.ui.unlock.UnlockScreen
@@ -160,7 +161,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // The report gated on "is there a photo lying around" while believing it was gating
                 // on "did THIS home arrive by scan". Emptying the slot when a new home begins is
                 // half of making those two the same question; the report route does the other half.
-                val newHomeHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val newHomeHandover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 LaunchedEffect(Unit) {
                     newHomeHandover.data = null
                     // ⭐⭐ AND THE PREVIOUS HOME LETS GO OF THE DRAFT (17 Aug 2026). This graph's
@@ -177,8 +178,10 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     onPropertyTypeChange = { vm.propertyType = it },
                     onDrawGrid = { nav.go(Routes.GUIDED_GRID) },
                     // ⭐ The consent screen is not optional and not skippable: the scanner is only
-                    // ever reached through it, or after it has already been answered once.
-                    onScan = { nav.go(if (consent.isGranted()) Routes.SCAN else Routes.SCAN_CONSENT) },
+                    // ever reached through it, or after it has already been answered once. Each card
+                    // names its own picker, which the scan screen opens the moment it appears.
+                    onScan = { nav.go(scanDoor(consent.isGranted(), ScanStart.PICK)) },
+                    onPhotograph = { nav.go(scanDoor(consent.isGranted(), ScanStart.CAMERA)) },
                     onSample = {
                         val sample = SamplePlans.all.first()
                         vm.updateRooms(sample.rooms)
@@ -189,15 +192,22 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 )
             }
 
-            composable(Routes.SCAN_CONSENT) {
+            composable(
+                route = Routes.SCAN_CONSENT_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_START) { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
                 val consent = koinInject<PlanReadingConsent>()
+                // Which picker the reader chose on Add a home — carried through, so agreeing opens it.
+                val start = entry.arguments?.getString(Routes.ARG_START) ?: ScanStart.PICK.name
                 ScanConsentScreen(
                     onAgree = {
                         consent.set(true)
                         // Replace the gate in the back stack: having agreed, Back from the scanner
                         // should go to "Add home", not back through the consent screen.
-                        nav.navigate(Routes.SCAN) {
-                            popUpTo(Routes.SCAN_CONSENT) { inclusive = true }
+                        nav.navigate(Routes.scanStarting(start)) {
+                            popUpTo(Routes.SCAN_CONSENT_ROUTE) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
@@ -206,142 +216,98 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 )
             }
 
-            composable(Routes.SCAN) { entry ->
+            composable(
+                route = Routes.SCAN_ROUTE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_START) { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
                 val planVm = sharedVm(nav, entry)
                 val scanVm: ScanViewModel = koinViewModel()
-                val reviewHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val pictureSlot = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
+                // Which picker "Add a home" asked for — opened the moment this screen appears.
+                val start = entry.arguments?.getString(Routes.ARG_START)
+                    ?.let { name -> ScanStart.entries.firstOrNull { it.name == name } }
                 // ⭐⭐ THE READ IS KEPT THE MOMENT IT SUCCEEDS (owner, 16 Aug 2026: *"I also tried a
                 // new home and left it on the screen right after scanning which shows the list of
-                // rooms scanned and this one isn't even stored"*).
+                // rooms scanned and this one isn't even stored"*). A reader who presses Back from the
+                // result still keeps the read: the home has its rooms, so it is on the saved list.
                 //
-                // ⚠ WHAT THIS COSTS WHEN IT IS MISSING, and it is the whole reason for the change:
-                // the hand-over used to happen on "use these rooms" and nowhere else, so a reader
-                // who pressed Back one screen earlier kept NOTHING. The home had no rooms on it, so
-                // there was nothing for the app to write; the reading and the photograph lived only
-                // in this screen's own ViewModel, which goes when the screen does. A finished read —
-                // a real network call, really paid for — thrown away by pressing Back.
+                // A refusal is deliberately NOT accepted: there is nothing in it to keep. "Show me
+                // what you read" replaces the state with the alternative reading, which arrives here
+                // as an ordinary outcome.
                 //
-                // A refusal is deliberately NOT accepted: there is nothing in it to keep, and
-                // writing an unfinished home for it would put a row on the saved-homes screen for a
-                // plan the app has just said it cannot read. "Show me what you read" replaces the
-                // state with the alternative reading, which arrives here as an ordinary outcome.
+                // ⭐ AND THE PHOTOGRAPH GOES INTO THE SLOT HERE TOO, for a placed read (30 Sep 2026).
+                // North is now set on this very screen, on this picture — it used to be written only
+                // on the way to the North screen. A read that could not be placed hands over NOTHING
+                // and wipes whatever an earlier read left, or the home about to be arranged by hand
+                // would inherit the previous plan's photograph.
                 val scanState = scanVm.state
                 LaunchedEffect(scanState) {
                     val outcome = (scanState as? com.vastufirst.app.ui.scan.ScanUiState.Done)?.outcome
                         ?: return@LaunchedEffect
                     if (outcome is com.vastufirst.shared.scan.ScanOutcome.Refused) return@LaunchedEffect
                     planVm.acceptScan(outcome, scanVm.lastImage?.bytes)
+                    pictureSlot.data = (outcome as? com.vastufirst.shared.scan.ScanOutcome.Placed)?.let {
+                        com.vastufirst.app.ui.scan.ScanPicture(imageBytes = scanVm.lastImage?.bytes, rooms = it.rooms)
+                    }
                 }
+                // Decoded once per picture: the dial's model compares its image by identity, so a
+                // fresh decode per recomposition would restart the drag's measure cache.
+                val photo = remember(pictureSlot.data) { pictureSlot.data?.decodeImage() }
+                val analysis by planVm.analysis.collectAsStateWithLifecycle()
                 ScanRoute(
                     vm = scanVm,
+                    startWith = start,
+                    // ⭐ North, on the result itself, for a placed read — the same home the report will
+                    // show, from the same shared draft the North screen would have used.
+                    north = com.vastufirst.app.ui.scan.NorthOnResult(
+                        rooms = planVm.rooms,
+                        north = planVm.north,
+                        analysis = analysis,
+                        cols = planVm.gridCols,
+                        rows = planVm.gridRows,
+                        planImage = photo,
+                        onNorthChange = planVm::updateNorth,
+                        doorKnown = planVm.door != null,
+                        hintPulse = true,
+                    ),
                     onUseRooms = { outcome ->
                         // ⚠ The hand-over itself is NewPlanViewModel.acceptScan — one function, called
-                        // from here and from the effect above, so "what a read does to the home" cannot
-                        // come to mean two different things. It is idempotent, so this tap is a no-op
-                        // when the effect has already taken this very reading. Everything the six
-                        // inline calls that used to live here did — clear, resize, place, mark parked,
-                        // mark photographed, read the front door off the plan's own entrance — moved
-                        // there unchanged, in that order, for the reasons documented on it.
+                        // from here and from the effect above. It is idempotent, so this tap is a no-op
+                        // when the effect has already taken this very reading.
                         planVm.acceptScan(outcome, scanVm.lastImage?.bytes)
-                        // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026), and North comes
-                        // FIRST (11 Aug 2026): a room has no direction and no verdict until North is
-                        // marked, and the checking screen's rows want both. The handover is written
-                        // first either way — North draws the same photograph the check screen does.
+                        // ⭐⭐ A placed scan NEVER opens the editor (owner, 6 Aug 2026), and since
+                        // 30 Sep 2026 its North has just been set on this screen — so the next step is
+                        // the front door when the plan did not name its own entrance, and otherwise the
+                        // report itself.
                         //
                         // ⚠ The `else` is the one route left from a scan into the editor, and it is not
-                        // a preference: it is a read whose rooms could NOT be placed, so there is no
-                        // geometry to score and somebody has to supply it. Measured on the 44 recorded
-                        // real plans: 24 place, 9 arrive unplaced, 11 are refused. It goes when placing
-                        // rooms by tapping the PHOTO exists to replace it — not before.
+                        // a preference: it is a read whose rooms could NOT be placed, so somebody has to
+                        // supply the geometry.
                         if (outcome is com.vastufirst.shared.scan.ScanOutcome.Placed) {
-                            reviewHandover.data = com.vastufirst.app.ui.scan.ScanReviewData(
+                            pictureSlot.data = com.vastufirst.app.ui.scan.ScanPicture(
                                 imageBytes = scanVm.lastImage?.bytes,
                                 rooms = outcome.rooms,
                             )
-                            nav.go(Routes.markNorthFromScan())
+                            if (planVm.door != null) {
+                                // The last step of the flow saves the home and opens its report. The
+                                // pop-first guard: a reader who pressed Back from their report and taps
+                                // on again returns to the one report rather than stacking a second.
+                                planVm.save()
+                                if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
+                                    nav.go(Routes.REPORT)
+                                }
+                            } else {
+                                nav.go(Routes.SCAN_DOOR)
+                            }
                         } else {
-                            // ⭐ A read that could not be placed hands over NOTHING — and must also
-                            // wipe whatever an earlier read left behind, or the home about to be
-                            // arranged by hand inherits the previous plan's photograph.
-                            reviewHandover.data = null
+                            pictureSlot.data = null
                             nav.go(Routes.GUIDED_GRID)
                         }
                     },
                     onDrawInstead = { nav.go(Routes.GUIDED_GRID) },
                     onBack = { nav.popBackStack() },
-                )
-            }
-
-            composable(Routes.SCAN_REVIEW) { entry ->
-                val planVm = sharedVm(nav, entry)
-                val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                // ⭐ The direction trial — the same holder the report reads, so both pictures agree.
-                val marker = koinInject<com.vastufirst.app.ui.common.RoomMarkerChoice>()
-                // ⭐ The live reading, so every row can carry the report's own one-word result and
-                // the direction the room sits in. It exists by now because North was marked on the
-                // screen before this one — which is exactly why that step was moved in front of it.
-                val analysis by planVm.analysis.collectAsStateWithLifecycle()
-                com.vastufirst.app.ui.scan.ScanReviewScreen(
-                    handover = handover,
-                    // Already read off the plan's own entrance, or null if the plan named none.
-                    door = planVm.door,
-                    analysis = analysis,
-                    // ⭐ WHAT we read it off, when it was a printed caption rather than a room typed
-                    // as an entrance — so the screen can quote the plan's own word back. Recomputed
-                    // rather than stored: it is only shown while the door still IS the one we read,
-                    // so a user who moves the door never sees a sentence claiming their plan put it
-                    // there.
-                    doorFromCaption = com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)
-                        ?.takeIf { it.door == planVm.door }?.fromCaption,
-                    // ⭐⭐ IS THIS DOOR STILL OURS, OR DID THE USER PUT IT THERE?
-                    //
-                    // ⚠ Derived from the plan on every recomposition, deliberately, and NOT held as
-                    // a flag on the screen. A flag would be right until the reader walked forward to
-                    // their report and came back — a path this flow supports — at which point the
-                    // screen would have forgotten and gone back to telling them "we read it from
-                    // your plan's own entrance" about a door they had placed with their own finger.
-                    // Comparing against what we WOULD have read cannot forget.
-                    doorIsOurs = planVm.door != null &&
-                        com.vastufirst.app.ui.newplan.frontDoorRead(planVm.rooms)?.door == planVm.door,
-                    // ⭐ WHERE THIS SCREEN LEADS, and it is now the END of the flow whenever the plan
-                    // named its own entrance: North is already marked, so the only thing that can
-                    // still be missing is the front door. When the plan answered that (13 of the 24
-                    // recorded real plans that place their rooms), the reader goes straight to their
-                    // report — the standing rule that the LAST step lands on the report, with no
-                    // free score screen in between (owner, 10 Aug 2026), unchanged.
-                    //
-                    // ⚠ The save moved here with the ending. It used to sit on the North dial's
-                    // "read my home" because that was the last step; leaving it there would have
-                    // written the home to disk while the reader was still checking it.
-                    //
-                    // ⚠ The same pop-first guard the door screen uses, and for the same reason: a
-                    // reader who presses Back from their report lands HERE now, and tapping on again
-                    // would otherwise stack a second report on top of the first. Returning to the one
-                    // already on the stack shows the same live reading, because the report reads the
-                    // shared draft rather than a snapshot.
-                    onContinue = {
-                        if (planVm.door != null) {
-                            planVm.save()
-                            if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
-                                nav.go(Routes.REPORT)
-                            }
-                        } else {
-                            nav.go(Routes.SCAN_DOOR)
-                        }
-                    },
-                    onChangeDoor = { nav.go(Routes.SCAN_DOOR) },
-                    // ⭐ The door dragged on the plan itself. Same slot the separate door screen
-                    // writes to, so the two ways of setting it cannot disagree.
-                    onDoorChange = planVm::updateDoor,
-                    onBack = { nav.popBackStack() },
-                    // ⭐ The optional extras, offered at the END of this screen since 17 Aug 2026.
-                    // "Done" there returns HERE, so the flag stays false and its button says so.
-                    siteAnswers = planVm.siteAnswers,
-                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
-                    roomMarker = marker.current,
-                    // No chooser at all unless the trial's switch in the data is on.
-                    onRoomMarkerChange = { m: com.vastufirst.app.ui.common.RoomMarker -> marker.current = m }
-                        .takeIf { marker.offered },
                 )
             }
 
@@ -352,7 +318,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 ),
             ) { entry ->
                 val planVm = sharedVm(nav, entry)
-                val handover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val handover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 com.vastufirst.app.ui.scan.ScanDoorScreen(
                     handover = handover,
                     door = planVm.door,
@@ -364,9 +330,8 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // report's "change where the front door is", the report is already behind us —
                     // so go BACK to it rather than pushing a second report on top of the first.
                     //
-                    // ⭐ In the flow this is now the LAST step — North was marked two screens ago
-                    // (11 Aug 2026) — so it saves the home and opens the report, which is what
-                    // North's own "read my home" used to do.
+                    // ⭐ In the flow this is the LAST step — North was marked on the scan result just
+                    // before it — so it saves the home and opens the report.
                     onNext = {
                         if (!nav.popBackStack(Routes.REPORT_ROUTE, inclusive = false)) {
                             planVm.save()
@@ -406,7 +371,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // screens legitimately need it right up to the report. The rule this restores is the
                 // one v0.12.0 stated: a photograph belongs to the home it was taken for, and every
                 // door into a DIFFERENT home has to close it.
-                val draftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val draftHandover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 ResumeDraft(vm = vm, id = draftId, handover = draftHandover)
                 GuidedGridScreen(
                     vm = vm,
@@ -419,7 +384,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                             nav.go(Routes.MARK_NORTH)
                         }
                     },
-                    // The on-photo review sends the user here to mark their front door (audit B2).
+                    // A drawn home's report opens this editor on its door step ("Change front door").
                     startInDoorMode = entry.arguments?.getBoolean(Routes.ARG_DOOR_MODE) ?: false,
                 )
             }
@@ -427,7 +392,6 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 route = Routes.MARK_NORTH_ROUTE,
                 arguments = listOf(
                     navArgument(Routes.ARG_FROM_REPORT) { type = NavType.BoolType; defaultValue = false },
-                    navArgument(Routes.ARG_FROM_SCAN) { type = NavType.BoolType; defaultValue = false },
                     navArgument(Routes.ARG_DRAFT_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
                 ),
             ) { entry ->
@@ -436,56 +400,35 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // off a photograph — see Routes.markNorthForDraft. Every other way here arrives with
                 // no id and the draft already on screen.
                 val northDraftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
-                val northDraftHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                ResumeDraft(vm = vm, id = northDraftId, handover = northDraftHandover)
-                // ⭐ North on the user's OWN plan. Decoded once and remembered: the dial's model is a
-                // data class and an ImageBitmap compares by identity, so a fresh decode per
-                // recomposition would invalidate the measure cache the drag's smoothness depends on.
-                val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
-                val fromScan = entry.arguments?.getBoolean(Routes.ARG_FROM_SCAN) ?: false
-                // ⭐⭐ AND A RESUMED HOME SHOWS ITS OWN PHOTOGRAPH TOO (owner, 16 Aug 2026: *"Do A"*).
+                val pictureSlot = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
+                ResumeDraft(vm = vm, id = northDraftId, handover = pictureSlot)
+                val fromReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
+                // ⭐⭐ North on the reader's OWN plan whenever this home has one — resumed from the
+                // saved-homes list (owner, 16 Aug 2026: *"Do A"*) and, since 30 Sep 2026, opened from
+                // that home's report too. See [northShowsPhoto] for why the slot can be trusted.
                 //
-                // ⚠ THIS IS THE BUG HE ACTUALLY REPORTED. "Carry on" was already routing a
-                // photographed home here rather than to the grid editor — that part worked — but the
-                // picture had been thrown away, so the dial came up over our redrawn coloured squares.
-                // Visually that IS the builder's canvas he asked to be kept out of the photo flow,
-                // arriving on the very screen built to replace it, and he reported it as the routing
-                // fix having failed. It had not; there was simply nothing left to draw.
-                //
-                // ⚠ The gate is still a gate, and it still means the same thing: draw a photograph
-                // only when it is THIS home's. Arriving by scan the slot was filled by the scan;
-                // arriving with a draft id it is filled by ResumeDraft, which publishes only after
-                // the ViewModel confirms it holds that same home. What it must never become is "draw
-                // whatever picture is lying around", which is how one plan ended up under another
-                // home's heading in v0.12.0.
-                val fromReportForPhoto = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
-                val planImage = remember(fromScan, fromReportForPhoto, northDraftId, scanHandover.data) {
-                    if (northShowsPhoto(fromReport = fromReportForPhoto, fromDraft = northDraftId != null, fromScan = fromScan)) {
-                        scanHandover.data?.decodeImage()
+                // Decoded once and remembered: the dial's model compares its image by identity, so a
+                // fresh decode per recomposition would invalidate the measure cache the drag's
+                // smoothness depends on.
+                val planImage = remember(fromReport, northDraftId, pictureSlot.data) {
+                    if (northShowsPhoto(fromReport = fromReport, fromDraft = northDraftId != null)) {
+                        pictureSlot.data?.decodeImage()
                     } else {
                         null
                     }
                 }
-                // ⚠ Which way out, and there are now three answers.
+                // ⚠ Which way out, and there are two answers.
                 //
-                //  · **Drawn by hand, or the sample home** — this is still the last step, so it saves
-                //    and pushes the REPORT. There is no score screen between the two (owner,
-                //    10 Aug 2026: "After the North is marked, jump straight to Report screen").
-                //  · **⭐ Arrived by SCAN** — North now comes FIRST (11 Aug 2026), so this leads to
-                //    "Check what we read", whose rows can finally carry each room's direction and
-                //    result because this screen has just supplied them. It does NOT save: the home
-                //    is written when the flow actually ends, two screens further on.
-                //  · **Opened from an already-read home's report** ("change which way North is") — it
-                //    goes BACK to the report it came from. Pushing a second copy would put the report
-                //    behind the report, so Back would land on the same screen again. The report reads
-                //    North straight off the shared draft, so returning shows the new number and the
-                //    re-sorted room list.
-                val fromReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
-                // ⭐ Opened from an already-read home's report, the dial is an EXPERIMENT until
-                // confirmed (audit B5). Every dial move autosaves ~50 ms later — that is what keeps
-                // the reading live — so before this, "just seeing" a different North had silently
-                // rewritten the saved home by the time Back was pressed. Back (chevron AND system
-                // gesture) now puts the entry value back; only the confirm button keeps the new North.
+                //  · **Drawn by hand, the sample, or a resumed scanned home** — this is the last step,
+                //    so it saves and pushes the REPORT (owner, 10 Aug 2026: "After the North is
+                //    marked, jump straight to Report screen"). A first scan no longer comes here at
+                //    all: its North is set on the scan result.
+                //  · **Opened from an already-read home's report** ("Change North") — it goes BACK to
+                //    the report it came from, which reads North straight off the shared draft.
+                //
+                // ⭐ Opened from a report, the dial is an EXPERIMENT until confirmed (audit B5). Every
+                // dial move autosaves ~50 ms later, so Back (chevron AND system gesture) puts the entry
+                // value back; only the confirm button keeps the new North.
                 val entryNorth = rememberSaveable { vm.north }
                 val cancelExperiment: () -> Unit = {
                     if (fromReport && vm.north != entryNorth) vm.updateNorth(entryNorth)
@@ -495,35 +438,21 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 MarkNorthScreen(
                     vm = vm,
                     onRead = {
-                        when {
-                            fromReport -> { vm.save(); nav.popBackStack() }
-                            // A scan checks its rooms next, and the check screen (or the door screen
-                            // after it) is what saves and opens the report.
-                            fromScan -> nav.go(Routes.SCAN_REVIEW)
-                            else -> { vm.save(); nav.go(Routes.REPORT) }
-                        }
+                        vm.save()
+                        if (fromReport) nav.popBackStack() else nav.go(Routes.REPORT)
                     },
-                    // ⭐ The button must never promise a screen it does not open. On the scan path
-                    // the next screen is the check, not the report.
-                    nextIsCheck = fromScan && !fromReport,
                     onBack = cancelExperiment,
                     planImage = planImage,
+                    // The button names where it goes: back to the report it came from.
+                    returnsToReport = fromReport,
                 )
             }
-            // The optional extras. Both ways out land back on the report, which re-reads the live
-            // analysis — so an answer given here shows up in the number immediately.
-            composable(
-                route = Routes.MORE_DETAILS_ROUTE,
-                arguments = listOf(
-                    navArgument(Routes.ARG_FROM_REPORT) { type = NavType.BoolType; defaultValue = false },
-                ),
-            ) { entry ->
+            // The optional extras, offered on the report. "Done" lands back on it, and the report
+            // re-reads the live analysis — so an answer given here shows up in the number at once.
+            composable(Routes.MORE_DETAILS) { entry ->
                 val vm = sharedVm(nav, entry)
                 MoreDetailsScreen(
                     vm = vm,
-                    // ⭐ It is offered in two places now, so its one button names the screen it will
-                    // really return to: the report, or the checklist the reader came from.
-                    returnsToReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false,
                     onDone = { nav.popBackStack() },
                     onBack = { nav.popBackStack() },
                 )
@@ -546,8 +475,9 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     }
                 })
             }
-            // ⭐⭐ WHERE THE FLOW LANDS. North pushes this directly (10 Aug 2026); the free score
-            // screen that used to sit between them is gone, and everything only it had came here.
+            // ⭐⭐ WHERE EVERY PATH LANDS: from the scan result or the front-door screen for a read
+            // home, from North for a drawn one. There is no free score screen and no checking screen
+            // in between (10 Aug and 30 Sep 2026).
             composable(
                 route = Routes.REPORT_ROUTE,
                 arguments = listOf(
@@ -558,13 +488,13 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // Only when the saved-homes list sent an id. Arriving from the flow there is no id,
                 // and loading one would pull a different home over the draft already on screen.
                 val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
-                val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanReviewHandover>()
+                val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 val reportMarker = koinInject<com.vastufirst.app.ui.common.RoomMarkerChoice>()
                 LaunchedEffect(planId) {
                     if (planId != null) {
                         vm.loadById(planId)
                         // ⭐⭐ A HOME OPENED FROM THE SAVED LIST HAS NO PHOTOGRAPH — ever. The scan's
-                        // picture is never written to disk (see ScanReviewData), so a saved home can
+                        // picture is never written to disk (see ScanPicture), so a saved home can
                         // only ever be showing one that is left over from a scan done earlier in the
                         // same session — i.e. somebody else's plan under this home's heading, in the
                         // paid report, with "change where the front door is" letting the reader mark
@@ -584,7 +514,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     scanned?.rooms?.let { com.vastufirst.app.ui.scan.planRoomsOf(it) }.orEmpty()
                 }
                 // ⭐⭐ THE FRONT DOOR, ON THE REPORT'S OWN PICTURE (owner, 18 Aug 2026). Worked out
-                // by the same function the checking screen uses, so the mark lands in the identical
+                // by the same function the front-door screen uses, so the mark lands in the identical
                 // place on both and cannot drift. Null for a home drawn by hand — that report shows
                 // the zone map, which has never carried a door and is not the place to start.
                 val reportDoorAtPage = remember(vm.door, scanned) {
@@ -592,6 +522,24 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     val rooms = scanned?.rooms
                     if (marked == null || rooms.isNullOrEmpty()) null
                     else com.vastufirst.app.ui.scan.doorMarkerOnPage(marked, rooms)
+                }
+                // ⭐ WHERE THAT DOOR CAME FROM — the note "Check what we read" used to carry, now
+                // behind the i on the report's "Your front door" (30 Sep 2026). Derived on every
+                // recomposition, never held as a flag: a reader who moved the door and came back must
+                // not be told "we read it from your plan" about a door they placed themselves.
+                val doorNote = remember(vm.door, vm.rooms, scanned) {
+                    val marked = vm.door
+                    if (marked == null || scanned == null) {
+                        null
+                    } else {
+                        val read = com.vastufirst.app.ui.newplan.frontDoorRead(vm.rooms)
+                        val ours = read?.door == marked
+                        com.vastufirst.app.ui.report.frontDoorProvenance(
+                            door = marked,
+                            doorFromCaption = read?.fromCaption?.takeIf { ours },
+                            doorIsOurs = ours,
+                        )
+                    }
                 }
                 ReportScreen(
                     vm = vm,
@@ -611,7 +559,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                             else Routes.guidedGridForDoor(),
                         )
                     },
-                    onAddDetails = { nav.go(Routes.moreDetailsFromReport()) },
+                    onAddDetails = { nav.go(Routes.MORE_DETAILS) },
                     // Recovery when rooms survived a process kill but the intent answer didn't:
                     // back to the first question, on the same shared draft, so nothing redraws.
                     onRestart = { nav.go(Routes.WELCOME) },
@@ -627,11 +575,12 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // moment: the home was read days ago, and replaying the bar every time makes
                     // the app feel slower than it is. An id means "opened from the list".
                     introMillis = if (planId != null) 0L else READING_MILLIS,
-                    // ⭐ The direction trial: the report's photograph shows the same kind of marker
-                    // "Check what we read" does, from the same holder, and offers the same chooser.
+                    // ⭐ The direction trial: the report's photograph shows the marker the trial's one
+                    // holder says, and offers the chooser only while the trial's switch is on.
                     roomMarker = reportMarker.current,
                     onRoomMarkerChange = { m: com.vastufirst.app.ui.common.RoomMarker -> reportMarker.current = m }
                         .takeIf { reportMarker.offered },
+                    doorNote = doorNote,
                 )
             }
         }
@@ -644,9 +593,21 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
  * The photograph comes from the one hand-over slot, and every door into a DIFFERENT home empties that
  * slot (starting a home, opening a saved one, resuming an unfinished one), so whatever is in it
  * belongs to the home on screen. This decides only which ways into the dial are allowed to draw it.
+ *
+ * ⚠ "Change North" on a report was missing from it until 30 Sep 2026: a scanned home's reader who
+ * corrected North from their report was handed our redrawn squares instead of their own plan — the one
+ * screen the photo flow exists to keep them from. A home drawn by hand has nothing in the slot, so it
+ * still gets its zone map.
  */
-internal fun northShowsPhoto(fromReport: Boolean, fromDraft: Boolean, fromScan: Boolean = false): Boolean =
-    fromScan || fromDraft
+internal fun northShowsPhoto(fromReport: Boolean, fromDraft: Boolean): Boolean =
+    fromReport || fromDraft
+
+/**
+ * Where "Upload a plan" and "Photograph your plan" go: the privacy card first, the first time only,
+ * then the scan screen, which opens the chosen picker the moment it appears.
+ */
+private fun scanDoor(consentGiven: Boolean, start: ScanStart): String =
+    if (consentGiven) Routes.scanStarting(start.name) else Routes.scanConsentThen(start.name)
 
 /** Navigate, debounced: a fast double-tap can't push two copies of the same destination (§B6). */
 private fun NavHostController.go(route: String) = navigate(route) { launchSingleTop = true }
@@ -684,7 +645,7 @@ private fun NavHostController.goHome() = navigate(Routes.HOME) {
 private fun ResumeDraft(
     vm: NewPlanViewModel,
     id: String?,
-    handover: com.vastufirst.app.ui.scan.ScanReviewHandover,
+    handover: com.vastufirst.app.ui.scan.ScanPictureSlot,
 ) {
     LaunchedEffect(id) {
         if (id == null) return@LaunchedEffect
@@ -696,7 +657,7 @@ private fun ResumeDraft(
         val photo = vm.scanPhoto
         val rooms = vm.scanRooms
         handover.data = if (photo != null || rooms.isNotEmpty()) {
-            com.vastufirst.app.ui.scan.ScanReviewData(imageBytes = photo, rooms = rooms)
+            com.vastufirst.app.ui.scan.ScanPicture(imageBytes = photo, rooms = rooms)
         } else {
             null
         }

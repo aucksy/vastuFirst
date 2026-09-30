@@ -344,8 +344,8 @@ data class FrontDoorRead(val door: GridDoor, val fromCaption: String?)
  *
  * [FrontDoorRead.fromCaption] is null when a room was typed as an entrance outright, and carries the
  * printed caption when the wall came from a way-in caption ([RoomLabels.namesAWayIn]) instead. The
- * check screen says which, because "we read your entrance" and "we read the porch your plan prints"
- * are different claims and only one of them is what actually happened.
+ * report says which, behind the i on "Your front door", because "we read your entrance" and "we read
+ * the porch your plan prints" are different claims and only one of them is what actually happened.
  */
 fun frontDoorRead(rooms: List<GridRoom>): FrontDoorRead? {
     if (rooms.isEmpty()) return null

@@ -397,48 +397,69 @@ class LongScreenBottomScreenshotTest {
     // matching and the test fails loudly instead of quietly photographing the wrong place.
 
     /**
-     * "Check what we read", scrolled to its end — the screen that now finishes the scan flow when
-     * the plan named its own entrance. What has to be legible: the result and direction pills on the
-     * last rows, and a button that says "read my home" rather than promising a North step that has
-     * already happened. (The line stating the door we read moved into the E's own note on
-     * 27 Sep 2026 — `scan-review-door-tapped` is the picture of it.)
-     */
-    /**
-     * ⚠⚠ THE ANCHOR MOVED DOWN ON 18 AUG 2026, AND THAT IS THE POINT OF THE CHANGE, NOT A DETAIL.
-     * It used to be "Put the front door somewhere else" — which stopped being this screen's last
-     * control the day the optional-extras offer was added below it, so the offer appeared in NO
-     * picture at any configuration while three sessions edited its wording. That is UI-POLISH §6.4
-     * ("a golden is a viewport, not a document") for the fourth time in this repo. The anchor is now
-     * the offer's own button, read from the same function that labels it, so it follows the copy.
+     * ⭐⭐ THE SCAN RESULT, SCROLLED TO ITS END (30 Sep 2026) — where North is agreed and the flow goes
+     * on. Its button names the screen it opens, and that is exactly the copy no top-of-screen golden
+     * contains: for a plan that names no entrance it is the front-door screen ("…your front door").
+     * The plan inside the dial is `plan-01`, the repository's SAMPLE sheet.
      */
     @Test
-    fun scan_review_bottom() = captureBottomPair(
-        "scan-review-door",
-        anchor = hasText(addDetailsLabel(SiteAnswers())),
+    fun scan_placed_bottom() = captureBottomPair("scan-placed", anchor = hasText("Try a different picture")) {
+        placedResult(PlanSheet.outcome(), PlanSheet.bitmap().asImageBitmap())
+    }
+
+    /**
+     * …and for a plan that names its own entrance — the owner's sheet prints FOYER — the same button
+     * goes straight to the report ("…read my home"): the checking screen that used to sit between the
+     * two is gone.
+     */
+    @Test
+    fun scan_placed_entrance_bottom() = captureBottomPair(
+        "scan-placed-entrance",
+        anchor = hasText("Try a different picture"),
     ) {
         val outcome = ScanMapper.map(
             RecordedScans.load(RecordedScans.PLAN_020)!!.reply,
             imageAspect = 1399.0 / 1389.0,
         ) as com.vastufirst.shared.scan.ScanOutcome.Placed
-        com.vastufirst.app.ui.scan.ScanReviewContent(
-            image = null,
-            rooms = outcome.rooms,
-            door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
-                com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
+        val beige = android.graphics.Bitmap.createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
+            .asImageBitmap()
+        placedResult(outcome, beige)
+    }
+
+    /** A placed read's result screen, with North worked out the way the app works it out. */
+    @Composable
+    private fun placedResult(
+        outcome: com.vastufirst.shared.scan.ScanOutcome.Placed,
+        photo: androidx.compose.ui.graphics.ImageBitmap,
+    ) {
+        val grid = com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+        val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid)
+        val analysis = com.vastufirst.app.ui.newplan.buildEnginePlan(
+            rooms = grid, door = door, intent = Intent.BUYING,
+            propertyType = com.vastufirst.shared.PropertyType.FLAT, north = 0, planId = "bottom-scan-result",
+        )?.let { com.vastufirst.engine.VastuEngine().analyze(it) }
+        com.vastufirst.app.ui.scan.ScanScreen(
+            state = com.vastufirst.app.ui.scan.ScanUiState.Done(outcome),
+            onPickImage = {}, onTakePhoto = {}, onRetry = {},
+            onUseRooms = {}, onCorrectRoom = { _, _ -> }, onDrawInstead = {}, onBack = {},
+            north = com.vastufirst.app.ui.scan.NorthOnResult(
+                rooms = grid, north = 0, analysis = analysis,
+                cols = outcome.cols, rows = outcome.rows, planImage = photo,
+                doorKnown = door != null,
             ),
-            readings = RenderFixtures.scannedReadings,
         )
     }
 
     /**
-     * Mark North on a scanned plan, scrolled to its end. The button here opens the checking screen
-     * now, not the report, and must say so — the double-check card above it is what the "Yes —" is
+     * Mark North opened from a report ("Change North"), scrolled to its end. The button returns to the
+     * report it came from and must say so — the "Is this right?" card above it is what the "Yes —" is
      * agreeing with, so the two have to read as one sentence.
      */
     @Test
-    fun mark_north_scan_bottom() = captureBottomPair(
+    fun mark_north_report_bottom() = captureBottomPair(
         "marknorth-photo",
-        anchor = hasText("Yes — check what we read"),
+        anchor = hasText("Yes — back to my report"),
     ) {
         com.vastufirst.app.ui.marknorth.MarkNorthContent(
             rooms = RenderFixtures.sampleRooms,
@@ -447,14 +468,13 @@ class LongScreenBottomScreenshotTest {
             onNorthChange = {},
             onRead = {},
             onBack = {},
-            nextIsCheck = true,
+            returnsToReport = true,
         )
     }
 
     /**
      * Marking the front door on the photo, scrolled to its end — the last step for a plan that named
-     * no entrance. Its button used to say "which way is North?"; North is two screens behind the
-     * reader now, so it opens the report.
+     * no entrance. North was set on the scan result just before it, so its button opens the report.
      */
     @Test
     fun scan_door_bottom() = captureBottomPair("scan-door", anchor = hasText("Read my home")) {

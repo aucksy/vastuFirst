@@ -30,8 +30,7 @@
 // comparison of the box-way pictures before and after that day shows only those words moving.
 //
 // ⚠⚠ THE WORDS ON THE ROOMS ARE NEVER WORKED OUT HERE. They are the engine's own, handed in by the
-// screen from the same result its rows print — see `roomReadings` on "Check what we read" and the
-// report's room list. Deriving a direction from where a label sits on the photograph would be a second
+// report from the same result its room list prints. Deriving a direction from where a label sits on the photograph would be a second
 // calculation, and one room called two things two inches apart is exactly the defect the rows were
 // built to prevent.
 package com.vastufirst.app.ui.common
@@ -82,8 +81,8 @@ enum class RoomMarker {
 }
 
 /**
- * ⭐ THE ONE PLACE THE TRIAL'S STATE LIVES — shared by "Check what we read" and the report, so both
- * pictures always show the same kind of marker.
+ * ⭐ THE ONE PLACE THE TRIAL'S STATE LIVES — read by the report's photograph (the only picture that
+ * shows it since "Check what we read" was removed on 30 Sep 2026).
  *
  * [offered] is the switch from the data: false = the box way on the plan, and no chooser. When it
  * is on, [current] starts on the direction (the trial is what he installs to feel) and the chooser can

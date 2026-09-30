@@ -56,6 +56,11 @@ fun AddHomeScreen(
     onSample: () -> Unit,
     propertyType: PropertyType = PropertyType.INDEPENDENT_HOUSE,
     onPropertyTypeChange: (PropertyType) -> Unit = {},
+    /**
+     * ⭐ The camera, as its own card (30 Sep 2026). It lived on the upload screen that followed this
+     * one, which asked "PDF or photo?" a second time. Both cards now open their picker at once.
+     */
+    onPhotograph: () -> Unit = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -85,7 +90,7 @@ fun AddHomeScreen(
             // shipped; a subtitle naming the grid first described the app as it was two releases
             // ago. The three cards each carry their own line, so nothing is lost by letting this one
             // say what the SCREEN does instead of what one card does.
-            "Tell us what kind of home it is, then how you'd like to add it.",
+            "Tell us what kind of home it is, then how to add it.",
             style = VastuTheme.type.body, color = colors.textSecondary,
         )
 
@@ -122,19 +127,34 @@ fun AddHomeScreen(
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
-        SectionLabel("How would you like to add it?")
+        // ⭐ What makes a plan read well, behind the i (owner's standing rule: explanation moves behind
+        // a small i, never deleted). These are the words of the upload screen's old "What works best"
+        // card, which the upload cards below now skip past.
+        VastuSectionHeader(
+            label = "How would you like to add it?",
+            info = com.vastufirst.app.ui.scan.WHAT_WORKS_BEST,
+            tag = "addhome.method.header",
+        )
         Spacer(Modifier.height(VastuTheme.spacing.s3))
 
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            // Upload leads, because it is the shortcut. The subtitle was "we read the room names,
-            // you place them" — written in the assisted-only era; since the §3q reader most scans
-            // come back fully placed, so the honest constant across both outcomes is: we read, YOU
-            // check, nothing is scored until you say it's right (the card below says the rest).
+            // Upload leads, because it is the shortcut, and a PDF or screenshot reads best.
+            // ⚠ ITS PROMISE CHANGED WITH THE FLOW (30 Sep 2026). It said "we read it, you check every
+            // room", and a box under these cards said "You confirm every room yourself — nothing is
+            // scored until you say it's right". The checking screen both leaned on is gone; what is
+            // still true — the rooms are listed, any of them can be changed, nothing is scored until
+            // the reader says so — is said on the result itself, where it is actionable.
             MethodCard(
                 icon = "⤒",
                 title = "Upload a plan",
-                subtitle = "Photo or PDF · we read it, you check every room",
+                subtitle = "A PDF or picture · we read the rooms for you",
                 onClick = onScan,
+            )
+            MethodCard(
+                icon = "◎",
+                title = "Photograph your plan",
+                subtitle = "Opens your camera · hold it flat above the paper",
+                onClick = onPhotograph,
             )
             MethodCard(
                 icon = "▦",
@@ -147,19 +167,6 @@ fun AddHomeScreen(
                 title = "Try a sample plan",
                 subtitle = "See the whole flow in ten seconds",
                 onClick = onSample,
-            )
-        }
-
-        Spacer(Modifier.height(VastuTheme.spacing.s6))
-        Box(
-            Modifier
-                .clip(VastuTheme.shapes.md)
-                .background(colors.surface)
-                .padding(VastuTheme.spacing.s4),
-        ) {
-            VText(
-                "You confirm every room yourself — nothing is scored until you say it's right.",
-                style = VastuTheme.type.bodySm, color = colors.textTertiary,
             )
         }
     }

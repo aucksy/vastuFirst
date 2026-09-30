@@ -259,7 +259,7 @@ private fun describe(type: RoomType, rect: CellRect, cols: Int, rows: Int): Stri
 fun GuidedGridScreen(
     vm: NewPlanViewModel,
     onNext: () -> Unit,
-    /** Open straight on the door step — how the on-photo review asks for the front door (B2). */
+    /** Open straight on the door step — how a drawn home's report changes its front door. */
     startInDoorMode: Boolean = false,
 ) {
     // Thin wrapper: it is the ONLY thing that touches the ViewModel, so the whole editor below can

@@ -154,8 +154,8 @@ fun IconTapButton(
     // ⚠ Forward navigation has been debounced since the v0.2.1 audit — "a double-tap must not push
     // two destinations" — and BACK never was. This glyph is the back chevron on every screen in the
     // app, so a shaky or impatient double-tap popped two screens: you meant to step back one and
-    // landed two behind. On the scan path that drops a reader out of the checking screen and all
-    // the way onto the upload screen, looking as though their read had been thrown away. The
+    // landed two behind. On the scan path that dropped a reader out of the (since removed) checking
+    // screen and all the way onto the upload screen, looking as though their read had been thrown away. The
     // audience this app is built for — older, less phone-literate — is exactly the one that
     // double-taps.
     //

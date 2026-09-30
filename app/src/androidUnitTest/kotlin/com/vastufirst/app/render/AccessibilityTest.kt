@@ -108,47 +108,33 @@ class AccessibilityTest {
             // The privacy gate carries more prose than any other screen, and the contrast trap this
             // check already caught once on the scan screen lives in exactly that kind of copy.
             "scan-consent" to { ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {}) },
-            // ⭐ The on-photo review: a canvas with a semantic description plus a tappable row per
-            // room — the same two shapes (described image, actionable list row) this pass guards
-            // everywhere else. Driven by the real recorded clean read through the real mapper.
-            // ⭐ With the result and direction pills on every row (11 Aug 2026) — they carry colour,
-            // so they face this pass's contrast check like everything else the app tints.
-            "scan-review" to {
-                com.vastufirst.app.ui.scan.ScanReviewContent(
-                    image = null,
-                    rooms = RenderFixtures.scannedScanRooms,
-                    readings = RenderFixtures.scannedReadings,
-                    startSelected = 1,
-                )
-            },
-            /**
-             * ⭐⭐ THE REVIEW SCREEN WITH THE DOOR MARK TAPPED — and it carries a real PICTURE, which
-             * is the point.
-             *
-             * ⚠ Every other entry for this screen passes `image = null`, so the plan component is
-             * never composed at all in this pass. That was fine while the plan drew only a photo and
-             * some outlines. It stopped being fine on 16 Aug 2026, when the plan gained a front-door
-             * mark, a description that names it, and a sentence in the list that appears when it is
-             * tapped — none of which any contrast or label check could see. The first draft of that
-             * sentence used the accent colour and measured 2.77 : 1 against the paper; nothing in the
-             * build would have said so.
-             */
-            "scan-review-door-tapped" to {
-                val outcome = ScanMapper.map(RecordedScans.load(RecordedScans.PLAN_020)!!.reply, imageAspect = 1399.0 / 1389.0)
-                    as com.vastufirst.shared.scan.ScanOutcome.Placed
-                com.vastufirst.app.ui.scan.ScanReviewContent(
-                    image = android.graphics.Bitmap
-                        .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
-                        .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
-                        .asImageBitmap(),
-                    rooms = outcome.rooms,
-                    door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(
-                        com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows),
-                    ),
-                    // Since 27 Sep 2026 a tap on the E opens its NOTE, which carries the sentences
-                    // that used to be printed round the plan — so the note is what this pass checks.
-                    startDoorNoteOpen = true,
-                )
+            // ⭐⭐ A PLACED READ, since 30 Sep 2026: "We read N rooms", the rooms folded under it, and
+            // North asked on the reader's own plan — the dial, the slider, the four chips and the
+            // "Is this right?" card, the densest cluster of controls on the whole scan path. Its list
+            // is opened by the photography seam so the rows face this pass too.
+            "scan-placed" to {
+                val outcome = PlanSheet.outcome()
+                val grid = com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
+                val door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid)
+                com.vastufirst.designsystem.components.VastuRevealAll {
+                    ScanScreen(
+                        ScanUiState.Done(outcome), {}, {}, {}, {}, { _, _ -> }, {}, {},
+                        north = com.vastufirst.app.ui.scan.NorthOnResult(
+                            rooms = grid,
+                            analysis = com.vastufirst.engine.VastuEngine().analyze(
+                                com.vastufirst.app.ui.newplan.buildEnginePlan(
+                                    rooms = grid, door = door, intent = Intent.BUYING,
+                                    propertyType = com.vastufirst.shared.PropertyType.INDEPENDENT_HOUSE,
+                                    north = 0, planId = "a11y-scan-placed",
+                                )!!,
+                            ),
+                            cols = outcome.cols,
+                            rows = outcome.rows,
+                            planImage = PlanSheet.bitmap().asImageBitmap(),
+                            doorKnown = door != null,
+                        ),
+                    )
+                }
             },
             // ⭐ Marking the front door on the photo — a described image that is also the screen's
             // only control, plus a line of state under it. The description has to say where the
@@ -203,43 +189,50 @@ class AccessibilityTest {
         screens.forEach { (name, content) -> writeA11yManifest(name, content) }
 
         // ⭐⭐ THE DIRECTION TRIAL'S LABEL, which no accessibility pass had ever looked at (found by the
-        // 30 Sep 2026 audit). A tapped room on the repository's one real plan picture, with its short
-        // direction on the room — made 20 % smaller that day by the owner — so the contrast and label
-        // checks see it. At the baseline, the 320 dp phone, the 200 % font and dark, each its own
-        // screen in the ratchet, because the owner asked for those three to be checked by name.
+        // 30 Sep 2026 audit). A tapped room on the repository's one real plan picture — a SAMPLE sheet —
+        // with its short direction on the room, made 20 % smaller that day by the owner, so the contrast
+        // and label checks see it. At the baseline, the 320 dp phone, the 200 % font and dark, each its
+        // own screen in the ratchet, because the owner asked for those three to be checked by name.
+        //
+        // ⚠ ON THE REPORT since 30 Sep 2026: "Check what we read", where this pass first ran, is gone,
+        // and the report draws the same picture through the same component.
         val sheet = PlanSheet.outcome()
         val picture = PlanSheet.bitmap().asImageBitmap()
-        val readings = run {
-            val grid = com.vastufirst.app.ui.scan.toGridRooms(sheet.rooms, sheet.cols, sheet.rows)
-            com.vastufirst.app.ui.scan.roomReadings(
-                com.vastufirst.engine.VastuEngine().analyze(
-                    com.vastufirst.app.ui.newplan.buildEnginePlan(
-                        rooms = grid,
-                        door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid),
-                        intent = Intent.BUILDING,
-                        propertyType = com.vastufirst.shared.PropertyType.FLAT,
-                        north = 0,
-                        planId = "a11y-direction",
-                    )!!,
-                ),
-            )
-        }
+        val grid = com.vastufirst.app.ui.scan.toGridRooms(sheet.rooms, sheet.cols, sheet.rows)
+        val sheetDoor = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid)
+        val sheetAnalysis = com.vastufirst.engine.VastuEngine().analyze(
+            com.vastufirst.app.ui.newplan.buildEnginePlan(
+                rooms = grid,
+                door = sheetDoor,
+                intent = Intent.BUILDING,
+                propertyType = com.vastufirst.shared.PropertyType.FLAT,
+                north = 0,
+                planId = "a11y-direction",
+            )!!,
+        )
         val kitchen = sheet.rooms.indexOfFirst { it.label == "KITCHEN" }
-        check(kitchen >= 0 && readings[com.vastufirst.app.ui.scan.scanRoomId(kitchen)] != null) {
+        val kitchenId = com.vastufirst.app.ui.scan.scanRoomId(kitchen)
+        check(kitchen >= 0 && sheetAnalysis.roomResults.any { it.roomId == kitchenId }) {
             "The kitchen must be read and scored, or this pass checks a plan with no label on it."
         }
         val tapped: @Composable () -> Unit = {
-            com.vastufirst.app.ui.scan.ScanReviewContent(
-                image = picture,
-                rooms = sheet.rooms,
-                readings = readings,
-                startSelected = kitchen,
+            ReportContent(
+                analysis = sheetAnalysis,
+                intent = Intent.BUILDING,
+                rooms = grid,
+                north = 0,
+                cols = sheet.cols,
+                rows = sheet.rows,
+                planImage = picture,
+                planRooms = com.vastufirst.app.ui.scan.planRoomsOf(sheet.rooms),
+                doorAtPage = sheetDoor?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, sheet.rooms) },
                 roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
                 onRoomMarkerChange = {},
+                startOpenRoomId = kitchenId,
             )
         }
         RenderMatrix.configs.filter { it.name in setOf("baseline", "w320", "font2_0", "dark") }.forEach { cfg ->
-            val name = if (cfg.name == "baseline") "scan-review-direction" else "scan-review-direction-${cfg.name.replace('_', '-')}"
+            val name = if (cfg.name == "baseline") "report-direction" else "report-direction-${cfg.name.replace('_', '-')}"
             writeA11yManifest(name, tapped, cfg)
         }
     }

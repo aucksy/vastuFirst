@@ -133,6 +133,12 @@ fun VastuFoldSection(
     /** Opens on first draw. Used where the list IS the answer rather than support for it. */
     startOpen: Boolean = false,
     tag: String? = null,
+    /**
+     * A few words that must be seen while the list is shut — "4 to check" on a scan's rooms when the
+     * reader was unsure of some. Drawn as a small pill on the heading, so the list can stay folded
+     * (the owner's rule) without hiding that something in it wants a look. Null draws nothing.
+     */
+    flag: String? = null,
     content: @Composable () -> Unit,
 ) {
     val colors = VastuTheme.colors
@@ -160,6 +166,20 @@ fun VastuFoldSection(
                 modifier = Modifier.weight(1f, fill = true),
                 color = colors.textSecondary,
             )
+            if (flag != null) {
+                // ⚠ textSecondary on the tint, not the accent colour: accent-on-accent measured below
+                // the 4.5 : 1 a caption needs (the scan result's CHECK pill learned this first).
+                VText(
+                    text = flag,
+                    style = VastuTheme.type.caption,
+                    color = colors.textSecondary,
+                    modifier = Modifier
+                        .padding(end = VastuTheme.spacing.s2)
+                        .clip(VastuTheme.shapes.full)
+                        .background(colors.provenanceMod.copy(alpha = 0.14f))
+                        .padding(horizontal = VastuTheme.spacing.s2, vertical = VastuTheme.spacing.s1),
+                )
+            }
             // ⚠ A glyph from the same set the finding rows already use, so "this opens" looks the
             // same everywhere in the report rather than twice in two shapes.
             VText(

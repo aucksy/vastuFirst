@@ -207,7 +207,7 @@ data class ScannedRoom(
     val printedSize: String = "",
     /**
      * ⭐ WHERE ON THE PICTURE this room was read — the sanitised [ScanBox], in the reader's own
-     * fraction coordinates. Carried so the on-photo review screen can tint the part of the image a
+     * fraction coordinates. Carried so the report's picture can mark the part of the image a
      * room came from; the grid pipeline never reads it (the [rect] is the placed answer).
      *
      * ⚠ Approximate BY THE PROMPT'S OWN FRAME: coordinates are fractions of the building's outer

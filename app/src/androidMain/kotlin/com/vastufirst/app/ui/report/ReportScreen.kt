@@ -57,6 +57,7 @@ import com.vastufirst.app.ui.details.SiteExtrasOffer
 import com.vastufirst.app.ui.details.coverageLine
 import com.vastufirst.app.ui.details.siteItemsLeft
 import com.vastufirst.app.ui.newplan.GRID
+import com.vastufirst.app.ui.newplan.GridDoor
 import com.vastufirst.app.ui.newplan.GridRoom
 import com.vastufirst.app.ui.common.readingOrder
 import com.vastufirst.app.ui.common.roomDisplayNames
@@ -167,6 +168,8 @@ fun ReportScreen(
     /** What a tapped room shows on the photograph — the direction trial. See [ReportContent]. */
     roomMarker: RoomMarker = RoomMarker.BOX,
     onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
+    /** Where the front door came from, for a read home — see [ReportContent.doorNote]. */
+    doorNote: String? = null,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
@@ -192,7 +195,31 @@ fun ReportScreen(
         introMillis = introMillis,
         roomMarker = roomMarker,
         onRoomMarkerChange = onRoomMarkerChange,
+        doorNote = doorNote,
     )
+}
+
+/**
+ * ⭐⭐ WHERE THE FRONT DOOR CAME FROM, for a home read off a photograph — the note on the report's
+ * "Your front door" heading, behind its **i**.
+ *
+ * ⚠ MOVED, NOT NEW (30 Sep 2026). These are the three sentences the E's note on "Check what we read"
+ * carried. That screen is gone (owner: *"I specially think the 'Check what we read' screen is not
+ * needed"*), and a plan that prints its own entrance now goes straight to this report — so this is the
+ * first place a reader can learn that the heaviest single input in their score was read, not asked.
+ * Only the last clause changed: the E does not drag here, so the note names the button that moves it.
+ *
+ * Three states, not two: once the reader has put the door somewhere themselves, claiming WE read it
+ * would take the credit for their correction.
+ */
+fun frontDoorProvenance(door: GridDoor, doorFromCaption: String?, doorIsOurs: Boolean): String {
+    val wall = com.vastufirst.app.ui.scan.doorSideWords(door.side)
+    return when {
+        !doorIsOurs -> "You put it on $wall. To move it, tap Change front door."
+        doorFromCaption != null ->
+            "Your plan prints \"$doorFromCaption\" on $wall, so we put it there. To move it, tap Change front door."
+        else -> "We read it from your plan's own entrance, on $wall. To move it, tap Change front door."
+    }
 }
 
 /**
@@ -273,8 +300,8 @@ fun ReportContent(
      * ⭐⭐ WHERE THE FRONT DOOR SITS ON THAT PHOTOGRAPH, in page fractions — so this document draws
      * the same entrance mark every other screen draws. Null for a home with no scanned plan.
      *
-     * Worked out by the caller with `doorMarkerOnPage`, the same function the checking screen uses,
-     * so the mark lands in the identical spot on both.
+     * Worked out by the caller with `doorMarkerOnPage`, the same function the front-door screen
+     * uses, so the mark lands in the identical spot on both.
      */
     doorAtPage: Pair<Float, Float>? = null,
     /**
@@ -302,8 +329,7 @@ fun ReportContent(
      * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PHOTOGRAPH — the direction trial (owner, 29 Sep 2026; redrawn
      * by him 30 Sep).
      *
-     * The report draws the SAME picture "Check what we read" draws, through the same component, so it
-     * shows the same kind of marker: [RoomMarker.BOX], the default, is this report exactly as it was;
+     * [RoomMarker.BOX], the default, is this report exactly as it was;
      * [RoomMarker.DIRECTION] shows nothing at rest, and the tapped room's SHORT direction on the middle
      * of the room — its full name stays in its row.
      */
@@ -315,6 +341,12 @@ fun ReportContent(
      * picture. Null — the default, and what the app always passes — keeps the report's own opening.
      */
     startOpenRoomId: String? = null,
+    /**
+     * ⭐ Where the front door came from, when this home was read off a photograph — see
+     * [frontDoorProvenance]. Shown behind the **i** on "Your front door". Null for a home drawn by
+     * hand, whose door the reader placed on the grid themselves: no note, no **i**.
+     */
+    doorNote: String? = null,
 ) {
     val colors = VastuTheme.colors
     val resolvedIntent = intent ?: Intent.BUILDING
@@ -643,8 +675,7 @@ fun ReportContent(
                         // and it is a few lines below.
                         doorAtPage = doorAtPage,
                         onTapDoor = { revealDoor = true },
-                        // ⭐ THE DIRECTION TRIAL, the same marker "Check what we read" shows — the
-                        // two pictures are one component and must not show two kinds of answer.
+                        // ⭐ THE DIRECTION TRIAL — see RoomMarker.kt.
                         marker = roomMarker,
                         directions = planDirections,
                     )
@@ -729,6 +760,7 @@ fun ReportContent(
             a.doorResult?.let {
                 DoorSection(
                     it, zones, remediesOnly, isFlat,
+                    note = doorNote,
                     modifier = Modifier.onGloballyPositioned { c -> doorY = c.positionInRoot().y.toInt() },
                 )
             }
@@ -788,16 +820,14 @@ fun ReportContent(
                 info = coverageLine(siteAnswers),
                 tag = "report.coverage.header",
             )
-            // ⭐ SECOND HOME, NOT ONLY HOME (owner, 17 Aug 2026: *"This 'Answer a few more and
-            // check more' does not belong on Report screen… we should nudge them to do this as
-            // optional below the 'These are my rooms' button — if they choose to skip then we
-            // continue to show it here also"*). The offer is made at the end of "Check what we
-            // read", where the reader is still describing their home; this stays for everyone who
-            // skipped it there, and for every home drawn by hand, which never passes that screen.
+            // ⭐ THE ONE PLACE THE OFFER IS MADE, since 30 Sep 2026. From 17 Aug it was also made at
+            // the end of "Check what we read" (owner: *"we should nudge them to do this as optional
+            // below the 'These are my rooms' button — if they choose to skip then we continue to
+            // show it here also"*). That screen is gone (owner, 30 Sep: *"lets not bombard them with
+            // so much to read and choose"*), so the report, which always carried it, is where it
+            // lives — for a scanned home and a drawn one alike.
             //
-            // ⚠ THE WHOLE OFFER IS [SiteExtrasOffer] NOW, not just its label. This end and the
-            // checking screen's end had already drifted into two different shapes around one
-            // decision; sharing the component is what stops that happening a third time.
+            // ⚠ THE WHOLE OFFER IS [SiteExtrasOffer], not just its label, so it cannot drift.
             //
             // ⚠ The gap is guarded too, not only the card. The card draws nothing once every
             // question is answered, so an unguarded spacer would leave a hole on exactly the
@@ -1020,8 +1050,10 @@ private fun verdictSentence(
         isFlat -> " Inside the flat the layout is still yours; the building around it is not."
         else -> " Nothing is built yet — the layout is still yours."
     }
-    val free = if (unlocked) "" else " Entrance, kitchen and toilets are below in full, free."
-    return head + tail + free
+    // ⭐ The free-tier line ("Entrance, kitchen and toilets are below in full, free.") moved behind the
+    // i on "Your rooms" (30 Sep 2026) — it explains the list, it does not answer "how is my home?".
+    // The pay bar still says what is locked, on the page, for every free reader.
+    return head + tail
 }
 
 /* ─────────────────────────── advice, filtered by who is reading ─────────────────────────── */
@@ -1188,13 +1220,19 @@ private fun DoorSection(
     zones: List<ZoneInfo>,
     remediesOnly: Boolean,
     isFlat: Boolean = false,
+    /** Where the door came from, for a read home — see [frontDoorProvenance]. Null: a plain heading. */
+    note: String? = null,
     modifier: Modifier = Modifier,
 ) {
     // ⚠ A Column purely so the section has ONE node to report its position from — the entrance mark
     // on the picture above scrolls here. It emitted its children straight into the page before, so
     // there was nothing to measure. The children are unchanged and so is what they measure to.
     Column(modifier.fillMaxWidth()) {
-        SectionLabel("Your front door")
+        if (note == null) {
+            SectionLabel("Your front door")
+        } else {
+            VastuSectionHeader(label = "Your front door", info = note, tag = "report.door.header")
+        }
         Spacer(Modifier.height(VastuTheme.spacing.s3))
         DoorCard(door, zones, remediesOnly, isFlat)
         Spacer(Modifier.height(VastuTheme.spacing.s6))
@@ -1265,6 +1303,7 @@ private fun RoomsSection(
         label = "Your rooms",
         count = rooms.size,
         info = "Worst first. Tap one for where and why." +
+            (if (unlocked) "" else " Entrance, kitchen and toilets are below in full, free.") +
             if (notRated) "\n\n$NOT_RATED_MEANS" else "",
         tag = "report.rooms.header",
     )

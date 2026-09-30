@@ -15,11 +15,10 @@
 //   · what it costs         — one tap each;
 //   · the way in            — a full-width button, level with every other button on the page.
 //
-// ⚠ ONE COMPONENT, TWO SCREENS. The offer is made at the end of "Check what we read" and again on
-// the report for anyone who walked past it there (and for every hand-drawn home, which never sees
-// that screen at all). Those were two separate lumps of copy, and they had already drifted — one a
-// sentence plus a hugging pill, the other a sentence plus a full-width button. One component means
-// improving the offer improves it in both places, which is the whole point.
+// ⚠ ONE COMPONENT. The offer used to be made in two places — the end of "Check what we read" and the
+// report — and the two lumps of copy had already drifted apart. Since 30 Sep 2026 that screen is gone
+// and the report is the one place the offer is made; the component stays one piece so it cannot split
+// again.
 package com.vastufirst.app.ui.details
 
 import androidx.compose.foundation.layout.Spacer

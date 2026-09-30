@@ -32,13 +32,15 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * ⭐⭐ THE FRONT DOOR ON THE PHOTOGRAPH, DRIVEN AS A REAL FINGER — the owner's report of 27 Sep 2026,
- * on the two photograph screens: *"its not moving real-time when holding and dragging it.. currently
+ * on the photograph screens: *"its not moving real-time when holding and dragging it.. currently
  * it follows after you have dragged it.. and I am also not able to move it to other walls.. its stuck
  * on same wall where you put it.. it should not be locked behind a button... user can just tap and
  * drag it... on first tap and pop up can tell them what it is"*.
  *
- * Every drag test here FAILED on the build before the fix: "Check what we read" refused to move an E
- * that had not been tapped first, and "Where is your front door?" understood no drag at all.
+ * Every drag test here FAILED on the build before the fix: "Where is your front door?" understood no
+ * drag at all. (The same fix reached "Check what we read"; that screen and its two tests went on
+ * 30 Sep 2026, and the front-door screen is where the E is dragged now — from the flow, or from the
+ * report's "Change front door".)
  *
  * The home: two rooms side by side, 8 cells wide and 4 deep, drawn on the photograph from x 0.2 to 0.8
  * and y 0.25 to 0.75. The photograph is square, so a fraction of the picture is a fraction of its box.
@@ -64,69 +66,6 @@ class DoorDragOnPhotoTest {
         android.graphics.Bitmap.createBitmap(1000, 1000, android.graphics.Bitmap.Config.ARGB_8888)
             .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
             .asImageBitmap()
-
-    // ── "Check what we read" ─────────────────────────────────────────────────────────────────────
-
-    @Test
-    fun `on Check what we read the E drags at once and follows the finger while held`() = runComposeUiTest {
-        val door = mutableStateOf<GridDoor?>(GridDoor(DoorSide.N, 1))
-        val image = photo()
-        setContent {
-            VastuTheme {
-                ScanReviewContent(image = image, rooms = rooms, door = door.value, onDoorChange = { door.value = it })
-            }
-        }
-        val plan = picture("Your scanned plan")
-        val start = eCentre() - plan.topLeft
-
-        // No tap first. A finger on the E, and along the top wall to about two-thirds of the way.
-        pictureNode("Your scanned plan").performTouchInput {
-            down(start)
-            repeat(7) { moveBy(Offset(plan.width * 0.05f, 0f)) }
-        }
-        waitForIdle()
-        // Page x 0.3125 + 0.35 = 0.6625. ⭐ Drawn under the finger — NOT at the centre of the cell it
-        // will settle in (0.6875), which is exactly the lag the owner saw.
-        val heldX = (eCentre().x - plan.left) / plan.width
-        assertEquals("the E is drawn where the finger has it", 0.6625f, heldX, 0.01f)
-        assertEquals("the door itself is set on the lift", GridDoor(DoorSide.N, 1), door.value)
-
-        // Round the corner: out past the east wall, and down it.
-        pictureNode("Your scanned plan").performTouchInput {
-            moveBy(Offset(plan.width * 0.2f, 0f))
-            repeat(5) { moveBy(Offset(0f, plan.height * 0.05f)) }
-        }
-        waitForIdle()
-        val cornerX = (eCentre().x - plan.left) / plan.width
-        val cornerY = (eCentre().y - plan.top) / plan.height
-        assertEquals("still held, the E is ON the east wall", 0.8f, cornerX, 0.01f)
-        assertEquals("and has come down it with the finger", 0.5f, cornerY, 0.01f)
-
-        pictureNode("Your scanned plan").performTouchInput { up() }
-        waitForIdle()
-        assertEquals("let go on the east wall, so the door is there", DoorSide.E, door.value?.side)
-    }
-
-    @Test
-    fun `on Check what we read a tap on the E opens its note and the old door text is gone`() = runComposeUiTest {
-        val image = photo()
-        setContent {
-            VastuTheme { ScanReviewContent(image = image, rooms = rooms, door = GridDoor(DoorSide.N, 1)) }
-        }
-        // The card and the two lines that used to fill the screen about the door.
-        onNodeWithText("We found your main entrance", substring = true).assertDoesNotExist()
-        onNodeWithText("Front door:", substring = true).assertDoesNotExist()
-        onNodeWithTag(DOOR_NOTE_TAG).assertDoesNotExist()
-
-        val plan = picture("Your scanned plan")
-        pictureNode("Your scanned plan").performTouchInput { click(eCentre() - plan.topLeft) }
-        waitForIdle()
-        onNodeWithTag(DOOR_NOTE_TAG).assertExists()
-        onNodeWithText("Your front door").assertExists()
-        onNodeWithText(
-            "We read it from your plan's own entrance, on the top wall of your plan. Drag the E to move it.",
-        ).assertExists()
-    }
 
     // ── "Where is your front door?" ──────────────────────────────────────────────────────────────
 

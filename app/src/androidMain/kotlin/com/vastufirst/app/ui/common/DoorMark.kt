@@ -43,7 +43,7 @@ import com.vastufirst.designsystem.theme.VastuColors
  * The letter inside the mark. "E" for entrance, everywhere.
  *
  * ⚠ The hand-drawn editor used to print "D" for door. Two letters for one thing is one letter too
- * many, and this is the one the app already explains out loud — the review screen's card says "we
+ * many, and this is the one the app explained out loud — the old review screen's card said "we
  * found your main entrance and marked it E on your plan", and it said that while the editor was
  * drawing a D.
  */

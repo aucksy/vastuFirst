@@ -11,9 +11,9 @@
 // to point at a wall on a picture that was not their home.
 //
 // ⚠ THIS SCREEN IS OFTEN SKIPPED, AND THAT IS THE POINT. When the plan prints its own entrance —
-// ENTRY, FOYER, ENTRANCE — `frontDoorFromEntrance` has already read the door off it and the review
-// screen STATES the answer instead of asking the question. This screen is what happens when the plan
-// says nothing, plus the way back in from "change it" when it does.
+// ENTRY, FOYER, ENTRANCE — `frontDoorFromEntrance` has already read the door off it and the flow goes
+// straight to the report, which draws the E and says where it was read from. This screen is what
+// happens when the plan says nothing, plus the way back in from the report's "Change front door".
 //
 // ⭐⭐ AND THE E NOW MOVES UNDER THE FINGER (owner, 27 Sep 2026: *"it should just seamlessly move
 // around realtime when tapping and dragging it"*). This screen used to understand one gesture — a tap
@@ -32,6 +32,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -79,10 +80,11 @@ import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.scan.ScannedRoom
 
 /**
- * ⭐ The picture is sized by its OWN shape and the page scrolls, exactly as on the review screen —
- * see the note there. Sharing the height instead leaves the plan sized by what is left over, which
- * on a square builder's sheet is a slot with dead margin above and below it, and which collapses at
- * a 200 % font precisely where somebody needs to aim at a wall.
+ * ⭐ The picture is sized by its OWN shape and the page scrolls. Sharing the height instead leaves the
+ * plan sized by what is left over, which on a square builder's sheet is a slot with dead margin above
+ * and below it, and which collapses at a 200 % font precisely where somebody needs to aim at a wall.
+ *
+ * ⚠ But never taller than [DOOR_PLAN_SCREEN_SHARE] of the screen — see [ScanDoorContent].
  */
 private fun doorPlanAspect(image: ImageBitmap?): Float =
     image?.takeIf { it.width > 0 && it.height > 0 }
@@ -114,7 +116,7 @@ internal fun scanDoorNote(door: GridDoor): DoorNoteText = DoorNoteText(
 
 @Composable
 fun ScanDoorScreen(
-    handover: ScanReviewHandover,
+    handover: ScanPictureSlot,
     door: GridDoor?,
     onDoor: (GridDoor) -> Unit,
     onNext: () -> Unit,
@@ -188,9 +190,16 @@ fun ScanDoorContent(
     val liveDragged by rememberUpdatedState(draggedDoor)
     val liveOnDoor by rememberUpdatedState(onDoor)
 
+    // ⭐⭐ THE PLAN NEVER OUTGROWS THE SCREEN (30 Sep 2026). Sized by width alone, a square sheet on a
+    // phone turned sideways came out about 806 dp tall on a 480 dp screen, so the wall a reader had to
+    // tap could be below the bottom edge. The screen's own height caps it; in portrait the cap is far
+    // above the width-derived size and changes nothing.
+    BoxWithConstraints(Modifier.screenRoot(colors.paper)) {
+    val planCap = maxHeight * DOOR_PLAN_SCREEN_SHARE
+    val planWidth = maxWidth - VastuTheme.spacing.s6 * 2
     Column(
         Modifier
-            .screenRoot(colors.paper)
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {
@@ -222,7 +231,7 @@ fun ScanDoorContent(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(aspect)
+                    .height(minOf(planWidth / aspect, planCap))
                     .onSizeChanged { boxSize = it }
                     .pointerInput(rooms, image) {
                         // ⭐⭐ ONE GESTURE READER FOR THE PICTURE — the same shape as the review
@@ -464,9 +473,8 @@ fun ScanDoorContent(
                 // Came from a finished report: this button returns there, and says so.
                 returnsToReport && door != null -> "Done — back to my report"
                 returnsToReport -> "Leave the door out — back to my report"
-                // ⭐ In the flow this is the LAST step since 11 Aug 2026 — North was marked two
-                // screens back, so nothing follows this but the report. It used to say "which way is
-                // North?", which is now a screen behind the reader rather than in front of them.
+                // ⭐ In the flow this is the LAST step — North was set on the scan result just
+                // before it, so nothing follows this but the report.
                 door != null -> "Read my home"
                 else -> "Skip the door — read my home"
             },
@@ -477,4 +485,11 @@ fun ScanDoorContent(
         // cut off by the bottom of the screen at a 200 % font — which is precisely what the geometry
         // gate reported when it was there.
     }
+    }
 }
+
+/**
+ * The most of the screen's height the plan may take. Chosen so that on a landscape phone (480 dp tall)
+ * the heading, the one-line instruction and the WHOLE plan are on the first screenful together.
+ */
+private const val DOOR_PLAN_SCREEN_SHARE = 0.62f

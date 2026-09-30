@@ -97,16 +97,17 @@ class ScoreDrivenScreensScreenshotTest {
      * read over it, and that our room rectangles have stood down rather than being drawn on top of
      * somebody's actual home.
      *
-     * ⭐ `nextIsCheck` is TRUE here because that is the truth of the scan path since 11 Aug 2026:
-     * North is marked FIRST and "Check what we read" comes after it, so the button on this screen
-     * opens the checklist and not the report. It is the only visible difference from the golden
-     * above, and it is the one a reader would notice if it were wrong.
+     * ⭐ Since 30 Sep 2026 a first scan sets North on its own result, so the photograph reaches this
+     * screen by two doors: "Carry on" with an unfinished scanned home (below), and "Change North" on a
+     * scanned home's report — which is THIS picture. That door used to draw our redrawn squares instead
+     * of the reader's plan (fixed the same day, NorthPhotoRuleTest), and its button now names the
+     * report it returns to.
      */
     @Test
     fun markNorth_onPhoto() = render("marknorth-photo") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            nextIsCheck = true,
+            returnsToReport = true,
             planImage = android.graphics.Bitmap
                 .createBitmap(1399, 1389, android.graphics.Bitmap.Config.ARGB_8888)
                 .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
@@ -131,10 +132,9 @@ class ScoreDrivenScreensScreenshotTest {
      * ⭐⭐ THE SAME SCREEN, REACHED BY "CARRY ON" — the picture the owner was actually handed, and the
      * one nothing has ever rendered.
      *
-     * ⚠ IT IS NOT THE GOLDEN ABOVE, and the difference is the whole bug of 16 Aug 2026. Resuming a
-     * photographed home lands here with `nextIsCheck = FALSE` — the checking screen is behind this
-     * reader, not in front of them — so the button reads "Read my home" rather than "Check what we
-     * read". Until this release it also arrived with `planImage = null`, because the photograph was
+     * ⚠ IT IS NOT THE GOLDEN ABOVE: resuming a photographed home continues the flow, so the button
+     * reads "Read my home" rather than naming a report the reader has not seen yet. Until 16 Aug 2026
+     * it also arrived with `planImage = null`, because the photograph was
      * thrown away when the reader walked off the screen, and the dial came up over our own redrawn
      * coloured squares. That is a builder's grid to look at, on the one screen built to replace the
      * builder's grid, and the owner reported it as "Carry on takes it to Manual grid". He was right
@@ -147,7 +147,6 @@ class ScoreDrivenScreensScreenshotTest {
     fun markNorth_resumedPhoto() = render("marknorth-photo-resumed") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            nextIsCheck = false,
             planImage = android.graphics.Bitmap
                 .createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
                 .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }
@@ -159,7 +158,6 @@ class ScoreDrivenScreensScreenshotTest {
     fun markNorth_onTallPhoto() = render("marknorth-photo-tall") {
         MarkNorthContent(
             rooms = rooms, north = north, analysis = analysis, onNorthChange = {}, onRead = {}, onBack = {},
-            nextIsCheck = true,
             planImage = android.graphics.Bitmap
                 .createBitmap(1256, 2760, android.graphics.Bitmap.Config.ARGB_8888)
                 .apply { eraseColor(android.graphics.Color.rgb(0xEF, 0xE9, 0xDA)) }

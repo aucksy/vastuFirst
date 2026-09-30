@@ -342,11 +342,11 @@ class NewPlanViewModel(
                 // by whatever screen ENDS the flow — so this never creates junk rows while the user
                 // is still drawing (E2E-ASSESSMENT §A3).
                 //
-                // ⚠ That is no longer always Mark North. Since 11 Aug 2026 North comes BEFORE the
-                // scan's checking screen, so a scanned home is first saved by "Check what we read"
-                // (or by the front-door screen after it, when the plan named no entrance). A home
-                // drawn by hand, an unplaced scan and the bundled sample still save at North.
-                // Naming one screen here is how a later session comes to believe the wrong one.
+                // ⚠ That is not always Mark North. Since 30 Sep 2026 a scanned home is first saved
+                // by the scan result's own "Read my home" (or by the front-door screen after it, when
+                // the plan named no entrance). A home drawn by hand, an unplaced scan and the bundled
+                // sample still save at North. Naming one screen here is how a later session comes to
+                // believe the wrong one.
                 planId?.let { id ->
                     if (name == null) name = repo.nextHomeName()
                     val saved = SavedPlan(

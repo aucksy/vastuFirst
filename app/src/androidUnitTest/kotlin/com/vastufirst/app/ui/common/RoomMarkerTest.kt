@@ -128,20 +128,20 @@ class RoomMarkerTest {
     fun `a screen reader hears the room's direction in the same words the row prints`() {
         assertEquals(
             "Your plan. Kitchen is in the North-East.",
-            buildPlanDescription("Kitchen", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION, selectedDirection = "North-East"),
+            buildPlanDescription("Kitchen", hasDoor = false, marker = RoomMarker.DIRECTION, selectedDirection = "North-East"),
         )
         // A room crossing into another zone: the row's middle dot is said as words, never read out.
         assertEquals(
             "Your plan. Living is in the North-West, and crosses the centre.",
             buildPlanDescription(
-                "Living", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION,
+                "Living", hasDoor = false, marker = RoomMarker.DIRECTION,
                 selectedDirection = "North-West · crosses the centre",
             ),
         )
         // The box way's words are untouched.
         assertEquals(
             "Your plan, showing roughly where Kitchen was read",
-            buildPlanDescription("Kitchen", hasDoor = false, zoomable = false),
+            buildPlanDescription("Kitchen", hasDoor = false),
         )
     }
 
@@ -162,7 +162,7 @@ class RoomMarkerTest {
     fun `at rest a screen reader hears that a tap gives a room's direction, not that every room carries one`() {
         assertEquals(
             "Your scanned plan. Tap a room to hear its direction.",
-            buildPlanDescription(null, hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION),
+            buildPlanDescription(null, hasDoor = false, marker = RoomMarker.DIRECTION),
         )
     }
 }

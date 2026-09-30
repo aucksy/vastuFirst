@@ -11,8 +11,9 @@ import kotlin.test.assertTrue
  * ⭐⭐ THE BOX DRAWN ON THE PHOTOGRAPH IS THE READER'S OWN RECTANGLE — never re-shaped from the
  * size the caption prints.
  *
- * **What the owner saw** (15 Aug 2026): he photographed "Check what we read", tapped a toilet, and
- * said the highlight did not match the room. It did not. Between 10 and 15 August every box was
+ * **What the owner saw** (15 Aug 2026): he photographed "Check what we read" (a screen removed on
+ * 30 Sep 2026 — the report draws the same picture now), tapped a toilet, and said the highlight did
+ * not match the room. It did not. Between 10 and 15 August every box was
  * redrawn at the size its own caption states, at the sheet's fitted scale, about the reader's
  * centre. The reasoning behind that was sound and is still right for the GRID — the reader
  * transcribes printed text at about 95 % and guesses rectangles at 40–70 %, so where the two
@@ -37,7 +38,7 @@ import kotlin.test.assertTrue
  *
  * Every line is marked so CI lifts it into the build log, where the numbers can be read.
  */
-class ScanReviewBoxShapeTest {
+class PlanBoxShapeTest {
 
     private fun say(line: String) = println("SCORE| $line")
 
@@ -63,7 +64,7 @@ class ScanReviewBoxShapeTest {
             val placed = ScanMapper.map(reply, imageAspect = 1.0) as? ScanOutcome.Placed ?: continue
             measured++
 
-            // ⭐ The invariant. `planRoomsOf` is what the review screen draws, and `source` is what
+            // ⭐ The invariant. `planRoomsOf` is what the report's picture draws, and `source` is what
             // `doorForPhotoTap` places the front door through. Asserting they are the SAME object
             // is what stops the two ever disagreeing again: a picture that contradicts the door is
             // a picture of a home nobody scored.

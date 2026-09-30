@@ -653,7 +653,7 @@ object ScanMapper {
 
     /**
      * ⭐ The tint fix (owner, 4 Aug 2026: the tapped-room boxes are "mostly bigger"). Room boxes are
-     * BUILDING-framed by prompt contract; the on-photo review draws [ScannedRoom.source] on the
+     * BUILDING-framed by prompt contract; the report's picture draws [ScannedRoom.source] on the
      * whole photo. When the reply carries a sane building box (prompt v4), compose the room onto
      * the page: page = building.origin + room × building.size. Measured on 35 approved scans:
      * Green Court centre error 0.18–0.28 → 0.007–0.033 of the sheet; every overlay eyeballed.

@@ -36,8 +36,12 @@ import com.vastufirst.app.ui.common.screenRoot
 
 /**
  * Welcome (Product PRD §6.1 · design system screen 1). The one question that changes the whole
- * product — intent (§2). No sign-up, no phone number. Continue is disabled until an intent is
- * chosen.
+ * product — intent (§2). No sign-up, no phone number.
+ *
+ * ⭐ ONE TAP, NOT TWO (30 Sep 2026 — owner: *"let the user get to the point quickly and lets not
+ * bombard them with so much to read and choose"*). Choosing an answer used to light up a separate
+ * Continue button that then had to be pressed as well. The answer is the whole question, so tapping
+ * it now moves on; Back returns here with it still marked, to change it.
  *
  * ⭐ NO LANGUAGE CONTROL, and this is permanent (owner decision, 9 Aug 2026). VastuFirst is
  * English only — not "English for now". The six-language plan is cancelled, so this screen carries
@@ -119,14 +123,12 @@ fun WelcomeContent(
         // case, so it sits second. The order is the owner's call (v0.6.6) and it also decides what
         // the report says: only BUILDING is offered layout changes at all.
         Column(verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s3)) {
-            IntentCard("I am buying a home", "Deciding between options", chosen == Intent.BUYING) { onIntentChange(Intent.BUYING) }
-            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { onIntentChange(Intent.BUILDING) }
-            IntentCard("I already live here", "Looking for remedies", chosen == Intent.LIVING) { onIntentChange(Intent.LIVING) }
+            IntentCard("I am buying a home", "Deciding between options", chosen == Intent.BUYING) { onIntentChange(Intent.BUYING); onContinue() }
+            IntentCard("I am building a home", "The plan is not final yet", chosen == Intent.BUILDING) { onIntentChange(Intent.BUILDING); onContinue() }
+            IntentCard("I already live here", "Looking for remedies", chosen == Intent.LIVING) { onIntentChange(Intent.LIVING); onContinue() }
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
-        VastuButton(text = "Continue", onClick = onContinue, enabled = chosen != null, modifier = Modifier.testTag("welcome.continue"))
-        Spacer(Modifier.height(VastuTheme.spacing.s4))
         // Quiet, and under the button on purpose — it must be findable, not sold. See [onPrivacy].
         //
         // ⚠ FULL WIDTH SINCE 18 AUG 2026, and it is still quiet. It was a hugging pill under a

@@ -45,8 +45,6 @@ fun MoreDetailsScreen(
     vm: NewPlanViewModel,
     onDone: () -> Unit,
     onBack: () -> Unit,
-    /** See [MoreDetailsContent.returnsToReport]. */
-    returnsToReport: Boolean = false,
 ) {
     MoreDetailsContent(
         answers = vm.siteAnswers,
@@ -54,7 +52,6 @@ fun MoreDetailsScreen(
         onDecline = vm::declineSiteItem,
         onDone = onDone,
         onBack = onBack,
-        returnsToReport = returnsToReport,
         isFlat = vm.propertyType == com.vastufirst.shared.PropertyType.FLAT,
     )
 }
@@ -66,15 +63,6 @@ fun MoreDetailsContent(
     onDecline: (SiteItem) -> Unit,
     onDone: () -> Unit,
     onBack: () -> Unit,
-    /**
-     * ⭐ TRUE when the reader came here from a finished report, false when they came from "Check
-     * what we read" — the second entry point, added 17 Aug 2026.
-     *
-     * It changes nothing but the words on the one button, and it has to: a button reading "back to
-     * my report" on a screen that returns to a checklist names a screen it does not open, which
-     * this project has logged as a defect twice.
-     */
-    returnsToReport: Boolean = false,
     /**
      * ⭐⭐ EVERY ONE OF THESE FOUR BELONGS TO THE BUILDING WHEN THE HOME IS A FLAT — the roof tank,
      * the sump, the tree in the compound, the road at the gate. Not one of them is on the reader's
@@ -150,7 +138,8 @@ fun MoreDetailsContent(
         // never did. The header's ‹ chevron is still there for anyone who wants to leave; the one
         // button below says what actually happens, which is that the answers are already in.
         VastuButton(
-            if (returnsToReport) "Done — back to my report" else "Done — back to my rooms",
+            // It is reached only from the report now ("Check what we read", its other door, is gone).
+            "Done — back to my report",
             onClick = onDone,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
