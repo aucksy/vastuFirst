@@ -148,7 +148,7 @@ class ScanJourneyNavTest {
     }
 
     private fun ComposeUiTest.waitFor(text: String, millis: Long = 10_000) {
-        waitUntil(millis) { onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        waitUntil(timeoutMillis = millis) { onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun ComposeUiTest.tapWhenShown(text: String, millis: Long = 10_000) {

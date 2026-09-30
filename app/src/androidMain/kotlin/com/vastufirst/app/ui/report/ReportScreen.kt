@@ -214,13 +214,16 @@ fun ReportScreen(
  */
 fun frontDoorProvenance(door: GridDoor, doorFromCaption: String?, doorIsOurs: Boolean): String {
     val wall = com.vastufirst.app.ui.scan.doorSideWords(door.side)
-    return when {
-        !doorIsOurs -> "You put it on $wall. To move it, tap Change front door."
-        doorFromCaption != null ->
-            "Your plan prints \"$doorFromCaption\" on $wall, so we put it there. To move it, tap Change front door."
-        else -> "We read it from your plan's own entrance, on $wall. To move it, tap Change front door."
+    val where = when {
+        !doorIsOurs -> "You put it on $wall."
+        doorFromCaption != null -> "Your plan prints \"$doorFromCaption\" on $wall, so we put it there."
+        else -> "We read it from your plan's own entrance, on $wall."
     }
+    return "$where $MOVE_THE_DOOR"
 }
+
+/** The one way to move the door from the report, said once for all three states above. */
+private const val MOVE_THE_DOOR = "To move it, tap Change front door."
 
 /**
  * The beat between "read my home" and the report. Long enough to read the line above the bar, short
