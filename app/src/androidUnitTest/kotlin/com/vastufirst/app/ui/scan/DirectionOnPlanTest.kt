@@ -269,6 +269,44 @@ class DirectionOnPlanTest {
         onNode(hasContentDescription("showing roughly where KITCHEN was read", substring = true)).assertExists()
     }
 
+    /**
+     * ⭐ THE TRIAL IS OVER (owner, 30 Sep 2026: *"END THE DIRECTION TRIAL. Keep directions. Remove the
+     * Boxes choice and the switch."*). The report, drawn with nothing but its own defaults — no switch
+     * handed in, no chooser — is the direction way: a screen reader is told a tap gives a direction, a
+     * tapped room shows its short form, and there is no "Trial" or "Boxes" anywhere on it.
+     */
+    @Test
+    fun `the report's photograph shows directions on its own, with no choice left to make`() = runComposeUiTest {
+        phoneSized()
+        val s = SheetReport()
+        setContent {
+            VastuTheme {
+                ReportContent(
+                    analysis = s.analysis,
+                    intent = Intent.BUILDING,
+                    rooms = s.grid,
+                    north = 0,
+                    cols = s.outcome.cols,
+                    rows = s.outcome.rows,
+                    planImage = s.picture,
+                    planRooms = s.planRooms,
+                    doorAtPage = s.door?.let { doorMarkerOnPage(it, s.outcome.rooms) },
+                )
+            }
+        }
+        onNode(hasContentDescription("Your scanned plan. Tap a room to hear its direction.", substring = true))
+            .assertExists()
+        listOf("Trial", "Boxes").forEach { gone ->
+            onAllNodes(hasText(gone, substring = true)).assertCountEquals(0)
+        }
+        onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
+        assertEquals(
+            "a tapped room must show its short form on the photograph",
+            listOf(s.resultNamed("KITCHEN").mainZone.code()),
+            labelsOnPlan(),
+        )
+    }
+
     /** The one tag the label carries, so a golden or a test elsewhere can find it by name. */
     @Test
     fun `the one label on the plan is the one the tag names`() = runComposeUiTest {
