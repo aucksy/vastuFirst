@@ -16,6 +16,7 @@ import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.components.VastuCard
+import com.vastufirst.designsystem.components.VastuFoldSection
 import com.vastufirst.designsystem.theme.VastuTheme
 
 /**
@@ -44,6 +45,13 @@ import com.vastufirst.designsystem.theme.VastuTheme
  * changed, which trains people to click through the card — the exact failure this screen exists to
  * avoid. If the owner reads it differently, bumping the key is a one-line change in
  * [PlanReadingConsent].
+ *
+ * ⭐ 30 Sep 2026 — THE FIVE FACTS ARE FOLDED (owner: *"Put its five facts inside one folded list, shut
+ * by default, headed 'What happens to your plan (5)' ... Keep every fact word for word inside the
+ * fold."*). The screen showed 172 words before scrolling and the facts were most of them. They sit,
+ * unchanged, one tap under that heading; the headline, the button that agrees, the line about
+ * Settings and the way to draw instead stay on the page. The consent key was NOT bumped, on his word:
+ * nothing new is disclosed — the same facts, one tap further in. ScanConsentFoldTest holds all of it.
  */
 @Composable
 fun ScanConsentScreen(
@@ -71,21 +79,11 @@ fun ScanConsentScreen(
         )
 
         Spacer(Modifier.height(VastuTheme.spacing.s6))
-        VastuCard {
-            Fact("What we send", "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.")
-            Fact(
-                "Who reads it",
-                "A relay called OpenRouter passes it to an AI model from OpenAI, which we ask " +
-                    "twice and keep the fuller reading — and sometimes a second model from Google " +
-                    "for a second opinion. Their computers are abroad.",
-            )
-            Fact(
-                "What we ask it",
-                "Only to read what is printed on your plan — the room names and sizes, and where " +
-                    "each room sits. It is never asked anything about Vastu.",
-            )
-            Fact("What we keep", "Nothing. Your plan is not stored by us, and it stays in your phone's own storage.")
-            Fact("Who works out your score", "Your phone does, on its own, exactly as it does for a home you draw by hand.")
+        // ⭐ Shut by default; one tap opens it. The count on the heading is counted, never typed.
+        VastuFoldSection(label = "What happens to your plan", count = CONSENT_FACTS.size) {
+            VastuCard {
+                CONSENT_FACTS.forEach { (title, body) -> Fact(title, body) }
+            }
         }
 
         Spacer(Modifier.height(VastuTheme.spacing.s4))
@@ -124,6 +122,23 @@ fun ScanConsentScreen(
         VastuButton("Back", onClick = onBack, style = VastuButtonStyle.SECONDARY, large = false)
     }
 }
+
+/**
+ * The five facts a person agrees to, each a title and its sentence — word for word what the card has
+ * said since 19 Sep 2026. The "Who reads it" fact must match `reader-config.json` (see above).
+ */
+private val CONSENT_FACTS = listOf(
+    "What we send" to "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.",
+    "Who reads it" to
+        "A relay called OpenRouter passes it to an AI model from OpenAI, which we ask " +
+        "twice and keep the fuller reading — and sometimes a second model from Google " +
+        "for a second opinion. Their computers are abroad.",
+    "What we ask it" to
+        "Only to read what is printed on your plan — the room names and sizes, and where " +
+        "each room sits. It is never asked anything about Vastu.",
+    "What we keep" to "Nothing. Your plan is not stored by us, and it stays in your phone's own storage.",
+    "Who works out your score" to "Your phone does, on its own, exactly as it does for a home you draw by hand.",
+)
 
 @Composable
 private fun Fact(title: String, body: String) {

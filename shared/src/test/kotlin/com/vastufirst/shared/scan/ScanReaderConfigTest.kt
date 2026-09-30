@@ -175,33 +175,6 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `⭐ the shipped build runs the direction trial, and its switch is one line of data`() {
-        // The owner, 29 Sep 2026: "as a trial: when I tap a room, show its direction ON the room, on
-        // the plan, instead of drawing a box ... Keep the switch as data, so going back is a one-line
-        // change and no code is deleted. The trial is ON in the build I install."
-        assertTrue(recipe.config.directionTrial, "the trial must be ON in the build he installs")
-        // Read from the FILE, never defaulted into being: the raw text must carry the very line he
-        // would edit to go back, or "a one-line change" is not true.
-        val raw = ScanReaderConfigLoader::class.java.getResourceAsStream(ScanReaderConfigLoader.RESOURCE)!!
-            .use { it.readBytes().decodeToString() }
-        assertTrue(
-            Regex("\"directionTrial\"\\s*:\\s*true").containsMatchIn(raw),
-            "reader-config.json must say directionTrial true in so many words",
-        )
-    }
-
-    @Test
-    fun `a config written before the trial keeps the box way`() {
-        // Absent means OFF. A config that never heard of the trial must not silently acquire it —
-        // that is what makes "false" and "deleted" the same thing, and the old app one value away.
-        val old = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }.decodeFromString(
-            ScanReaderConfig.serializer(),
-            """{"endpoint":"https://x.example","model":"m","userAgent":"u","promptResource":"/p"}""",
-        )
-        assertEquals(false, old.directionTrial)
-    }
-
-    @Test
     fun `a broken config fails loudly rather than silently`() {
         // Fail-loud is the ruleset loader's contract too: a config the app cannot use is a
         // programming error we want at startup with a readable message, not requests to nowhere.

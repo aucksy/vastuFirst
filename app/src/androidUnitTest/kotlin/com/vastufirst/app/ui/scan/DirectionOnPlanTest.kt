@@ -1,10 +1,6 @@
 package com.vastufirst.app.ui.scan
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.semantics.SemanticsActions
@@ -19,16 +15,12 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
 import com.vastufirst.app.render.PlanSheet
 import com.vastufirst.app.ui.common.ROOM_CODE_TAG
-import com.vastufirst.app.ui.common.ROOM_MARKER_CHOICE_TAG
-import com.vastufirst.app.ui.common.RoomMarker
-import com.vastufirst.app.ui.common.RoomMarkerChoice
 import com.vastufirst.app.ui.common.centreOrNull
 import com.vastufirst.app.ui.common.code
 import com.vastufirst.app.ui.common.directionWords
@@ -37,7 +29,6 @@ import com.vastufirst.app.ui.common.short
 import com.vastufirst.app.ui.report.ReportContent
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Intent
-import com.vastufirst.shared.scan.ScanReaderConfigLoader
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -47,23 +38,25 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * ⭐⭐ THE DIRECTION TRIAL, DONE WITH A FINGER — as the owner redrew it on 30 Sep 2026: *"it should not
- * show any short or long form direction until tapped on a room bellow in the list.. and it should only
- * show the short form on the floor plan and full direction name on the card below only .. and try to
- * improve the placement of direction short form to be in center of the room and 20% smaller"*.
+ * ⭐⭐ THE DIRECTION ON THE PLAN, DONE WITH A FINGER — as the owner redrew it on 30 Sep 2026: *"it should
+ * not show any short or long form direction until tapped on a room bellow in the list.. and it should
+ * only show the short form on the floor plan and full direction name on the card below only .. and try
+ * to improve the placement of direction short form to be in center of the room and 20% smaller"*.
  *
  * So: at rest the plan carries no direction; a tapped room — by its card, or on the plan itself, one
  * selection under one rule — shows its short form on the plan, the engine's own zone, where MOST of the
  * room is; its full name is in its card and nowhere on the plan.
  *
+ * ⚠ IT IS THE ONLY WAY SINCE v0.36.0 (owner, 30 Sep 2026: *"END THE DIRECTION TRIAL. Keep directions.
+ * Remove the Boxes choice and the switch."*). The tests of the switch and of the chooser went with them;
+ * the first test below pins that nothing is left to choose.
+ *
  * ⚠ ON THE REPORT ONLY, SINCE 30 SEP 2026. These tests were written for two screens — "Check what we
  * read" and the report — and pushed ALONE first (9a412ed), failing on the app as it was. The checking
  * screen is gone (owner: *"I specially think the 'Check what we read' screen is not needed"*), so
  * every one of them now holds the report, which draws the same picture through the same component.
- * Nothing the trial promises lost its test.
  *
- * Every test here performs a real tap. The trial is switched on HERE the way the app switches it on —
- * from the bundled reader config — so the day the data says `false` these tests say so too.
+ * Every test here performs a real tap.
  *
  * ⚠ org.junit.Assert: the MESSAGE comes FIRST.
  */
@@ -75,9 +68,6 @@ class DirectionOnPlanTest {
 
     /** The same string the render matrix calls its baseline — a real phone's window. */
     private fun phoneSized() = org.robolectric.RuntimeEnvironment.setQualifiers("+w412dp-h915dp-port-xhdpi")
-
-    /** The switch exactly as the app reads it: the bundled reader config, through the app's holder. */
-    private fun shippedChoice() = RoomMarkerChoice(trialOn = ScanReaderConfigLoader.load().config.directionTrial)
 
     /**
      * Every direction label on the plan, whatever its kind — each kind the plan has ever drawn carries
@@ -118,8 +108,9 @@ class DirectionOnPlanTest {
         fun resultNamed(name: String) = planRooms.first { it.name == name }.id.let { id -> analysis.roomResults.first { it.roomId == id } }
     }
 
+    /** The report exactly as the app draws it for a scanned home: nothing handed in but the home. */
     @Composable
-    private fun SheetReportContent(s: SheetReport, marker: RoomMarker, onMarkerChange: ((RoomMarker) -> Unit)?) {
+    private fun SheetReportContent(s: SheetReport) {
         ReportContent(
             analysis = s.analysis,
             intent = Intent.BUILDING,
@@ -130,31 +121,40 @@ class DirectionOnPlanTest {
             planImage = s.picture,
             planRooms = s.planRooms,
             doorAtPage = s.door?.let { doorMarkerOnPage(it, s.outcome.rooms) },
-            roomMarker = marker,
-            onRoomMarkerChange = onMarkerChange,
         )
     }
 
-    /** The report with the trial's chooser live, as the build he installs draws it. */
-    @Composable
-    private fun LiveChooserReport(s: SheetReport) {
-        val choice = remember { shippedChoice() }
-        var marker by remember { mutableStateOf(choice.current) }
-        SheetReportContent(s, marker) { marker = it }
-    }
-
+    /**
+     * ⭐ THE TRIAL IS OVER (owner, 30 Sep 2026: *"END THE DIRECTION TRIAL. Keep directions. Remove the
+     * Boxes choice and the switch."*). The report, drawn with nothing but its own defaults — no switch
+     * handed in, no chooser — is the direction way: a screen reader is told a tap gives a direction, a
+     * tapped room shows its short form, and there is no "Trial" or "Boxes" anywhere on it.
+     *
+     * Pushed ALONE first (4c75c12), on v0.35.0, where the report's own default was still the box way.
+     */
     @Test
-    fun `the build he installs runs the trial`() {
-        val choice = shippedChoice()
-        assertTrue("the trial must be ON in the shipped data", choice.offered)
-        assertEquals(RoomMarker.DIRECTION, choice.current)
+    fun `the report's photograph shows directions on its own, with no choice left to make`() = runComposeUiTest {
+        phoneSized()
+        val s = SheetReport()
+        setContent { VastuTheme { SheetReportContent(s) } }
+        onNode(hasContentDescription("Your scanned plan. Tap a room to hear its direction.", substring = true))
+            .assertExists()
+        listOf("Trial", "Boxes").forEach { gone ->
+            onAllNodes(hasText(gone, substring = true)).assertCountEquals(0)
+        }
+        onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
+        assertEquals(
+            "a tapped room must show its short form on the photograph",
+            listOf(s.resultNamed("KITCHEN").mainZone.code()),
+            labelsOnPlan(),
+        )
     }
 
     @Test
     fun `at rest the photograph is bare, a tapped card puts only its short form there, and tapped again leaves it bare`() = runComposeUiTest {
         phoneSized()
         val s = SheetReport()
-        setContent { VastuTheme { LiveChooserReport(s) } }
+        setContent { VastuTheme { SheetReportContent(s) } }
         assertEquals("at rest the report's photograph may carry no direction", emptyList<String>(), labelsOnPlan())
 
         val kitchen = s.resultNamed("KITCHEN")
@@ -177,9 +177,8 @@ class DirectionOnPlanTest {
     @Test
     fun `a tap on the room in the photograph shows the same short form`() = runComposeUiTest {
         phoneSized()
-        val choice = shippedChoice()
         val s = SheetReport()
-        setContent { VastuTheme { SheetReportContent(s, choice.current, null) } }
+        setContent { VastuTheme { SheetReportContent(s) } }
         val kitchen = s.planRooms.first { it.name == "KITCHEN" }
         // ⚠ Scrolled into view first: a touch below the fold lands nowhere and raises no error.
         val picture = onNode(hasContentDescription("Your scanned plan", substring = true))
@@ -206,7 +205,7 @@ class DirectionOnPlanTest {
             "the finding for the living room must still name the zone it crosses into",
             s.analysis.defects.any { it.roomId == living.roomId && it.zone == living.zone },
         )
-        setContent { VastuTheme { SheetReportContent(s, RoomMarker.DIRECTION, null) } }
+        setContent { VastuTheme { SheetReportContent(s) } }
         val card = onNode(isRoomCard and hasText("LIVING ROOM", substring = true))
         card.performScrollTo().performClick()
 
@@ -223,7 +222,7 @@ class DirectionOnPlanTest {
     fun `a screen reader touching the label hears the room's direction in words, not letters`() = runComposeUiTest {
         phoneSized()
         val s = SheetReport()
-        setContent { VastuTheme { SheetReportContent(s, RoomMarker.DIRECTION, null) } }
+        setContent { VastuTheme { SheetReportContent(s) } }
         val words = s.resultNamed("LIVING ROOM").directionWords()
         assertTrue("the living room must be a crossing room, so its words carry the middle dot", words.contains(" · "))
         onNode(isRoomCard and hasText("LIVING ROOM", substring = true)).performScrollTo().performClick()
@@ -236,83 +235,12 @@ class DirectionOnPlanTest {
         )
     }
 
-    @Test
-    fun `flipping the chooser to boxes takes the direction off the plan and brings the box way back`() = runComposeUiTest {
-        phoneSized()
-        val s = SheetReport()
-        setContent { VastuTheme { LiveChooserReport(s) } }
-        onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
-        assertEquals("the trial shows the tapped room's short form", 1, labelsOnPlan().size)
-
-        onNodeWithText("Boxes").performScrollTo().performClick()
-
-        assertEquals("the box way writes no direction on the plan", emptyList<String>(), labelsOnPlan())
-        // The picture now says what the box way has always said about the same room.
-        onNode(hasContentDescription("showing roughly where", substring = true)).assertExists()
-    }
-
-    /** The switch: off is the box way, no chooser, no direction anywhere on the photograph. */
-    @Test
-    fun `with the switch off the photograph is the box way and offers no chooser`() = runComposeUiTest {
-        phoneSized()
-        val off = RoomMarkerChoice(trialOn = false)
-        val s = SheetReport()
-        setContent {
-            VastuTheme {
-                SheetReportContent(s, off.current, if (off.offered) ({ m: RoomMarker -> off.current = m }) else null)
-            }
-        }
-        onAllNodesWithTag(ROOM_MARKER_CHOICE_TAG).assertCountEquals(0)
-        assertEquals("the box way writes no direction on the photograph", emptyList<String>(), labelsOnPlan())
-        onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
-        assertEquals("…not even for a tapped room", emptyList<String>(), labelsOnPlan())
-        onNode(hasContentDescription("showing roughly where KITCHEN was read", substring = true)).assertExists()
-    }
-
-    /**
-     * ⭐ THE TRIAL IS OVER (owner, 30 Sep 2026: *"END THE DIRECTION TRIAL. Keep directions. Remove the
-     * Boxes choice and the switch."*). The report, drawn with nothing but its own defaults — no switch
-     * handed in, no chooser — is the direction way: a screen reader is told a tap gives a direction, a
-     * tapped room shows its short form, and there is no "Trial" or "Boxes" anywhere on it.
-     */
-    @Test
-    fun `the report's photograph shows directions on its own, with no choice left to make`() = runComposeUiTest {
-        phoneSized()
-        val s = SheetReport()
-        setContent {
-            VastuTheme {
-                ReportContent(
-                    analysis = s.analysis,
-                    intent = Intent.BUILDING,
-                    rooms = s.grid,
-                    north = 0,
-                    cols = s.outcome.cols,
-                    rows = s.outcome.rows,
-                    planImage = s.picture,
-                    planRooms = s.planRooms,
-                    doorAtPage = s.door?.let { doorMarkerOnPage(it, s.outcome.rooms) },
-                )
-            }
-        }
-        onNode(hasContentDescription("Your scanned plan. Tap a room to hear its direction.", substring = true))
-            .assertExists()
-        listOf("Trial", "Boxes").forEach { gone ->
-            onAllNodes(hasText(gone, substring = true)).assertCountEquals(0)
-        }
-        onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
-        assertEquals(
-            "a tapped room must show its short form on the photograph",
-            listOf(s.resultNamed("KITCHEN").mainZone.code()),
-            labelsOnPlan(),
-        )
-    }
-
     /** The one tag the label carries, so a golden or a test elsewhere can find it by name. */
     @Test
     fun `the one label on the plan is the one the tag names`() = runComposeUiTest {
         phoneSized()
         val s = SheetReport()
-        setContent { VastuTheme { SheetReportContent(s, RoomMarker.DIRECTION, null) } }
+        setContent { VastuTheme { SheetReportContent(s) } }
         onNode(isRoomCard and hasText("KITCHEN", substring = true)).performScrollTo().performClick()
         onAllNodesWithTag(ROOM_CODE_TAG).assertCountEquals(1)
     }

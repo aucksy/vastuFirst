@@ -3,52 +3,34 @@ package com.vastufirst.app.ui.common
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.scan.ScanBox
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * ⭐⭐ THE DIRECTION TRIAL'S ARITHMETIC — pure, so every case is pinned without drawing anything.
+ * ⭐⭐ THE DIRECTION ON THE PLAN, ITS ARITHMETIC — pure, so every case is pinned without drawing anything.
  *
  * The owner, 29 Sep 2026: *"when I tap a room, show its direction ON the room, on the plan, instead of
- * drawing a box ... Build the new way beside the box way, never over it. One switch picks between
- * them."* Three things here would each fail silently in a picture:
+ * drawing a box"* — and on 30 Sep, ending the trial: *"Keep directions. Remove the Boxes choice and the
+ * switch."* Two things here would each fail silently in a picture:
  *
- *  · the switch — off must be the box way on the plan with no chooser, on must start on the trial;
- *  · the tap — with no box drawn, the finger aims at the room itself, and the box way's smallest-first
- *    rule then picks the WRONG room exactly where the reader's boxes are worst;
+ *  · the tap — with no box drawn, the finger aims at the room itself, and a smallest-box-first rule
+ *    would pick the WRONG room exactly where the reader's boxes are worst;
  *  · the label — centred on the room's middle (owner, 30 Sep 2026), and wholly inside the picture when
  *    the room is hard against its edge.
  *
  * ⚠ org.junit.Assert: the MESSAGE comes FIRST in every assertion below.
  */
-class RoomMarkerTest {
+class RoomDirectionTest {
 
     private fun room(id: String, type: RoomType, x: Double, y: Double, w: Double, h: Double) =
         PlanRoom(id = id, type = type, name = id, box = ScanBox(x = x, y = y, w = w, h = h))
 
-    @Test
-    fun `with the switch off the app is the box way exactly, and offers no choice`() {
-        val choice = RoomMarkerChoice(trialOn = false)
-        assertFalse("the chooser must not be offered when the trial is off", choice.offered)
-        assertEquals(RoomMarker.BOX, choice.current)
-    }
-
-    @Test
-    fun `with the switch on the app starts on the direction, and can flip to the box`() {
-        val choice = RoomMarkerChoice(trialOn = true)
-        assertTrue("the chooser must be offered while the trial runs", choice.offered)
-        assertEquals("the trial is what he installs to feel", RoomMarker.DIRECTION, choice.current)
-        choice.current = RoomMarker.BOX
-        assertEquals(RoomMarker.BOX, choice.current)
-    }
-
     /**
-     * ⭐ The case the direction way's own tap rule exists for. The reader's boxes swallow each other —
-     * 118 rooms across the recorded corpus sit inside another room's box — so a toilet's box often
-     * spills over the middle of the living room. With boxes on screen the finger can see that; with
-     * dots, a tap on the LIVING room's own dot must select the living room.
+     * ⭐ The case the plan's tap rule exists for. The reader's boxes swallow each other — 118 rooms
+     * across the recorded corpus sit inside another room's box — so a toilet's box often spills over
+     * the middle of the living room, where the smallest box containing the tap is the TOILET's. With no
+     * box on screen the finger aims at the room itself: a tap on the LIVING room's middle must select
+     * the living room.
      */
     @Test
     fun `a tap on the living room's dot picks the living room, even under a toilet's spilled box`() {
@@ -56,9 +38,7 @@ class RoomMarkerTest {
         val toilet = room("toilet", RoomType.TOILET, 0.25, 0.25, 0.2, 0.2)     // dot at 0.35, 0.35
         val rooms = listOf(living, toilet)
 
-        // The box way is UNCHANGED: smallest box containing the tap, which is the toilet's.
-        assertEquals("the box way must still pick the smallest box", "toilet", roomAtPoint(rooms, 0.30f, 0.30f)?.id)
-        // The direction way: the nearest dot among the boxes containing the tap.
+        // The nearest middle among the boxes containing the tap.
         assertEquals(
             "a tap on a room's own dot must select that room",
             "living",
@@ -128,20 +108,15 @@ class RoomMarkerTest {
     fun `a screen reader hears the room's direction in the same words the row prints`() {
         assertEquals(
             "Your plan. Kitchen is in the North-East.",
-            buildPlanDescription("Kitchen", hasDoor = false, marker = RoomMarker.DIRECTION, selectedDirection = "North-East"),
+            buildPlanDescription("Kitchen", hasDoor = false, selectedDirection = "North-East"),
         )
         // A room crossing into another zone: the row's middle dot is said as words, never read out.
         assertEquals(
             "Your plan. Living is in the North-West, and crosses the centre.",
             buildPlanDescription(
-                "Living", hasDoor = false, marker = RoomMarker.DIRECTION,
+                "Living", hasDoor = false,
                 selectedDirection = "North-West · crosses the centre",
             ),
-        )
-        // The box way's words are untouched.
-        assertEquals(
-            "Your plan, showing roughly where Kitchen was read",
-            buildPlanDescription("Kitchen", hasDoor = false),
         )
     }
 
@@ -162,7 +137,7 @@ class RoomMarkerTest {
     fun `at rest a screen reader hears that a tap gives a room's direction, not that every room carries one`() {
         assertEquals(
             "Your scanned plan. Tap a room to hear its direction.",
-            buildPlanDescription(null, hasDoor = false, marker = RoomMarker.DIRECTION),
+            buildPlanDescription(null, hasDoor = false),
         )
     }
 }

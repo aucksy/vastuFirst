@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -50,25 +49,6 @@ data class PlanRoom(
     /** Fractions of the picture. Null when the reader gave us no rectangle for this room. */
     val box: ScanBox?,
 )
-
-/**
- * Which room a tap at [point] (in fractions of the drawn picture) landed on, or null for none.
- *
- * ⚠ SMALLEST-FIRST, and that is the whole of the arithmetic. Rooms overlap on a real plan — an
- * attached toilet sits inside the bedroom's rectangle, a passage runs under three of them — so the
- * first box that contains the tap is very often the largest one. Sorting by area and taking the
- * smallest match means a tap on the toilet selects the toilet, which is what the finger meant.
- *
- * Pure, and separated from the drawing on purpose, so every case can be tested without rendering
- * anything: overlap, no match, and a room the reader gave no rectangle for.
- */
-fun roomAtPoint(rooms: List<PlanRoom>, x: Float, y: Float): PlanRoom? =
-    rooms.asSequence()
-        .filter { r ->
-            val b = r.box ?: return@filter false
-            x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h
-        }
-        .minByOrNull { (it.box!!.w * it.box.h) }
 
 /**
  * ⭐⭐ WHERE THE PICTURE ACTUALLY LANDS INSIDE ITS BOX — ONE function, and the whole safety of this
@@ -133,11 +113,10 @@ private suspend fun PointerInputScope.planTaps(
 }
 
 /**
- * The plan, the rooms drawn over it, and a tap that selects one.
+ * The plan, and a tap that selects a room on it.
  *
- * ⚠ In the box way EVERY room is outlined, not only the selected one: a picture where nothing is
- * drawn until you tap the right spot is a feature with no affordance. The selected room is filled and
- * thickened; the rest are quiet outlines that say "these are tappable".
+ * Nothing is drawn over a room at rest — no outline, no box. The selected room shows its short
+ * direction on its middle ([TappedRoomDirection]), and its card says the rest.
  */
 @Composable
 fun PlanWithRooms(
@@ -164,19 +143,11 @@ fun PlanWithRooms(
     /** The door was tapped. On the report this brings its reading into view. */
     onTapDoor: () -> Unit = {},
     /**
-     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026; redrawn by him 30 Sep) — what this picture shows
-     * about each room.
-     *
-     * [RoomMarker.BOX], the default, is this component exactly as it was before the trial: quiet
-     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws no box at all, and at rest no
-     * direction either: only the tapped room shows its SHORT direction ("SW"), on the middle of the room.
-     * Its full name is in its card, never here. See RoomMarker.kt.
-     */
-    marker: RoomMarker = RoomMarker.BOX,
-    /**
-     * The engine's own direction for each room, by room id — the SAME zone and words its card prints.
-     * Only read under [RoomMarker.DIRECTION]. A room missing from it shows nothing: this picture never
-     * works a direction out for itself.
+     * ⭐⭐ THE ENGINE'S OWN DIRECTION FOR EACH ROOM, by room id — the SAME zone and words its card
+     * prints (owner, 29 Sep 2026; redrawn by him 30 Sep). At rest nothing is shown; the tapped room shows
+     * its SHORT direction ("SW") on the middle of the room, and its full name stays in its card. A room
+     * missing from this map shows nothing: this picture never works a direction out for itself. See
+     * RoomDirection.kt.
      */
     directions: Map<String, RoomDirection> = emptyMap(),
 ) {
@@ -192,16 +163,11 @@ fun PlanWithRooms(
     val realAspect = if (image.width > 0 && image.height > 0) image.width.toFloat() / image.height else PLAN_DEFAULT_ASPECT
     val aspect = realAspect.coerceIn(PLAN_MIN_ASPECT, PLAN_MAX_ASPECT)
     val selected = rooms.firstOrNull { it.id == selectedId }
-    val quiet = colors.borderStrong
-    // ⚠ Resolved HERE, in composable scope. `editorColor()` reads the theme, and a draw lambda is not
-    // a composable scope — asking for it inside the Canvas does not compile.
-    val selectedTint = selected?.type?.editorColor() ?: colors.primary
 
     // ⚠ Read LIVE, never used as a pointerInput key: the gesture reader is keyed on the picture, and
-    // a new door, room list or marker must change what the NEXT tap means without restarting it.
+    // a new door or room list must change what the NEXT tap means without restarting it.
     val liveDoor by rememberUpdatedState(doorAtPage)
     val liveRooms by rememberUpdatedState(rooms)
-    val liveMarker by rememberUpdatedState(marker)
     val liveOnTapDoor by rememberUpdatedState(onTapDoor)
     val liveOnTapRoom by rememberUpdatedState(onTapRoom)
 
@@ -248,16 +214,11 @@ fun PlanWithRooms(
                                 if (f.w > 0f && f.h > 0f) {
                                     val fx = (at.x - f.ox) / f.w
                                     val fy = (at.y - f.oy) / f.h
-                                    // ⭐ The box way aims at outlines it can see; the direction way aims
-                                    // at the room itself, its printed name — see [roomNearestCentre] for
-                                    // why the two need different arithmetic. ⭐ ONE SELECTION, ONE RULE:
-                                    // a room chosen here is the same selection as a tap on its card.
-                                    val hit = if (liveMarker == RoomMarker.DIRECTION) {
-                                        roomNearestCentre(liveRooms, fx, fy, f.w, f.h, doorTouch.toPx())
-                                    } else {
-                                        roomAtPoint(liveRooms, fx, fy)
-                                    }
-                                    hit?.let { liveOnTapRoom(it.id) }
+                                    // ⭐ The finger aims at the room itself, its printed name — see
+                                    // [roomNearestCentre]. ⭐ ONE SELECTION, ONE RULE: a room chosen here
+                                    // is the same selection as a tap on its card.
+                                    roomNearestCentre(liveRooms, fx, fy, f.w, f.h, doorTouch.toPx())
+                                        ?.let { liveOnTapRoom(it.id) }
                                 }
                             },
                             onDoorTap = { liveOnTapDoor() },
@@ -267,7 +228,6 @@ fun PlanWithRooms(
                         contentDescription = buildPlanDescription(
                             selected?.name,
                             doorAtPage != null,
-                            marker = marker,
                             selectedDirection = selected?.let { directions[it.id]?.words },
                         )
                     },
@@ -280,26 +240,8 @@ fun PlanWithRooms(
                     dstOffset = IntOffset(origin.x.toInt(), origin.y.toInt()),
                     dstSize = IntSize(drawn.width.toInt(), drawn.height.toInt()),
                 )
-                fun rectOf(b: ScanBox): Pair<Offset, Size> =
-                    Offset(origin.x + b.x.toFloat() * drawn.width, origin.y + b.y.toFloat() * drawn.height) to
-                        Size(b.w.toFloat() * drawn.width, b.h.toFloat() * drawn.height)
-
-                if (marker == RoomMarker.BOX) {
-                    // The quiet ones first, so the selected room's outline is never drawn under another's.
-                    rooms.forEach { r ->
-                        if (r.id == selectedId) return@forEach
-                        val b = r.box ?: return@forEach
-                        val (tl, area) = rectOf(b)
-                        drawRect(color = quiet, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 4f))
-                    }
-                    selected?.box?.let { b ->
-                        val (tl, area) = rectOf(b)
-                        drawRect(color = selectedTint.copy(alpha = 0.28f), topLeft = tl, size = area)
-                        drawRect(color = selectedTint, topLeft = tl, size = area, style = Stroke(width = strokeDp.toPx() / 2f))
-                    }
-                }
-                // ⭐⭐ THE DIRECTION TRIAL DRAWS NOTHING ON THE PHOTOGRAPH ITSELF — no box, no dot, no
-                // ring. The tapped room's short direction is one small label laid over the picture by
+                // ⭐⭐ NOTHING IS DRAWN ON THE PHOTOGRAPH FOR A ROOM — no box, no dot, no ring. The tapped
+                // room's short direction is one small label laid over the picture by
                 // [TappedRoomDirection], on the room's middle; at rest there is none.
 
                 // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it.
@@ -325,12 +267,12 @@ fun PlanWithRooms(
                 }
             }
 
-            // ⭐⭐ THE DIRECTION TRIAL — the TAPPED room's short direction, the engine's own, laid over the
-            // user's own photograph on the middle of the room (owner, 30 Sep 2026). Nothing at rest, and
-            // never the full name: that is in the room's card.
+            // ⭐⭐ THE TAPPED room's short direction, the engine's own, laid over the user's own photograph
+            // on the middle of the room (owner, 30 Sep 2026). Nothing at rest, and never the full name:
+            // that is in the room's card.
             val tappedDirection = selected?.let { directions[it.id] }
             val tappedMiddle = selected?.centreOrNull()
-            if (marker == RoomMarker.DIRECTION && selected != null && tappedDirection != null && tappedMiddle != null) {
+            if (selected != null && tappedDirection != null && tappedMiddle != null) {
                 val density = LocalDensity.current
                 val boxW = with(density) { drawnWidth.toPx() }
                 val boxH = with(density) { drawnHeight.toPx() }
@@ -375,25 +317,18 @@ internal fun doorCentrePx(
 internal fun buildPlanDescription(
     selectedName: String?,
     hasDoor: Boolean,
-    /** The direction trial says the room's direction, where the box way said where it was read. */
-    marker: RoomMarker = RoomMarker.BOX,
+    /** The tapped room's direction in its card's words — what a screen reader is told about it. */
     selectedDirection: String? = null,
 ): String {
-    val head = if (marker == RoomMarker.DIRECTION) {
-        when {
-            // ⚠ At rest nothing is written on the plan (owner, 30 Sep 2026), so this says what a tap
-            // gives rather than "with each room's direction written on it".
-            selectedName == null -> "Your scanned plan. Tap a room to hear its direction."
-            // The same words the room's card prints, in full although the plan shows only the short
-            // form — with the card's middle dot said as words.
-            selectedDirection != null ->
-                "Your plan. $selectedName is in the ${spokenDirection(selectedDirection)}."
-            else -> "Your plan, showing where $selectedName was read."
-        }
-    } else {
-        selectedName
-            ?.let { "Your plan, showing roughly where $it was read" }
-            ?: "Your scanned plan. Tap a room to see roughly where we read it."
+    val head = when {
+        // ⚠ At rest nothing is written on the plan (owner, 30 Sep 2026), so this says what a tap
+        // gives rather than "with each room's direction written on it".
+        selectedName == null -> "Your scanned plan. Tap a room to hear its direction."
+        // The same words the room's card prints, in full although the plan shows only the short
+        // form — with the card's middle dot said as words.
+        selectedDirection != null ->
+            "Your plan. $selectedName is in the ${spokenDirection(selectedDirection)}."
+        else -> "Your plan, showing where $selectedName was read."
     }
     // ⚠ The door sentence STATES a fact and does not issue an instruction, and it names the LETTER the
     // mark carries, so a screen-reader user can ask somebody about it.

@@ -286,7 +286,7 @@ jobs:
           PY
 
       # Which APP tests ran, class by class (29 Sep 2026). The render step runs every test under
-      # app/src/androidUnitTest — the tap tests, the direction trial's tests, the measurements — and
+      # app/src/androidUnitTest — the tap tests, the direction-on-the-plan tests, the measurements — and
       # Gradle prints only failures, so a test class that silently stopped being picked up looked
       # exactly like one that passed. Same shape as the pure-module summary above.
       - name: App test summary (what actually ran in the render step)

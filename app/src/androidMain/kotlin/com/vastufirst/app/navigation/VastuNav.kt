@@ -489,7 +489,6 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // and loading one would pull a different home over the draft already on screen.
                 val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
                 val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
-                val reportMarker = koinInject<com.vastufirst.app.ui.common.RoomMarkerChoice>()
                 LaunchedEffect(planId) {
                     if (planId != null) {
                         vm.loadById(planId)
@@ -575,11 +574,6 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // moment: the home was read days ago, and replaying the bar every time makes
                     // the app feel slower than it is. An id means "opened from the list".
                     introMillis = if (planId != null) 0L else READING_MILLIS,
-                    // ⭐ The direction trial: the report's photograph shows the marker the trial's one
-                    // holder says, and offers the chooser only while the trial's switch is on.
-                    roomMarker = reportMarker.current,
-                    onRoomMarkerChange = { m: com.vastufirst.app.ui.common.RoomMarker -> reportMarker.current = m }
-                        .takeIf { reportMarker.offered },
                     doorNote = doorNote,
                 )
             }

@@ -46,8 +46,6 @@ import com.vastufirst.app.ui.common.NotesStrip
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.PlanWithRooms
 import com.vastufirst.app.ui.common.RoomDirection
-import com.vastufirst.app.ui.common.RoomMarker
-import com.vastufirst.app.ui.common.RoomMarkerChooser
 import com.vastufirst.app.ui.common.directionWords
 import com.vastufirst.app.ui.common.buildZoneMapModel
 import com.vastufirst.app.ui.common.defectTitle
@@ -165,9 +163,6 @@ fun ReportScreen(
      * slower than it is.
      */
     introMillis: Long = READING_MILLIS,
-    /** What a tapped room shows on the photograph — the direction trial. See [ReportContent]. */
-    roomMarker: RoomMarker = RoomMarker.BOX,
-    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
     /** Where the front door came from, for a read home — see [ReportContent.doorNote]. */
     doorNote: String? = null,
 ) {
@@ -193,8 +188,6 @@ fun ReportScreen(
         planRooms = planRooms,
         doorAtPage = doorAtPage,
         introMillis = introMillis,
-        roomMarker = roomMarker,
-        onRoomMarkerChange = onRoomMarkerChange,
         doorNote = doorNote,
     )
 }
@@ -329,17 +322,6 @@ fun ReportContent(
     onAddDetails: () -> Unit = {},
     onRestart: () -> Unit = {},
     /**
-     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PHOTOGRAPH — the direction trial (owner, 29 Sep 2026; redrawn
-     * by him 30 Sep).
-     *
-     * [RoomMarker.BOX], the default, is this report exactly as it was;
-     * [RoomMarker.DIRECTION] shows nothing at rest, and the tapped room's SHORT direction on the middle
-     * of the room — its full name stays in its row.
-     */
-    roomMarker: RoomMarker = RoomMarker.BOX,
-    /** Flips [roomMarker] from the trial's chooser under the photograph. Null draws no chooser. */
-    onRoomMarkerChange: ((RoomMarker) -> Unit)? = null,
-    /**
      * For the harness: open this room on first draw, so a golden can photograph a tapped room on the
      * picture. Null — the default, and what the app always passes — keeps the report's own opening.
      */
@@ -467,7 +449,7 @@ fun ReportContent(
     var openRoomId by rememberSaveable { mutableStateOf(startOpenRoomId) }
 
     /**
-     * ⭐ The direction the trial shows for a tapped room on the photograph — the short form of the zone
+     * ⭐ The direction a tapped room shows on the photograph — the short form of the zone
      * its row names, and the row's very words for a screen reader ([directionWords], one spelling for
      * both) — never worked out again from where the room sits in the picture.
      */
@@ -678,16 +660,9 @@ fun ReportContent(
                         // and it is a few lines below.
                         doorAtPage = doorAtPage,
                         onTapDoor = { revealDoor = true },
-                        // ⭐ THE DIRECTION TRIAL — see RoomMarker.kt.
-                        marker = roomMarker,
+                        // ⭐ A tapped room's direction, on the photograph — see RoomDirection.kt.
                         directions = planDirections,
                     )
-                    // The trial's chooser, only under the PHOTOGRAPH: a home drawn by hand shows its
-                    // zone map, which has no reader's box to compare against.
-                    if (onRoomMarkerChange != null) {
-                        Spacer(Modifier.height(VastuTheme.spacing.s3))
-                        RoomMarkerChooser(current = roomMarker, onChange = onRoomMarkerChange)
-                    }
                 } else {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         ZoneMap(

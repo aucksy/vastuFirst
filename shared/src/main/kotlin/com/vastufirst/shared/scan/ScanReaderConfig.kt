@@ -46,34 +46,6 @@ data class ScanReaderConfig(
     val promptResource: String = "",
     val connectTimeoutMs: Int = 20_000,
     val readTimeoutMs: Int = 90_000,
-    /**
-     * ⭐⭐ THE DIRECTION TRIAL'S ONE SWITCH (owner, 29 Sep 2026).
-     *
-     * *"Those boxes have never been accurate, because every floor plan is drawn differently. But Vastu
-     * only needs each room's DIRECTION. So, as a trial: when I tap a room, show its direction ON the
-     * room, on the plan, instead of drawing a box."*
-     *
-     * `true` = the trial, as the owner redrew it on 30 Sep 2026: on the report's photograph (the only
-     * picture that shows it since "Check what we read" was removed the same day) the plan shows no
-     * direction until a room is tapped, then that room's SHORT
-     * direction on the middle of the room — the engine's own zone — with its full name only in its
-     * card; a small chooser under the plan lets the reader flip back to the box to compare the two on
-     * the same plan. `false` = the plan exactly as it was before 29 Sep 2026: the box, and no chooser.
-     * **Nothing of the box way was deleted** — this is a trial, built beside today's behaviour, and
-     * going back is this one value.
-     *
-     * ⚠ The cards' WORDS are not this switch's. A room crossing into a zone it may not occupy reads
-     * "North-West · crosses the centre" either way: that was the owner's separate decision about the
-     * words (29 Sep 2026), made for every place a room's direction is printed.
-     *
-     * Absent means `false`. A config written before the trial therefore keeps the old behaviour
-     * rather than silently acquiring a new one.
-     *
-     * ⚠ It chooses how a room is SHOWN, never how it is SCORED. The words on the room are the ones on
-     * its row and in the report, from the same engine result; the reader is still asked only for text
-     * and where things are, never for a direction (plan doc §3i, rule S1).
-     */
-    val directionTrial: Boolean = false,
 )
 
 /** A config plus the prompt text it names — everything needed to build one request. */

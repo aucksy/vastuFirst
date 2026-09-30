@@ -108,6 +108,13 @@ class AccessibilityTest {
             // The privacy gate carries more prose than any other screen, and the contrast trap this
             // check already caught once on the scan screen lives in exactly that kind of copy.
             "scan-consent" to { ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {}) },
+            // …and with its five facts opened (folded shut since 30 Sep 2026), so the words a person
+            // agrees to still face this pass.
+            "scan-consent-open" to {
+                com.vastufirst.designsystem.components.VastuRevealAll {
+                    ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {})
+                }
+            },
             // ⭐⭐ A PLACED READ, since 30 Sep 2026: "We read N rooms", the rooms folded under it, and
             // North asked on the reader's own plan — the dial, the slider, the four chips and the
             // "Is this right?" card, the densest cluster of controls on the whole scan path. Its list
@@ -188,7 +195,7 @@ class AccessibilityTest {
         )
         screens.forEach { (name, content) -> writeA11yManifest(name, content) }
 
-        // ⭐⭐ THE DIRECTION TRIAL'S LABEL, which no accessibility pass had ever looked at (found by the
+        // ⭐⭐ THE DIRECTION LABEL, which no accessibility pass had ever looked at (found by the
         // 30 Sep 2026 audit). A tapped room on the repository's one real plan picture — a SAMPLE sheet —
         // with its short direction on the room, made 20 % smaller that day by the owner, so the contrast
         // and label checks see it. At the baseline, the 320 dp phone, the 200 % font and dark, each its
@@ -226,8 +233,6 @@ class AccessibilityTest {
                 planImage = picture,
                 planRooms = com.vastufirst.app.ui.scan.planRoomsOf(sheet.rooms),
                 doorAtPage = sheetDoor?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, sheet.rooms) },
-                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
-                onRoomMarkerChange = {},
                 startOpenRoomId = kitchenId,
             )
         }

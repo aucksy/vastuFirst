@@ -1738,6 +1738,11 @@ and then *still* showing a refusal. It now costs one primary call and shows the 
 
 ## 3x. ⭐⭐⭐ THE DIRECTION TRIAL — each room shows its direction on the user's own plan (29 September 2026, v0.32.0)
 
+**ENDED 30 Sep 2026, v0.36.0 — directions are the only way.** The owner kept directions and removed the
+"Directions / Boxes" choice and the `directionTrial` switch; the box way was deleted with them. Where the
+switch, the chooser or the box way appear below, they describe what shipped then, not what exists now.
+See "v0.36.0 — the trial ends" at the end of this section.
+
 **The owner's brief:** *"On 'Check what we read', tapping a room draws a box over where the reader
 thinks the room is. Those boxes have never been accurate, because every floor plan is drawn
 differently. But Vastu only needs each room's DIRECTION. So, as a trial: when I tap a room, show its
@@ -1750,9 +1755,9 @@ plan just like we were doing before."*
 
 ### What shipped in v0.32.0 (free, no paid scan)
 
-- **The switch:** `directionTrial` in `shared/src/main/resources/scan/reader-config.json`, `true`.
+- **The switch (deleted in v0.36.0):** `directionTrial` in `shared/src/main/resources/scan/reader-config.json`, `true`.
   `false` = the box way exactly — same drawing, same tap rule, no chooser. Absent = `false`. One
-  `RoomMarkerChoice` (Koin single, not saved) holds it for both screens.
+  `RoomMarkerChoice` (Koin single, not saved) held it for both screens.
 - **The picture:** `PlanWithRooms`, the one component "Check what we read" and the report both draw,
   takes `marker` and `directions`. Under `DIRECTION` nothing is drawn on the photograph itself — no box,
   dot or ring. Every room carries a small label with its short direction (N, NE, SW, C) edged in its
@@ -1765,7 +1770,7 @@ plan just like we were doing before."*
   calculation.
 - **The tap:** under `DIRECTION` the nearest room middle wins among the boxes that contain the tap
   (`roomNearestCentre`); the box way's smallest-box rule is untouched.
-- **The chooser:** "Trial — your plan shows: Directions / Boxes", first in the list on "Check what we
+- **The chooser (deleted in v0.36.0):** "Trial — your plan shows: Directions / Boxes", first in the list on "Check what we
   read" (the pinned header has no room in landscape at 200 %) and under the report's photograph.
 - **Every existing golden re-rendered byte-identical** — the box way really is untouched.
 - **Correcting a room's place:** nothing to preserve. No screen has let a reader move a room on the
@@ -1961,7 +1966,7 @@ gate.
 
 **The audit of the feature as built (v0.33.0), free, each point proven by a test or a picture:**
 
-- **The switch.** `directionTrial: false` gives the box way on the PLAN on both screens, with no chooser:
+- **The switch (deleted in v0.36.0).** `directionTrial: false` gave the box way on the PLAN on both screens, with no chooser:
   pinned on "Check what we read" by the existing test and now on the report too (`DirectionOnPlanTest`,
   "on the report with the switch off…", which passed on v0.33.0 as it stands). ⚠ One thing the switch
   does NOT turn back, and the config's note used to claim it did: the cards' words for a room crossing
@@ -2022,3 +2027,21 @@ in center of the room and 20% smaller"*. Built exactly so, on both screens (one 
   printed name** on the sample sheet: "KITCHEN" reads "HEN", "LIVING ROOM" reads "ROOM" — shown to the
   owner as a picture. It also sits a little left of each room's drawn middle, because it goes on the
   middle of the READER's box, which on this sheet is wider than the drawn room.
+
+### v0.36.0 (30 Sep 2026) — the trial ends
+
+**The owner's decision:** *"END THE DIRECTION TRIAL. Keep directions. Remove the Boxes choice and the
+switch."* Directions are the only way, and they look exactly as they did: nothing at rest, the tapped
+room's short form on the middle of the reader's box, its full name in its card.
+
+- **Deleted:** the chooser ("Trial — your plan shows: Directions / Boxes") under the report's photograph;
+  `directionTrial` in `reader-config.json` and `ScanReaderConfig`; `RoomMarker`, `RoomMarkerChoice` and
+  its Koin single; and the box way nothing could reach any more — its outlines on the photograph, its
+  smallest-box tap rule (`roomAtPoint`) and its screen-reader sentence ("…roughly where we read it").
+  Their tests went with them. `RoomMarker.kt` is `RoomDirection.kt` now, holding what is left.
+- **Kept:** the one tap rule (`roomNearestCentre`), the label and its placement, the screen-reader words.
+- **Proof:** a test pushed ALONE first (4c75c12) failed on v0.35.0 because the report's own default was
+  still the box way; it passes now. `report-scanned`'s pictures lose the thin outlines they drew at rest,
+  because that golden never asked for directions — the app's own report always did.
+- **Not changed, on the owner's word:** where the label sits. On the middle of the room it covers the
+  printed name; that is still his open question.

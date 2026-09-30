@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.billing.BillingState
 import com.vastufirst.app.ui.addhome.AddHomeScreen
-import com.vastufirst.app.ui.common.RoomMarker
 import com.vastufirst.app.ui.details.MoreDetailsContent
 import com.vastufirst.app.ui.details.SiteAnswers
 import com.vastufirst.app.ui.grid.GuidedGridContent
@@ -211,8 +210,6 @@ internal object JourneyFixtures {
             planImage = home.photo,
             planRooms = planRoomsOf(home.outcome.rooms),
             doorAtPage = home.door?.let { doorMarkerOnPage(it, home.outcome.rooms) },
-            roomMarker = RoomMarker.DIRECTION,
-            onRoomMarkerChange = {},
         )
     }
 

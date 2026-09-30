@@ -60,8 +60,8 @@ class PlanFitTest {
     }
 
     /**
-     * ⭐ A tap inside a room's drawn rectangle must select that room: a real box walked through the SAME
-     * conversion the tap reader uses, and `roomAtPoint` — the real one — asked what it finds.
+     * ⭐ A tap on a room's middle must select that room: a real box walked through the SAME conversion
+     * the tap reader uses, and `roomNearestCentre` — the plan's one tap rule — asked what it finds.
      */
     @Test
     fun `a tap in a room's drawn box finds that room`() {
@@ -78,7 +78,7 @@ class PlanFitTest {
             val f = planFit(boxW, boxH, w, h)
             val cx = f.ox + (b.x + b.w / 2).toFloat() * f.w
             val cy = f.oy + (b.y + b.h / 2).toFloat() * f.h
-            val hit = roomAtPoint(listOf(room), (cx - f.ox) / f.w, (cy - f.oy) / f.h)
+            val hit = roomNearestCentre(listOf(room), (cx - f.ox) / f.w, (cy - f.oy) / f.h, f.w, f.h, maxPx = 48f)
             assertEquals("the centre of the kitchen must select the kitchen on a $w × $h sheet", "r1", hit?.id)
         }
     }

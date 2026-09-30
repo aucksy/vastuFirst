@@ -86,14 +86,6 @@ val appModule = module {
     single<ReaderChoice> { AndroidReaderChoice(androidContext()) }
     // The one-field slot that carries a scan's photograph and its rooms to the screens after it.
     single { ScanPictureSlot() }
-    // ⭐ The direction trial (owner, 29 Sep 2026): what a tapped room shows on the report's photograph,
-    // switched by `directionTrial` in the reader's config — the one line of data that turns the trial
-    // off and gives back the box way, untouched.
-    single {
-        com.vastufirst.app.ui.common.RoomMarkerChoice(
-            trialOn = get<com.vastufirst.shared.scan.PlanReadRecipe>().config.directionTrial,
-        )
-    }
 
     // ⭐ The ₹699 checkout. Built in full, SWITCHED OFF by a build flag — and the "off" path is a
     // real, honest implementation rather than a disabled button: NoBilling unlocks locally and the

@@ -1,5 +1,4 @@
-// RoomMarker.kt — what the user's own plan photograph shows about each room: the box the reader
-// drew, or the room's DIRECTION. The direction is a trial, built beside the box, switched by data.
+// RoomDirection.kt — what the user's own plan photograph shows about a tapped room: its DIRECTION.
 //
 // ⭐⭐ WHY THIS FILE EXISTS (owner, 29 Sep 2026): *"On 'Check what we read', tapping a room draws a box
 // over where the reader thinks the room is. Those boxes have never been accurate, because every floor
@@ -17,17 +16,14 @@
 // (The first design, 29 Sep 2026, put every room's short direction on the plan all the time and spelled
 // the tapped one out on the plan. It is gone because he asked for this one, not because it broke.)
 //
-// ⚠ IT IS A TRIAL, AND THE BOX WAY IS STILL HERE, WHOLE. Nothing that draws, taps or tests the box was
-// deleted or rewritten. `directionTrial` in `scan/reader-config.json` picks the default; with it off
-// the PLAN is the box way exactly — box, tint, tap and screen-reader words — and no chooser is offered.
-// With it on, a small chooser under the plan flips between the two on the SAME plan, so they can be
-// compared without reinstalling.
+// ⭐ IT IS THE ONLY WAY NOW (owner, 30 Sep 2026: *"END THE DIRECTION TRIAL. Keep directions. Remove the
+// Boxes choice and the switch."*). It began on 29 Sep as a trial beside the reader's box, with a switch
+// in the reader's config and a "Directions / Boxes" chooser under the plan. In v0.36.0 the chooser, the
+// switch and the box way — its outlines, its smallest-box tap rule and its screen-reader sentence —
+// were deleted, and what a reader sees of the directions did not change by a pixel.
 //
-// ⚠ What the switch does NOT turn back: the words in the rooms' cards. A room crossing into a zone it
-// may not occupy reads where most of it is ("North-West · crosses the centre") with the switch either
-// way, because that was the owner's separate decision about the words (29 Sep 2026), made for every
-// place a room's direction is printed — not a part of the trial. Found by the 30 Sep audit; the
-// comparison of the box-way pictures before and after that day shows only those words moving.
+// ⚠ WHERE THE LABEL SITS IS STILL THE OWNER'S OPEN QUESTION. On the middle of the room it can cover the
+// name the sheet prints there (on the sample sheet it hides most of "KITCHEN"). Do not move it without him.
 //
 // ⚠⚠ THE WORDS ON THE ROOMS ARE NEVER WORKED OUT HERE. They are the engine's own, handed in by the
 // report from the same result its room list prints. Deriving a direction from where a label sits on the photograph would be a second
@@ -37,12 +33,6 @@ package com.vastufirst.app.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,35 +54,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import com.vastufirst.designsystem.components.VText
-import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.pillShapeFor
 import com.vastufirst.designsystem.components.wrappedLineHeight
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.shared.Zone
 import kotlin.math.roundToInt
-
-/** What the plan shows about each room. */
-enum class RoomMarker {
-    /** The rectangle the reader drew, for a tapped room — everything before 29 Sep 2026. */
-    BOX,
-
-    /** The tapped room's short direction, from the engine, on the middle of the room — the trial. */
-    DIRECTION,
-}
-
-/**
- * ⭐ THE ONE PLACE THE TRIAL'S STATE LIVES — read by the report's photograph (the only picture that
- * shows it since "Check what we read" was removed on 30 Sep 2026).
- *
- * [offered] is the switch from the data: false = the box way on the plan, and no chooser. When it
- * is on, [current] starts on the direction (the trial is what he installs to feel) and the chooser can
- * flip it for comparison. Held for the life of the app and NOT saved: every launch starts on the trial
- * again, so a comparison made yesterday cannot quietly leave the trial switched off today.
- */
-class RoomMarkerChoice(trialOn: Boolean) {
-    val offered: Boolean = trialOn
-    var current: RoomMarker by mutableStateOf(if (trialOn) RoomMarker.DIRECTION else RoomMarker.BOX)
-}
 
 /**
  * A room's direction as the plan shows it: the engine's zone, and the words its card prints.
@@ -116,26 +82,22 @@ internal fun spokenDirection(words: String): String = words.replace(" · ", ", a
  */
 const val ROOM_CODE_TAG = "plan.room.code"
 
-/** The test tag on the trial's chooser under the plan. */
-const val ROOM_MARKER_CHOICE_TAG = "plan.marker.choice"
-
 /** Where a room is taken to BE, as one point: the middle of the rectangle it was read from. */
 internal fun PlanRoom.centreOrNull(): Pair<Float, Float>? =
     box?.let { (it.x + it.w / 2.0).toFloat() to (it.y + it.h / 2.0).toFloat() }
 
 /**
- * ⭐ WHICH ROOM A TAP MEANT, WHEN NO BOX IS DRAWN to aim at.
+ * ⭐ WHICH ROOM A TAP MEANT, WITH NO BOX DRAWN to aim at — the plan's one tap rule.
  *
- * With the box way the finger aims at an outline it can see, so "the smallest box that contains the
- * tap" ([roomAtPoint]) is right. With the direction way no box is drawn — the finger aims at the room's
- * name printed on the photograph, which is its middle, or at its label once tapped — and smallest-first
- * then picks wrongly exactly where the reader's boxes are worst: a toilet's box spilling over the middle
- * of the living room would take the tap aimed at the LIVING room. So here the nearest room middle wins among the rooms
- * whose box contains the tap; a tap outside every box takes the nearest middle within [maxPx].
+ * No outline is drawn, so the finger aims at the room's name printed on the photograph, which is its
+ * middle, or at its label once tapped. "The smallest box that contains the tap" would then pick wrongly
+ * exactly where the reader's boxes are worst: a toilet's box spilling over the middle of the living room
+ * would take the tap aimed at the LIVING room. So the nearest room middle wins among the rooms whose box
+ * contains the tap; a tap outside every box takes the nearest middle within [maxPx].
  * Distances are measured in drawn pixels ([pxPerX], [pxPerY]), so a tall sheet and a wide one behave
  * the same.
  *
- * Pure, so every case is pinned by a plain test (RoomMarkerTest) rather than by a picture.
+ * Pure, so every case is pinned by a plain test (RoomDirectionTest) rather than by a picture.
  */
 fun roomNearestCentre(
     rooms: List<PlanRoom>,
@@ -216,8 +178,7 @@ internal fun Zone.planColor(): Color = with(VastuTheme.colors) {
 internal class PlanLabel(val id: String, val direction: RoomDirection, val at: Offset)
 
 /**
- * ⭐⭐ THE TAPPED ROOM'S DIRECTION, ON THE USER'S OWN PLAN — the trial itself, as the owner redrew it on
- * 30 Sep 2026.
+ * ⭐⭐ THE TAPPED ROOM'S DIRECTION, ON THE USER'S OWN PLAN — as the owner redrew it on 30 Sep 2026.
  *
  * ONE label, for the tapped room only, and only its SHORT form — "SW", "N", "C". The full name is in the
  * room's own card below and nowhere on the plan. It sits on the middle of the room
@@ -290,43 +251,6 @@ internal fun TappedRoomDirection(label: PlanLabel, boxW: Float, boxH: Float) {
         layout(constraints.maxWidth, constraints.maxHeight) {
             val at = directionLabelTopLeft(label.at.x, label.at.y, p.width, p.height, boxW, boxH, glowPx)
             p.place(at.x, at.y)
-        }
-    }
-}
-
-/**
- * ⭐ THE TRIAL'S CHOOSER — the directions or the box, on the same plan, without reinstalling (owner:
- * *"If it is cheap to do, let me compare both views on the same plan without reinstalling."*).
- *
- * It says "Trial" in its own words because it is one: a reader handed this build should know the
- * choice is being tried, not wonder why a report has a setting in it. Shown only while the switch in
- * the data is on — with it off, nothing here is drawn anywhere.
- *
- * ⚠ Two chips in a FlowRow, not a segmented bar. A segment gets half the row and a long word at a
- * 200 % font is wider than half of a 320 dp phone; a chip hugs its words and a FlowRow puts the second
- * one on its own line when the first does not leave room — see the note on `VastuSegmented`.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun RoomMarkerChooser(current: RoomMarker, onChange: (RoomMarker) -> Unit, modifier: Modifier = Modifier) {
-    val colors = VastuTheme.colors
-    Column(modifier.testTag(ROOM_MARKER_CHOICE_TAG)) {
-        VText("Trial — your plan shows", style = VastuTheme.type.caption, color = colors.textSecondary)
-        Spacer(Modifier.height(VastuTheme.spacing.s1))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-            verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s2),
-        ) {
-            VastuChip(
-                text = "Directions",
-                selected = current == RoomMarker.DIRECTION,
-                onClick = { onChange(RoomMarker.DIRECTION) },
-            )
-            VastuChip(
-                text = "Boxes",
-                selected = current == RoomMarker.BOX,
-                onClick = { onChange(RoomMarker.BOX) },
-            )
         }
     }
 }

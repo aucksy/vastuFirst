@@ -418,4 +418,21 @@ class ScanScreenshotTest {
         captureAcrossMatrix("scan-consent", content)
         writeManifestAcrossMatrix("scan-consent", content)
     }
+
+    /**
+     * ⭐ THE SAME GATE WITH ITS FIVE FACTS OPENED (30 Sep 2026). They are folded shut now (owner: *"one
+     * folded list, shut by default"*), and a shut list is not drawn — so without this picture the words a
+     * person agrees to would appear in no golden at any size. Opened by the photography seam, exactly as
+     * one tap on "What happens to your plan (5)" opens them.
+     */
+    @Test
+    fun scanConsentOpen() {
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.vastufirst.designsystem.components.VastuRevealAll {
+                ScanConsentScreen(onAgree = {}, onDrawInstead = {}, onBack = {})
+            }
+        }
+        captureAcrossMatrix("scan-consent-open", content)
+        writeManifestAcrossMatrix("scan-consent-open", content)
+    }
 }

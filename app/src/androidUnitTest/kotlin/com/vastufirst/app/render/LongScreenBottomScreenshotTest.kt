@@ -155,17 +155,18 @@ class LongScreenBottomScreenshotTest {
     }
 
     /**
-     * ⭐⭐ THE DIRECTION TRIAL ON THE REPORT'S PHOTOGRAPH (owner, 29 Sep 2026; redrawn by him 30 Sep) —
-     * the other half of the sweep. The report draws the same picture "Check what we read" draws,
-     * through the same component, so a room tapped here shows the same marker: its SHORT direction on
-     * the middle of the room, and nothing else on the plan. These are the only pictures of it.
+     * ⭐⭐ THE DIRECTION ON THE REPORT'S PHOTOGRAPH (owner, 29 Sep 2026; redrawn by him 30 Sep; the only
+     * way since he ended the trial the same day) — a tapped room shows its SHORT direction on the middle
+     * of the room, and nothing else is on the plan. These are the only pictures of it.
      *
      * ⚠ A SCROLLED capture, because the report's picture sits below its verdict and the matrix
-     * goldens start at the top: anchored on the trial's chooser, which sits directly under the plan,
-     * so the plan, the tapped room's label and the chooser are all in frame. The three sizes the
-     * owner asked to see: normal, large text, and the narrowest phone — tapped here, at rest below.
+     * goldens start at the top: anchored on "Change front door", the button directly under the plan
+     * since the trial's chooser went, so the plan and the tapped room's label are in frame. Every size
+     * the matrix has except dark (the app keeps its one light palette): 412 / 360 / 320 dp, 200 % text,
+     * landscape and right-to-left — tapped here, at rest below.
      *
-     * ⚠ On the real plan-01 sheet with its building box supplied — see [PlanSheet] for why.
+     * ⚠ On the real plan-01 sheet with its building box supplied — see [PlanSheet] for why. It is a
+     * SAMPLE sheet from this repository, standing in for a customer's own photograph.
      */
     @Test
     fun report_plan_direction() = reportPlanDirection(tapped = true)
@@ -206,16 +207,17 @@ class LongScreenBottomScreenshotTest {
                 planImage = picture.asImageBitmap(),
                 planRooms = planRooms,
                 doorAtPage = door?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, outcome.rooms) },
-                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
-                onRoomMarkerChange = {},
                 startOpenRoomId = if (tapped) kitchen else null,
             )
         }
-        val anchor = hasTestTag(com.vastufirst.app.ui.common.ROOM_MARKER_CHOICE_TAG)
+        val anchor = hasTestTag("report.edit.entry")
         val name = if (tapped) "plan_direction" else "plan_direction_rest"
         captureBottom("report", name, anchor, 1.0f, content = content)
         captureBottom("report", "${name}_font2_0", anchor, 2.0f, content = content)
-        captureBottom("report", "${name}_w320", anchor, 1.0f, "+w320dp-h711dp-port-xhdpi", content)
+        // The rest of the matrix, each from its one definition in RenderMatrix.
+        RenderMatrix.configs.filter { it.name in setOf("w360", "w320", "landscape", "rtl") }.forEach { cfg ->
+            captureBottom("report", "${name}_${cfg.name}", anchor, cfg.fontScale, cfg.qualifiers, content)
+        }
     }
 
     /** The remedies-only branch ends on the same elements but gets there through different cards. */
