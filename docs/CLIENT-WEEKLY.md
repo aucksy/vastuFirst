@@ -101,6 +101,43 @@ developer account.
 
 ## Week of 28 September – 4 October 2026
 
+### Wednesday 30 September, evening — fewer screens between your plan and your report
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.35.0/vastufirst-v0.35.0.apk
+**This is the one to install.**
+
+**A scanned plan now reaches its report three screens sooner, with about 40 % less to read on the
+way.**
+
+The "Check what we read" screen is gone. It listed your rooms a second time, between the North compass
+and the report — and the report lists them again, with their directions — so the same rooms were shown
+to you three times over. Now:
+
+- **"Upload a plan" opens your phone's own file picker straight away**, and a new **"Photograph your
+  plan"** choice opens the camera. The extra screen that asked "PDF or photo?" a second time is
+  skipped; its tips on what reads best are one tap away, behind the small **i**.
+- **The result says "We read 11 rooms" and asks which way is North on the same screen**, on your own
+  photograph. Your rooms are folded under one line — "Rooms we read (11)" — which also says how many
+  the app was unsure of. Tap it to see them, and to change what kind of room one is.
+- **If your plan prints its entrance, the next screen is your report.** If it does not, you mark the
+  front door first, as before.
+- **The first screen takes one tap:** choosing why you are here moves you on. There is no separate
+  Continue button.
+
+Nothing you could do before has gone. Where your front door was read from is now behind the **i** on
+"Your front door" in your report, and "Change front door" still moves it. The four optional questions
+— water tank, sump, a big tree, the road — are offered on your report, where they always were too.
+
+**Counted, not guessed:** for a plan that prints its entrance, a first scan used to take 9 screens and
+10 taps, with about 780 words to read across them. It now takes 6 screens and 6 taps, with about 460.
+
+**Two fixes found on the way:** on a phone turned sideways, the North compass and the front-door plan
+now fit on the screen — before, each was nearly twice the screen's height. And "Change North" on a
+scanned home's report now shows your own plan, not our drawing of it.
+
+The direction labels are still a trial: the "Directions / Boxes" choice under your report's plan is
+unchanged, and nothing about your score changes either way.
+
 ### Wednesday 30 September — your plan stays clear until you pick a room
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.34.0/vastufirst-v0.34.0.apk
