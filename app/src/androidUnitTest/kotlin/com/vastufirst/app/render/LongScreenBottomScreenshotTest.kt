@@ -155,19 +155,30 @@ class LongScreenBottomScreenshotTest {
     }
 
     /**
-     * ⭐⭐ THE DIRECTION TRIAL ON THE REPORT'S PHOTOGRAPH (owner, 29 Sep 2026) — the other half of the
-     * sweep. The report draws the same picture "Check what we read" draws, through the same component,
-     * so a room tapped here shows the same kind of marker; this is the only picture of it.
+     * ⭐⭐ THE DIRECTION TRIAL ON THE REPORT'S PHOTOGRAPH (owner, 29 Sep 2026; redrawn by him 30 Sep) —
+     * the other half of the sweep. The report draws the same picture "Check what we read" draws,
+     * through the same component, so a room tapped here shows the same marker: its SHORT direction on
+     * the middle of the room, and nothing else on the plan. These are the only pictures of it.
      *
      * ⚠ A SCROLLED capture, because the report's picture sits below its verdict and the matrix
      * goldens start at the top: anchored on the trial's chooser, which sits directly under the plan,
-     * so the plan, the tapped room's words and the chooser are all in frame. The three sizes the
-     * owner asked to see: normal, large text, and the narrowest phone.
+     * so the plan, the tapped room's label and the chooser are all in frame. The three sizes the
+     * owner asked to see: normal, large text, and the narrowest phone — tapped here, at rest below.
      *
      * ⚠ On the real plan-01 sheet with its building box supplied — see [PlanSheet] for why.
      */
     @Test
-    fun report_plan_direction() {
+    fun report_plan_direction() = reportPlanDirection(tapped = true)
+
+    /**
+     * ⭐ THE SAME PHOTOGRAPH AT REST — nothing tapped, so nothing on the plan (owner, 30 Sep 2026: *"it
+     * should not show any short or long form direction until tapped on a room"*). The report opens its
+     * first room's reasons without a tap; that opening is not a tap, and the plan stays bare.
+     */
+    @Test
+    fun report_plan_direction_rest() = reportPlanDirection(tapped = false)
+
+    private fun reportPlanDirection(tapped: Boolean) {
         val picture = PlanSheet.bitmap()
         val outcome = PlanSheet.outcome()
         val grid =com.vastufirst.app.ui.scan.toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
@@ -197,13 +208,14 @@ class LongScreenBottomScreenshotTest {
                 doorAtPage = door?.let { com.vastufirst.app.ui.scan.doorMarkerOnPage(it, outcome.rooms) },
                 roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
                 onRoomMarkerChange = {},
-                startOpenRoomId = kitchen,
+                startOpenRoomId = if (tapped) kitchen else null,
             )
         }
         val anchor = hasTestTag(com.vastufirst.app.ui.common.ROOM_MARKER_CHOICE_TAG)
-        captureBottom("report", "plan_direction", anchor, 1.0f, content = content)
-        captureBottom("report", "plan_direction_font2_0", anchor, 2.0f, content = content)
-        captureBottom("report", "plan_direction_w320", anchor, 1.0f, "+w320dp-h711dp-port-xhdpi", content)
+        val name = if (tapped) "plan_direction" else "plan_direction_rest"
+        captureBottom("report", name, anchor, 1.0f, content = content)
+        captureBottom("report", "${name}_font2_0", anchor, 2.0f, content = content)
+        captureBottom("report", "${name}_w320", anchor, 1.0f, "+w320dp-h711dp-port-xhdpi", content)
     }
 
     /** The remedies-only branch ends on the same elements but gets there through different cards. */

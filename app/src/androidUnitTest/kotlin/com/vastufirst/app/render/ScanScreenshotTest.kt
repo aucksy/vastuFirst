@@ -198,8 +198,9 @@ class ScanScreenshotTest {
     }
 
     /**
-     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — a tapped room showing its DIRECTION on the room,
-     * where every other golden on this screen shows the box.
+     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026; redrawn by him 30 Sep) — a tapped room showing its
+     * SHORT direction on the middle of the room, where every other golden on this screen shows the box.
+     * Its full name is in its card below, which this picture also shows.
      *
      * ⚠ ON A REAL PLAN, NOT A BLANK STAND-IN. Every other photo on this screen's goldens is a flat
      * beige rectangle, which is honest for geometry but cannot show whether a label lands ON the room
@@ -236,9 +237,9 @@ class ScanScreenshotTest {
     /**
      * ⭐⭐ A TAPPED ROOM THAT CROSSES A LINE (owner's label decision, 29 Sep 2026). The living room on
      * this sheet is flagged for crossing into the centre, although most of it lies in the North-West.
-     * It used to read "C"; it now reads where most of it is, and tapped it spells the crossing out —
-     * the longest words a label on this plan can carry, which is exactly why it is photographed at
-     * every size in the matrix.
+     * Tapped, the plan shows "NW" — where most of it is — and its card spells the crossing out,
+     * "North-West · crosses the centre": the longest words a room's card carries, which is exactly why
+     * it is photographed at every size in the matrix.
      */
     @Test
     fun scanReviewDirectionCrossing() {
@@ -266,11 +267,11 @@ class ScanScreenshotTest {
     }
 
     /**
-     * ⭐⭐ THE DIRECTION TRIAL AT REST — nothing tapped, every room carrying its short direction.
+     * ⭐⭐ THE DIRECTION TRIAL AT REST — nothing tapped, so nothing on the plan.
      *
-     * The owner, 29 Sep 2026: *"by default, you're showing SW or N or E on the floor plan on that
-     * screen"*. [scanReviewDirection] photographs a tapped room; this is the screen as it OPENS, which
-     * is the state every reader sees first and the one where eight labels share one small picture.
+     * The owner, 30 Sep 2026: *"it should not show any short or long form direction until tapped on a
+     * room bellow in the list"*. [scanReviewDirection] photographs a tapped room; this is the screen as
+     * it OPENS, which is the state every reader sees first.
      */
     @Test
     fun scanReviewDirectionAtRest() {

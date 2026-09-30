@@ -1956,3 +1956,54 @@ and swaps findings both ways, so it is the owner's decision, put to him as a que
 A drift found on the way, not fixed here: the mapper's JavaScript twin places hlv9vurn with today's
 reader while Kotlin hands it back as assisted (`TOO_MANY_ROOMS`, 14 rooms) — the two disagree on that
 gate.
+
+### v0.34.0 (30 Sep 2026) — the audit, and the owner's redesign of what the plan shows
+
+**The audit of the feature as built (v0.33.0), free, each point proven by a test or a picture:**
+
+- **The switch.** `directionTrial: false` gives the box way on the PLAN on both screens, with no chooser:
+  pinned on "Check what we read" by the existing test and now on the report too (`DirectionOnPlanTest`,
+  "on the report with the switch off…", which passed on v0.33.0 as it stands). ⚠ One thing the switch
+  does NOT turn back, and the config's note used to claim it did: the cards' words for a room crossing
+  a line. The box-way goldens of v0.32.0 and v0.33.0 differ ONLY there — "Centre" became "North-West ·
+  crosses the centre" — because that was the owner's separate decision about the words (29 Sep),
+  applied everywhere a room's direction is printed. The notes now say so; the behaviour was left alone
+  and put to him.
+- **The words.** Every label and card comes from the engine: the review screen through `roomReadings`
+  (`directionWords()`, `mainZone`), the report through the same two on `RoomResult`; the plan never works
+  a direction out. The screen reader's sentence says the dot as words ("…, and crosses the centre").
+- **Nothing lost.** Since v0.31.0 (before the trial) the scoring engine changed by ONE line — the additive
+  `mainZone = positiveZone` — and the rules not at all. The real-plan score table printed by CI ("What
+  real plans score": ten homes, 37 findings, 19 of them centre findings) is line-for-line the same on
+  the run before `mainZone` (38d1fb4) and on v0.33.0; the only lines that differ are the reader round's
+  new measurements.
+- **Every size.** Looked at every v0.33.0 direction golden. At 200 % text the crossing room's long tapped
+  label hid the kitchen's label (known), and also the master bedroom's and bedroom 2's entirely; at
+  320 dp its glow touched the pooja's label; in landscape the tapped "North-East" covered the living
+  room's printed name, and on the report at 200 % the lower half of the living room's label. All of it
+  came from labels sitting next to each other, and the redesign removes that: only one label is ever on
+  the plan now.
+- **A gap:** no accessibility pass had ever looked at a direction label (`AccessibilityTest` drew no
+  photograph with one). It does now — see below.
+
+**The owner's redesign (30 Sep 2026):** *"it should not show any short or long form direction until
+tapped on a room bellow in the list.. and it should only show the short form on the floor plan and full
+direction name on the card below only .. and try to improve the placement of direction short form to be
+in center of the room and 20% smaller"*. Built exactly so, on both screens (one component):
+
+- **At rest** the plan carries no direction at all.
+- **A tapped room** — by its card, or on the plan itself (kept: one selection, one rule) — shows ONLY its
+  short form (N, NE, SW, C; a crossing room where most of it is) on the plan. The full name is in its
+  card and nowhere on the plan. The tapped look is kept: dark pill, paper letters, edged and glowing in
+  the zone's colour.
+- **On the middle of the room** — the centre of the reader's box (`directionLabelTopLeft`), kept wholly
+  inside the picture, glow included, when the room is hard against its edge.
+- **20 % smaller:** text, padding and glow, each its theme token × `PLAN_LABEL_SCALE` (0.8): caption
+  12 sp → 9.6 sp, padding 8/4 dp → 6.4/3.2 dp, glow 4 dp → 3.2 dp. The border keeps the focus width.
+- **The screen reader:** at rest "Your scanned plan. Tap a room to hear its direction."; tapped, the full
+  words as before; the label itself is described in its card's words, not read out as two letters.
+- The review screen's "How to use this screen" line follows: "Tap a room — here or below — to see its
+  direction on the plan."
+- **Proof it is a change:** the eight new tests were pushed ALONE first (9a412ed) and all eight failed on
+  v0.33.0, each for the reason its name gives (e.g. "at rest… expected [] but was [E, NE, NE, NW, S, S,
+  SE, W]"; the label's middle 181 px, not 200); the other 459 app tests passed.

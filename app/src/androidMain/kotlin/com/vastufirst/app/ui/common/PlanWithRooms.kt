@@ -329,16 +329,17 @@ fun PlanWithRooms(
     /** What a screen reader hears on the E itself: a fact, never an instruction to drag. */
     doorDescription: String = "Your front door",
     /**
-     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026) — what this picture shows about each room.
+     * ⭐⭐ THE DIRECTION TRIAL (owner, 29 Sep 2026; redrawn by him 30 Sep) — what this picture shows
+     * about each room.
      *
      * [RoomMarker.BOX], the default, is this component exactly as it was before the trial: quiet
-     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws no box at all: every room
-     * carries its short direction ("SW") on the photograph, and the tapped room's lights up and spells
-     * itself out ("South-West"). See RoomMarker.kt.
+     * outlines, and the tapped room tinted. [RoomMarker.DIRECTION] draws no box at all, and at rest no
+     * direction either: only the tapped room shows its SHORT direction ("SW"), on the middle of the room.
+     * Its full name is in its card, never here. See RoomMarker.kt.
      */
     marker: RoomMarker = RoomMarker.BOX,
     /**
-     * The engine's own direction for each room, by room id — the SAME zone and words its row prints.
+     * The engine's own direction for each room, by room id — the SAME zone and words its card prints.
      * Only read under [RoomMarker.DIRECTION]. A room missing from it shows nothing: this picture never
      * works a direction out for itself.
      */
@@ -346,8 +347,6 @@ fun PlanWithRooms(
 ) {
     val colors = VastuTheme.colors
     val strokeDp = VastuTheme.spacing.s1
-    // How far above a room's middle its direction sits — see [directionLabelTopLeft] for why above.
-    val labelGapDp = VastuTheme.spacing.s1
     val doorTouch = VastuTheme.sizes.minTouch
     // One string is ever measured here (the door mark's letter), so the default cache is ample.
     val measurer = rememberTextMeasurer()
@@ -481,8 +480,10 @@ fun PlanWithRooms(
                                 noteOpen = false
                                 pageOf(at)?.let { (fx, fy) ->
                                     // ⭐ The box way aims at outlines it can see; the direction way aims
-                                    // at dots — see [roomNearestCentre] for why the two need different
-                                    // arithmetic. The box way's is untouched.
+                                    // at the room itself, its printed name — see [roomNearestCentre]
+                                    // for why the two need different arithmetic. The box way's is
+                                    // untouched. ⭐ ONE SELECTION, ONE RULE: a room chosen here is the
+                                    // same selection as a tap on its card, so it shows the same label.
                                     val hit = if (liveMarker == RoomMarker.DIRECTION) {
                                         val f = fitNow()
                                         roomNearestCentre(liveRooms, fx, fy, f.w, f.h, doorTouch.toPx())
@@ -558,9 +559,9 @@ fun PlanWithRooms(
                 }
                 // ⭐⭐ THE DIRECTION TRIAL DRAWS NOTHING ON THE PHOTOGRAPH ITSELF — no box, no dot, no
                 // ring. The owner, after seeing rings: *"the directions will just show on the floor
-                // plan"*. Each room's direction is a small label laid over the picture by
-                // [RoomDirectionLabels], just above the room's middle so the name the plan prints
-                // there stays readable; the photograph underneath is exactly the one scanned.
+                // plan"*. The tapped room's short direction is one small label laid over the picture
+                // by [TappedRoomDirection], on the room's middle; at rest there is none. The
+                // photograph underneath is exactly the one scanned.
 
                 // ⭐⭐ THE FRONT DOOR, LAST, so nothing is drawn over it — and drawn where the finger
                 // has it while it is being carried, not where the scored door last settled.
@@ -602,28 +603,22 @@ fun PlanWithRooms(
                 }
             }
 
-            // ⭐⭐ THE DIRECTION TRIAL — every room's direction, in the engine's own words, laid over the
-            // user's own photograph; the tapped room's spelled out and lit. Drawn BEFORE the E's node
-            // and note, so the door's note is never hidden under a label. A magnified sheet can carry a
-            // room out of view; its label goes with it rather than floating somewhere the room is not.
-            if (marker == RoomMarker.DIRECTION && directions.isNotEmpty()) {
+            // ⭐⭐ THE DIRECTION TRIAL — the TAPPED room's short direction, the engine's own, laid over the
+            // user's own photograph on the middle of the room (owner, 30 Sep 2026). Nothing at rest, and
+            // never the full name: that is in the room's card. Drawn BEFORE the E's node and note, so
+            // the door's note is never hidden under the label. A magnified sheet can carry the room out
+            // of view; its label goes with it rather than floating somewhere the room is not.
+            val tappedDirection = selected?.let { directions[it.id] }
+            val tappedMiddle = selected?.centreOrNull()
+            if (marker == RoomMarker.DIRECTION && selected != null && tappedDirection != null && tappedMiddle != null) {
                 val density = LocalDensity.current
                 val boxW = with(density) { drawnWidth.toPx() }
                 val boxH = with(density) { drawnHeight.toPx() }
                 val fit = planFit(boxW, boxH, image.width, image.height, zoom, pan)
-                val labels = rooms.mapNotNull { r ->
-                    val d = directions[r.id] ?: return@mapNotNull null
-                    val (cx, cy) = r.centreOrNull() ?: return@mapNotNull null
-                    val at = Offset(fit.ox + cx * fit.w, fit.oy + cy * fit.h)
-                    if (at.x in 0f..boxW && at.y in 0f..boxH) PlanLabel(r.id, d, at) else null
+                val at = Offset(fit.ox + tappedMiddle.first * fit.w, fit.oy + tappedMiddle.second * fit.h)
+                if (at.x in 0f..boxW && at.y in 0f..boxH) {
+                    TappedRoomDirection(PlanLabel(selected.id, tappedDirection, at), boxW, boxH)
                 }
-                RoomDirectionLabels(
-                    labels = labels,
-                    selectedId = selectedId,
-                    boxW = boxW,
-                    boxH = boxH,
-                    gapPx = with(density) { labelGapDp.toPx() },
-                )
             }
 
             // ⭐ THE E'S OWN NODE AND ITS NOTE — only where the door can be moved or explained, so the
@@ -702,11 +697,14 @@ internal fun buildPlanDescription(
 ): String {
     val head = if (marker == RoomMarker.DIRECTION) {
         when {
-            selectedName == null -> "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full."
-            // The same words the room's row prints, so a screen-reader user hears what everyone sees —
-            // with the row's middle dot said as words: "…in the North-West, and crosses the centre."
+            // ⚠ At rest nothing is written on the plan (owner, 30 Sep 2026), so this no longer says
+            // "with each room's direction written on it" — it says what a tap gives.
+            selectedName == null -> "Your scanned plan. Tap a room to hear its direction."
+            // The same words the room's card prints, in full although the plan shows only the short
+            // form — with the card's middle dot said as words: "…in the North-West, and crosses the
+            // centre."
             selectedDirection != null ->
-                "Your plan. $selectedName is in the ${selectedDirection.replace(" · ", ", and ")}."
+                "Your plan. $selectedName is in the ${spokenDirection(selectedDirection)}."
             else -> "Your plan, showing where $selectedName was read."
         }
     } else {

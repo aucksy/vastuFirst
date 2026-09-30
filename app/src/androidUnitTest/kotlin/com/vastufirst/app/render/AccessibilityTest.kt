@@ -201,5 +201,46 @@ class AccessibilityTest {
             },
         )
         screens.forEach { (name, content) -> writeA11yManifest(name, content) }
+
+        // ⭐⭐ THE DIRECTION TRIAL'S LABEL, which no accessibility pass had ever looked at (found by the
+        // 30 Sep 2026 audit). A tapped room on the repository's one real plan picture, with its short
+        // direction on the room — made 20 % smaller that day by the owner — so the contrast and label
+        // checks see it. At the baseline, the 320 dp phone, the 200 % font and dark, each its own
+        // screen in the ratchet, because the owner asked for those three to be checked by name.
+        val sheet = PlanSheet.outcome()
+        val picture = PlanSheet.bitmap().asImageBitmap()
+        val readings = run {
+            val grid = com.vastufirst.app.ui.scan.toGridRooms(sheet.rooms, sheet.cols, sheet.rows)
+            com.vastufirst.app.ui.scan.roomReadings(
+                com.vastufirst.engine.VastuEngine().analyze(
+                    com.vastufirst.app.ui.newplan.buildEnginePlan(
+                        rooms = grid,
+                        door = com.vastufirst.app.ui.newplan.frontDoorFromEntrance(grid),
+                        intent = Intent.BUILDING,
+                        propertyType = com.vastufirst.shared.PropertyType.FLAT,
+                        north = 0,
+                        planId = "a11y-direction",
+                    )!!,
+                ),
+            )
+        }
+        val kitchen = sheet.rooms.indexOfFirst { it.label == "KITCHEN" }
+        check(kitchen >= 0 && readings[com.vastufirst.app.ui.scan.scanRoomId(kitchen)] != null) {
+            "The kitchen must be read and scored, or this pass checks a plan with no label on it."
+        }
+        val tapped: @Composable () -> Unit = {
+            com.vastufirst.app.ui.scan.ScanReviewContent(
+                image = picture,
+                rooms = sheet.rooms,
+                readings = readings,
+                startSelected = kitchen,
+                roomMarker = com.vastufirst.app.ui.common.RoomMarker.DIRECTION,
+                onRoomMarkerChange = {},
+            )
+        }
+        RenderMatrix.configs.filter { it.name in setOf("baseline", "w320", "font2_0", "dark") }.forEach { cfg ->
+            val name = if (cfg.name == "baseline") "scan-review-direction" else "scan-review-direction-${cfg.name.replace('_', '-')}"
+            writeA11yManifest(name, tapped, cfg)
+        }
     }
 }

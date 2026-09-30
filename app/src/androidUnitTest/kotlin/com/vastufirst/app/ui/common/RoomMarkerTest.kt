@@ -15,10 +15,11 @@ import org.junit.Test
  * drawing a box ... Build the new way beside the box way, never over it. One switch picks between
  * them."* Three things here would each fail silently in a picture:
  *
- *  · the switch — off must be the old app exactly, on must start on the trial;
- *  · the tap — with no box drawn, the finger aims at a dot, and the box way's smallest-first rule
- *    then picks the WRONG room exactly where the reader's boxes are worst;
- *  · the label — hard against the top wall or the side of the picture it must stay wholly inside it.
+ *  · the switch — off must be the box way on the plan with no chooser, on must start on the trial;
+ *  · the tap — with no box drawn, the finger aims at the room itself, and the box way's smallest-first
+ *    rule then picks the WRONG room exactly where the reader's boxes are worst;
+ *  · the label — centred on the room's middle (owner, 30 Sep 2026), and wholly inside the picture when
+ *    the room is hard against its edge.
  *
  * ⚠ org.junit.Assert: the MESSAGE comes FIRST in every assertion below.
  */
@@ -86,22 +87,27 @@ class RoomMarkerTest {
         assertEquals("bed", roomNearestCentre(listOf(unplaced, placed), 0.2f, 0.2f, 400f, 400f, 48f)?.id)
     }
 
+    /**
+     * A room hard against a wall of the picture: the label moves only as far as it must to stay wholly
+     * inside it, glow and all ([insetPx]) — so it is never cut off by the picture's own edge.
+     */
     @Test
-    fun `the label sits over its pin, flips below at the top wall, and never leaves the picture`() {
-        // Plenty of room: centred on the pin, its bottom one gap above it.
-        val mid = directionLabelTopLeft(pinX = 200f, pinY = 200f, labelW = 100, labelH = 30, boxW = 400f, boxH = 400f, gapPx = 10f)
-        assertEquals(150, mid.x)
-        assertEquals(160, mid.y)
-        // Hard against the top wall: no room above, so it goes below the pin instead.
-        val top = directionLabelTopLeft(200f, 12f, 100, 30, 400f, 400f, 10f)
-        assertEquals("the label must drop below a pin at the top wall", 22, top.y)
-        // Hard against the left and right walls: clamped inside, never cut off.
-        assertEquals(0, directionLabelTopLeft(10f, 200f, 100, 30, 400f, 400f, 10f).x)
-        assertEquals(300, directionLabelTopLeft(395f, 200f, 100, 30, 400f, 400f, 10f).x)
-        // A pin at the very bottom corner: the label stays inside both edges.
-        val corner = directionLabelTopLeft(399f, 399f, 100, 30, 400f, 400f, 10f)
-        assertTrue("inside horizontally", corner.x in 0..300)
-        assertTrue("inside vertically", corner.y in 0..370)
+    fun `a label at the picture's edge stays wholly inside it, glow included`() {
+        val inset = 4f
+        // Top-left corner: pushed right and down, exactly to the inset.
+        val corner = directionLabelTopLeft(5f, 5f, 100, 30, 400f, 400f, insetPx = inset)
+        assertEquals("pushed in from the left wall to the inset", 4, corner.x)
+        assertEquals("pushed down from the top wall to the inset", 4, corner.y)
+        // Bottom-right corner: pulled back so its far edges sit one inset inside.
+        val far = directionLabelTopLeft(398f, 398f, 100, 30, 400f, 400f, insetPx = inset)
+        assertEquals("pulled in from the right wall", 400 - 100 - 4, far.x)
+        assertEquals("pulled up from the bottom wall", 400 - 30 - 4, far.y)
+        // Only the axis that needs it moves: hard against the top, still centred across.
+        val top = directionLabelTopLeft(200f, 2f, 100, 30, 400f, 400f, insetPx = inset)
+        assertEquals("still centred across", 150, top.x)
+        assertEquals(4, top.y)
+        // A label wider than the whole picture starts inside it rather than throwing.
+        assertEquals(4, directionLabelTopLeft(40f, 200f, 100, 30, 80f, 400f, insetPx = inset).x)
     }
 
     /**
@@ -131,10 +137,6 @@ class RoomMarkerTest {
                 "Living", hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION,
                 selectedDirection = "North-West · crosses the centre",
             ),
-        )
-        assertEquals(
-            "Your scanned plan, with each room's direction written on it. Tap a room to hear it in full.",
-            buildPlanDescription(null, hasDoor = false, zoomable = false, marker = RoomMarker.DIRECTION),
         )
         // The box way's words are untouched.
         assertEquals(

@@ -53,11 +53,17 @@ data class ScanReaderConfig(
      * only needs each room's DIRECTION. So, as a trial: when I tap a room, show its direction ON the
      * room, on the plan, instead of drawing a box."*
      *
-     * `true` = the trial: a room tapped on "Check what we read" or on the report's photograph shows
-     * the engine's own direction words on the room, and a small chooser under the plan lets the reader
-     * flip back to the box to compare the two on the same plan. `false` = everything exactly as it was
-     * before 29 Sep 2026: the box, and no chooser. **Nothing of the box way was deleted** — this is a
-     * trial, built beside today's behaviour, and going back is this one value.
+     * `true` = the trial, as the owner redrew it on 30 Sep 2026: on "Check what we read" and on the
+     * report's photograph the plan shows no direction until a room is tapped, then that room's SHORT
+     * direction on the middle of the room — the engine's own zone — with its full name only in its
+     * card; a small chooser under the plan lets the reader flip back to the box to compare the two on
+     * the same plan. `false` = the plan exactly as it was before 29 Sep 2026: the box, and no chooser.
+     * **Nothing of the box way was deleted** — this is a trial, built beside today's behaviour, and
+     * going back is this one value.
+     *
+     * ⚠ The cards' WORDS are not this switch's. A room crossing into a zone it may not occupy reads
+     * "North-West · crosses the centre" either way: that was the owner's separate decision about the
+     * words (29 Sep 2026), made for every place a room's direction is printed.
      *
      * Absent means `false`. A config written before the trial therefore keeps the old behaviour
      * rather than silently acquiring a new one.

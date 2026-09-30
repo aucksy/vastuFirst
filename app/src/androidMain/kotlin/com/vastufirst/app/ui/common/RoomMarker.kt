@@ -5,18 +5,29 @@
 // over where the reader thinks the room is. Those boxes have never been accurate, because every floor
 // plan is drawn differently. But Vastu only needs each room's DIRECTION."*
 //
-// ⭐⭐ AND WHAT IT SHOWS, IN HIS WORDS (same day, after the first build): *"the directions will just show
-// on the floor plan... by default, you're showing SW or N or E on the floor plan on that screen. But
-// when you tap on the actual room in the list [or on the floor plan], then it just converts to
-// southwest or north or east... don't generate a new image. Just use the actual floor plan just like we
-// were doing before."* So: every room carries its short direction ON THE USER'S OWN PHOTOGRAPH, all the
-// time; the tapped room's lights up and spells itself out. Nothing is redrawn — the photo is the
-// picture of record, exactly as it has been since 4 Aug 2026.
+// ⭐⭐ AND WHAT IT SHOWS, IN HIS WORDS — redrawn by him on 30 Sep 2026, after living with the first one:
+// *"it should not show any short or long form direction until tapped on a room bellow in the list..
+// and it should only show the short form on the floor plan and full direction name on the card below
+// only .. and try to improve the placement of direction short form to be in center of the room and 20%
+// smaller"*. So: at rest the plan carries NO direction; the tapped room — by its card, or on the plan
+// itself, one selection under one rule — shows its SHORT direction ("SW") on the middle of the room, on
+// THE USER'S OWN PHOTOGRAPH; the full name ("South-West") is printed only in that room's card. Nothing
+// is redrawn — the photo is the picture of record, exactly as it has been since 4 Aug 2026.
+//
+// (The first design, 29 Sep 2026, put every room's short direction on the plan all the time and spelled
+// the tapped one out on the plan. It is gone because he asked for this one, not because it broke.)
 //
 // ⚠ IT IS A TRIAL, AND THE BOX WAY IS STILL HERE, WHOLE. Nothing that draws, taps or tests the box was
 // deleted or rewritten. `directionTrial` in `scan/reader-config.json` picks the default; with it off
-// the app is byte-for-byte the box way and offers no chooser at all. With it on, a small chooser under
-// the plan flips between the two on the SAME plan, so they can be compared without reinstalling.
+// the PLAN is the box way exactly — box, tint, tap and screen-reader words — and no chooser is offered.
+// With it on, a small chooser under the plan flips between the two on the SAME plan, so they can be
+// compared without reinstalling.
+//
+// ⚠ What the switch does NOT turn back: the words in the rooms' cards. A room crossing into a zone it
+// may not occupy reads where most of it is ("North-West · crosses the centre") with the switch either
+// way, because that was the owner's separate decision about the words (29 Sep 2026), made for every
+// place a room's direction is printed — not a part of the trial. Found by the 30 Sep audit; the
+// comparison of the box-way pictures before and after that day shows only those words moving.
 //
 // ⚠⚠ THE WORDS ON THE ROOMS ARE NEVER WORKED OUT HERE. They are the engine's own, handed in by the
 // screen from the same result its rows print — see `roomReadings` on "Check what we read" and the
@@ -36,7 +47,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,10 +58,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.zIndex
 import com.vastufirst.designsystem.components.VText
 import com.vastufirst.designsystem.components.VastuChip
 import com.vastufirst.designsystem.components.pillShapeFor
@@ -65,7 +77,7 @@ enum class RoomMarker {
     /** The rectangle the reader drew, for a tapped room — everything before 29 Sep 2026. */
     BOX,
 
-    /** Every room's direction, in the engine's own words, on the room — the trial. */
+    /** The tapped room's short direction, from the engine, on the middle of the room — the trial. */
     DIRECTION,
 }
 
@@ -73,7 +85,7 @@ enum class RoomMarker {
  * ⭐ THE ONE PLACE THE TRIAL'S STATE LIVES — shared by "Check what we read" and the report, so both
  * pictures always show the same kind of marker.
  *
- * [offered] is the switch from the data: false = the old app exactly, box only and no chooser. When it
+ * [offered] is the switch from the data: false = the box way on the plan, and no chooser. When it
  * is on, [current] starts on the direction (the trial is what he installs to feel) and the chooser can
  * flip it for comparison. Held for the life of the app and NOT saved: every launch starts on the trial
  * again, so a comparison made yesterday cannot quietly leave the trial switched off today.
@@ -84,26 +96,26 @@ class RoomMarkerChoice(trialOn: Boolean) {
 }
 
 /**
- * A room's direction as the plan shows it: the engine's zone, and the words its row prints.
- * [code] — "SW", "N", "C" — is what every room carries; [words] — "South-West" — is what the tapped
- * room spells out. Both come from ONE engine zone, so the short and the long can never disagree.
+ * A room's direction as the plan shows it: the engine's zone, and the words its card prints.
+ * [code] — "SW", "N", "C" — is what the plan shows for the tapped room; [words] — "South-West",
+ * "North-West · crosses the centre" — are its card's, and what a screen reader hears. Both come from
+ * ONE engine zone, so the short and the long can never disagree.
  */
 data class RoomDirection(val zone: Zone, val words: String) {
     val code: String get() = zone.code()
 }
 
 /**
- * The tapped room's words as the PLAN lays them out: its row's very words, with the crossing on a line
- * of its own — "North-West" over "crosses the centre" — rather than wherever the pill's width happens
- * to break "North-West · crosses the / centre". Narrower, so it hides less of the plan around it.
+ * A room's direction as a screen reader should SAY it: its card's words, with the card's middle dot
+ * said as words — "North-West, and crosses the centre" — rather than read out, or skipped, as a symbol.
  */
-internal fun tappedLabelText(words: String): String = words.replace(" · ", "\n")
+internal fun spokenDirection(words: String): String = words.replace(" · ", ", and ")
 
-/** The test tag on a room's short direction on the plan ("SW"). One per untapped room. */
+/**
+ * The test tag on the one direction on the plan: the tapped room's short form ("SW"). At rest there is
+ * none, and there is never more than one.
+ */
 const val ROOM_CODE_TAG = "plan.room.code"
-
-/** The test tag on the tapped room's direction, spelled out ("South-West"). */
-const val ROOM_DIRECTION_TAG = "plan.room.direction"
 
 /** The test tag on the trial's chooser under the plan. */
 const val ROOM_MARKER_CHOICE_TAG = "plan.marker.choice"
@@ -113,13 +125,13 @@ internal fun PlanRoom.centreOrNull(): Pair<Float, Float>? =
     box?.let { (it.x + it.w / 2.0).toFloat() to (it.y + it.h / 2.0).toFloat() }
 
 /**
- * ⭐ WHICH ROOM A TAP MEANT, WHEN WHAT IS DRAWN IS A LABEL PER ROOM rather than a box per room.
+ * ⭐ WHICH ROOM A TAP MEANT, WHEN NO BOX IS DRAWN to aim at.
  *
  * With the box way the finger aims at an outline it can see, so "the smallest box that contains the
- * tap" ([roomAtPoint]) is right. With the direction way no box is drawn — the finger aims at a room's
- * label, or at its name printed on the photograph — and smallest-first then picks wrongly exactly where
- * the reader's boxes are worst: a toilet's box spilling over the middle of the living room would take
- * the tap aimed at the LIVING room's own label. So here the nearest room middle wins among the rooms
+ * tap" ([roomAtPoint]) is right. With the direction way no box is drawn — the finger aims at the room's
+ * name printed on the photograph, which is its middle, or at its label once tapped — and smallest-first
+ * then picks wrongly exactly where the reader's boxes are worst: a toilet's box spilling over the middle
+ * of the living room would take the tap aimed at the LIVING room. So here the nearest room middle wins among the rooms
  * whose box contains the tap; a tap outside every box takes the nearest middle within [maxPx].
  * Distances are measured in drawn pixels ([pxPerX], [pxPerY]), so a tall sheet and a wide one behave
  * the same.
@@ -151,17 +163,19 @@ fun roomNearestCentre(
 }
 
 /**
- * Where a room's direction label's top-left corner goes, in the picture box's pixels: centred over the
- * room's middle and just ABOVE it; below it when there is no room above; and always wholly inside the
- * box, so the words are never cut off by the picture's own edge.
+ * Where the direction label's top-left corner goes, in the picture box's pixels: its CENTRE on the
+ * room's middle ([pinX], [pinY]), and always wholly inside the picture with [insetPx] to spare — the
+ * label's glow — so neither the letters nor the glow are ever cut off by the picture's own edge.
  *
- * ⚠ ABOVE the middle, never on it. The middle of a room's box is, on most sheets, exactly where the
- * plan PRINTS the room's name (the reader finds rooms by their captions); a label laid on the middle
- * hides the very name this screen asks the reader to check. The first two renders proved it: dots and
- * rings there turned "LIVING ROOM" into "ING ROOM" and "G ROOM".
+ * ⭐ ON THE MIDDLE, by the owner's choice (30 Sep 2026: *"improve the placement of direction short form
+ * to be in center of the room"*). Until then it sat just ABOVE the middle, and that was right while
+ * every room carried a label: the middle is where most sheets PRINT the room's name, and eight labels
+ * there hid eight names — the first render turned "LIVING ROOM" into "ING ROOM". Now only the tapped
+ * room carries one and its card below names the room, so the middle is his call to make. Where a
+ * centred label covers a printed name, the screenshots show it rather than an argument.
  *
- * Pure, so the edge cases — a room hard against the top wall, a label wider than the room is from the
- * side — are pinned by a plain test rather than found in a photograph.
+ * Pure, so the edge cases — a room hard against a wall, a label wider than the picture — are pinned by a
+ * plain test rather than found in a photograph.
  */
 internal fun directionLabelTopLeft(
     pinX: Float,
@@ -170,16 +184,24 @@ internal fun directionLabelTopLeft(
     labelH: Int,
     boxW: Float,
     boxH: Float,
-    gapPx: Float,
+    insetPx: Float,
 ): IntOffset {
-    val above = pinY - gapPx - labelH
-    val y = if (above >= 0f) above else pinY + gapPx
-    val x = pinX - labelW / 2f
+    // Never below the inset, even when the label is wider than the picture — a lower bound above the
+    // upper one would throw, and a label that cannot fit should at least start inside the picture.
+    val maxX = (boxW - labelW - insetPx).coerceAtLeast(insetPx)
+    val maxY = (boxH - labelH - insetPx).coerceAtLeast(insetPx)
     return IntOffset(
-        x.coerceIn(0f, (boxW - labelW).coerceAtLeast(0f)).roundToInt(),
-        y.coerceIn(0f, (boxH - labelH).coerceAtLeast(0f)).roundToInt(),
+        (pinX - labelW / 2f).coerceIn(insetPx, maxX).roundToInt(),
+        (pinY - labelH / 2f).coerceIn(insetPx, maxY).roundToInt(),
     )
 }
+
+/**
+ * ⭐ HOW MUCH SMALLER THE LABEL ON THE PLAN IS THAN THE ONE IT REPLACED (owner, 30 Sep 2026: *"20%
+ * smaller"*). Its text, its padding and its glow are each their own theme token times this, so the
+ * label still follows the theme and no raw size lives outside the theme package.
+ */
+internal const val PLAN_LABEL_SCALE = 0.8f
 
 /** The colour a zone wears everywhere else in the app — the zone map's own. */
 @Composable
@@ -191,92 +213,84 @@ internal fun Zone.planColor(): Color = with(VastuTheme.colors) {
     }
 }
 
-/** One room's label on the plan: where its middle is drawn, in the picture box's pixels, and its direction. */
+/** The tapped room's label on the plan: where its middle is drawn, in the picture box's pixels, and its direction. */
 internal class PlanLabel(val id: String, val direction: RoomDirection, val at: Offset)
 
 /**
- * ⭐⭐ EVERY ROOM'S DIRECTION, ON THE USER'S OWN PLAN — the trial itself.
+ * ⭐⭐ THE TAPPED ROOM'S DIRECTION, ON THE USER'S OWN PLAN — the trial itself, as the owner redrew it on
+ * 30 Sep 2026.
  *
- * Each room carries its short direction — "SW", "N", "C" — on a small paper pill edged in its zone's own
- * colour (the zone map's palette, so the plan and the map speak the same colours). The TAPPED room's
- * label lights up: it spells the direction out in the very words its row prints ("South-West"), in ink
- * with paper letters, and glows in its zone's colour. Drawn last, so it is never under a neighbour's.
+ * ONE label, for the tapped room only, and only its SHORT form — "SW", "N", "C". The full name is in the
+ * room's own card below and nowhere on the plan. It sits on the middle of the room
+ * ([directionLabelTopLeft]) and keeps the tapped look it had: a dark pill with paper letters, edged and
+ * glowing in its zone's colour — the zone map's palette, so the plan and the map speak the same colours.
  *
- * Small type — the row pill's — because this sits on somebody's photograph: at a 200 % font a heading's
- * size covered the neighbouring room's printed name.
+ * ⚠ 20 % SMALLER THAN THE LABEL IT REPLACED — the text, its padding and the glow, each its own theme
+ * token times [PLAN_LABEL_SCALE]. The border keeps the focus width: it carries the zone's colour, and a
+ * thinner line stops reading as a colour at all.
  *
- * ⚠ NO POINTER INPUT, on purpose. The labels lie over the picture, and the picture's one gesture
- * reader must still receive every touch — a tap on a room's label is a tap on that room.
+ * ⚠ A SCREEN READER HEARS THE WORDS, NOT THE LETTERS. "SW" read aloud is two letters to decode, in an
+ * app made of directions — the one thing the room card was built never to do (see the card's own note).
+ * So the label is described in its card's words, said as words; its drawn text stays the short form.
+ *
+ * ⚠ NO POINTER INPUT, on purpose. The label lies over the picture, and the picture's one gesture reader
+ * must still receive every touch — a tap on the label is a tap on its room.
  */
 @Composable
-internal fun RoomDirectionLabels(labels: List<PlanLabel>, selectedId: String?, boxW: Float, boxH: Float, gapPx: Float) {
+internal fun TappedRoomDirection(label: PlanLabel, boxW: Float, boxH: Float) {
     val colors = VastuTheme.colors
-    val borders = VastuTheme.borders
-    val glowDp = VastuTheme.spacing.s1
-    // The tapped room LAST, so it is drawn over any neighbour its longer words reach.
-    val ordered = labels.sortedBy { it.id == selectedId }
-    val padV = VastuTheme.spacing.s1
+    val caption = VastuTheme.type.caption
+    val style = caption.copy(
+        fontSize = caption.fontSize * PLAN_LABEL_SCALE,
+        lineHeight = caption.lineHeight * PLAN_LABEL_SCALE,
+    )
+    // ⚠ The same side padding as before and twice the top and bottom, both scaled alike: with less at
+    // the sides a one-letter direction ("C", "S") came out as a tall oval in the first render. This way
+    // one letter sits in a circle and two in a pill.
+    val padH = VastuTheme.spacing.s2 * PLAN_LABEL_SCALE
+    val padV = VastuTheme.spacing.s1 * PLAN_LABEL_SCALE
+    val glow = VastuTheme.spacing.s1 * PLAN_LABEL_SCALE
+    val glowPx = with(LocalDensity.current) { glow.toPx() }
+    val zoneColor = label.direction.zone.planColor()
+    // One line keeps its round ends; wrapped words get rounded corners (see pillShapeFor). Two letters
+    // do not wrap on any phone in the matrix, but the pill is safe if a narrower one ever makes them.
+    var wrappedLine by remember(label.id) { mutableStateOf<Float?>(null) }
+    val shape = pillShapeFor(wrappedLine, padV)
+    val spoken = spokenDirection(label.direction.words)
     Layout(
         content = {
-            ordered.forEach { label ->
-                key(label.id) {
-                    val tapped = label.id == selectedId
-                    val zoneColor = label.direction.zone.planColor()
-                    // One line keeps its round ends; wrapped words get rounded corners (see pillShapeFor —
-                    // at a 200 % font the round ends cut "North-West" to "orth-West").
-                    var wrappedLine by remember(tapped) { mutableStateOf<Float?>(null) }
-                    val shape = pillShapeFor(wrappedLine, padV)
-                    VText(
-                        text = if (tapped) tappedLabelText(label.direction.words) else label.direction.code,
-                        style = VastuTheme.type.caption,
-                        color = if (tapped) colors.paper else colors.textPrimary,
-                        onTextLayout = { wrappedLine = wrappedLineHeight(it) },
-                        modifier = Modifier
-                            .testTag(if (tapped) ROOM_DIRECTION_TAG else ROOM_CODE_TAG)
-                            // ⚠ ON TOP BY RULE, not by order. Placing the tapped label last used to be
-                            // enough; once each label kept its own wrap state (the key above) a neighbour's
-                            // "NE" was drawn over the tapped label's glow on a 320 dp phone. zIndex says it.
-                            .zIndex(if (tapped) 1f else 0f)
-                            .then(
-                                if (tapped) {
-                                    // The glow: a soft wash of the zone's colour just outside the pill,
-                                    // with the pill's own corners grown by the glow.
-                                    Modifier.drawBehind {
-                                        val g = glowDp.toPx()
-                                        val r = wrappedLine?.let { it / 2f + padV.toPx() } ?: (size.height / 2f)
-                                        drawRoundRect(
-                                            color = zoneColor.copy(alpha = 0.35f),
-                                            topLeft = Offset(-g, -g),
-                                            size = Size(size.width + 2 * g, size.height + 2 * g),
-                                            cornerRadius = CornerRadius(r + g),
-                                        )
-                                    }
-                                } else {
-                                    Modifier
-                                },
-                            )
-                            .clip(shape)
-                            .background(if (tapped) colors.textPrimary else colors.paper.copy(alpha = 0.9f))
-                            .border(if (tapped) borders.focus else borders.strong, zoneColor, shape)
-                            // ⚠ The same side padding for both, and twice the top and bottom: with less at
-                            // the sides a one-letter direction ("C", "S") came out as a tall oval in the
-                            // first render. This way one letter sits in a circle and two in a pill.
-                            .padding(horizontal = VastuTheme.spacing.s2, vertical = padV),
-                    )
-                }
-            }
+            VText(
+                text = label.direction.code,
+                style = style,
+                color = colors.paper,
+                onTextLayout = { wrappedLine = wrappedLineHeight(it) },
+                modifier = Modifier
+                    .testTag(ROOM_CODE_TAG)
+                    .semantics { contentDescription = spoken }
+                    // The glow: a soft wash of the zone's colour just outside the pill, with the pill's
+                    // own corners grown by the glow.
+                    .drawBehind {
+                        val g = glow.toPx()
+                        val r = wrappedLine?.let { it / 2f + padV.toPx() } ?: (size.height / 2f)
+                        drawRoundRect(
+                            color = zoneColor.copy(alpha = 0.35f),
+                            topLeft = Offset(-g, -g),
+                            size = Size(size.width + 2 * g, size.height + 2 * g),
+                            cornerRadius = CornerRadius(r + g),
+                        )
+                    }
+                    .clip(shape)
+                    .background(colors.textPrimary)
+                    .border(VastuTheme.borders.focus, zoneColor, shape)
+                    .padding(horizontal = padH, vertical = padV),
+            )
         },
     ) { measurables, constraints ->
-        // Never wider than the picture: at a 200 % font on a 320 dp phone a long direction wraps before
-        // it would run off the side.
-        val loose = Constraints(maxWidth = constraints.maxWidth.coerceAtLeast(0))
-        val placeables = measurables.map { it.measure(loose) }
+        // Never wider than the picture.
+        val p = measurables.single().measure(Constraints(maxWidth = constraints.maxWidth.coerceAtLeast(0)))
         layout(constraints.maxWidth, constraints.maxHeight) {
-            placeables.forEachIndexed { i, p ->
-                val c = ordered[i].at
-                val at = directionLabelTopLeft(c.x, c.y, p.width, p.height, boxW, boxH, gapPx)
-                p.place(at.x, at.y)
-            }
+            val at = directionLabelTopLeft(label.at.x, label.at.y, p.width, p.height, boxW, boxH, glowPx)
+            p.place(at.x, at.y)
         }
     }
 }

@@ -182,7 +182,8 @@ data class RoomReading(
     val direction: String,
     /**
      * The engine's zone the [direction] words spell — carried so the direction trial can write the
-     * SHORT form ("SW") on the plan from the same zone. Null only where a reading was built by hand.
+     * SHORT form ("SW") on the plan for a tapped room from the same zone. Null only where a reading was
+     * built by hand.
      */
     val zone: com.vastufirst.shared.Zone? = null,
 )
@@ -202,7 +203,8 @@ fun roomReadings(analysis: Analysis?): Map<String, RoomReading> =
             // of this very screen, which names the wall we read it on.
             status = r.rowStatus(),
             // ⚠ [directionWords] — the ONE spelling of a room's direction as a label, shared with the
-            // report's rows and with the direction trial's words on the plan. [short] alone also feeds
+            // report's rows and with what a screen reader hears for the tapped room on the plan (whose
+            // drawn label is only the short form). [short] alone also feeds
             // running prose where "the centre" has to stay lowercase. A pill is a label.
             direction = r.directionWords(),
             // Where MOST of the room is — the zone the words above lead with. Differs from the
@@ -365,10 +367,12 @@ fun ScanReviewContent(
     /** For the harness: draw the screen with the E's note open, so the golden shows that state. */
     startDoorNoteOpen: Boolean = false,
     /**
-     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PLAN — the direction trial (owner, 29 Sep 2026).
+     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PLAN — the direction trial (owner, 29 Sep 2026; redrawn by
+     * him 30 Sep).
      *
      * [RoomMarker.BOX], the default, is this screen exactly as it was. [RoomMarker.DIRECTION] shows
-     * the room's direction on the room, in the words on its own row — see RoomMarker.kt.
+     * nothing on the plan at rest, and the tapped room's SHORT direction on the middle of the room; the
+     * full name is on its own row — see RoomMarker.kt.
      */
     roomMarker: RoomMarker = RoomMarker.BOX,
     /**
@@ -510,8 +514,10 @@ fun ScanReviewContent(
             VastuInfoLine(
                 label = "How to use this screen",
                 // ⚠ The sentence says what a tap will actually show, so it follows the trial's marker.
+                // ⚠ Since 30 Sep 2026 the plan carries no direction until a room is tapped (owner's
+                // redesign), so it no longer claims "each room's direction on it".
                 info = if (roomMarker == RoomMarker.DIRECTION) {
-                    "Your plan, as you scanned it, with each room's direction on it. Tap a room — here or below — to see its direction in full."
+                    "Your plan, as you scanned it. Tap a room — here or below — to see its direction on the plan."
                 } else {
                     "Your plan, as you scanned it. Tap a room — here or below — to see roughly where we read it."
                 },

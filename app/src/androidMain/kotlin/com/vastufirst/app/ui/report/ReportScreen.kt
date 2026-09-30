@@ -299,11 +299,13 @@ fun ReportContent(
     onAddDetails: () -> Unit = {},
     onRestart: () -> Unit = {},
     /**
-     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PHOTOGRAPH — the direction trial (owner, 29 Sep 2026).
+     * ⭐⭐ WHAT A TAPPED ROOM SHOWS ON THE PHOTOGRAPH — the direction trial (owner, 29 Sep 2026; redrawn
+     * by him 30 Sep).
      *
      * The report draws the SAME picture "Check what we read" draws, through the same component, so it
      * shows the same kind of marker: [RoomMarker.BOX], the default, is this report exactly as it was;
-     * [RoomMarker.DIRECTION] shows the tapped room's direction on the room, in the words its row prints.
+     * [RoomMarker.DIRECTION] shows nothing at rest, and the tapped room's SHORT direction on the middle
+     * of the room — its full name stays in its row.
      */
     roomMarker: RoomMarker = RoomMarker.BOX,
     /** Flips [roomMarker] from the trial's chooser under the photograph. Null draws no chooser. */
@@ -430,9 +432,9 @@ fun ReportContent(
     var openRoomId by rememberSaveable { mutableStateOf(startOpenRoomId) }
 
     /**
-     * ⭐ The direction the trial writes ON a room in the photograph — the very words that room's row
-     * prints below it ([directionWords], one spelling for both), never worked out again from where
-     * the room sits in the picture.
+     * ⭐ The direction the trial shows for a tapped room on the photograph — the short form of the zone
+     * its row names, and the row's very words for a screen reader ([directionWords], one spelling for
+     * both) — never worked out again from where the room sits in the picture.
      */
     val planDirections = remember(a) {
         // mainZone, not zone: where most of the room is — the zone its row's words lead with.
@@ -1280,7 +1282,8 @@ private fun RoomsSection(
                 codeColor = r.type.editorColor(),
                 // ⚠ [directionWords], not [short] — short also feeds running prose where "the centre"
                 // must stay lowercase ("Toilet — centre"). A pill is a label, not a sentence. The same
-                // function spells the words the direction trial lays on the room in the photograph.
+                // function spells what a screen reader hears for the tapped room on the photograph,
+                // whose drawn label is the short form of the same zone. The full name is only here.
                 direction = r.directionWords(),
                 // ⚠ [rowStatus], not the bare verdict — the entrance is scored as the front door and
                 // must not be stamped "Not rated" on the page that judges it.

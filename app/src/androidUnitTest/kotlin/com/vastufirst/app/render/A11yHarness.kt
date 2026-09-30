@@ -35,15 +35,37 @@ import java.io.File
  *  - ATF is skipped by the library below API 34; we render at SDK 35, so it runs.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalRoborazziApi::class)
-fun writeA11yManifest(screen: String, content: @Composable () -> Unit) {
-    val cfg = RenderMatrix.configs.first()          // baseline (412×915, light, scale 1.0, en)
+fun writeA11yManifest(
+    screen: String,
+    content: @Composable () -> Unit,
+    /**
+     * The baseline (412×915, light, scale 1.0, en) unless a screen asks for more. ⭐ The direction
+     * trial's label is the one element whose SIZE the owner set by hand (30 Sep 2026: 20 % smaller), on
+     * a photograph — so it is checked at the narrow phone, the large font and dark as well, each as its
+     * own screen in the ratchet, and the counts are reported rather than assumed.
+     */
+    cfg: RenderConfig = RenderMatrix.configs.first(),
+) {
     RuntimeEnvironment.setQualifiers(cfg.qualifiers)
 
     var count = 0
     var detail = ""
     var errored = false
     runComposeUiTest {
-        setContent { VastuTheme { content() } }
+        setContent {
+            // At scale 1.0 exactly as before — every screen already in the ratchet renders untouched.
+            if (cfg.fontScale == 1f) {
+                VastuTheme { content() }
+            } else {
+                val base = androidx.compose.ui.platform.LocalDensity.current
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalDensity provides
+                        androidx.compose.ui.unit.Density(base.density, cfg.fontScale),
+                ) {
+                    VastuTheme { content() }
+                }
+            }
+        }
         try {
             onRoot().checkRoboAccessibility(
                 roborazziATFAccessibilityCheckOptions = RoborazziATFAccessibilityCheckOptions(

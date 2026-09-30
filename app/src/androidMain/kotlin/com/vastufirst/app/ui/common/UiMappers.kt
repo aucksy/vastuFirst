@@ -150,9 +150,10 @@ fun Zone.short(): String = when (this) {
 /**
  * ⭐ A ROOM'S DIRECTION AS A LABEL — "North-East", "Centre" — the ONE place it is spelled.
  *
- * Its row on "Check what we read", its row in the report and (under the direction trial) the words
- * laid over the room on the photograph all print this, so the three can never call one room two
- * different things. Capitalised here and not in [short], because [short] also feeds running prose
+ * Its row on "Check what we read" and its row in the report both print this, and under the direction
+ * trial a screen reader hears it for the tapped room on the photograph, whose drawn label is the short
+ * form of the same zone — so no two places can call one room two different things. Capitalised here and
+ * not in [short], because [short] also feeds running prose
  * where "the centre" has to stay lowercase; a label is not a sentence.
  *
  * ⭐ WHERE MOST OF THE ROOM IS, AND THE CROSSING IN WORDS (owner's decision, 29 Sep 2026). A room
