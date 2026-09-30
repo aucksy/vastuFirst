@@ -2007,3 +2007,18 @@ in center of the room and 20% smaller"*. Built exactly so, on both screens (one 
 - **Proof it is a change:** the eight new tests were pushed ALONE first (9a412ed) and all eight failed on
   v0.33.0, each for the reason its name gives (e.g. "at rest… expected [] but was [E, NE, NE, NW, S, S,
   SE, W]"; the label's middle 181 px, not 200); the other 459 app tests passed.
+- **The cloud build of the change (b4ff41c):** 466 app tests and 408 engine/rules tests, none failed;
+  the geometry gate unchanged (every direction screen 0). Only the direction pictures changed — every
+  box-way golden is byte-for-byte what it was. **Accessibility, the new label (ATF, 30 Sep 2026):**
+  scan-review-direction 6 findings at the baseline, 6 in dark, 2 at 200 % text, 2 at 320 dp — and
+  **none of them is the label**: all are the known contrast warnings on the cards' coloured result
+  words ("Needs fixing", "Already right"), the same kind the box-way screen carries (10). The label's
+  letters are paper on ink, 13.6 : 1. Nothing checks text SIZE: at normal text the letters are 9.6 sp,
+  below the 11 sp Android uses for its smallest standard text — the owner's size, reported, not undone.
+- **Looked at, every direction picture:** at rest the plan is bare at every size on both screens; a
+  tapped room shows one small pill, letters whole, inside the picture, at 412 / 360 / 320 dp, 200 %
+  text, landscape and right-to-left (the photo is not mirrored; the label stays on its room); dark is
+  byte-identical to light (the app keeps its one light palette). **The centred label covers the room's
+  printed name** on the sample sheet: "KITCHEN" reads "HEN", "LIVING ROOM" reads "ROOM" — shown to the
+  owner as a picture. It also sits a little left of each room's drawn middle, because it goes on the
+  middle of the READER's box, which on this sheet is wider than the drawn room.

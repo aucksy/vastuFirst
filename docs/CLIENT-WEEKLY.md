@@ -101,6 +101,29 @@ developer account.
 
 ## Week of 28 September – 4 October 2026
 
+### Wednesday 30 September — your plan stays clear until you pick a room
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.34.0/vastufirst-v0.34.0.apk
+**This is the one to install.**
+
+**Your plan no longer carries a label on every room. It opens clear, and shows one direction at a
+time — for the room you pick.**
+
+Until today every room on your plan carried its direction all the time, and the room you tapped
+spelled its direction out in full, on the plan. On a busy plan that was a lot of labels on one small
+picture, and the long names reached over the rooms around them. Now the plan opens with nothing
+written on it — just your own photograph. Tap a room in the list below it, or on the plan itself, and
+that room's direction appears in short in the middle of the room: **NE**, **SW**, or **C** for the
+centre of the home. The full name — **"North-East"**, or **"North-West · crosses the centre"** for a
+room that reaches into the next direction — is in that room's card below, and only there. The label
+is also a fifth smaller than before.
+
+Because the label now sits in the middle of the room, it covers the room's name printed on your plan
+while that room is picked; the card below names the room. Your report's photograph works the same way.
+
+It is still a trial: the choice under the plan between "Directions" and "Boxes" is unchanged, and
+nothing about your score changes either way.
+
 ### Tuesday 29 September, later — a room that crosses a line shows where most of it is
 
 **Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.33.0/vastufirst-v0.33.0.apk
