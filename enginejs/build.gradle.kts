@@ -27,8 +27,10 @@ plugins {
 }
 
 kotlin {
-    js(IR) {
-        moduleName = "vastuengine"
+    // Kotlin 2.4: IR is the only JS compiler, so it is no longer named, and `moduleName` became
+    // `outputModuleName`. The bundle is still vastuengine.js (tools/verify-enginejs.mjs looks for it).
+    js {
+        outputModuleName.set("vastuengine")
         browser {
             // The engine's real tests are the JVM ones in :engine. This target exists to produce a
             // bundle, not to host a second test suite that would drift from them.
