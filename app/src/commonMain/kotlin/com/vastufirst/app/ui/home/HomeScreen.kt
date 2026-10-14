@@ -50,10 +50,11 @@ import com.vastufirst.designsystem.components.scoreOutOfTen
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.foundation.clickableTapAndHold
 import com.vastufirst.designsystem.theme.VastuTheme
-import com.vastufirst.app.ui.common.relativeUpdated
-import com.vastufirst.app.ui.common.rememberDayClock
+import com.vastufirst.app.platform.nowMillis
+import com.vastufirst.app.platform.updatedLabel
+import com.vastufirst.app.platform.rememberToday
 import com.vastufirst.app.ui.common.screenRoot
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Saved-plans home (§6 · design system screen 11). Add a home, or reopen a saved one (which
@@ -84,7 +85,7 @@ fun HomeScreen(
     // would stop that harness ever seeing the screen as finished. See [rememberDayClock].
     HomeContent(
         plans = saved.plans,
-        now = rememberDayClock(),
+        now = rememberToday(),
         unreadable = saved.unreadable,
         onAddHome = onAddHome,
         onOpenPlan = onOpenPlan,
@@ -109,7 +110,7 @@ fun HomeContent(
     onOpenPlan: (String) -> Unit,
     onSettings: () -> Unit,
     onRename: (String, String) -> Unit = { _, _ -> },
-    now: Long = System.currentTimeMillis(),
+    now: Long = nowMillis(),
     /** Saved rows this build could not read. Shown BY NAME rather than hidden — see the note below. */
     unreadable: List<UnreadableHome> = emptyList(),
     /** Remove one unreadable row for good. Reached only through the are-you-sure dialog. */
@@ -192,7 +193,7 @@ fun HomeContent(
                     Spacer(Modifier.height(VastuTheme.spacing.s2))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         VText(
-                            "${home.name} · ${relativeUpdated(home.updatedAt, now)}",
+                            "${home.name} · ${updatedLabel(home.updatedAt, now)}",
                             style = VastuTheme.type.label, color = colors.textPrimary,
                             modifier = Modifier.weight(1f),
                         )
@@ -430,7 +431,7 @@ private fun DraftRow(draft: SavedDraft, now: Long, onOpen: () -> Unit, onDiscard
     val rooms = draft.roomCount
     VastuListRow(
         title = draft.draft.name ?: "Unfinished home",
-        subtitle = "$rooms ${if (rooms == 1) "room" else "rooms"} so far · ${relativeUpdated(draft.updatedAt, now)}",
+        subtitle = "$rooms ${if (rooms == 1) "room" else "rooms"} so far · ${updatedLabel(draft.updatedAt, now)}",
         modifier = Modifier.clickableTap(
             role = Role.Button,
             onClickLabel = "carry on with this home",
@@ -567,7 +568,7 @@ private fun PlanRow(
     val intentLabel = plan.intent.name.lowercase().replaceFirstChar { it.uppercase() }
     VastuListRow(
         title = plan.name,
-        subtitle = "$intentLabel · ${relativeUpdated(plan.updatedAt, now)}",
+        subtitle = "$intentLabel · ${updatedLabel(plan.updatedAt, now)}",
         modifier = Modifier.clickableTapAndHold(
             role = Role.Button,
             onLongClickLabel = "delete this home",

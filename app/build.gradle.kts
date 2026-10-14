@@ -21,8 +21,20 @@ kotlin {
         }
     }
 
+    // ⭐ THE iPHONE (plan stage 2, 14 Oct 2026). The screens live in commonMain and compile for both
+    // phones; only the platform pieces (start-up, camera and pickers, files, haptics, the crash note,
+    // the checkout, the Control Room fetch) stay in androidMain, each behind a small doorway in
+    // commonMain that iosMain answers too. No module split: on AGP 8.x an Android application module
+    // may still carry iOS targets (AGP 9 forbids it — that split waits until the plugin is moved).
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "VastuApp"
+            isStatic = true
+        }
+    }
+
     sourceSets {
-        androidMain.dependencies {
+        commonMain.dependencies {
             implementation(project(":designsystem"))
             implementation(project(":shared"))
             implementation(project(":rules"))
@@ -33,22 +45,33 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.ui)
             implementation(compose.material3)          // un-themed primitives only (ripple, text-field internals)
+            implementation(compose.components.resources) // decodeToImageBitmap for the plan photo
 
+            implementation(libs.jb.navigation.compose)
+            implementation(libs.jb.lifecycle.viewmodel.compose)
+            implementation(libs.jb.lifecycle.runtime.compose)
+
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)          // koinInject in the launch decider
+            implementation(libs.koin.compose.viewmodel)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.sqldelight.native.driver)
+        }
+
+        androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
             // The opening screen (res/values/themes.xml, Theme.VastuFirst.Starting): the brand
             // mark on paper on every Android version, held until the first screen is decided.
             implementation(libs.androidx.core.splashscreen)
-            implementation(libs.androidx.navigation.compose)
-            implementation(libs.androidx.lifecycle.viewmodel.compose)
-            implementation(libs.androidx.lifecycle.runtime.compose)
 
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-
-            implementation(libs.koin.core)
             implementation(libs.koin.android)
-            implementation(libs.koin.compose)          // koinInject in the launch decider
             implementation(libs.koin.androidx.compose)
 
             implementation(libs.sqldelight.android.driver)

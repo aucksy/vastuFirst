@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
@@ -37,11 +33,11 @@ import com.vastufirst.designsystem.components.VastuButton
 import com.vastufirst.designsystem.components.VastuButtonStyle
 import com.vastufirst.designsystem.foundation.clickableTap
 import com.vastufirst.designsystem.theme.VastuTheme
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.viewmodel.koinViewModel
+import com.vastufirst.app.platform.rememberDeviceServices
 import org.koin.compose.koinInject
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.scan.PlanReadingConsent
-import com.vastufirst.app.CrashLog
 import com.vastufirst.app.ui.common.screenRoot
 
 /**
@@ -63,11 +59,11 @@ fun SettingsScreen(
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen renders headlessly
     // from fixture callbacks in the screenshot harness (UI-POLISH §6, stateless-content).
     var allowed by remember { mutableStateOf(consent.isGranted()) }
-    val context = LocalContext.current
+    val device = rememberDeviceServices()
     // ⭐ A crash the app recorded last time. Read once, so the offer does not flicker in and out as
     // the screen recomposes, and cleared the moment the user acts either way — nobody should be
     // asked twice about the same crash.
-    var crash by remember { mutableStateOf(CrashLog.lastCrash(context)) }
+    var crash by remember { mutableStateOf(device.lastCrash()) }
     var reader by remember { mutableStateOf(readerChoice.chosen()) }
     // ⚠ EMPTY WHEN THE BUILD CANNOT READ PLANS AT ALL, which hides the whole section. The model
     // names come from a settings file bundled INSIDE the app, so they are always present — but the
@@ -76,7 +72,7 @@ fun SettingsScreen(
     // anything: the same "a build that cannot read plans looked exactly like one that could" trap
     // the scan screen already has its own state for.
     val readerOptions = remember(recipe) {
-        if (recipe.canRead(com.vastufirst.app.BuildConfig.PLAN_READER_KEY)) {
+        if (recipe.canRead(device.bakedReaderKey)) {
             listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel)
         } else {
             emptyList()
@@ -95,7 +91,7 @@ fun SettingsScreen(
         // the homes and false of the pictures. Cleared here, where the promise is made.
         onDeleteAll = {
             homeViewModel.deleteAll()
-            com.vastufirst.app.ui.scan.clearPlanPhotos(context)
+            device.clearPlanPhotos()
         },
         planReadingAllowed = allowed,
         onSetPlanReading = { granted -> consent.set(granted); allowed = granted },
@@ -106,44 +102,17 @@ fun SettingsScreen(
         // longer existed. Now a failed launch leaves the card exactly where it was, so they can try
         // again after installing mail — or dismiss it themselves, which is a different button.
         onSendCrash = {
-            val opened = crash?.let { text -> sendCrashEmail(context, text) } ?: false
+            val opened = crash?.let { text -> device.sendCrashEmail(text) } ?: false
             if (opened) {
-                CrashLog.clear(context)
+                device.clearCrash()
                 crash = null
             }
         },
         onDismissCrash = {
-            CrashLog.clear(context)
+            device.clearCrash()
             crash = null
         },
     )
-}
-
-/**
- * Hand the crash text to the user's own mail app, with everything visible before they send.
- *
- * ⚠ ACTION_SENDTO with a mailto: URI, never ACTION_SEND. SENDTO can only be answered by something
- * that actually handles email, so the chooser cannot offer to post the crash to a social app — which
- * is a thing ACTION_SEND does, and a thing nobody wants to discover after tapping.
- */
-/** A blank line in the email body, built from a character code so no editing pass can eat an escape. */
-private val LINE_BREAK: String = 10.toChar().toString()
-
-/** True when a mail app actually opened. False means nothing was sent and the report must be kept. */
-private fun sendCrashEmail(context: Context, body: String): Boolean {
-    val intent = Intent(Intent.ACTION_SENDTO).apply {
-        data = Uri.parse("mailto:contact@vastufirst.com")
-        putExtra(Intent.EXTRA_SUBJECT, "VastuFirst — something went wrong")
-        putExtra(
-            Intent.EXTRA_TEXT,
-            "Anything you were doing when it happened (optional):" + LINE_BREAK + LINE_BREAK +
-                LINE_BREAK + "--- technical detail, nothing personal ---" + LINE_BREAK + body,
-        )
-    }
-    // No mail app on the device is a real case on a cheap phone. Crashing the settings screen while
-    // reporting a crash would be absurd — but so is quietly binning the report, so the caller is
-    // told whether anything opened and keeps it if nothing did.
-    return runCatching { context.startActivity(intent) }.isSuccess
 }
 
 /** Settings as a pure function of its callbacks — no ViewModel — so the render harness can draw it. */

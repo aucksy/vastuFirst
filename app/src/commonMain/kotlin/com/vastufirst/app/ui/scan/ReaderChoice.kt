@@ -1,6 +1,5 @@
 package com.vastufirst.app.ui.scan
 
-import android.content.Context
 
 /**
  * ⭐ WHICH AI READS A PLAN — moved OUT of the scan flow and into Settings (owner, 10 Aug 2026:
@@ -21,22 +20,6 @@ interface ReaderChoice {
     /** The model id the user pinned, or null for Auto. */
     fun chosen(): String?
     fun set(model: String?)
-}
-
-class AndroidReaderChoice(context: Context) : ReaderChoice {
-
-    private val prefs = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-
-    override fun chosen(): String? = prefs.getString(KEY, null)
-
-    override fun set(model: String?) {
-        prefs.edit().apply { if (model == null) remove(KEY) else putString(KEY, model) }.apply()
-    }
-
-    private companion object {
-        const val FILE = "vastufirst_reader"
-        const val KEY = "reader_model"
-    }
 }
 
 /** Held in memory only — for the render harness and tests, which must never touch prefs. */

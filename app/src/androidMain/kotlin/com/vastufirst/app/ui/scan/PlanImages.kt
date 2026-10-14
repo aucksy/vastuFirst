@@ -9,7 +9,7 @@ import android.graphics.BitmapFactory
 import com.vastufirst.shared.scan.PlanImage
 
 /** The decoded picture, or null when the bytes do not decode — then the reply is used as read. */
-fun DecodedImage.toPlanImage(): PlanImage? {
+actual fun DecodedImage.toPlanImage(): PlanImage? {
     val bitmap = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull() ?: return null
     return try {
         val w = bitmap.width

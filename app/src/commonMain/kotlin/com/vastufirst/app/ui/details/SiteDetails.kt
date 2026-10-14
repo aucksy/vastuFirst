@@ -252,7 +252,7 @@ fun areaCentroid(poly: List<Point>): Point {
 
 private fun rotate(p: Point, degrees: Double, origin: Point): Point {
     if (degrees == 0.0) return p
-    val t = Math.toRadians(degrees)
+    val t = degrees * (kotlin.math.PI / 180.0)
     val c = cos(t)
     val s = sin(t)
     val dx = p.x - origin.x

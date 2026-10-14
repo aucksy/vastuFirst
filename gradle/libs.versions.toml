@@ -12,11 +12,14 @@ androidxCoreSplashscreen = "1.0.1"
 kotlinxSerialization = "1.11.0"
 kotlinxDatetime = "0.6.1"         # engine uses no java.time (Product PRD §3.1)
 kotlinxCoroutines = "1.11.0"
-koin = "4.0.0"                    # KMP-friendly DI (Impl PRD §2) — applied from Phase 1
+koin = "4.1.1"                    # KMP-friendly DI. 4.1: koin-compose-viewmodel for screens shared with the iPhone (stage 2)
 sqldelight = "2.4.1"             # KMP-native DB; 2.4 has the iPhone driver the plan uses (stage 1)
 turbine = "1.2.0"
-androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2 screen graph
-androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
+# ⭐ iPhone plan stage 2 (14 Oct 2026): navigation and lifecycle come from JetBrains' multiplatform
+# builds, so the shared screens use them on both phones. Same package names as androidx; on Android
+# they resolve to androidx itself (navigation 2.9.2 -> androidx 2.9.x, lifecycle 2.9.6 -> androidx 2.9.x).
+jbNavigationCompose = "2.9.2"
+jbLifecycle = "2.9.6"
 # Google Play Billing — the ONLY payment route Play permits for digital content sold and read
 # inside a Play Store app. Built in full, shipped behind a flag (app/.../billing/Billing.kt).
 # ⚠ Play refuses new apps and updates on a Billing Library below 8 since 31 Aug 2026. 8.3.0 is the
@@ -56,17 +59,19 @@ koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
 # Navigation + lifecycle (Android UI — Phase 2, :app only).
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
-androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
-androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+jb-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "jbNavigationCompose" }
+jb-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "jbLifecycle" }
+jb-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "jbLifecycle" }
 play-billing = { module = "com.android.billingclient:billing-ktx", version.ref = "playBilling" }
 
 # DB (declared now, wired in Phase 2).
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 # JVM driver — TEST ONLY. Lets :data run its migrations against a real SQLite file rather than
 # trusting that a migration which compiles is a migration that works.
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }

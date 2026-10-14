@@ -1,6 +1,5 @@
 package com.vastufirst.app.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +44,8 @@ import com.vastufirst.data.PlanRepository
 import com.vastufirst.designsystem.components.BrandMark
 import com.vastufirst.designsystem.theme.VastuTheme
 import kotlinx.coroutines.flow.first
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.viewmodel.koinViewModel
+import com.vastufirst.app.platform.PlatformBackHandler
 import org.koin.compose.koinInject
 
 /**
@@ -439,7 +439,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     if (fromReport && vm.north != entryNorth) vm.updateNorth(entryNorth)
                     nav.popBackStack()
                 }
-                if (fromReport) BackHandler(onBack = cancelExperiment)
+                if (fromReport) PlatformBackHandler(onBack = cancelExperiment)
                 MarkNorthScreen(
                     vm = vm,
                     onRead = {

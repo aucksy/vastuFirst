@@ -86,7 +86,7 @@ data class GridDoor(val side: DoorSide, val cell: Int)
 class NewPlanViewModel(
     private val engine: VastuEngine,
     private val repo: PlanRepository,
-    private val now: () -> Long = { System.currentTimeMillis() },
+    private val now: () -> Long = { com.vastufirst.app.platform.nowMillis() },
     /**
      * Where scoring runs — off the main thread in the app, and injectable so a test can make the
      * whole save path deterministic. Without this seam the only way to prove "finishing a home

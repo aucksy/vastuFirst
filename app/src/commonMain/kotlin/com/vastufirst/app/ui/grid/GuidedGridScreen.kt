@@ -58,7 +58,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalConfiguration
+import com.vastufirst.app.platform.screenHeightDp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -662,7 +662,7 @@ fun GuidedGridContent(
         // a slice back for the controls underneath, then allow only the width whose grid fits what
         // is left. Portrait is untouched by construction — the reserve leaves far more height than a
         // width-driven grid ever asks for on a phone.
-        val planBlockCap = (LocalConfiguration.current.screenHeightDp.dp -
+        val planBlockCap = (screenHeightDp().dp -
             VastuTheme.sizes.editorControlsReserve)
             .coerceAtLeast(VastuTheme.sizes.control * 4) * (cols.toFloat() / rows.toFloat())
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {

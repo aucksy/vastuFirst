@@ -16,12 +16,11 @@
 //   · the four optional questions   → the report, which always offered them too.
 package com.vastufirst.app.ui.scan
 
-import android.graphics.BitmapFactory
+import com.vastufirst.app.platform.decodeImageBitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import com.vastufirst.app.ui.common.PlanRoom
 import com.vastufirst.app.ui.common.roomDisplayNames
 import com.vastufirst.shared.scan.ScannedRoom
@@ -36,7 +35,7 @@ class ScanPicture(
      * and the room boxes are positioned against the same picture's own pixels.
      */
     fun decodeImage(): ImageBitmap? = imageBytes?.let { bytes ->
-        runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
+        decodeImageBitmap(bytes)
     }
 }
 

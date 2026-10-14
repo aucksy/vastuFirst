@@ -18,6 +18,8 @@ on:
       - 'rules/**'
       - 'shared/**'
       - 'data/**'
+      - 'app/**'
+      - 'designsystem/**'
       - 'buildSrc/**'
       - 'gradle/**'
       - '.github/workflows/ios.yml'
@@ -61,6 +63,10 @@ jobs:
         run: >
           gradle :shared:iosSimulatorArm64Test :rules:iosSimulatorArm64Test
           :engine:iosSimulatorArm64Test :data:iosSimulatorArm64Test --stacktrace
+
+      # Stage 2: the shared screens (app commonMain) and the design kit compile for the iPhone.
+      - name: The shared screens compile for the iPhone
+        run: gradle :designsystem:compileKotlinIosSimulatorArm64 :app:compileKotlinIosSimulatorArm64 --stacktrace
 
       - name: What ran on the iPhone
         if: always()
