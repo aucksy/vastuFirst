@@ -265,7 +265,7 @@ private fun TapPlanPicture(
 ) {
     val colors = VastuTheme.colors
     val dotFill = colors.primary
-    val dotRing = colors.surfaceRaised
+    val dotRing = colors.primaryDark
     val dotRadius = VastuTheme.spacing.s2
     val ringWidth = VastuTheme.borders.strong
     val liveOnTap by rememberUpdatedState(onTap)
@@ -307,16 +307,22 @@ private fun TapPlanPicture(
                     dstOffset = IntOffset(fit.ox.toInt(), fit.oy.toInt()),
                     dstSize = IntSize(fit.w.toInt(), fit.h.toInt()),
                 )
+                // ⚠ SEE-THROUGH, found by looking at the first render: a solid dot sits exactly on the
+                // room's printed name — the tap goes where the words are — and hid the very caption the
+                // user had just found. A ring over a faint wash marks the spot and leaves the words legible.
                 val r = dotRadius.toPx()
                 for (p in points) {
                     val at = Offset(fit.ox + p.x * fit.w, fit.oy + p.y * fit.h)
-                    drawCircle(dotFill, radius = r, center = at)
+                    drawCircle(dotFill.copy(alpha = DOT_WASH_ALPHA), radius = r, center = at)
                     drawCircle(dotRing, radius = r, center = at, style = Stroke(width = ringWidth.toPx()))
                 }
             }
         }
     }
 }
+
+/** How much of the tap mark's colour fills its middle: enough to see, little enough to read through. */
+private const val DOT_WASH_ALPHA = 0.25f
 
 /** The photograph's test tag — the tests find the picture by it. */
 const val TAP_PLAN_TAG = "editor.tapPlan"
