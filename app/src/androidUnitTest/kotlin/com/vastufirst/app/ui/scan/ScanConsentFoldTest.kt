@@ -38,9 +38,9 @@ class ScanConsentFoldTest {
         "What we send" to
             "The one picture or PDF you choose. Nothing else — no name, no phone number, no location.",
         "Who reads it" to
-            "A relay called OpenRouter passes it to an AI model from OpenAI, which we ask twice and keep the " +
-            "fuller reading — and sometimes a second model from Google for a second opinion. Their " +
-            "computers are abroad.",
+            "Our own server, which keeps nothing, hands it to a relay called OpenRouter. That passes it to " +
+            "an AI model from OpenAI, which we ask twice and keep the fuller reading — and sometimes a " +
+            "second model from Google for a second opinion. Their computers are abroad.",
         "What we ask it" to
             "Only to read what is printed on your plan — the room names and sizes, and where each room " +
             "sits. It is never asked anything about Vastu.",

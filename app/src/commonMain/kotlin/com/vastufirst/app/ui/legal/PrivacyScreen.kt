@@ -95,8 +95,9 @@ const val PRIVACY_COLLECT =
 
 const val PRIVACY_UPLOAD =
     "If you choose to have a floor plan read for you, that one picture is sent to be turned " +
-        "into rooms, and the rooms come back. It goes to a relay called OpenRouter, which passes " +
-        "it to an AI model from OpenAI — and sometimes to a second model from Google, for a " +
+        "into rooms, and the rooms come back. Our own server, which keeps nothing, hands it to a " +
+        "relay called OpenRouter, which passes it to an AI model from OpenAI — and sometimes to a " +
+        "second model from Google, for a " +
         "second opinion. Their computers are abroad. The app asks you before it does this, every " +
         "first time, and you can turn it off again in Settings. The picture is not stored by us " +
         "and is not linked to you — there is nothing to link it to. Drawing your home by hand " +

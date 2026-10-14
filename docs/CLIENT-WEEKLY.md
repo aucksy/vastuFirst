@@ -60,7 +60,8 @@ These are the things only you can decide or provide. Everything else is being fi
    reinstall) or **one home per payment**.
 6. **The plan-reading service in your name.** Reading a photographed plan uses a paid AI service
    (about 50 paise a plan at September's prices — each plan is read twice). Before launch it should be billed to you: an account at
-   openrouter.ai with your card and a monthly spending limit. We move the app onto it.
+   openrouter.ai with your card and a monthly spending limit. We move the reading onto it on our
+   server, so phones need no app update for it.
 7. **Two names for the front door.** Two of the 32 door positions — **E7 and S7** — have no
    traditional name in our sources, so the report says it will not invent one. If your Vastu expert
    can name them, the report will use those names.
@@ -108,6 +109,26 @@ is now produced with every build.
 **No dates on any of this.** Several of them move only when a decision above lands.
 
 ## Week of 12 – 18 October 2026
+
+### Wednesday 14 October, evening — the plan-reading key no longer travels inside the app
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.39.0/vastufirst-v0.39.0.apk
+**This is the one to install.**
+
+**Reading a plan now goes through VastuFirst's own small server.** Until this build, the key that
+pays for reading a plan photo was inside the app file itself, and anyone with the app file could
+take it out and spend on that account. Now the app carries no key at all. It sends the plan picture
+to our own server, which keeps the key, checks the request, passes it on and hands the rooms back.
+Both app stores expect this before launch.
+
+**It also puts a ceiling on the bill.** The server allows a few reads a minute from one phone and a
+fixed number a day in total, so a misuse can never run up a large charge. The daily number is set
+well above today's use and is raised before launch.
+
+**Nothing changes on screen,** apart from one line: the consent card before a plan is read, and the
+privacy policy, now say that the picture passes through our own server, which keeps nothing. A test
+plan was read through the new route before this build: every room and every printed size came back,
+in about ten seconds.
 
 ### Wednesday 14 October, later — share your report as a PDF, and the iPhone app opens
 

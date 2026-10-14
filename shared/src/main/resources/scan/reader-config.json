@@ -63,11 +63,14 @@
     "useRelay / relayEndpoint (14 Oct 2026): the relay is our own server (server/reader in this repo,",
     "deployed at reader.vastufirst.com). It holds the AI key, allows only the two models above, and",
     "counts reads exactly: 6 a minute per phone, 300 a day in total. With useRelay true the app sends",
-    "no key and the build leaves the key out of the APK. Left false until one real read through the",
-    "relay is approved and proven (each read is paid); then flip it to true and release."
+    "no key and the build leaves the key out of the APK. Turned ON 14 Oct 2026 (v0.39.0) after ONE",
+    "approved paid read of plan-01 through the relay: HTTP 200 in 10 s, 2D_PLAN, all 8 rooms with their",
+    "printed sizes, $0.0016. Note the daily cap counts READS, and a scan is 2 reads (readsPerScan), so",
+    "300 reads is about 150 scans a day across everyone - raise DAILY_CAP in server/reader/wrangler.toml",
+    "before launch traffic needs it."
   ],
   "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-  "useRelay": false,
+  "useRelay": true,
   "relayEndpoint": "https://reader.vastufirst.com/v1/chat/completions",
   "model": "openai/gpt-5.6-luna",
   "escalationModel": "google/gemini-3.1-pro-preview",

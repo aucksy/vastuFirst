@@ -212,4 +212,15 @@ class ScanReaderConfigTest {
         val config = ScanReaderConfigLoader.load().config
         assertTrue(config.relayEndpoint.startsWith("https://"), "relay was '${config.relayEndpoint}'")
     }
+
+    // ⭐ The AI key stays off the phone (v0.39.0). Every released APK is public, so a build that reads
+    // straight from the provider carries a key anyone can lift and spend. Turning the relay off again
+    // must be a deliberate edit to this test, never a quiet config change.
+    @Test
+    fun `the shipped config reads through the relay so no APK carries the key`() {
+        val recipe = ScanReaderConfigLoader.load()
+        assertTrue(recipe.config.useRelay, "useRelay is off: the build would bake the AI key into the APK")
+        assertEquals(recipe.config.relayEndpoint, recipe.target)
+        assertTrue(recipe.canRead(bakedKey = ""))
+    }
 }
