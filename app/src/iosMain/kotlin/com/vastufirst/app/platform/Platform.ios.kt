@@ -85,9 +85,11 @@ private object IosDeviceServices : DeviceServices {
     // The iPhone build never carries a key: its reads go through our relay (reader-config useRelay).
     override val bakedReaderKey: String = ""
 
-    // The crash note and the plan photo store arrive in stage 4; until then there is nothing kept.
-    override fun lastCrash(): String? = null
-    override fun clearCrash() = Unit
+    override fun lastCrash(): String? = IosCrashLog.last()
+    override fun clearCrash() = IosCrashLog.clear()
+
+    // The iPhone keeps no camera files of its own (the camera hands back a picture in memory); the
+    // photos of unfinished homes are removed with the homes, by the repository's own deleteAll.
     override fun clearPlanPhotos() = Unit
 
     override fun sendCrashEmail(text: String): Boolean {

@@ -51,7 +51,9 @@ val appModule = module {
     // ⚠ Nothing downloaded takes effect in the session that downloads it. Swapping the rules under
     // a report somebody is reading would move their score while they looked at it, with nothing on
     // the screen to explain it. The download lands; the next launch uses it.
-    single { PublishedRulesStore(androidContext()) }
+    // ⚠ Registered AS RulesStore (shared since 14 Oct 2026): PublishedRules.atStartup and RulesUpdater
+    // ask Koin for a RulesStore, and Koin does not find a subclass registered under its own name.
+    single<com.vastufirst.app.update.RulesStore> { PublishedRulesStore(androidContext()) }
     single { PublishedRules.atStartup(store = get(), appVersion = BuildConfig.VERSION_NAME) }
 
     // Engine — loads + validates the versioned ruleset once (Product PRD §5.1), from whichever

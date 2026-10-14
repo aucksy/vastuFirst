@@ -6,8 +6,6 @@ import com.vastufirst.shared.update.Plans
 import com.vastufirst.shared.update.RulesetUpdate
 import com.vastufirst.shared.update.UPDATE_PUBLIC_KEY_SPKI_B64
 import com.vastufirst.shared.update.UPDATE_URL
-import java.net.HttpURLConnection
-import java.net.URI
 
 /**
  * What this launch is using: the rules that score a home, and the prices the app shows.
@@ -42,7 +40,7 @@ class PublishedRules private constructor(
          * Reads what is on disk and checks it from scratch — signature, version, and the app's own
          * loader. Anything it dislikes and the bundled rules are used instead.
          */
-        fun atStartup(store: PublishedRulesStore, appVersion: String): PublishedRules {
+        fun atStartup(store: RulesStore, appVersion: String): PublishedRules {
             val bundled = try {
                 RuleSetLoader.loadDefault()
             } catch (t: Throwable) {
@@ -88,10 +86,10 @@ class PublishedRules private constructor(
  * returns a recorded reply.
  */
 class RulesUpdater(
-    private val store: PublishedRulesStore,
+    private val store: RulesStore,
     private val appVersion: String,
     private val url: String = UPDATE_URL,
-    private val fetch: (String) -> String? = ::httpGet,
+    private val fetch: (String) -> String? = ::defaultRulesFetch,
 ) {
 
     /** What happened, for the owner's own diagnosis. Never shown to anybody using the app. */
@@ -127,28 +125,4 @@ class RulesUpdater(
                 if (store.save(body)) Result.Kept(outcome.accepted.version) else Result.CouldNotSave
         }
     }
-}
-
-/**
- * One plain HTTP GET, with short timeouts.
- *
- * ⚠ The timeouts are the point. This runs while somebody is opening the app; a network that
- * accepts a connection and then says nothing would otherwise hold a background thread for as long
- * as the system allows. Eight seconds and it gives up, which costs nothing at all — the app is
- * already running on the rules built into it.
- */
-private fun httpGet(url: String): String? = try {
-    val connection = URI(url).toURL().openConnection() as HttpURLConnection
-    connection.connectTimeout = 8_000
-    connection.readTimeout = 8_000
-    connection.requestMethod = "GET"
-    connection.setRequestProperty("Accept", "application/json")
-    try {
-        if (connection.responseCode != 200) null
-        else connection.inputStream.bufferedReader().use { it.readText() }
-    } finally {
-        connection.disconnect()
-    }
-} catch (_: Throwable) {
-    null
 }

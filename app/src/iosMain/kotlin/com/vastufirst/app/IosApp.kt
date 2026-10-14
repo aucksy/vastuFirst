@@ -29,7 +29,15 @@ import com.vastufirst.engine.VastuEngine
 import com.vastufirst.shared.scan.GroqPlanReader
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.shared.scan.ScanReaderConfigLoader
+import com.vastufirst.app.update.IosRulesStore
+import com.vastufirst.app.update.PublishedRules
+import com.vastufirst.app.update.RulesStore
+import com.vastufirst.app.update.RulesUpdater
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import platform.Foundation.NSBundle
 import kotlinx.coroutines.IO
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
@@ -40,11 +48,12 @@ import platform.UIKit.UIViewController
  * ⭐ THE iPHONE APP'S FRONT DOOR (iPhone plan, stage 3). The Swift app (iosApp/) shows this one view
  * controller, and everything inside it is the shared app — the same screens, navigation and engine
  * Android runs. What differs is only the wiring below: where homes are stored, how settings are kept,
- * and the pieces not built for the iPhone yet (Apple's checkout, Control Room updates), each of which
+ * and the pieces not built for the iPhone yet (Apple's checkout), each of which
  * SAYS so or keeps the safe default rather than pretending.
  */
 @Suppress("FunctionName", "unused") // called from Swift: MainViewControllerKt.MainViewController()
 fun MainViewController(): UIViewController {
+    com.vastufirst.app.platform.IosCrashLog.install(appVersion)
     startKoinOnce()
     return ComposeUIViewController {
         CompositionLocalProvider(
@@ -63,15 +72,27 @@ private var koinStarted = false
 private fun startKoinOnce() {
     if (koinStarted) return
     koinStarted = true
-    startKoin { modules(iosModule) }
+    val koin = startKoin { modules(iosModule) }.koin
+    // Ask the Control Room for newer rules, off the main thread and never waited for — exactly as
+    // Android does at start-up. What it produces is a file; the next launch reads it.
+    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        runCatching { koin.get<RulesUpdater>().refresh() }
+    }
 }
 
+/** The version Apple shows for this build (CFBundleShortVersionString), as the Control Room compares it. */
+private val appVersion: String
+    get() = NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: "0.0.0"
+
 /**
- * The iPhone's half of the wiring — Android's is di/AppModule.kt. The rules are the ones built into
- * the app (taking a newer published set from the Control Room arrives in stage 4).
+ * The iPhone's half of the wiring — Android's is di/AppModule.kt. The rules are the newest set the
+ * Control Room published and this phone verified, or the ones built into the app.
  */
 val iosModule = module {
-    single { VastuEngine() }
+    single<RulesStore> { IosRulesStore }
+    single { PublishedRules.atStartup(store = get(), appVersion = appVersion) }
+    single { VastuEngine(get<PublishedRules>().ruleSet) }
+    single { RulesUpdater(store = get(), appVersion = appVersion) }
     single { NativeSqliteDriver(VastuDatabase.Schema, "vastufirst.db") }
     single { VastuDatabaseFactory.create(get<NativeSqliteDriver>()) }
     single { PlanRepository(db = get(), io = Dispatchers.IO, photos = IosPlanPhotoStore) }
@@ -87,7 +108,7 @@ val iosModule = module {
     single<ReaderChoice> { UserDefaultsReaderChoice }
     single { ScanPictureSlot() }
     // Apple's checkout is stage 6. With payments off the screen says no payment is taken, as on Android.
-    single<Billing> { NoBilling() }
+    single<Billing> { NoBilling(publishedPrice = get<PublishedRules>().plans?.unlockPrice) }
 
     viewModel { HomeViewModel(repo = get(), engine = get()) }
     viewModel { NewPlanViewModel(engine = get(), repo = get(), handle = get()) }

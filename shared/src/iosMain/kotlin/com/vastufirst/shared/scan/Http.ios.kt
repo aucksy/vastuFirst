@@ -13,7 +13,12 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
+import platform.Foundation.HTTPBody
+import platform.Foundation.HTTPMethod
+import platform.Foundation.NSURLRequestUseProtocolCachePolicy
+import platform.Foundation.dataTaskWithRequest
 import platform.Foundation.dataUsingEncoding
+import platform.Foundation.setValue
 import kotlin.coroutines.resume
 
 /**
@@ -23,9 +28,12 @@ import kotlin.coroutines.resume
 actual fun platformHttp(): Http = Http { method, url, headers, body, connectTimeoutMs, readTimeoutMs ->
     val nsUrl = NSURL.URLWithString(url) ?: return@Http null
     suspendCancellableCoroutine { cont ->
-        val request = NSMutableURLRequest.requestWithURL(nsUrl)
+        val request = NSMutableURLRequest.requestWithURL(
+            nsUrl,
+            NSURLRequestUseProtocolCachePolicy,
+            (connectTimeoutMs + readTimeoutMs) / 1000.0,
+        )
         request.HTTPMethod = method
-        request.timeoutInterval = (connectTimeoutMs + readTimeoutMs) / 1000.0
         headers.forEach { (name, value) -> request.setValue(value, forHTTPHeaderField = name) }
         if (body != null) {
             @Suppress("CAST_NEVER_SUCCEEDS")
