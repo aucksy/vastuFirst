@@ -62,7 +62,7 @@ class StressCorpusTest {
     // ---------- Realistic scenarios ----------
 
     @Test
-    fun `an angled clean rectangle scores normally — never 'irregular', no false cut`() {
+    fun `an angled clean rectangle scores normally — never 'irregular' no false cut`() {
         // A perfectly rectangular home tilted 30° to the compass (the common Indian case).
         val square = Fixtures.rect(10.0, 10.0, 80.0, 60.0)
         val tilted = square.map { rot(it, 30.0, 50.0, 40.0) }
@@ -99,13 +99,13 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `a courtyard home (open centre marked as a room) scores without crashing`() {
+    fun `a courtyard home open centre marked as a room scores without crashing`() {
         val rooms = goodRooms + Room("court", RoomType.COURTYARD, Fixtures.rect(38.0, 38.0, 24.0, 24.0))
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), rooms)))
     }
 
     @Test
-    fun `U, T and plus footprints score without crashing`() {
+    fun `U T and plus footprints score without crashing`() {
         val u = listOf(Point(0.0, 0.0), Point(30.0, 0.0), Point(30.0, 60.0), Point(70.0, 60.0), Point(70.0, 0.0), Point(100.0, 0.0), Point(100.0, 100.0), Point(0.0, 100.0))
         val plus = listOf(
             Point(33.0, 0.0), Point(67.0, 0.0), Point(67.0, 33.0), Point(100.0, 33.0), Point(100.0, 67.0),
@@ -167,7 +167,7 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `a small flat-sized unit and extreme-scale plots all score (scale-free)`() {
+    fun `a small flat-sized unit and extreme-scale plots all score scale-free`() {
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 1.0, 1.0), listOf(Room("l", RoomType.LIVING, Fixtures.rect(0.6, 0.6, 0.3, 0.3))),
             doors = listOf(Door("d", Point(0.5, 1.0), Point(0.0, 1.0), Point(1.0, 1.0), true)))))
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100000.0, 80000.0), listOf(Room("l", RoomType.LIVING, Fixtures.rect(60000.0, 60000.0, 20000.0, 15000.0))),
@@ -177,7 +177,7 @@ class StressCorpusTest {
     // ---------- Broken / degenerate input — must never crash ----------
 
     @Test
-    fun `empty outline with no rooms is graceful (INSUFFICIENT), never a crash`() {
+    fun `empty outline with no rooms is graceful INSUFFICIENT never a crash`() {
         val a = engine.analyze(plan(emptyList(), emptyList(), doors = emptyList()))
         assertEquals(AnalysisQuality.INSUFFICIENT, a.quality)
         assertEquals(0, a.score)
@@ -193,14 +193,14 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `two-point, collinear and zero-area outlines never crash`() {
+    fun `two-point collinear and zero-area outlines never crash`() {
         assertUsable(engine.analyze(plan(listOf(Point(0.0, 0.0), Point(10.0, 0.0)), goodRooms)))
         assertUsable(engine.analyze(plan(listOf(Point(0.0, 0.0), Point(50.0, 0.0), Point(100.0, 0.0)), goodRooms)))
         assertUsable(engine.analyze(plan(listOf(Point(5.0, 5.0), Point(5.0, 5.0), Point(5.0, 5.0), Point(5.0, 5.0)), goodRooms)))
     }
 
     @Test
-    fun `NaN and infinite coordinates are cleaned, never crash`() {
+    fun `NaN and infinite coordinates are cleaned never crash`() {
         val nanOutline = listOf(Point(0.0, 0.0), Point(Double.NaN, 0.0), Point(100.0, 0.0), Point(100.0, 100.0), Point(Double.POSITIVE_INFINITY, 50.0), Point(0.0, 100.0))
         assertUsable(engine.analyze(plan(nanOutline, goodRooms)))
         // Entirely non-finite outline falls back to the rooms.
@@ -208,7 +208,7 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `a self-intersecting (bowtie) outline is tidied, never crash`() {
+    fun `a self-intersecting bowtie outline is tidied never crash`() {
         val bowtie = listOf(Point(0.0, 0.0), Point(100.0, 100.0), Point(100.0, 0.0), Point(0.0, 100.0))
         val a = engine.analyze(plan(bowtie, goodRooms))
         assertUsable(a)
@@ -216,7 +216,7 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `duplicate room ids, a zero-area room, and a room outside the footprint never crash`() {
+    fun `duplicate room ids a zero-area room and a room outside the footprint never crash`() {
         val rooms = listOf(
             Room("dup", RoomType.LIVING, Fixtures.rect(66.0, 66.0, 28.0, 28.0)),
             Room("dup", RoomType.KITCHEN, Fixtures.rect(66.0, 6.0, 28.0, 26.0)),      // duplicate id
@@ -227,7 +227,7 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `missing, multiple, and NaN-positioned markers never crash`() {
+    fun `missing multiple and NaN-positioned markers never crash`() {
         // no main door
         val noDoor = engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), goodRooms, doors = emptyList()))
         assertUsable(noDoor)
@@ -247,7 +247,7 @@ class StressCorpusTest {
     }
 
     @Test
-    fun `out-of-range north offsets are normalized, no rooms and no door still score`() {
+    fun `out-of-range north offsets are normalized no rooms and no door still score`() {
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), goodRooms, north = 725)))
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), goodRooms, north = -30)))
         assertUsable(engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), emptyList(), doors = emptyList())))

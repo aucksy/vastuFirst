@@ -63,7 +63,7 @@ class DefectFixtureTest {
     }
 
     @Test
-    fun `overhead tank in NE is assessed (X-09) and no longer 'not assessed'`() {
+    fun `overhead tank in NE is assessed X-09 and no longer 'not assessed'`() {
         val tank = Fixture("tank", FixtureType.OVERHEAD_TANK, Point(85.0, 85.0))
         val a = engine.analyze(planWith(listOf(Room("l", RoomType.LIVING, Fixtures.rect(60.0, 60.0, 30.0, 30.0))), listOf(tank)))
         assertTrue(a.defects.any { it.id == "X-09" })
@@ -71,7 +71,7 @@ class DefectFixtureTest {
     }
 
     @Test
-    fun `absent fixtures are reported not-assessed, never clear`() {
+    fun `absent fixtures are reported not-assessed never clear`() {
         val a = engine.analyze(planWith(listOf(Room("l", RoomType.LIVING, Fixtures.rect(60.0, 60.0, 30.0, 30.0)))))
         assertTrue(a.notAssessed.containsAll(listOf("X-09", "X-11", "X-12", "X-13")))
     }

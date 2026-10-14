@@ -28,7 +28,7 @@ class BoundaryTest {
     }
 
     @Test
-    fun `L-shaped footprint missing the NE corner is a cut, not an irregular shape`() {
+    fun `L-shaped footprint missing the NE corner is a cut not an irregular shape`() {
         val lOutline = listOf(
             Point(0.0, 0.0), Point(100.0, 0.0), Point(100.0, 60.0),
             Point(60.0, 60.0), Point(60.0, 100.0), Point(0.0, 100.0),
@@ -119,7 +119,7 @@ class BoundaryTest {
     }
 
     @Test
-    fun `a room straddling a pada line is assigned by majority area, deterministically`() {
+    fun `a room straddling a pada line is assigned by majority area deterministically`() {
         // Toilet centred just east of the E/NE and col boundaries; more area in NE than E.
         val toilet = Room("t", RoomType.TOILET, Fixtures.rect(68.0, 60.0, 24.0, 24.0))
         val a1 = engine.analyze(plan(Fixtures.rect(0.0, 0.0, 100.0, 100.0), listOf(toilet)))

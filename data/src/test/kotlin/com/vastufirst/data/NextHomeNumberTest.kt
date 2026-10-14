@@ -13,7 +13,7 @@ class NextHomeNumberTest {
         assertEquals(3, nextHomeNumber(listOf("Home 1", "Home 2")))
     }
 
-    @Test fun `uses max plus one, not count — a delete never collides`() {
+    @Test fun `uses max plus one not count — a delete never collides`() {
         // "Home 2" was deleted; the survivors are Home 1 and Home 3. count+1 would give 3 (a
         // duplicate of the existing Home 3); max+1 correctly gives 4.
         assertEquals(4, nextHomeNumber(listOf("Home 1", "Home 3")))

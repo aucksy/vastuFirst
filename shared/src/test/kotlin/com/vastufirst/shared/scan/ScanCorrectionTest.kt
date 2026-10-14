@@ -44,7 +44,7 @@ class ScanCorrectionTest {
     }
 
     @Test
-    fun `the printed caption is kept, because it is the evidence`() {
+    fun `the printed caption is kept because it is the evidence`() {
         // What was on the plan does not change when the user tells us what it means. Keeping it is
         // what lets the row still read "Living / LOBBY 10'-3½"X14'-10½"" — our reading beside theirs.
         val out = assisted(room(RoomType.CORRIDOR, "LOBBY")).withRoomType(0, RoomType.LIVING)
@@ -79,7 +79,7 @@ class ScanCorrectionTest {
     }
 
     @Test
-    fun `flags about the room's SHAPE survive, because knowing its kind says nothing about its size`() {
+    fun `flags about the room's SHAPE survive because knowing its kind says nothing about its size`() {
         val out = assisted(
             room(
                 RoomType.CORRIDOR, "LOBBY",

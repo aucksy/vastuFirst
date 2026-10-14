@@ -23,7 +23,7 @@ class HomeNameTest {
         assertEquals(homeNameKey("Dwarka flat"), homeNameKey("  Dwarka   flat "))
     }
 
-    @Test fun `a tab reads as a blank, like it looks on screen`() {
+    @Test fun `a tab reads as a blank like it looks on screen`() {
         assertEquals(homeNameKey("Dwarka flat"), homeNameKey("Dwarka\tflat"))
     }
 

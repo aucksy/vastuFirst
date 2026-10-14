@@ -35,7 +35,7 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `the second opinion is configured, and it is a different model`() {
+    fun `the second opinion is configured and it is a different model`() {
         // The primary refuses straight-overhead furnished renders as not-2D; the escalation model
         // is the only measured candidate that reads that class (plan doc §3p). Blank would silently
         // turn the feature off; the same model would double-spend for the same answer.
@@ -67,7 +67,7 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `the 2D question is asked about the camera, never about the styling`() {
+    fun `the 2D question is asked about the camera never about the styling`() {
         // ⭐ Prompt v5, 5 Aug 2026, and this test is the whole point of it. v4 described a 3D render
         // by how it LOOKS — "often with furniture, shadows" — and both models duly refused
         // straight-overhead FURNISHED renders: flat, axis-aligned sheets with the room names and
@@ -98,7 +98,7 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `the camera question is asked about the drawing, not about the whole sheet`() {
+    fun `the camera question is asked about the drawing not about the whole sheet`() {
         // ⭐ Prompt v6, 23 Aug 2026. v5 fixed WHAT the question is (the angle, not the styling) but
         // left WHAT IT IS ASKED ABOUT wrong: "an image that is supposed to be a home's floor plan",
         // judged as one thing. A builder's marketing sheet is not one thing. plan-018 of the corpus
@@ -161,7 +161,7 @@ class ScanReaderConfigTest {
     }
 
     @Test
-    fun `⚠ a read count outside the allowed range is refused, because every read costs money`() {
+    fun `⚠ a read count outside the allowed range is refused because every read costs money`() {
         // A typo here does not misbehave quietly: it spends the owner's money once per scan, per
         // customer, for as long as it goes unnoticed.
         for (bad in listOf(0, -1, 4, 50)) {

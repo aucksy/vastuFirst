@@ -29,7 +29,7 @@ class GridEditingTest {
     }
 
     @Test
-    fun `rooms sharing area overlap, in both directions`() {
+    fun `rooms sharing area overlap in both directions`() {
         val a = CellRect(0, 0, 3, 3)
         val b = CellRect(2, 2, 3, 3)   // one shared cell
         assertTrue(a.overlaps(b))
@@ -75,7 +75,7 @@ class GridEditingTest {
     }
 
     @Test
-    fun `a feasible squeeze keeps every room at full size, none overlapping`() {
+    fun `a feasible squeeze keeps every room at full size none overlapping`() {
         // Four 2×2 rooms (16 cells) squeezed into a 4×4 grid (16 cells): a perfect tiling exists, so
         // the pack must succeed with every room preserved at 2×2 and no overlap.
         val rooms = listOf(
@@ -91,7 +91,7 @@ class GridEditingTest {
     }
 
     @Test
-    fun `an infeasible squeeze is refused (null), never overlapping`() {
+    fun `an infeasible squeeze is refused null never overlapping`() {
         // Five 3×3 rooms = 45 cells can't fit a 6×6 grid (36 cells) without overlap. The pack must
         // FAIL rather than force an overlap — the caller (updateGrid) then refuses the resize.
         val rooms = List(5) { CellRect(0, 0, 3, 3) }
@@ -260,7 +260,7 @@ class GridEditingTest {
     // ── zones ──────────────────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `the zone map matches the engine's, row 0 being north`() {
+    fun `the zone map matches the engine's row 0 being north`() {
         assertEquals(Zone.NW, zoneOfRect(CellRect(0, 0, 2, 2), grid))
         assertEquals(Zone.N, zoneOfRect(CellRect(3, 0, 2, 2), grid))
         assertEquals(Zone.NE, zoneOfRect(CellRect(6, 0, 2, 2), grid))
@@ -285,7 +285,7 @@ class GridEditingTest {
     }
 
     @Test
-    fun `a room's centre decides its zone, not its top-left corner`() {
+    fun `a room's centre decides its zone not its top-left corner`() {
         // Its top-left corner is dead centre, but its bulk — and its centre — is south-east.
         assertEquals(Zone.SE, zoneOfRect(CellRect(4, 4, 4, 4), grid))
         // A room covering the whole grid is centred on the Brahmasthan.

@@ -33,7 +33,7 @@ class ScanMapperTest {
     // ---- L0 triage: the refusals a user can act on -------------------------------------------
 
     @Test
-    fun `a 3D marketing render is refused, not read`() {
+    fun `a 3D marketing render is refused not read`() {
         // 5 of the 30 real plans were 3D renders. They do not fail loudly — they return
         // plausible-looking rectangles that are simply wrong, the worst case for a paid score.
         val out = ScanMapper.map(goodDraft().copy(planType = PlanImageType.THREE_D_RENDER))
@@ -41,7 +41,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `a 3D refusal carries the reading it refused, so the user can look at it`() {
+    fun `a 3D refusal carries the reading it refused so the user can look at it`() {
         // ⭐ The 2D gate is the ONE refusal decided purely by the model's opinion, and that opinion
         // is measurably wrong on a real class: a straight-overhead furnished render (plan-007) is
         // called 3D at 0.99 confidence by the primary model while it reads the room names fine.
@@ -60,7 +60,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `read-anyway hands over NAMES, never a drawn layout`() {
+    fun `read-anyway hands over NAMES never a drawn layout`() {
         // ⭐⭐ The safety of the whole escape hatch, and it was found by measurement, not by taste:
         // run through the mapper, both genuinely tilted sheets in the corpus come back Placed — a
         // confident drawn layout from rectangles that describe where the camera stood rather than
@@ -164,7 +164,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `one unit caption on a single home is a title, not a second home`() {
+    fun `one unit caption on a single home is a title not a second home`() {
         val out = ScanMapper.map(
             draft(
                 box("UNIT-1", 0.0, 0.0, 0.01, 0.01),
@@ -203,7 +203,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `a reply with no planType field is read, not treated as 3D`() {
+    fun `a reply with no planType field is read not treated as 3D`() {
         // The §3e fixtures predate the triage prompt. "Not stated" must never mean "reject".
         val out = ScanMapper.map(goodDraft().copy(planType = PlanImageType.UNKNOWN))
         assertIs<ScanOutcome.Placed>(out)
@@ -212,7 +212,7 @@ class ScanMapperTest {
     // ---- adversarial geometry -----------------------------------------------------------------
 
     @Test
-    fun `NaN and infinite coordinates are dropped, not propagated`() {
+    fun `NaN and infinite coordinates are dropped not propagated`() {
         val out = ScanMapper.map(
             draft(
                 box("KITCHEN", Double.NaN, 0.0, 0.4, 0.4),
@@ -292,7 +292,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ a small room squeezed between two bigger ones is KEPT, and they give way instead`() {
+    fun `⭐ a small room squeezed between two bigger ones is KEPT and they give way instead`() {
         // The toilet straddles the seam between two bigger, more confident rooms. This used to cost
         // the plan its toilet outright: cutting it clear of one pushed it into the other, there was no
         // single edge left to give, and it was dropped — a scored room, weight 2.5, gone from a paid
@@ -353,7 +353,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `an unrecognised caption is dropped and reported, never guessed`() {
+    fun `an unrecognised caption is dropped and reported never guessed`() {
         val out = ScanMapper.map(
             draft(
                 box("LIVING ROOM", 0.0, 0.0, 1.0, 0.5),
@@ -369,7 +369,7 @@ class ScanMapperTest {
     // ---- a room inside another room's rectangle SURVIVES (a measured reversal) -------------------
 
     @Test
-    fun `⭐ a typed room drawn wholly inside another room is kept, and the big room gives way`() {
+    fun `⭐ a typed room drawn wholly inside another room is kept and the big room gives way`() {
         // ⚠ This asserts the OPPOSITE of what it used to. The geometric sub-area drop was measured
         // across every recorded real reply (41 plans) and fired 24 times — every single one a real
         // scored room: nine toilets, a pooja, balconies, a study, the owner's own master-bedroom
@@ -561,7 +561,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ a sheet naming several UNITS is several homes, and is refused`() {
+    fun `⭐ a sheet naming several UNITS is several homes and is refused`() {
         // The check that the lift rule was standing in front of, and the only one of the two that
         // the corpus actually supports: plan-001 names UNIT-1 to UNIT-4 on one page.
         val out = ScanMapper.map(
@@ -609,7 +609,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐⭐ a balcony on the north wall and one on the east are TWO balconies, not one L`() {
+    fun `⭐⭐ a balcony on the north wall and one on the east are TWO balconies not one L`() {
         // The owner's own flat, 19 Sep 2026, with his reader's real rectangles: a wide strip across
         // the top and a tall strip down the right, meeting at the corner. Fused, the enclosing
         // rectangle is 0.641..0.982 × 0.016..0.338 — which is half his living room.
@@ -684,7 +684,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐⭐ a LAYOUT that runs past the bottom of the page is shrunk onto it, never deleted`() {
+    fun `⭐⭐ a LAYOUT that runs past the bottom of the page is shrunk onto it never deleted`() {
         // ⚠ The reader routinely returns rooms outside the unit square — it lays out a template and
         // the template runs long. Three of the fifteen on the owner's own sheet did. Cutting them
         // off at the edge DELETED one of his three balconies outright and flattened his utility to
@@ -709,7 +709,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⚠ ONE room past the edge is that room being wrong, and is still clamped or dropped`() {
+    fun `⚠ ONE room past the edge is that room being wrong and is still clamped or dropped`() {
         // The safety rail on the change above, and the tests that caught its absence. Shrinking a
         // whole home to accommodate a single hallucinated rectangle would let one bad box pull every
         // real room smaller — the "one stray rectangle inflates the frame" failure this file warns
@@ -743,7 +743,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ the gate is room count, and coverage decides nothing`() {
+    fun `⭐ the gate is room count and coverage decides nothing`() {
         // Guards the correction that cost this feature a wrong answer in BOTH directions. Coverage
         // was the gate until the model's rectangles were drawn back over real plans and looked at:
         // two plans with IDENTICAL coverage (0.421) placed well and badly, and the corpus's highest
@@ -775,7 +775,7 @@ class ScanMapperTest {
     // ---- overlaps: TRIM, never relocate ----------------------------------------------------------
 
     @Test
-    fun `⭐ an overlapping room is TRIMMED where it was read, never moved somewhere free`() {
+    fun `⭐ an overlapping room is TRIMMED where it was read never moved somewhere free`() {
         // This is the anti-`fitWithoutOverlap` assertion. Relocating a room the user has not seen
         // silently misreports where the kitchen is — and the kitchen's zone is a scored input.
         val out = ScanMapper.map(
@@ -798,7 +798,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ the smaller room keeps its cells, whatever its confidence`() {
+    fun `⭐ the smaller room keeps its cells whatever its confidence`() {
         // The kitchen is the LEAST confident rectangle in this reply (0.40 against 0.95) and it still
         // keeps every cell, because it is smaller than the living room. Confidence only breaks ties
         // between rooms of equal size now; what a cut actually costs is proportional to the room.
@@ -843,7 +843,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `⭐ a room too small to round to a cell is drawn as ONE cell, never rounded away`() {
+    fun `⭐ a room too small to round to a cell is drawn as ONE cell never rounded away`() {
         // This used to be a drop. A rectangle whose edges rounded together had no cells left and was
         // reported as DEGENERATE — and because the grid was framed on the whole PICTURE, a home
         // occupying a third of a builder's sheet made every room a third of its proper size, so the
@@ -893,7 +893,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `no building box, or a mad one, leaves the tint source untouched`() {
+    fun `no building box or a mad one leaves the tint source untouched`() {
         val room = ScanBox(label = "LOBBY", x = 0.2, y = 0.2, w = 0.3, h = 0.3)
         assertEquals(room, ScanMapper.pageSource(null, room), "older replies pass through")
         assertEquals(room, ScanMapper.pageSource(ScanBox(x = 0.0, y = 0.0, w = 0.01, h = 0.9), room), "a sliver is not a building")
@@ -931,7 +931,7 @@ class ScanMapperTest {
      * and not an opinion — see `tools/scan-eval/exp-plan-aspect.mjs` for the corpus run.
      */
     @Test
-    fun `the plan's proportions come from the building box, not the page`() {
+    fun `the plan's proportions come from the building box not the page`() {
         // plan-018: a 4 BHK drawn beside a large showcase render. The page is 2.43 wide; the flat
         // itself is very nearly square, and the sheet's own drawing measures about 1.17.
         val plan018 = ScanBox(x = 0.577, y = 0.347, w = 0.224, h = 0.484)
@@ -948,7 +948,7 @@ class ScanMapperTest {
     }
 
     @Test
-    fun `no building box, or a mad one, leaves the proportions exactly as they were`() {
+    fun `no building box or a mad one leaves the proportions exactly as they were`() {
         // Every pre-v4 recording and every bundled fixture arrives without a box. They must not move
         // — which is also why none of the pinned plans in this suite changed when this landed.
         assertEquals(1.7, ScanMapper.planAspect(null, 1.7)!!, 1e-9)

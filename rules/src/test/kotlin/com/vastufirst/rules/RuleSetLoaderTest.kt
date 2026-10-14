@@ -40,7 +40,7 @@ class RuleSetLoaderTest {
     }
 
     @Test
-    fun `an unimplemented Brahmasthan extent is rejected loudly, not silently run as 3x3`() {
+    fun `an unimplemented Brahmasthan extent is rejected loudly not silently run as 3x3`() {
         val broken = """{"brahmasthanExtent":"ONE_NINTH_BY_AREA","unruledRoomTypes":["BATHROOM","COURTYARD","UTILITY","CORRIDOR"]}"""
         val ex = assertFailsWith<IllegalStateException> {
             RuleSetLoader.load { path ->
@@ -95,7 +95,7 @@ class RuleSetLoaderTest {
     }
 
     @Test
-    fun `a defect offering only the universal remedies, with no explanation of why, is rejected`() {
+    fun `a defect offering only the universal remedies with no explanation of why is rejected`() {
         val broken = """[{"id":"X-GEN","title":"t","severity":"MODERATE","provenance":"DERIV","tier":"A",
             "explanation":"e","remedyIds":["structural-correction","vastu-shanti"]}]"""
         val ex = assertFailsWith<IllegalStateException> {

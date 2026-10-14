@@ -29,7 +29,7 @@ class GroqWireTest {
     // ---- the request ------------------------------------------------------------------------
 
     @Test
-    fun `request carries the model, the prompt and the image as a data url`() {
+    fun `request carries the model the prompt and the image as a data url`() {
         val body = GroqWire.parseObject(GroqWire.requestBody(recipe, "QUJD"))
 
         assertEquals(recipe.config.model, body["model"]?.jsonPrimitive?.content)
@@ -129,7 +129,7 @@ class GroqWireTest {
     }
 
     @Test
-    fun `a reply we cannot parse is unavailable, never a refusal`() {
+    fun `a reply we cannot parse is unavailable never a refusal`() {
         // ⭐ The distinction matters to the user: a refusal says "your plan is the problem, change
         // it", which would be a lie when the failure is ours. Unavailable says "try again".
         assertEquals(ScanResult.Unavailable, GroqWire.readOutcome(envelope("I'm sorry, I can't help."), 1.0))
@@ -169,7 +169,7 @@ class GroqWireTest {
     }
 
     @Test
-    fun `429 falls back through Retry-After to the request reset, then to no number at all`() {
+    fun `429 falls back through Retry-After to the request reset then to no number at all`() {
         assertEquals(
             30,
             assertIs<ScanResult.Busy>(
@@ -187,7 +187,7 @@ class GroqWireTest {
     }
 
     @Test
-    fun `every other failure is unavailable, including a retired model and a dead key`() {
+    fun `every other failure is unavailable including a retired model and a dead key`() {
         // 400 is what a decommissioned model id returns; 401 a bad key; 403 Cloudflare's own block.
         for (status in listOf(400, 401, 403, 404, 413, 500, 502, 503)) {
             assertEquals(ScanResult.Unavailable, GroqWire.mapStatus(status) { null }, "status $status")
@@ -285,7 +285,7 @@ class GroqWireTest {
     }
 
     @Test
-    fun `two identical answers keep the first, every time`() {
+    fun `two identical answers keep the first every time`() {
         val a = placed(12, sized = 4)
         val b = placed(12, sized = 4)
         assertTrue(GroqWire.fullerOf(a, b) === a, "a tie must be decided the same way on every run")

@@ -61,7 +61,7 @@ class RoomDimensionsTest {
     }
 
     @Test
-    fun `an ASCII eleven-and-a-half under-reads as one-and-a-half, by design`() {
+    fun `an ASCII eleven-and-a-half under-reads as one-and-a-half by design`() {
         // 15'-41/2" is unambiguous (4 + 1/2); 12'-11/2" is not — the true printed value was 11½
         // but the ASCII form cannot say so. Backtracking lands on 1 + 1/2, ten inches under.
         // Documented rather than fixed: under-reading one dimension beats refusing the size.
@@ -203,7 +203,7 @@ class RoomDimensionsTest {
     // ---- metres, and the field the reader now fills in ----------------------------------------
 
     @Test
-    fun `⭐ metres are read, because the owner's own plan prints them`() {
+    fun `⭐ metres are read because the owner's own plan prints them`() {
         val living = RoomDimensions.parse("7.25m X 4.30m")!!
         assertEquals(7250.0, living.widthMm, 1e-6)
         assertEquals(4300.0, living.depthMm, 1e-6)
@@ -227,7 +227,7 @@ class RoomDimensionsTest {
     }
 
     @Test
-    fun `⭐ the reader's own size field wins over the caption, and the caption still works`() {
+    fun `⭐ the reader's own size field wins over the caption and the caption still works`() {
         // The reply the owner's flat produces: a clean name, and the size in its own field.
         val split = ScanBox(label = "LIVING/DINING", printedSize = "7.25m X 4.30m ( 23'-9\" x 14'-1\" )")
         assertEquals(7.25 * 1000 / mmPerFoot, RoomDimensions.of(split)!!.widthMm / mmPerFoot, 0.05)

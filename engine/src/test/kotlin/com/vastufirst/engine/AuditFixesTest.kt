@@ -81,7 +81,7 @@ class AuditFixesTest {
     }
 
     @Test
-    fun `with no site, X-11 stays not-assessed (never silently clear)`() {
+    fun `with no site X-11 stays not-assessed never silently clear`() {
         val a = engine.analyze(plan(listOf(Room("l", RoomType.LIVING, Fixtures.rect(60.0, 60.0, 30.0, 30.0)))))
         assertTrue("X-11" in a.notAssessed)
         assertFalse(a.defects.any { it.id == "X-11" })
@@ -90,7 +90,7 @@ class AuditFixesTest {
     // ---- Config honesty ----
 
     @Test
-    fun `a room straddling two prohibited zones raises a defect for each (section 4-6)`() {
+    fun `a room straddling two prohibited zones raises a defect for each section 4-6`() {
         // A kitchen big enough to violate BOTH the Brahmasthan and the NE (both prohibited for
         // R-02). §4.6 requires every violated (RoomType, Zone) pair to resolve to a defect.
         val kitchen = Room("k", RoomType.KITCHEN, Fixtures.rect(40.0, 40.0, 50.0, 50.0))

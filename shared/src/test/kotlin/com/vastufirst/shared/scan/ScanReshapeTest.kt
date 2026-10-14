@@ -87,7 +87,7 @@ class ScanReshapeTest {
     }
 
     @Test
-    fun `the kitchen is deeper than it is wide, as the plan says`() {
+    fun `the kitchen is deeper than it is wide as the plan says`() {
         // Printed 6'-11" x 9'-7". Drawn 4 wide x 1 deep. The kitchen is the joint-highest-weighted
         // room the engine scores, so its direction is the most expensive one to get wrong.
         val r = placed().room("KITCHEN").rect!!
@@ -103,7 +103,7 @@ class ScanReshapeTest {
     }
 
     @Test
-    fun `⭐ a one-dimension strip caption sets the strip's DEPTH, and the freed row collapses`() {
+    fun `⭐ a one-dimension strip caption sets the strip's DEPTH and the freed row collapses`() {
         // ⚠ This asserts the OPPOSITE of what it used to. "BALCONY 6'-0\" WIDE" was treated as no
         // size at all, so the balcony kept the reader's sketch rectangle — three rows deep, nearly
         // a third of the grid — while every sized room around it shrank to print scale. That is

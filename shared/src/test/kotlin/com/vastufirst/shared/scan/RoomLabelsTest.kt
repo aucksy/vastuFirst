@@ -66,7 +66,7 @@ class RoomLabelsTest {
     }
 
     @Test
-    fun `owner decision D1 — the synonym table, in full`() {
+    fun `owner decision D1 — the synonym table in full`() {
         assertEquals(RoomType.BALCONY, type("PORCH"))
         assertEquals(RoomType.BALCONY, type("SIT OUT"))
         assertEquals(RoomType.ENTRANCE, type("VESTIBULE"))
@@ -110,7 +110,7 @@ class RoomLabelsTest {
     }
 
     @Test
-    fun `site features and furniture drop as not-a-room, never as unrecognised`() {
+    fun `site features and furniture drop as not-a-room never as unrecognised`() {
         // A lawn and a pathway are ground outside the home; a crockery unit is a cabinet drawn on
         // the sheet. "We didn't recognise the name" was dishonest for these — we read them fine;
         // they are simply not rooms.
@@ -124,7 +124,7 @@ class RoomLabelsTest {
     }
 
     @Test
-    fun `owner decision D1 — dressing areas and service shafts are dropped, not typed`() {
+    fun `owner decision D1 — dressing areas and service shafts are dropped not typed`() {
         for (caption in listOf(
             "DRESS", "DRESSING", "DRESS AREA", "DRESSING ROOM",
             "WALK IN CLOSET", "WALK-IN WARDROBE", "WARDROBE",
@@ -154,7 +154,7 @@ class RoomLabelsTest {
     }
 
     @Test
-    fun `longest synonym wins, so BEDROOM never swallows MASTER BEDROOM`() {
+    fun `longest synonym wins so BEDROOM never swallows MASTER BEDROOM`() {
         assertEquals(RoomType.MASTER_BEDROOM, type("MASTER BEDROOM WITH BALCONY"))
         assertEquals(RoomType.GUEST_BEDROOM, type("GUEST BEDROOM"))
         assertEquals(RoomType.ENTRANCE, type("ENTRANCE HALL"))
@@ -169,7 +169,7 @@ class RoomLabelsTest {
     }
 
     @Test
-    fun `whole-caption matches are not flagged loose, substring matches are`() {
+    fun `whole-caption matches are not flagged loose substring matches are`() {
         val exact = RoomLabels.resolve("KITCHEN")
         assertIs<LabelMatch.Room>(exact)
         assertFalse(exact.loose)

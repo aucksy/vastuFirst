@@ -127,7 +127,7 @@ class FlatNeutralityTest {
      * DETECTOR; **X-15** (long and narrow) comes out of the ENGINE. One test, both paths.
      */
     @Test
-    fun `the flag survives onto the findings the report actually reads, from both builders`() {
+    fun `the flag survives onto the findings the report actually reads from both builders`() {
         // ⚠ A real front door on the south wall of each shape. The engine's sanitizer treats a
         // doorless plan as a lesser read, and a fixture that quietly degrades would make both
         // assertions below vacuous rather than red.

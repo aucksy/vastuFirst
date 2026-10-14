@@ -75,7 +75,7 @@ class FootprintTest {
     }
 
     @Test
-    fun `a notch in one wall is traced, not smoothed away`() {
+    fun `a notch in one wall is traced not smoothed away`() {
         // ⚠ The notched cell must be one NO ROOM covers. A cut under a room lapses by design (see
         // "a stale cut under a room is ignored" below), so a fixture that puts one there proves
         // nothing about tracing — it proves the lapse. This layout leaves exactly cell (1,0) bare.
@@ -127,7 +127,7 @@ class FootprintTest {
     }
 
     @Test
-    fun `a missing corner is one removable gap, named by its direction`() {
+    fun `a missing corner is one removable gap named by its direction`() {
         // Rooms cover everything except the north-east 3x3 of an 8x8 home.
         val rooms = listOf(rect(0, 0, 5, 8), rect(5, 3, 3, 5))
         val gaps = Footprint.gaps(rooms)

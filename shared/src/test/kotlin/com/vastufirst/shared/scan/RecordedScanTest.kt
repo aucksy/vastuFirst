@@ -95,7 +95,7 @@ class RecordedScanTest {
      * of a space we did not read, and the thing the collapse rule deliberately leaves alone.
      */
     @Test
-    fun `⭐⭐ the 24-space sheet is one flat in a tower, and it places`() {
+    fun `⭐⭐ the 24-space sheet is one flat in a tower and it places`() {
         val out = ScanMapper.map(RecordedScans.load(RecordedScans.DENSE)!!.reply)
         val placed = assertIs<ScanOutcome.Placed>(out, "one flat on a whole floor is still one home")
         assertTrue(placed.rooms.size > ScanMapper.MAX_TRUSTED_ROOMS, "got ${placed.rooms.size} rooms")
@@ -229,7 +229,7 @@ class RecordedScanTest {
      * half; the mirror pins its own in `sim.mjs`, so the two can no longer drift apart silently.
      */
     @Test
-    fun `⭐ the feet-and-inches plan places, with every size read from its printed text`() {
+    fun `⭐ the feet-and-inches plan places with every size read from its printed text`() {
         val rec = assertNotNull(RecordedScans.load(RecordedScans.PLAN_020), "plan-020 is not bundled")
         assertEquals(14, rec.reply.rooms.size, "the sheet names fourteen spaces")
         assertEquals(
@@ -295,7 +295,7 @@ class RecordedScanTest {
      * one bedroom the size of both, in a Vastu direction neither of them is in.
      */
     @Test
-    fun `⭐ only balconies fuse, and only where they actually touch`() {
+    fun `⭐ only balconies fuse and only where they actually touch`() {
         val apart = ScanMapper.map(
             ScanDraft(
                 planType = PlanImageType.TWO_D_PLAN,
@@ -341,7 +341,7 @@ class RecordedScanTest {
      * strip is fat" — is this line.
      */
     @Test
-    fun `⭐ the millimetre 2BHK places whole, and the one-dimension balcony is a strip at its printed depth`() {
+    fun `⭐ the millimetre 2BHK places whole and the one-dimension balcony is a strip at its printed depth`() {
         val rec = assertNotNull(RecordedScans.load(RecordedScans.GREENCOURT), "greencourt-526 is not bundled")
         assertEquals(7, rec.reply.rooms.size, "the sheet names seven spaces")
         assertEquals(
@@ -394,7 +394,7 @@ class RecordedScanTest {
      *    scale: the bedroom his sheet puts on the east wall keeps that wall.
      */
     @Test
-    fun `⭐⭐ the 336 clean copy — the balcony stops towering, the grid ends at the home, the bedroom keeps its wall`() {
+    fun `⭐⭐ the 336 clean copy — the balcony stops towering the grid ends at the home the bedroom keeps its wall`() {
         val rec = assertNotNull(
             RecordedScans.load(RecordedScans.GREENCOURT_336_CLEAN),
             "greencourt-336-clean is not bundled",
@@ -427,7 +427,7 @@ class RecordedScanTest {
     }
 
     @Test
-    fun `⭐ the 336 branded copy — the same rules hold on a scrambled read, and every room still places`() {
+    fun `⭐ the 336 branded copy — the same rules hold on a scrambled read and every room still places`() {
         // The branded page's ARRANGEMENT is wrong (the reader returns the bedroom full-width when
         // the sheet has it on the right) and stays wrong: measured across every recording, no
         // signal in a single reply separates this copy from the clean one — the one candidate
@@ -466,7 +466,7 @@ class RecordedScanTest {
      *     the end. Shaped from the drawing it fits, and every room lands where the paper draws it.
      */
     @Test
-    fun `⭐⭐ a flat plan drawn beside a showcase render is read, and is not squashed into a letterbox`() {
+    fun `⭐⭐ a flat plan drawn beside a showcase render is read and is not squashed into a letterbox`() {
         val rec = assertNotNull(
             RecordedScans.load(RecordedScans.COMPOSITE_SHEET),
             "plan-018-composite is not bundled",

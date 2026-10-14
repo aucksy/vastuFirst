@@ -86,7 +86,7 @@ class PartialCreditTest {
      * its zone reads the same both ways.
      */
     @Test
-    fun `a clipping room says where most of it is, beside the zone it crosses into`() {
+    fun `a clipping room says where most of it is beside the zone it crosses into`() {
         val living = room("living")
         assertEquals(com.vastufirst.shared.Zone.BRAHMASTHAN, living.zone, "the finding is about the centre it crosses into")
         assertEquals(com.vastufirst.shared.Zone.E, living.mainZone, "most of the living room is in the East")
@@ -141,7 +141,7 @@ class PartialCreditTest {
      * a Vastu-neutral piece of arithmetic that is easy to "tune" back without anyone noticing.
      */
     @Test
-    fun `the fine is charged at the same share as the marks, never at double it`() {
+    fun `the fine is charged at the same share as the marks never at double it`() {
         val shareOf = analysis.roomResults.associate { it.roomId to it.encroachedShare }
         val atTheRoomsOwnShare = analysis.defects
             .filter { it.provenance != Provenance.DISP }

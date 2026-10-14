@@ -18,7 +18,7 @@ class RotationInvarianceTest {
     }
 
     @Test
-    fun `sample-01 scores 31 under the §15 90-degree rotation`() {
+    fun `sample-01 scores 31 under the 15 90-degree rotation`() {
         assertEquals(31, engine.analyze(Fixtures.rotated(90)).score)
     }
 
@@ -32,7 +32,7 @@ class RotationInvarianceTest {
     }
 
     @Test
-    fun `a NON-square (L-shaped) plan is also rotation-invariant — proves the area-centroid origin`() {
+    fun `a NON-square L-shaped plan is also rotation-invariant — proves the area-centroid origin`() {
         // The L's area centroid (~44.3, 44.3) differs from its bbox centre (50, 50). If the engine
         // rotated about the bbox centre instead of the mandated area centroid (§4.0), this
         // round-trip would NOT reconstruct and the score would drift. A square could not catch that.

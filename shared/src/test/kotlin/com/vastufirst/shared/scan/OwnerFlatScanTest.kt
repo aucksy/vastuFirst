@@ -58,7 +58,7 @@ class OwnerFlatScanTest {
             ?: throw AssertionError("$caption did not survive: ${rooms.map { it.label }}")
 
     @Test
-    fun `the recorded reply is what the API returned — fifteen rooms, all of them sized`() {
+    fun `the recorded reply is what the API returned — fifteen rooms all of them sized`() {
         val draft = reply()
         assertEquals(15, draft.rooms.size, "his sheet has fifteen named spaces")
         assertEquals(PlanImageType.TWO_D_PLAN, draft.planType)
@@ -69,7 +69,7 @@ class OwnerFlatScanTest {
     }
 
     @Test
-    fun `⚠ the rectangles are a template, not a measurement — which is why we do not trust them`() {
+    fun `⚠ the rectangles are a template not a measurement — which is why we do not trust them`() {
         val draft = reply()
         // Four distinct left edges for fifteen rooms. A real home does not line up like that.
         val lefts = draft.rooms.map { it.x }.distinct()
@@ -90,7 +90,7 @@ class OwnerFlatScanTest {
     }
 
     @Test
-    fun `⭐⭐ his flat is PLACED — a fifteen-room apartment is one home, not a floor of them`() {
+    fun `⭐⭐ his flat is PLACED — a fifteen-room apartment is one home not a floor of them`() {
         // Asserted against the REPLY, not the outcome: what proves the point is that his sheet is
         // over the old gate, and that number cannot drift with how overlaps happen to resolve.
         assertTrue(
@@ -127,7 +127,7 @@ class OwnerFlatScanTest {
      * room ever survived. It survived.)
      */
     @Test
-    fun `⭐⭐ his master-bedroom toilet arrives, and nothing from his sheet is dropped`() {
+    fun `⭐⭐ his master-bedroom toilet arrives and nothing from his sheet is dropped`() {
         val p = placed()
         assertEquals(15, p.rooms.size, "all fifteen named spaces on his sheet must arrive")
         assertTrue(p.notes.dropped.isEmpty(), "nothing may be dropped: ${p.notes.dropped}")
@@ -157,7 +157,7 @@ class OwnerFlatScanTest {
     }
 
     @Test
-    fun `⭐ his home reaches its own west wall — the grid is filled, not letterboxed`() {
+    fun `⭐ his home reaches its own west wall — the grid is filled not letterboxed`() {
         // The old uniform fit centred 3.64 columns of content in the 5-column grid, and the margin
         // rounded into a FULL EMPTY COLUMN on the west: his home drawn hugging the east edge, off
         // the wall his sheet puts the first bedroom, both west toilets and the master bedroom on —

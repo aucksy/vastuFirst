@@ -49,7 +49,7 @@ class ExpertRulingsTest {
     }
 
     @Test
-    fun `the worked example scores 31 under the ruling, and the alternative is measured not guessed`() {
+    fun `the worked example scores 31 under the ruling and the alternative is measured not guessed`() {
         val underRuling = VastuEngine(shipped).analyze(Fixtures.sample01(0))
         assertEquals(31, underRuling.score, "the §15 worked example, under the shipped ruling")
 
@@ -75,7 +75,7 @@ class ExpertRulingsTest {
     // ── the rulings that are SURFACED rather than scored ──────────────────────────────────────
 
     @Test
-    fun `every disputed rule still shows both readings, so no ruling is hidden from the reader`() {
+    fun `every disputed rule still shows both readings so no ruling is hidden from the reader`() {
         for (dispute in shipped.disputes) {
             assertTrue(
                 dispute.readingA.text.isNotBlank() && dispute.readingB.text.isNotBlank(),
@@ -92,7 +92,7 @@ class ExpertRulingsTest {
     // ── W-12 · where the prayer room belongs ──────────────────────────────────────────────────
 
     @Test
-    fun `W-12 the prayer room is ruled for the modern North-East, and is therefore scored`() {
+    fun `W-12 the prayer room is ruled for the modern North-East and is therefore scored`() {
         // ⭐ INVERTED on purpose, 1 August 2026. This test used to assert the OPPOSITE — that the
         // pooja rule still carried its `disputeId` and so returned NOT_SCORED — precisely so the
         // ruling could not be applied by accident. The owner has now ruled, so the same test guards
@@ -141,7 +141,7 @@ class ExpertRulingsTest {
     }
 
     @Test
-    fun `a prayer room in the classical CENTRE raises no defect — we decline that reading, not condemn it`() {
+    fun `a prayer room in the classical CENTRE raises no defect — we decline that reading not condemn it`() {
         // ⭐ THE SUBTLEST PROMISE IN THE WHOLE RULING, and the reason nothing is prohibited.
         // The classical school puts the shrine in the Brahmasthan. Every OTHER room rule prohibits
         // the centre, so following the pattern would have printed "defect" on the exact position the
@@ -167,7 +167,7 @@ class ExpertRulingsTest {
     }
 
     @Test
-    fun `the prayer room is now really scored, and a North-West one is not-ideal rather than a defect`() {
+    fun `the prayer room is now really scored and a North-West one is not-ideal rather than a defect`() {
         val analysis = VastuEngine(shipped).analyze(Fixtures.sample01(0))
         val pooja = assertNotNull(analysis.roomResults.firstOrNull { it.roomId == "pooja" })
         assertEquals(Zone.NW, pooja.zone, "the worked example's prayer room sits in the North-West")

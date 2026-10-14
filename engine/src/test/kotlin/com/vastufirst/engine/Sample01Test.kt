@@ -29,13 +29,13 @@ class Sample01Test {
     }
 
     @Test
-    fun `defects contain X-01 and X-03, both MAJOR, and nothing else`() {
+    fun `defects contain X-01 and X-03 both MAJOR and nothing else`() {
         assertEquals(listOf("X-01", "X-03"), analysis.defects.map { it.id }.sorted())
         assertTrue(analysis.defects.all { it.severity == Severity.MAJOR })
     }
 
     @Test
-    fun `door resolves to E6 Satya, INAUSPICIOUS`() {
+    fun `door resolves to E6 Satya INAUSPICIOUS`() {
         val door = analysis.doorResult!!
         assertEquals("E6", door.pada.id)
         assertEquals(PadaVerdict.INAUSPICIOUS, door.verdict)
@@ -44,7 +44,7 @@ class Sample01Test {
     }
 
     @Test
-    fun `room verdicts match the §15 table`() {
+    fun `room verdicts match the 15 table`() {
         fun verdict(id: String) = analysis.roomResults.first { it.roomId == id }.verdict
         // ⭐ Was NOT_SCORED until the owner ruled W-12 for the modern North-East on 1 Aug 2026. The
         // worked example's prayer room is in the NORTH-WEST, so it is now scored — and because the
@@ -59,7 +59,7 @@ class Sample01Test {
     }
 
     @Test
-    fun `disputes contain W-12, cuts and extensions empty, shape regular`() {
+    fun `disputes contain W-12 cuts and extensions empty shape regular`() {
         // ⭐ Still true AFTER the prayer room started being scored — that is the point. The dispute
         // now reaches the reader through the dispute's own `appliesTo: POOJA` rather than through the
         // room rule's `disputeId`, which the ruling removed. Scoring one school's reading must never
@@ -71,7 +71,7 @@ class Sample01Test {
     }
 
     @Test
-    fun `notAssessed lists the Tier C and D rules (no fixtures or site supplied)`() {
+    fun `notAssessed lists the Tier C and D rules no fixtures or site supplied`() {
         assertTrue(analysis.notAssessed.containsAll(listOf("X-09", "X-11", "X-12", "X-13")))
     }
 

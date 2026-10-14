@@ -34,7 +34,7 @@ class RulesetUpdateTest {
     // ---- the happy path ------------------------------------------------------------------------
 
     @Test
-    fun `a genuine reply is accepted, and carries everything the app needs`() {
+    fun `a genuine reply is accepted and carries everything the app needs`() {
         val outcome = RulesetUpdate.consider(reply, publicKey, "0.24.0", "2026.08.23-3", accepting(true))
         val use = outcome as? RulesetUpdate.Outcome.Use
             ?: fail("a genuine, signed rule set was refused: ${(outcome as RulesetUpdate.Outcome.Keep).why}")
@@ -102,7 +102,7 @@ class RulesetUpdateTest {
     }
 
     @Test
-    fun `a loader that throws is treated as a refusal, not a crash`() {
+    fun `a loader that throws is treated as a refusal not a crash`() {
         val outcome = RulesetUpdate.consider(reply, publicKey, "0.24.0", "2026.08.23-3") {
             throw IllegalStateException("the loader blew up")
         }

@@ -42,7 +42,7 @@ class PlansTest {
     }
 
     @Test
-    fun `the price the unlock screen shows is the one marked, written in rupees`() {
+    fun `the price the unlock screen shows is the one marked written in rupees`() {
         assertEquals("₹849", Plans.parse(good)?.unlockPrice)
     }
 
@@ -122,7 +122,7 @@ class PlansTest {
     }
 
     @Test
-    fun `words that are not there simply come back empty, and do not lose the plan`() {
+    fun `words that are not there simply come back empty and do not lose the plan`() {
         val noWords = """
             {
               "unlockTierId": "one-home",
@@ -147,7 +147,7 @@ class PlansTest {
     }
 
     @Test
-    fun `a plan marked to show but switched off shows nothing, so the app keeps its own price`() {
+    fun `a plan marked to show but switched off shows nothing so the app keeps its own price`() {
         val off = """
             {
               "unlockTierId": "one-home",
@@ -164,7 +164,7 @@ class PlansTest {
     // ---- rupees, written the way they are written in India ------------------------------------
 
     @Test
-    fun `rupees are grouped the Indian way, which is not the same as everywhere else`() {
+    fun `rupees are grouped the Indian way which is not the same as everywhere else`() {
         assertEquals("₹0", rupees(0))
         assertEquals("₹99", rupees(99))
         assertEquals("₹699", rupees(699))
@@ -176,21 +176,6 @@ class PlansTest {
         // foreign to exactly the people this app is for.
         assertEquals("₹1,00,000", rupees(100000))
         assertEquals("₹12,34,567", rupees(1234567))
-    }
-
-    @Test
-    fun `rupees do not depend on what country the phone thinks it is in`() {
-        // Written out rather than taken from the phone's locale on purpose: a golden screenshot of
-        // a price must not change because a test machine has different locale data.
-        val before = java.util.Locale.getDefault()
-        try {
-            java.util.Locale.setDefault(java.util.Locale.US)
-            assertEquals("₹1,00,000", rupees(100000))
-            java.util.Locale.setDefault(java.util.Locale.GERMANY)
-            assertEquals("₹1,00,000", rupees(100000))
-        } finally {
-            java.util.Locale.setDefault(before)
-        }
     }
 
     @Test

@@ -23,7 +23,7 @@ class GridEditingRectTest {
     // ── move on a rectangular plot ───────────────────────────────────────────────────────────────
 
     @Test
-    fun `move clamps to the deep axis, not the wide one`() {
+    fun `move clamps to the deep axis not the wide one`() {
         // 8 wide × 5 deep. A 2×2 room pushed hard down must stop at row 3 (rows-h = 5-2), NOT row 6.
         val start = CellRect(3, 0, 2, 2)
         assertEquals(CellRect(3, 3, 2, 2), moveBy(start, 0, 9, cols = 8, rows = 5))
@@ -85,7 +85,7 @@ class GridEditingRectTest {
     )
 
     @Test
-    fun `stepper widen at the east wall is a no-op, never off-grid`() {
+    fun `stepper widen at the east wall is a no-op never off-grid`() {
         // Room already flush to the east wall (col 6, w 2 on an 8-wide plot). "Wider" can't grow it.
         val r = CellRect(6, 0, 2, 2)
         assertEquals(r, stepperResize(r, +1, 0, cols = 8, rows = 8), "widen past the wall must clamp to no-op")
@@ -116,14 +116,14 @@ class GridEditingRectTest {
     }
 
     @Test
-    fun `an infeasible rectangular squeeze is refused, never overlapped`() {
+    fun `an infeasible rectangular squeeze is refused never overlapped`() {
         // Three 3×3 rooms (27 cells) cannot fit a 4×5 plot (20 cells) clear → null.
         val rooms = List(3) { CellRect(0, 0, 3, 3) }
         assertEquals(null, fitWithoutOverlap(rooms, cols = 4, rows = 5))
     }
 
     @Test
-    fun `a single room wider than the shrunk plot is clamped to fit, not refused (documents S7)`() {
+    fun `a single room wider than the shrunk plot is clamped to fit not refused documents S7`() {
         // ⚠ FINDING S7: clampToGrid caps w/h to the axis BEFORE the overlap logic, so a lone oversized
         // room is SILENTLY SHRUNK to fit rather than the resize being refused. Refusal (null) only
         // guards the RELOCATION-collision case, not the too-big-for-the-axis case. No overlap results
