@@ -1,4 +1,4 @@
-@file:OptIn(kotlin.experimental.ExperimentalNativeApi::class, kotlinx.cinterop.BetaInteropApi::class)
+@file:OptIn(kotlin.experimental.ExperimentalNativeApi::class, kotlinx.cinterop.BetaInteropApi::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 
 package com.vastufirst.app.platform
 
