@@ -181,4 +181,35 @@ class ScanReaderConfigTest {
         assertFailsWith<IllegalStateException> { ScanReaderConfigLoader.load("/scan/does-not-exist.json") }
         assertFailsWith<IllegalStateException> { ScanReaderConfigLoader.load("/scan/plan-read-prompt.txt") }
     }
+
+    // ⭐ The relay switch (14 Oct 2026). Through our relay a build needs no key and must send its reads
+    // there; without it, a keyless build cannot read and says so. One rule, asked by the scan screen and
+    // Settings alike.
+    @Test
+    fun `through the relay no key is needed and reads go to the relay`() {
+        val recipe = PlanReadRecipe(
+            ScanReaderConfig(
+                endpoint = "https://openrouter.ai/api/v1/chat/completions",
+                useRelay = true,
+                relayEndpoint = "https://reader.vastufirst.com/v1/chat/completions",
+            ),
+            prompt = "read the plan",
+        )
+        assertTrue(recipe.canRead(bakedKey = ""))
+        assertEquals("https://reader.vastufirst.com/v1/chat/completions", recipe.target)
+    }
+
+    @Test
+    fun `without the relay a keyless build cannot read and reads go to the provider`() {
+        val recipe = PlanReadRecipe(ScanReaderConfig(endpoint = "https://openrouter.ai/api/v1/chat/completions"), "p")
+        assertEquals(false, recipe.canRead(bakedKey = ""))
+        assertTrue(recipe.canRead(bakedKey = "sk-anything"))
+        assertEquals("https://openrouter.ai/api/v1/chat/completions", recipe.target)
+    }
+
+    @Test
+    fun `the shipped config names an https relay`() {
+        val config = ScanReaderConfigLoader.load().config
+        assertTrue(config.relayEndpoint.startsWith("https://"), "relay was '${config.relayEndpoint}'")
+    }
 }

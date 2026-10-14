@@ -46,10 +46,28 @@ data class ScanReaderConfig(
     val promptResource: String = "",
     val connectTimeoutMs: Int = 20_000,
     val readTimeoutMs: Int = 90_000,
+    /**
+     * ⭐ THE KEY STAYS OFF THE PHONE (14 Oct 2026). When `useRelay` is true the app sends its request
+     * to [relayEndpoint] — our own small server (server/reader), which holds the AI key, allows only the
+     * two models above, and caps reads per phone and per day — and the APK carries NO key at all (the
+     * build reads this flag and leaves the key out). When false, the app calls [endpoint] directly with
+     * the key baked into the build, as it did until v0.37.
+     */
+    val useRelay: Boolean = false,
+    val relayEndpoint: String = "",
 )
 
 /** A config plus the prompt text it names — everything needed to build one request. */
-data class PlanReadRecipe(val config: ScanReaderConfig, val prompt: String)
+data class PlanReadRecipe(val config: ScanReaderConfig, val prompt: String) {
+    /** Where requests go: our relay when it is switched on, the provider otherwise. */
+    val target: String get() = if (config.useRelay) config.relayEndpoint else config.endpoint
+
+    /**
+     * Whether this build can read a plan at all: through the relay it needs no key; directly it needs
+     * the key baked into the build. The ONE place that decides — the scan screen and Settings both ask.
+     */
+    fun canRead(bakedKey: String): Boolean = config.useRelay || bakedKey.isNotBlank()
+}
 
 object ScanReaderConfigLoader {
 
@@ -73,6 +91,9 @@ object ScanReaderConfigLoader {
      * tested by handing it a value, rather than by shipping a broken file to find out.
      */
     fun validate(config: ScanReaderConfig, prompt: String): PlanReadRecipe {
+        require(!config.useRelay || config.relayEndpoint.startsWith("https://")) {
+            "Scan reader relay must be https, was '${config.relayEndpoint}'"
+        }
         require(config.endpoint.startsWith("https://")) {
             "Scan reader endpoint must be https, was '${config.endpoint}'"
         }

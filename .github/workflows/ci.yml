@@ -371,10 +371,9 @@ jobs:
       - name: Build the shrunk release (R8 runs on every push)
         run: gradle :app:assembleRelease --stacktrace
 
-      # Android Lint, errors only (app/build.gradle.kts, lint block). ⚠ Report-only for its first
-      # runs (continue-on-error) so the existing findings can be read and fixed; then it gates.
+      # Android Lint, errors only (app/build.gradle.kts, lint block). Gates since its first run found
+      # three findings, all one false positive, now switched off with the reason beside it.
       - name: Android Lint (errors only)
-        continue-on-error: true
         run: gradle :app:lintDebug --stacktrace
 
       # An APK signed by a different key than the last one cannot be installed as an update, so every

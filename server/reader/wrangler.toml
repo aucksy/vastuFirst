@@ -1,0 +1,28 @@
+# VastuFirst plan-reader relay (see src/worker.js). Cloudflare Workers free plan.
+# Deploy:  cd server/reader && npx wrangler deploy
+# Key:     npx wrangler secret put OPENROUTER_API_KEY   (never in this file, never in the repo)
+name = "vastufirst-reader"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+
+# reader.vastufirst.com, not *.workers.dev: some Indian mobile networks have blocked workers.dev.
+routes = [{ pattern = "reader.vastufirst.com", custom_domain = true }]
+
+[vars]
+# The two models the app's reader-config.json names. Keep in step with it.
+ALLOWED_MODELS = "openai/gpt-5.6-luna,google/gemini-3.1-pro-preview"
+# A scan is 2 requests (two reads, the fuller kept), sometimes 3. 300 requests is ~120-150 scans a
+# day, at roughly Rs 0.25 a request at Sep 2026 prices: the most the key can cost in a day (~Rs 75).
+DAILY_CAP = "300"
+MAX_BODY_BYTES = "6000000"
+# Per address: 6 requests a minute (two or three scans).
+PER_IP_PER_MINUTE = "6"
+
+# The exact counter for both limits (src/worker.js, class Limiter). SQLite-backed: the free plan's kind.
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "Limiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Limiter"]

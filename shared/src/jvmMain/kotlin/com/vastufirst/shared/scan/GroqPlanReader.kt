@@ -47,7 +47,7 @@ class GroqPlanReader(
     override suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult = withContext(io) {
         // A build made without the key must not pretend to read anything. The screen checks this
         // first and says so plainly; this is the belt to that braces.
-        if (apiKey.isBlank() || image.isEmpty()) return@withContext ScanResult.Unavailable
+        if (!recipe.canRead(apiKey) || image.isEmpty()) return@withContext ScanResult.Unavailable
 
         val base64 = Base64.getEncoder().encodeToString(image)
 
@@ -87,7 +87,7 @@ class GroqPlanReader(
      */
     override suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult =
         withContext(io) {
-            if (apiKey.isBlank() || image.isEmpty() || model.isBlank()) return@withContext ScanResult.Unavailable
+            if (!recipe.canRead(apiKey) || image.isEmpty() || model.isBlank()) return@withContext ScanResult.Unavailable
             val base64 = Base64.getEncoder().encodeToString(image)
             postOnce(GroqWire.requestBody(recipe, base64, model = model), imageAspect, picture).attributedTo(model)
         }
@@ -107,13 +107,18 @@ class GroqPlanReader(
         val body = bodyText.toByteArray(Charsets.UTF_8)
         var connection: HttpURLConnection? = null
         return runCatching {
-            val conn = (URI(recipe.config.endpoint).toURL().openConnection() as HttpURLConnection)
+            val conn = (URI(recipe.target).toURL().openConnection() as HttpURLConnection)
             connection = conn
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.connectTimeout = recipe.config.connectTimeoutMs
             conn.readTimeout = recipe.config.readTimeoutMs
-            conn.setRequestProperty("Authorization", "Bearer $apiKey")
+            if (recipe.config.useRelay) {
+                // Our relay adds the key itself; this header only tells it the request is the app's.
+                conn.setRequestProperty("X-VastuFirst-App", recipe.config.userAgent.ifBlank { "vastufirst" })
+            } else {
+                conn.setRequestProperty("Authorization", "Bearer $apiKey")
+            }
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Accept", "application/json")
             // Not decoration: Cloudflare fronts these APIs and answers an unrecognised client with

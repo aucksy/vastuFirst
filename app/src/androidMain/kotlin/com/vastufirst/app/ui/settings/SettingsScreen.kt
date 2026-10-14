@@ -76,7 +76,7 @@ fun SettingsScreen(
     // anything: the same "a build that cannot read plans looked exactly like one that could" trap
     // the scan screen already has its own state for.
     val readerOptions = remember(recipe) {
-        if (com.vastufirst.app.BuildConfig.PLAN_READER_KEY.isNotBlank()) {
+        if (recipe.canRead(com.vastufirst.app.BuildConfig.PLAN_READER_KEY)) {
             listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel)
         } else {
             emptyList()

@@ -1,0 +1,3 @@
+# Wrangler local state: holds the account name (an email) - never commit.
+.wrangler/
+node_modules/

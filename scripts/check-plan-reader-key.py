@@ -77,7 +77,33 @@ def fetch(url, key, user_agent):
         return json.loads(response.read())
 
 
+def relay_check():
+    """With useRelay on, the build ships NO key; what must work is our relay. Returns an exit code or None."""
+    config = json.load(open(CONFIG, encoding="utf-8"))
+    if not config.get("useRelay"):
+        return None
+    relay = config.get("relayEndpoint", "")
+    health = relay.split("/v1/")[0] + "/health"
+    print("  reader uses the relay: %s" % relay)
+    try:
+        with urllib.request.urlopen(urllib.request.Request(health, headers={"Accept": "application/json"}), timeout=30) as r:
+            state = json.loads(r.read())
+    except Exception as exc:
+        print("  ⚠ could not reach the relay (%s) — not failing the build for its uptime" % type(exc).__name__)
+        return 0
+    if not state.get("keyPresent"):
+        print("")
+        print("PLAN-READER RELAY CHECK FAILED: the relay has no AI key, so every scan would fail.")
+        print("  cd server/reader && npx wrangler secret put OPENROUTER_API_KEY")
+        return 1
+    print("Plan-reader relay check passed: the relay is up and holds a key; this build carries none.")
+    return 0
+
+
 def main():
+    relayed = relay_check()
+    if relayed is not None:
+        return relayed
     key, source = key_from_env()
     if not key:
         print("Plan-reader key check SKIPPED: no key in this build.")

@@ -58,9 +58,17 @@
     "one-line edit here. (Corrected 29 Sep 2026: this file ships INSIDE the app and nothing fetches",
     "it remotely, so any edit reaches phones with the next build, not before.) The two reads run",
     "concurrently, so the user waits for the slower one and not for both. See GroqWire.fullerOf for",
-    "how the winner is chosen."
+    "how the winner is chosen.",
+    "",
+    "useRelay / relayEndpoint (14 Oct 2026): the relay is our own server (server/reader in this repo,",
+    "deployed at reader.vastufirst.com). It holds the AI key, allows only the two models above, and",
+    "counts reads exactly: 6 a minute per phone, 300 a day in total. With useRelay true the app sends",
+    "no key and the build leaves the key out of the APK. Left false until one real read through the",
+    "relay is approved and proven (each read is paid); then flip it to true and release."
   ],
   "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "useRelay": false,
+  "relayEndpoint": "https://reader.vastufirst.com/v1/chat/completions",
   "model": "openai/gpt-5.6-luna",
   "escalationModel": "google/gemini-3.1-pro-preview",
   "readsPerScan": 2,

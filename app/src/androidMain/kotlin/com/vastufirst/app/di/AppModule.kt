@@ -116,7 +116,7 @@ val appModule = module {
             decode = get(),
             // A build made without the key cannot read anything, and the screen says so rather than
             // offering a picker that leads nowhere.
-            canRead = BuildConfig.PLAN_READER_KEY.isNotBlank(),
+            canRead = recipe.canRead(BuildConfig.PLAN_READER_KEY),
             // The testing picker's choices: the primary model first, then the second-opinion model.
             modelChoices = listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel),
             // Read from Settings, not picked on the scan screen (owner, 10 Aug 2026).
