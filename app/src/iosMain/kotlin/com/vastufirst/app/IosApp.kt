@@ -13,7 +13,7 @@ import com.vastufirst.app.platform.UserDefaultsReaderChoice
 import com.vastufirst.app.platform.iosDecimalMark
 import com.vastufirst.app.ui.home.HomeViewModel
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
-import com.vastufirst.app.ui.scan.DecodedImage
+import com.vastufirst.app.ui.scan.IosImageDecoder
 import com.vastufirst.app.ui.scan.ImageDecoder
 import com.vastufirst.app.ui.scan.PlanReadingConsent
 import com.vastufirst.app.ui.scan.ReaderChoice
@@ -26,10 +26,9 @@ import com.vastufirst.designsystem.components.LocalDecimalMark
 import com.vastufirst.designsystem.foundation.LocalVastuHaptics
 import com.vastufirst.designsystem.theme.VastuTheme
 import com.vastufirst.engine.VastuEngine
-import com.vastufirst.shared.scan.PlanImage
+import com.vastufirst.shared.scan.GroqPlanReader
 import com.vastufirst.shared.scan.PlanReader
 import com.vastufirst.shared.scan.ScanReaderConfigLoader
-import com.vastufirst.shared.scan.ScanResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.context.startKoin
@@ -41,7 +40,8 @@ import platform.UIKit.UIViewController
  * ⭐ THE iPHONE APP'S FRONT DOOR (iPhone plan, stage 3). The Swift app (iosApp/) shows this one view
  * controller, and everything inside it is the shared app — the same screens, navigation and engine
  * Android runs. What differs is only the wiring below: where homes are stored, how settings are kept,
- * and the pieces not built for the iPhone yet, each of which SAYS so rather than pretending.
+ * and the pieces not built for the iPhone yet (Apple's checkout, Control Room updates), each of which
+ * SAYS so or keeps the safe default rather than pretending.
  */
 @Suppress("FunctionName", "unused") // called from Swift: MainViewControllerKt.MainViewController()
 fun MainViewController(): UIViewController {
@@ -76,10 +76,13 @@ val iosModule = module {
     single { VastuDatabaseFactory.create(get<NativeSqliteDriver>()) }
     single { PlanRepository(db = get(), io = Dispatchers.IO, photos = IosPlanPhotoStore) }
     single { ScanReaderConfigLoader.load() }
-    // Reading a plan on the iPhone arrives in stage 4 (its pickers and the relay call). Until then the
-    // scan screen says so (ScanRoute.ios.kt) and this reader answers "unavailable" if ever asked.
-    single<PlanReader> { NotYetOnIphoneReader }
-    single<ImageDecoder> { NotYetOnIphoneDecoder }
+    // ⭐ The iPhone reads plans ONLY through our relay (server/reader): it never carries the AI key,
+    // whatever reader-config says for Android. Same reader code as Android (GroqPlanReader, shared).
+    single<PlanReader> {
+        val recipe = get<com.vastufirst.shared.scan.PlanReadRecipe>()
+        GroqPlanReader(apiKey = "", recipe = recipe.copy(config = recipe.config.copy(useRelay = true)))
+    }
+    single<ImageDecoder> { IosImageDecoder }
     single<PlanReadingConsent> { UserDefaultsPlanReadingConsent }
     single<ReaderChoice> { UserDefaultsReaderChoice }
     single { ScanPictureSlot() }
@@ -93,18 +96,10 @@ val iosModule = module {
         ScanViewModel(
             reader = get(),
             decode = get(),
-            canRead = false,
+            canRead = true,
             modelChoices = listOfNotNull(recipe.config.model.ifBlank { null }, recipe.config.escalationModel),
             readerChoice = get(),
         )
     }
 }
 
-private object NotYetOnIphoneReader : PlanReader {
-    override suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult =
-        ScanResult.Unavailable
-}
-
-private object NotYetOnIphoneDecoder : ImageDecoder {
-    override suspend fun toJpeg(source: Any): DecodedImage? = null
-}

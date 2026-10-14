@@ -23,16 +23,14 @@
 // made with the escalation model, and its answer is used only if it actually reads the plan. A
 // genuine photo-of-not-a-plan refuses twice and the user sees the original honest refusal.
 //
-// No dependency added to the app: `HttpURLConnection` and `java.util.Base64` are both in the
-// platform (Base64 since API 26, which is our minimum), so the first networked feature in an
-// otherwise offline app costs 0 KB of the 30 MB budget.
+// ⭐ SHARED BY BOTH PHONES since 14 Oct 2026 (iPhone plan, stage 4). The one thing each phone does
+// its own way — the HTTP exchange itself — is the [Http] doorway (Http.kt): HttpURLConnection on
+// Android (exactly the calls this file made before), NSURLSession on the iPhone. Base64 is Kotlin's
+// own, which writes the same standard, padded, unbroken text java.util.Base64's encoder did.
 package com.vastufirst.shared.scan
 
-import java.net.HttpURLConnection
-import java.net.URI
-import java.util.Base64
+import kotlin.io.encoding.Base64
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -41,7 +39,8 @@ import kotlinx.coroutines.withContext
 class GroqPlanReader(
     private val apiKey: String,
     private val recipe: PlanReadRecipe = ScanReaderConfigLoader.load(),
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = readerDispatcher,
+    private val http: Http = platformHttp(),
 ) : PlanReader {
 
     override suspend fun read(image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult = withContext(io) {
@@ -49,7 +48,7 @@ class GroqPlanReader(
         // first and says so plainly; this is the belt to that braces.
         if (!recipe.canRead(apiKey) || image.isEmpty()) return@withContext ScanResult.Unavailable
 
-        val base64 = Base64.getEncoder().encodeToString(image)
+        val base64 = Base64.Default.encode(image)
 
         // ⭐ THE SAME PHOTOGRAPH, READ MORE THAN ONCE, AND THE FULLER ANSWER KEPT.
         // The reader is not deterministic: on the owner's own flat the identical JPEG came back
@@ -88,7 +87,7 @@ class GroqPlanReader(
     override suspend fun readWith(model: String, image: ByteArray, imageAspect: Double?, picture: PlanImage?): ScanResult =
         withContext(io) {
             if (!recipe.canRead(apiKey) || image.isEmpty() || model.isBlank()) return@withContext ScanResult.Unavailable
-            val base64 = Base64.getEncoder().encodeToString(image)
+            val base64 = Base64.Default.encode(image)
             postOnce(GroqWire.requestBody(recipe, base64, model = model), imageAspect, picture).attributedTo(model)
         }
 
@@ -102,48 +101,32 @@ class GroqPlanReader(
         return outcome.reason == RefusalReason.NOT_2D
     }
 
-    /** One POST → one [ScanResult]. Never throws; see the rules at the top of the file. */
-    private fun postOnce(bodyText: String, imageAspect: Double?, picture: PlanImage?): ScanResult {
-        val body = bodyText.toByteArray(Charsets.UTF_8)
-        var connection: HttpURLConnection? = null
-        return runCatching {
-            val conn = (URI(recipe.target).toURL().openConnection() as HttpURLConnection)
-            connection = conn
-            conn.requestMethod = "POST"
-            conn.doOutput = true
-            conn.connectTimeout = recipe.config.connectTimeoutMs
-            conn.readTimeout = recipe.config.readTimeoutMs
+    private suspend fun postOnce(bodyText: String, imageAspect: Double?, picture: PlanImage?): ScanResult {
+        val headers = buildMap {
             if (recipe.config.useRelay) {
                 // Our relay adds the key itself; this header only tells it the request is the app's.
-                conn.setRequestProperty("X-VastuFirst-App", recipe.config.userAgent.ifBlank { "vastufirst" })
+                put("X-VastuFirst-App", recipe.config.userAgent.ifBlank { "vastufirst" })
             } else {
-                conn.setRequestProperty("Authorization", "Bearer $apiKey")
+                put("Authorization", "Bearer $apiKey")
             }
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.setRequestProperty("Accept", "application/json")
-            // Not decoration: Cloudflare fronts these APIs and answers an unrecognised client with
-            // its own 403 (error 1010) before the request ever reaches the model.
-            conn.setRequestProperty("User-Agent", recipe.config.userAgent)
-            // Known length, so ~180 KB of base64 isn't buffered a second time inside the connection.
-            conn.setFixedLengthStreamingMode(body.size)
-
-            conn.outputStream.use { it.write(body) }
-
-            val status = conn.responseCode
-            val stream = if (status in 200..299) conn.inputStream else conn.errorStream
-            val text = stream?.use { it.readBytes().decodeToString() }.orEmpty()
-
-            if (status in 200..299) {
-                GroqWire.readOutcome(text, imageAspect, picture)
-            } else {
-                GroqWire.mapStatus(status) { name -> conn.getHeaderField(name) }
-            }
-        }.also {
-            runCatching { connection?.disconnect() }
-        }.getOrElse {
-            // Offline, DNS, timeout, TLS, a truncated reply: all the same thing to the user, and all
-            // of them are worth trying again. The exception itself is deliberately not logged.
-            ScanResult.Unavailable
+            put("Content-Type", "application/json")
+            put("Accept", "application/json")
+            put("User-Agent", recipe.config.userAgent)
+        }
+        val reply = runCatching {
+            http.exchange(
+                method = "POST",
+                url = recipe.target,
+                headers = headers,
+                body = bodyText,
+                connectTimeoutMs = recipe.config.connectTimeoutMs,
+                readTimeoutMs = recipe.config.readTimeoutMs,
+            )
+        }.getOrNull() ?: return ScanResult.Unavailable
+        return if (reply.status in 200..299) {
+            GroqWire.readOutcome(reply.body, imageAspect, picture)
+        } else {
+            GroqWire.mapStatus(reply.status) { name -> reply.header(name) }
         }
     }
 }

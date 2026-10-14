@@ -15,7 +15,8 @@ appId: com.vastufirst.app
     timeout: 20000
 - takeScreenshot: 02-add-home
 
-# Reading a plan is not built for the iPhone yet: the screen must SAY so and offer the grid.
+# Upload a plan: the privacy card first, then the iPhone asks where the plan is (Photos or Files).
+# Cancelling that first pick goes back to "Add your home" - no paid read ever happens in this walk.
 - tapOn: "Upload a plan"
 - extendedWaitUntil:
     visible: "Your plan leaves this phone"
@@ -25,10 +26,18 @@ appId: com.vastufirst.app
     element: "I agree — read my plan"
 - tapOn: "I agree — read my plan"
 - extendedWaitUntil:
-    visible: ".*isn't ready on iPhone yet.*"
+    visible: "Where is your plan.*"
     timeout: 20000
-- takeScreenshot: 04-scan-not-ready
-- tapOn: "Draw it on a grid instead"
+- takeScreenshot: 04-where-is-your-plan
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "Add your home"
+    timeout: 20000
+
+# Draw by hand: the grid editor.
+- scrollUntilVisible:
+    element: "Draw it on a grid"
+- tapOn: "Draw it on a grid"
 - extendedWaitUntil:
     visible: "Place your rooms"
     timeout: 20000
@@ -47,7 +56,7 @@ appId: com.vastufirst.app
     element: "Try a sample plan"
 - tapOn: "Try a sample plan"
 - extendedWaitUntil:
-    visible: "Which way is North\\?"
+    visible: "Which way is North.*"
     timeout: 20000
 - takeScreenshot: 06-north
 - scrollUntilVisible:

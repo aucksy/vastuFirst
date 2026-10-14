@@ -1,8 +1,5 @@
 package com.vastufirst.app.ui.scan
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -10,10 +7,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.FileProvider
 import kotlinx.coroutines.delay
-import java.io.File
+
+/** Which door "Add a home" opened this screen through — the picker or the camera. */
+enum class ScanStart { PICK, CAMERA }
+
+/**
+ * The phone's own ways in for a plan picture. Each phone answers it (androidMain / iosMain); the scan
+ * route below is the same on both.
+ */
+interface PlanPickers {
+    /** Open the picker for a PDF or a picture. */
+    fun pickDocument()
+
+    /** Open the camera. False when this phone has no camera to open — the screen then says so. */
+    fun takePhoto(): Boolean
+}
+
+/** The pickers, delivering what was picked to [onPicked] — or null when the person backed out. */
+@Composable
+expect fun rememberPlanPickers(onPicked: (Any?) -> Unit): PlanPickers
 
 /**
  * The scan screen wired to the platform, by two doors and no more.
@@ -41,26 +54,21 @@ import java.io.File
  * older, less phone-literate, and standing in daylight.
  */
 @Composable
-actual fun ScanRoute(
+fun ScanRoute(
     vm: ScanViewModel,
     onUseRooms: (com.vastufirst.shared.scan.ScanOutcome) -> Unit,
     onDrawInstead: () -> Unit,
     onBack: () -> Unit,
-    startWith: ScanStart?,
-    north: NorthOnResult,
+    startWith: ScanStart? = null,
+    north: NorthOnResult = NorthOnResult(),
 ) {
-    val context = LocalContext.current
     // Which way in the user last chose, so "try a different picture" reopens the same one.
     var lastWasCamera by rememberSaveable { mutableStateOf(false) }
-    // ⚠ SAVEABLE, and that is the whole point. The camera app is a separate app in the foreground,
-    // which is exactly when Android reclaims ours — so this must survive process death or the photo
-    // comes back with nowhere to be read from. Stored as a String because Uri is not Saveable.
-    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
     // Set when the phone has no camera app at all (an emulator, a stripped ROM). The screen then
     // says so in one line rather than the button doing nothing — the defect this release fixes.
     var cameraUnavailable by rememberSaveable { mutableStateOf(false) }
 
-    // ⭐ SAVEABLE, like the photo above: true once this screen has opened the picker by itself, so a
+    // ⭐ SAVEABLE, like the flags above: true once this screen has opened the picker by itself, so a
     // screen rebuilt after the picker (or after Android reclaimed the app while it was open) never
     // opens it a second time.
     var autoOpened by rememberSaveable { mutableStateOf(false) }
@@ -69,51 +77,28 @@ actual fun ScanRoute(
     // asked for.
     var awaitingFirstPick by rememberSaveable { mutableStateOf(false) }
 
-    fun picked(uri: Uri?) {
-        val cancelledTheFirst = awaitingFirstPick && uri == null
+    fun picked(source: Any?) {
+        val cancelledTheFirst = awaitingFirstPick && source == null
         awaitingFirstPick = false
-        if (cancelledTheFirst) onBack() else vm.scan(uri)
+        if (cancelledTheFirst) onBack() else vm.scan(source)
     }
 
-    val documentPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri: Uri? -> picked(uri) }
-
-    val camera = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture(),
-    ) { saved: Boolean ->
-        // `saved` is false when the user backed out of the camera without keeping the shot. That is
-        // a decision, not a failure, and never a zero-byte file to read.
-        val uri = pendingPhoto?.let(Uri::parse)
-        pendingPhoto = null
-        picked(if (saved) uri else null)
-    }
-
-    val pickDocument = remember(documentPicker) {
+    // The phone's own picker and camera (Android: its document picker and camera app; iPhone: Photos,
+    // Files and its camera). Each hands back what it picked, or null when the person backed out.
+    val pickers = rememberPlanPickers(onPicked = ::picked)
+    val pickDocument = remember(pickers) {
         {
             lastWasCamera = false
-            // PDF first in the list, because it is the input that reads best — and `image/*` is why
-            // this one button still covers "a picture I already have" now that the second button is
-            // the camera. There is no third button: two clear choices beat three on this screen.
-            documentPicker.launch(arrayOf("application/pdf", "image/*"))
+            pickers.pickDocument()
         }
     }
-    val takePhoto = remember(camera, context) {
+    val takePhoto = remember(pickers) {
         {
             lastWasCamera = true
-            // Total on purpose: a phone with no camera app throws on launch, and a scan screen that
-            // crashes is worse than one that says "use a picture instead".
-            val started = runCatching {
-                val uri = newPlanPhotoUri(context)
-                pendingPhoto = uri.toString()
-                camera.launch(uri)
-            }.isSuccess
-            if (!started) { pendingPhoto = null; cameraUnavailable = true; awaitingFirstPick = false }
+            if (!pickers.takePhoto()) { cameraUnavailable = true; awaitingFirstPick = false }
         }
     }
 
-    // ⭐ The automatic opening itself — once, only while there is nothing on screen to lose, and never
-    // in a build that cannot read plans (that build says so on its own screen instead).
     LaunchedEffect(Unit) {
         if (startWith == null || autoOpened || vm.state != ScanUiState.Idle) return@LaunchedEffect
         autoOpened = true
@@ -173,39 +158,4 @@ actual fun ScanRoute(
         onReadAnyway = vm::readAnyway,
         north = north,
     )
-}
-
-/**
- * A fresh, empty file for the camera app to write one plan photo into, as a URI it is allowed to
- * open. Named by the clock so a second shot never lands on top of the first while the first is still
- * being read; the folder lives in the cache, so the phone may clear it whenever it likes and the
- * picture never enters the user's gallery.
- */
-private fun newPlanPhotoUri(context: android.content.Context): Uri {
-    val dir = planPhotoDir(context).apply { mkdirs() }
-    // ⭐ EVERY EARLIER SHOT GOES FIRST, so at most one plan photograph is ever on the phone.
-    // Without this the folder only grew: three plans photographed meant three pictures of somebody's
-    // home sitting in the cache with nothing in the app able to remove them. The one that remains is
-    // the one being read, and "Delete all my data" now takes that too — see [clearPlanPhotos].
-    clearPlanPhotos(context)
-    val file = File(dir, "plan-${System.currentTimeMillis()}.jpg")
-    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-}
-
-/** Where the camera door writes a plan photograph. Cache, so the OS may clear it whenever it likes. */
-internal fun planPhotoDir(context: android.content.Context): File =
-    File(context.cacheDir, "plan-photos")
-
-/**
- * ⭐ Remove every plan photograph this app's camera has written.
- *
- * ⚠ Called by "Delete all my data", which promises "this permanently removes every saved home from
- * this device". It emptied the two databases and left the photographs behind — so somebody handing
- * their phone on, having been told everything was gone, still had a picture of their own floor plan
- * on it. The databases were never the only copy.
- *
- * Total on purpose: a file that cannot be deleted must not take the rest of the wipe down with it.
- */
-internal fun clearPlanPhotos(context: android.content.Context) {
-    runCatching { planPhotoDir(context).listFiles()?.forEach { it.delete() } }
 }
