@@ -59,8 +59,14 @@ appId: com.vastufirst.app
     visible: "Which way is North.*"
     timeout: 20000
 - takeScreenshot: 06-north
-- scrollUntilVisible:
-    element: ".*[Rr]ead my home"
+# Swipe from the bottom edge: a swipe through the middle lands on the North dial, which turns instead
+# of scrolling (the dial is meant to be dragged).
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          start: 50%, 93%
+          end: 50%, 45%
 - tapOn: ".*[Rr]ead my home"
 - extendedWaitUntil:
     visible: "(?i).*full report.*"
