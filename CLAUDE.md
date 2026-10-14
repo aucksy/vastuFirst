@@ -12,8 +12,11 @@ Claude Code reads this at the start of every session and must follow it.
   on-device.
 - **Stack (this project — NOT the generic template):**
   - **Kotlin Multiplatform + Compose Multiplatform** (Android target now; iOS is a later re-target).
-  - Pure logic modules are **`kotlin("jvm")`** today; flipping them to `multiplatform` is the
-    iOS move (a build-file change, not a rewrite — Product PRD §3.1).
+  - Pure logic modules are **multiplatform** since 14 Oct 2026 (iPhone plan stage 1): `jvm()` for
+    Android and the JVM tests, plus `iosArm64`/`iosSimulatorArm64`. Common code stays in
+    `src/main/kotlin`, common tests in `src/test/kotlin`; JVM-only bits in `src/jvmMain`/`jvmTest`.
+    The "iPhone engine" workflow runs the common tests on the iPhone simulator. ⚠ Test names in
+    common tests: no commas or brackets (Kotlin/Native rejects them).
   - DI: **Koin** · DB: **SQLDelight** · Serialization: **kotlinx-serialization** ·
     Async: Coroutines+Flow. Backend: Supabase (Phase 4+). AI: the plan reader calls OpenRouter
     (since 4 Aug 2026); the Phase 4 assistant is not built. Payments: **Google Play Billing**
