@@ -21,6 +21,7 @@ on:
       - 'app/**'
       - 'designsystem/**'
       - 'buildSrc/**'
+      - 'iosApp/**'
       - 'gradle/**'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
@@ -83,3 +84,83 @@ jobs:
                   for bad in list(case.findall('failure')) + list(case.findall('error')):
                       print(f"      FAILED: {case.get('name')}: {(bad.get('message') or '')[:300]}")
           print(f"IPHONE TOTAL: {total} tests, {fails} failed, {skips} skipped")
+
+  # ⭐ THE iPHONE APP OPENS (iPhone plan, stage 3): build the real app for the simulator, start it, and
+  # walk it by its visible words (Maestro), with a picture at each step. Fails on a crash or on any
+  # step whose words never appear. No Apple account needed: simulator builds are unsigned.
+  ios-app:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 and 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.1'
+
+      - name: Cache the Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd iosApp && xcodegen generate
+
+      - name: Pick an iPhone simulator
+        shell: python3 {0}
+        run: |
+          import json, os, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          phones = [d for runtime, devs in data["devices"].items() if "iOS" in runtime
+                    for d in devs if d["name"].startswith("iPhone")]
+          pick = sorted(phones, key=lambda d: d["name"])[-1]
+          print("simulator:", pick["name"], pick["udid"])
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write("SIM_UDID=" + pick["udid"] + chr(10))
+              f.write("SIM_NAME=" + pick["name"] + chr(10))
+
+      - name: Build the iPhone app (simulator, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/VastuFirst.xcodeproj -scheme VastuFirst -configuration Debug -sdk iphonesimulator -destination "id=$SIM_UDID" -derivedDataPath iosApp/build ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO GRADLE_BIN="$(which gradle)" build | tail -60
+
+      - name: Install and open it
+        run: |
+          xcrun simctl boot "$SIM_UDID" || true
+          xcrun simctl bootstatus "$SIM_UDID" -b
+          xcrun simctl install "$SIM_UDID" iosApp/build/Build/Products/Debug-iphonesimulator/VastuFirst.app
+          xcrun simctl launch "$SIM_UDID" com.vastufirst.app
+          sleep 15
+          mkdir -p iphone-walk
+          xcrun simctl io "$SIM_UDID" screenshot iphone-walk/00-opened.png
+          # Still running 15 seconds later, or it crashed on open.
+          xcrun simctl spawn "$SIM_UDID" launchctl list | grep -q com.vastufirst.app
+
+      - name: Walk the app (Maestro)
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          export PATH="$PATH:$HOME/.maestro/bin"
+          maestro --device "$SIM_UDID" test iosApp/maestro/walk.yaml --test-output-dir iphone-walk
+
+      - name: Keep the pictures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iphone-walk
+          path: |
+            iphone-walk/*.png
+            iphone-walk/**/*.png
+          retention-days: 14

@@ -1,0 +1,59 @@
+# The iPhone "does it open" walk (iPhone plan, stage 3). Maestro taps the real app on the simulator
+# by the words a person sees, and takes a picture at each step. Any crash, or any step whose words do
+# not appear, fails the run.
+appId: com.vastufirst.app
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "I am building a home"
+    timeout: 60000
+- takeScreenshot: 01-welcome
+- tapOn: "I am building a home"
+- extendedWaitUntil:
+    visible: "Add your home"
+    timeout: 20000
+- takeScreenshot: 02-add-home
+
+# Reading a plan is not built for the iPhone yet: the screen must SAY so and offer the grid.
+- tapOn: "Upload a plan"
+- extendedWaitUntil:
+    visible: "Your plan leaves this phone"
+    timeout: 20000
+- takeScreenshot: 03-consent
+- scrollUntilVisible:
+    element: "I agree — read my plan"
+- tapOn: "I agree — read my plan"
+- extendedWaitUntil:
+    visible: ".*isn't ready on iPhone yet.*"
+    timeout: 20000
+- takeScreenshot: 04-scan-not-ready
+- tapOn: "Draw it on a grid instead"
+- extendedWaitUntil:
+    visible: "Place your rooms"
+    timeout: 20000
+- takeScreenshot: 05-editor
+
+# The new ‹ arrow (no Back key on an iPhone) leaves the editor.
+- tapOn:
+    text: "Back"
+    index: 0
+- extendedWaitUntil:
+    visible: "Add your home"
+    timeout: 20000
+
+# The sample home all the way to its report.
+- scrollUntilVisible:
+    element: "Try a sample plan"
+- tapOn: "Try a sample plan"
+- extendedWaitUntil:
+    visible: "Which way is North\\?"
+    timeout: 20000
+- takeScreenshot: 06-north
+- scrollUntilVisible:
+    element: ".*[Rr]ead my home"
+- tapOn: ".*[Rr]ead my home"
+- extendedWaitUntil:
+    visible: "(?i).*full report.*"
+    timeout: 30000
+- takeScreenshot: 07-report

@@ -1,0 +1,37 @@
+# The iPhone app shell (iPhone plan, stage 3). XcodeGen turns this file into VastuFirst.xcodeproj on the
+# cloud Mac (`xcodegen generate`), so no hand-edited Xcode project lives in the repo.
+#
+# The app itself is the shared Kotlin code, built by Gradle into the static framework "VastuApp"
+# (app/build.gradle.kts). The build phase below asks Gradle for it, together with the bundled fonts
+# (Compose resources), in the shape Xcode needs.
+name: VastuFirst
+options:
+  bundleIdPrefix: com.vastufirst
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+targets:
+  VastuFirst:
+    type: application
+    platform: iOS
+    sources:
+      - path: VastuFirst
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vastufirst.app
+        PRODUCT_NAME: VastuFirst
+        INFOPLIST_FILE: VastuFirst/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"          # iPhone only; an iPad runs it in iPhone mode
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.38.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_USER_SCRIPT_SANDBOXING: NO     # the build phase runs Gradle, which writes outside the sandbox
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS: ["$(inherited)", "-framework", "VastuApp", "-lsqlite3"]
+    preBuildScripts:
+      - name: Build the shared Kotlin app (Gradle)
+        basedOnDependencyAnalysis: false
+        script: |
+          set -e
+          cd "$SRCROOT/.."
+          "${GRADLE_BIN:-gradle}" :app:embedAndSignAppleFrameworkForXcode

@@ -1,5 +1,6 @@
 package com.vastufirst.app.navigation
 
+import androidx.savedstate.read
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -204,7 +205,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
             ) { entry ->
                 val consent = koinInject<PlanReadingConsent>()
                 // Which picker the reader chose on Add a home — carried through, so agreeing opens it.
-                val start = entry.arguments?.getString(Routes.ARG_START) ?: ScanStart.PICK.name
+                val start = entry.stringArg(Routes.ARG_START) ?: ScanStart.PICK.name
                 ScanConsentScreen(
                     onAgree = {
                         consent.set(true)
@@ -230,7 +231,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 val scanVm: ScanViewModel = koinViewModel()
                 val pictureSlot = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 // Which picker "Add a home" asked for — opened the moment this screen appears.
-                val start = entry.arguments?.getString(Routes.ARG_START)
+                val start = entry.stringArg(Routes.ARG_START)
                     ?.let { name -> ScanStart.entries.firstOrNull { it.name == name } }
                 // ⭐⭐ THE READ IS KEPT THE MOMENT IT SUCCEEDS (owner, 16 Aug 2026: *"I also tried a
                 // new home and left it on the screen right after scanning which shows the list of
@@ -329,7 +330,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     onDoor = planVm::updateDoor,
                     // Opened from a finished report, this screen returns there — so the button says
                     // that, instead of naming a North step it will never open.
-                    returnsToReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false,
+                    returnsToReport = entry.boolArg(Routes.ARG_FROM_REPORT),
                     // ⚠ Which way out depends on where this was entered from. Reached from the
                     // report's "change where the front door is", the report is already behind us —
                     // so go BACK to it rather than pushing a second report on top of the first.
@@ -356,7 +357,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 val vm = sharedVm(nav, entry)
                 // Present ONLY when the user tapped an unfinished home on the saved-homes screen.
                 // Every other way into this editor arrives with no id and therefore a clean grid.
-                val draftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
+                val draftId = entry.stringArg(Routes.ARG_DRAFT_ID)
                 // ⭐⭐ AND THE PHOTOGRAPH SLOT IS EMPTIED WITH IT — THE THIRD ROUTE, MISSED IN
                 // v0.12.0. That release found the scan's picture being drawn under homes it does not
                 // belong to and closed two of the three ways in: starting a new home empties the
@@ -390,7 +391,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                         }
                     },
                     // A drawn home's report opens this editor on its door step ("Change front door").
-                    startInDoorMode = entry.arguments?.getBoolean(Routes.ARG_DOOR_MODE) ?: false,
+                    startInDoorMode = entry.boolArg(Routes.ARG_DOOR_MODE),
                 )
             }
             composable(
@@ -404,10 +405,10 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 // ⭐ Present ONLY when the reader tapped "Carry on" on an unfinished home that came
                 // off a photograph — see Routes.markNorthForDraft. Every other way here arrives with
                 // no id and the draft already on screen.
-                val northDraftId = entry.arguments?.getString(Routes.ARG_DRAFT_ID)
+                val northDraftId = entry.stringArg(Routes.ARG_DRAFT_ID)
                 val pictureSlot = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 ResumeDraft(vm = vm, id = northDraftId, handover = pictureSlot)
-                val fromReport = entry.arguments?.getBoolean(Routes.ARG_FROM_REPORT) ?: false
+                val fromReport = entry.boolArg(Routes.ARG_FROM_REPORT)
                 // ⭐⭐ North on the reader's OWN plan whenever this home has one — resumed from the
                 // saved-homes list (owner, 16 Aug 2026: *"Do A"*) and, since 30 Sep 2026, opened from
                 // that home's report too. See [northShowsPhoto] for why the slot can be trusted.
@@ -492,7 +493,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 val vm = sharedVm(nav, entry)
                 // Only when the saved-homes list sent an id. Arriving from the flow there is no id,
                 // and loading one would pull a different home over the draft already on screen.
-                val planId = entry.arguments?.getString(Routes.ARG_PLAN_ID)
+                val planId = entry.stringArg(Routes.ARG_PLAN_ID)
                 val scanHandover = koinInject<com.vastufirst.app.ui.scan.ScanPictureSlot>()
                 LaunchedEffect(planId) {
                     if (planId != null) {
@@ -669,3 +670,14 @@ private fun sharedVm(nav: NavHostController, entry: NavBackStackEntry): NewPlanV
     val parent = remember(entry) { nav.getBackStackEntry(Routes.NEWPLAN_GRAPH) }
     return koinViewModel(viewModelStoreOwner = parent)
 }
+
+/*
+ * A destination's argument, the same way on both phones (iPhone plan, stage 2). On Android these were
+ * Bundle.getString / getBoolean; the shared navigation hands over a SavedState instead. Same answers:
+ * a missing string is null, a missing flag is false.
+ */
+private fun NavBackStackEntry.stringArg(key: String): String? =
+    arguments?.read { if (contains(key)) getStringOrNull(key) else null }
+
+private fun NavBackStackEntry.boolArg(key: String): Boolean =
+    arguments?.read { if (contains(key)) getBoolean(key) else false } ?: false
