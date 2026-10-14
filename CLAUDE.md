@@ -20,8 +20,8 @@ Claude Code reads this at the start of every session and must follow it.
     (`:app` only; built, shipped switched off). Razorpay was dropped: Google forbids another
     payment service for digital goods sold inside a Play app. Versions are pinned in
     `gradle/libs.versions.toml`.
-  - Min/Target SDK **26 / 35**. ⚠ Google Play has refused a target below 36 since 31 Aug 2026
-    (an extension to 1 Nov 2026 can be asked for in Play Console).
+  - Min/Target SDK **26 / 36** since v0.37.0. Google Play refuses a target below 36 (since
+    31 Aug 2026); it raises the floor every August.
 - **Module graph:** `engine`, `rules`, `shared`, `data` = pure, **zero Android**;
   `designsystem` = Compose UI kit; `app` = Android entry point + all Android-only deps.
 - **Where things live:** `app/` = screens & platform glue · `engine/` = the scoring engine ·

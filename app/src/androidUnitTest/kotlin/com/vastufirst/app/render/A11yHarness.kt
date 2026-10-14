@@ -32,7 +32,7 @@ import java.io.File
  *    the build; the ratchet script decides. Warning (not Error) is deliberate: it also captures the
  *    contrast warnings — incl. the three documented sub-3:1 accent colours (UI-POLISH §2 rule 3) —
  *    which both proves the check is genuinely executing (not a silent skip) and gives a richer signal.
- *  - ATF is skipped by the library below API 34; we render at SDK 35, so it runs.
+ *  - ATF is skipped by the library below API 34; we render at SDK 36, so it runs.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalRoborazziApi::class)
 fun writeA11yManifest(

@@ -13,6 +13,9 @@ import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -38,12 +41,22 @@ class PlayBilling(
     publishedPrice: String? = null,
 ) : Billing {
 
-    private var current = BillingState(
-        mode = BillingMode.UNAVAILABLE,
-        price = null,
-        publishedPrice = publishedPrice,
+    // ⭐ LIVE, not a snapshot (14 Oct 2026). The client starts connecting at launch and answers a
+    // moment later; a screen that copied `state` once kept showing "can't reach Google Play" and a
+    // "Try again" button for the whole visit, even after the store had answered with a price — and
+    // a buyer who already owned the report never saw "See the full report". Screens collect [states].
+    private val flow = MutableStateFlow(
+        BillingState(
+            mode = BillingMode.UNAVAILABLE,
+            price = null,
+            publishedPrice = publishedPrice,
+        ),
     )
+    private var current: BillingState
+        get() = flow.value
+        set(value) { flow.value = value }
     override val state: BillingState get() = current
+    override val states: StateFlow<BillingState> = flow.asStateFlow()
 
     private var details: ProductDetails? = null
     private var pending: CompletableDeferred<PurchaseResult>? = null
@@ -61,8 +74,22 @@ class PlayBilling(
             result.responseCode != BillingClient.BillingResponseCode.OK ->
                 waiting?.complete(PurchaseResult.Failed(plainMessage(result)))
             else -> {
-                val bought = purchases.orEmpty().any { record(it) }
-                waiting?.complete(if (bought) PurchaseResult.Purchased else PurchaseResult.Cancelled)
+                val list = purchases.orEmpty()
+                val bought = list.any { record(it) }
+                // ⭐ A purchase Google confirms LATER (cash at a shop counter) arrives here with nobody
+                // waiting. It used to be acknowledged and then forgotten: `owned` never changed, so
+                // the report stayed locked until the app was restarted. Now it unlocks at once.
+                if (bought) current = current.copy(owned = true)
+                val pendingPay = !bought && list.any { it.purchaseState == Purchase.PurchaseState.PENDING }
+                waiting?.complete(
+                    when {
+                        bought -> PurchaseResult.Purchased
+                        // Not "Cancelled": the customer chose to pay, and silence read as nothing
+                        // having happened. The screen now says the payment is waiting.
+                        pendingPay -> PurchaseResult.Pending
+                        else -> PurchaseResult.Cancelled
+                    },
+                )
             }
         }
     }
@@ -72,6 +99,9 @@ class PlayBilling(
         // Required from Billing 7 onward; a purchase can be left pending (a customer paying at a
         // shop counter), and the app has to be able to receive it later rather than losing it.
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+        // Billing 8: the client reconnects by itself after Google Play's service drops. Before this,
+        // a dropped connection made the NEXT payment fail with "The payment didn't go through".
+        .enableAutoServiceReconnection()
         .build()
 
     /** Connect, ask the store for the price, and see whether this account already owns the report. */
@@ -95,8 +125,8 @@ class PlayBilling(
                 if (cont.isActive) cont.resume(result.responseCode == BillingClient.BillingResponseCode.OK)
             }
             override fun onBillingServiceDisconnected() {
-                // Not resumed here: a disconnect after a successful setup is normal and the client
-                // reconnects itself. Resuming twice would crash.
+                // Not resumed here: a disconnect after a successful setup is normal, and since Billing 8
+                // the client reconnects itself (enableAutoServiceReconnection). Resuming twice would crash.
             }
         })
     }
@@ -113,8 +143,10 @@ class PlayBilling(
             )
             .build()
         val found = suspendCancellableCoroutine<ProductDetails?> { cont ->
-            client.queryProductDetailsAsync(params) { _, list ->
-                if (cont.isActive) cont.resume(list.firstOrNull())
+            // Billing 8: the answer is a result object, not a bare list. A product the store could not
+            // return is in `unfetchedProductList`; here that simply means no price yet (null).
+            client.queryProductDetailsAsync(params) { _, result ->
+                if (cont.isActive) cont.resume(result.productDetailsList.firstOrNull())
             }
         }
         details = found

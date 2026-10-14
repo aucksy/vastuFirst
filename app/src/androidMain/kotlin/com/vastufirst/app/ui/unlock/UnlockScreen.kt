@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import com.vastufirst.app.billing.Billing
 import com.vastufirst.app.billing.BillingMode
 import com.vastufirst.app.billing.BillingState
+import com.vastufirst.app.billing.PENDING_PAYMENT_MESSAGE
 import com.vastufirst.app.billing.PurchaseResult
 import com.vastufirst.app.billing.billingActionLabel
 import com.vastufirst.app.billing.billingNotice
@@ -47,16 +49,26 @@ import org.koin.compose.koinInject
 @Composable
 fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
     val scope = rememberCoroutineScope()
-    var state by remember { mutableStateOf(billing.state) }
+    // ⭐ LIVE billing state (14 Oct 2026). This used to copy `billing.state` ONCE, when the screen
+    // opened — before Google Play had answered — so a buyer saw "can't reach Google Play" and "Try
+    // again" for the whole visit, and an owner never saw "See the full report". The store's answer
+    // now reaches the screen when it arrives. `busy` stays local: it is this screen's own latch.
+    val live by billing.states.collectAsState()
+    var busy by remember { mutableStateOf(false) }
+    val state = live.copy(busy = live.busy || busy)
     var problem by remember { mutableStateOf<String?>(null) }
+    // A waiting payment is not a problem, so it is not said in the error colour.
+    var waitingNote by remember { mutableStateOf<String?>(null) }
 
     UnlockContent(
         state = state,
         problem = problem,
+        waitingNote = waitingNote,
         onAction = {
             scope.launch {
                 problem = null
-                state = state.copy(busy = true)
+                waitingNote = null
+                busy = true
                 // ⚠ THE BUSY FLAG IS CLEARED IN A `finally`, NOT AFTER THE CALL. Rotating the phone
                 // or the OS reclaiming the app while Google's payment sheet is open CANCELS this
                 // coroutine, so the line that cleared it never ran — and the buyer came back to a
@@ -70,10 +82,12 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
                         is PurchaseResult.Purchased, is PurchaseResult.AlreadyOwned -> onUnlocked()
                         // Backing out is not an error and must not be reported as one.
                         is PurchaseResult.Cancelled -> Unit
+                        // Chosen to pay, not yet confirmed: say so, rather than look like nothing happened.
+                        is PurchaseResult.Pending -> waitingNote = PENDING_PAYMENT_MESSAGE
                         is PurchaseResult.Failed -> problem = result.message
                     }
                 } finally {
-                    state = billing.state.copy(busy = false)
+                    busy = false
                 }
             }
         },
@@ -83,7 +97,7 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
                 // ⚠ Restore takes the same busy latch the pay button has, so a double-tap cannot
                 // fire two restores — the one control on this screen that had no guard at all.
                 if (state.busy) return@launch
-                state = state.copy(busy = true)
+                busy = true
                 try {
                     val result = billing.restore()
                     when (result) {
@@ -92,7 +106,7 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
                         else -> problem = "We couldn't find a purchase on this Google account."
                     }
                 } finally {
-                    state = billing.state.copy(busy = false)
+                    busy = false
                 }
             }
         },
@@ -105,6 +119,7 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
 fun UnlockContent(
     state: BillingState,
     problem: String? = null,
+    waitingNote: String? = null,
     onAction: () -> Unit = {},
     onRestore: () -> Unit = {},
 ) {
@@ -159,6 +174,10 @@ fun UnlockContent(
         if (problem != null) {
             Spacer(Modifier.height(VastuTheme.spacing.s3))
             VText(problem, style = VastuTheme.type.bodySm, color = colors.error)
+        }
+        if (waitingNote != null) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            VText(waitingNote, style = VastuTheme.type.bodySm, color = colors.textSecondary)
         }
 
         // Restoring is only meaningful once there is a store to restore FROM. Offering it when

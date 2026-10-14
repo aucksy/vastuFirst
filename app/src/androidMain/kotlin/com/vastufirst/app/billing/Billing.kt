@@ -1,5 +1,8 @@
 package com.vastufirst.app.billing
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
 /**
  * ⭐ TAKING MONEY FOR THE ₹699 REPORT — built in full, shipped switched OFF.
  *
@@ -40,6 +43,13 @@ sealed interface PurchaseResult {
 
     /** The user backed out. Not an error, and must not be reported as one. */
     data object Cancelled : PurchaseResult
+
+    /**
+     * The customer chose to pay, but the store has not confirmed it yet (cash at a shop counter, a
+     * bank that asks first). Not bought, not cancelled: the screen says it is waiting, and the report
+     * unlocks by itself the moment the store confirms.
+     */
+    data object Pending : PurchaseResult
 
     /** Already bought — restoring rather than charging again. */
     data object AlreadyOwned : PurchaseResult
@@ -93,6 +103,14 @@ const val REPORT_PRODUCT_ID = "vastufirst_full_report"
 const val FALLBACK_PRICE = "₹699"
 
 /**
+ * Said on the unlock screen when a payment is waiting for the store to confirm it. The words name the
+ * store, so they live here with the other store-named sentences (one place to change per store).
+ */
+const val PENDING_PAYMENT_MESSAGE =
+    "Your payment is waiting for Google Play to confirm it. The report unlocks by itself as soon as " +
+        "it does. Nothing more to pay."
+
+/**
  * The plain sentence under the unlock button. It is a function, not four strings scattered through
  * the screen, because getting it wrong is the one thing in this whole feature that could mislead
  * somebody about money — so it is pinned by tests.
@@ -121,7 +139,11 @@ fun billingActionLabel(state: BillingState): String = when {
  * flag-off implementation is [NoBilling]; the real one is PlayBilling.
  */
 interface Billing {
+    /** The state right now. A screen that stays open must collect [states] instead. */
     val state: BillingState
+
+    /** The same state, live: it changes when the store answers, after the screen has opened. */
+    val states: StateFlow<BillingState>
 
     /** Start the purchase. Returns what happened, in terms the screen can show a person. */
     suspend fun purchase(): PurchaseResult
@@ -141,6 +163,8 @@ class NoBilling(publishedPrice: String? = null) : Billing {
         price = null,
         publishedPrice = publishedPrice,
     )
+    // Nothing here ever changes: no store, nothing to wait for.
+    override val states: StateFlow<BillingState> = MutableStateFlow(state)
     override suspend fun purchase(): PurchaseResult = PurchaseResult.Purchased
     override suspend fun restore(): PurchaseResult = PurchaseResult.AlreadyOwned
 }

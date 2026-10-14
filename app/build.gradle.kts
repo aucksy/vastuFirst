@@ -219,7 +219,7 @@ android {
     }
 
     // Required by Robolectric so the render harness can resolve app resources, and so
-    // src/androidUnitTest/resources/robolectric.properties (sdk = 35) is honoured (UI-POLISH §6.1).
+    // src/androidUnitTest/resources/robolectric.properties (sdk = 36) is honoured (UI-POLISH §6.1).
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
