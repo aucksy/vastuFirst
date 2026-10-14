@@ -1,655 +1,362 @@
 <!--
-MAINTAINER NOTE — not for the client's email; this one IS for the owner to use on their phone.
+MAINTAINER NOTE — not for the client's weekly email. This IS the list the client runs on real phones.
 
 ⭐ THIS IS THE SINGLE RUNNING LIST of everything that needs a real finger, a real phone, or a real
-pair of eyes. It is the canonical list — docs/UAT-GRID-PLAN-BUILDING.md and PHASE-2-PROGRESS.md now
+pair of eyes. It is the canonical list — docs/UAT-GRID-PLAN-BUILDING.md and PHASE-2-PROGRESS.md
 point HERE instead of keeping their own copies, so there is never a second, staler list.
 
+REBUILT FOR v0.37.0 (14 Oct 2026). Every row was checked against the app's own code: button labels
+are quoted exactly as the screen prints them. Rows for screens that no longer exist ("Check what we
+read", the "Directions / Boxes" trial, the live phone compass, the grid a placed scan used to land
+on, the boxes drawn over a photographed plan) were deleted, not parked.
+
 APPENDING IS PART OF "DONE". Every time a build ships something that automated tests cannot prove —
-a haptic, a raw gesture, true process-death, a screen-reader phrase, anything whose only proof is
-looking at it — add a row here, tagged with the build it arrived in. Never quietly drop a row: once
-the owner reports a result, move it to "Settled" at the bottom with their verdict and the date.
+a haptic, a raw gesture, true process death, a screen-reader phrase, anything whose only proof is
+looking at it — add a row here, tagged with the build it arrived in. When a screen is deleted,
+delete its rows in the same commit. Once the owner reports a result, move the row to "Settled" at
+the bottom with the verdict and the date.
 
 Keep every line in plain English: what to DO, what you should SEE. No file names, no class names.
 -->
 
-# VastuFirst — manual test list (things only a phone can prove)
+# VastuFirst — the three-phone pass
 
-**Latest build to test:** v0.24.0 —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.24.0/vastufirst-v0.24.0.apk)
+**Build to test:** v0.37.0 (14 October 2026) —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.37.0/vastufirst-v0.37.0.apk)
 
-Everything else about the app is checked automatically on every build — the maths, the layout at
-small screens and large fonts, the score, and screenshots of every screen. What's left below is the
-handful of things a machine genuinely cannot judge: how a drag *feels*, whether a buzz actually
-happens, what a screen reader says out loud, and whether Android killing the app loses your work.
+This is the last check before the Play Store. Everything else is checked automatically on every
+build — the maths, the score, and a picture of every screen at small sizes and large text. What is
+left below is what a machine cannot judge: how a drag feels, whether a buzz happens, what a screen
+reader says out loud, what an old or a brand-new phone does to the app, and whether your work
+survives Android closing it.
 
-**You don't need to do these in one sitting, or in order.** Tick what you get to. Anything you don't
-reach stays on the list for next time.
+### The three phones
 
-### ⚠ Installing this version — one last uninstall
-
-Up to v0.3.16 every build we published carried a different signature, which is why Android made you
-uninstall each time, and why your saved homes kept disappearing. **From v0.3.17 onward builds install
-straight over each other and your homes are kept.** Moving *to* v0.3.17 still needs one uninstall,
-because the old signature can't be recovered — that is the last one.
-
-- [ ] **Install v0.3.17 over v0.3.18 when it arrives, without uninstalling.** Draw or scan a home, save
-      it, then install the next build I send. Your homes must still be there. If Android says "App not
-      installed" or you have to uninstall again, tell me — the check that is supposed to prevent it
-      failed.
-
-### How to report a problem so it's quick to fix
-
-Three things, and a screenshot if it's visual:
-
-1. **Which screen** you were on ("the floor-plan builder", "the compass screen").
-2. **What you did** — as literally as you can ("held the bottom-right dot of the kitchen and dragged
-   it left past the living room").
-3. **What happened** vs what you expected.
-
-The most useful sentence you can send is the one that starts *"I tapped X and expected Y, but Z."*
-
----
-
-## A · Moving and resizing rooms by finger
-
-The whole point of the rework — and the part no automated test can reach, because the tests press
-buttons and never actually slide a finger.
-
-- [ ] **A1 · Touch a room and keep sliding.** It should select the moment you touch it and start
-      moving in that *same* motion — no extra tap first. *(v0.2.3)*
-- [ ] **A2 · Pull each corner dot to resize.** The opposite corner should stay exactly where it is,
-      like stretching a picture frame. *(v0.2.3)*
-- [ ] **A3 · Pull one corner past the far corner.** The room should stop at one cell and refuse to
-      turn inside-out. It must never vanish or flip. *(v0.2.3)*
-- [ ] **A4 · Drag a room on top of another.** It should freeze at the last clear spot, the outline
-      should turn red, and lifting should leave it in the clear spot — never stacked. *(v0.2.3)*
-- [ ] **A5 · Touch the middle of a small (1×1) room and drag.** It must **move**, not resize. This
-      was a real bug: the corner dot used to swallow a tiny room's own middle. *(v0.3.8)*
-- [ ] **A6 · Rooms pushed right up against a wall.** Their corner dots should sit *on* the corners,
-      not floated inwards, and should still be grabbable. *(v0.3.7)*
-- [ ] **A7 · Change the plot size, then immediately drag a room.** It should land exactly where your
-      finger is. Rooms used to go off-grid after a resize because the app was still using the old
-      grid. *(v0.3.7)*
-- [ ] **A8 · Rest a second finger on the plan while dragging a room.** Watch whether the page
-      scrolls underneath the drag. Standard Android drag behaviour does this too, so if it isn't
-      noticeable in practice we'll leave it — I just want to know. *(v0.3.10, curiosity)*
-
-## B · Plot size and the front door
-
-- [ ] **B1 · Press "−" on plot size until it stops.** At the smallest size, one more press should
-      give a short **"no" buzz** — the same one you feel dragging a room onto another. It used to do
-      nothing at all, which looked like a broken button. *(v0.3.10)*
-- [ ] **B2 · Fill the plot with rooms, then press "−".** Same "no" buzz — the app refuses rather
-      than squashing your rooms on top of each other. *(v0.3.10)*
-- [ ] **B3 · Draw the plot bigger than your rooms, then set the front door.** The little **D** should
-      sit on the wall of your *house*, not out in the empty space around it. *(v0.3.9)*
-- [ ] **B4 · Move a room so the house gets smaller, with the door already set.** The D should stay
-      stuck to the house's edge, and still be there when you reopen the home. *(v0.3.6)*
-- [ ] **B5 · Tap each of the four walls in the door step, on a plot bigger than your house.** The
-      wall it picks should be the one you aimed at, every time — including when you tap out in the
-      empty space *beyond* a wall. This used to measure to the edges of the drawing area, so a tap
-      just above your house could come back as a *West* door. **This is the important one to try.**
-      *(v0.3.11 — was gap S8)*
-- [ ] **B6 · Your house should be outlined during the door step.** A sage line hugging your rooms, so
-      "tap the wall" points at something you can see. It's the box the app actually scores, so on a
-      home with a gap between rooms it will look larger than the rooms themselves — that's honest, not
-      a glitch, but tell me if it reads oddly. *(v0.3.11)*
-- [ ] **B7 · A one-room-deep home.** Draw a single wide room, one cell tall, then tap just above it
-      and just below it. You should get a north door and a south door respectively — a thin house used
-      to only ever accept a north door. *(v0.3.11)*
-- [ ] **B8 · Select a room that touches a wall, then press the arrow or size key that points into
-      that wall.** Same short "no" buzz as B1. Until now those keys did nothing at all while the plot
-      keys buzzed — the same job on the same screen, answered two different ways. The *decision* is
-      tested; only the buzz needs a finger. *(v0.26.0)*
-- [ ] **B9 · Draw a room, then press the big green button.** It should read "Next — set the front
-      door" and open the door step rather than leaving the screen. Tap a wall: the line under the
-      heading should now say which wall the door is on, and the button should read "Next — mark
-      North". If you press on without tapping a wall, the button says "Skip the door" and the screen
-      says so in words first. *(v0.26.0)*
-
-## C · How it feels (haptics)
-
-Turn phone vibration **on** first — the app deliberately stays silent if you've turned it off.
-
-- [ ] **C1 · Dragging a room:** a soft tick each time the shape jumps a cell. *(v0.2.3)*
-- [ ] **C2 · A refused move or resize:** a firmer "no" buzz. *(v0.2.3)*
-- [ ] **C3 · A room or door landing:** a confirming tap. *(v0.2.3)*
-- [ ] **C4 · Every button, chip and row:** a light tap. *(v0.2.9)*
-- [ ] **C5 · The compass dial — a decision for you.** It currently ticks for **every degree** you
-      turn. The design suggested a firmer click every **15°** instead. Which do you prefer? Either is
-      a one-line change. *(v0.2.9, needs your preference)*
-- [ ] **C6 · Is any of it too much?** If the buzzing is annoying anywhere, say where.
-
-## D · Surviving interruptions
-
-- [ ] **D1 · Rotate the phone mid-edit.** Your selected room, the room you were placing, and the door
-      step should all still be there. *(v0.3.5)*
-- [ ] **D2 · A half-drawn NEW home, then force-stop the app** (Settings → Apps → VastuFirst → Force
-      stop) and reopen. **Expected today: the rooms are gone.** That's the known gap "S3" — I want to
-      know how bad it feels before deciding whether to fix it. *(known gap)*
-- [ ] **D3 · A home you've already scored, force-stopped and reopened.** This one **should** come
-      back exactly as you left it. *(v0.3.1)*
-- [ ] **D4 · Reopen a saved home where you'd left empty space around the rooms.** The plot comes back
-      trimmed to the rooms; your rooms and score are unchanged. That's the known gap "S2" — tell me
-      whether the trimming bothers you. *(known gap)*
-
-## E · Screen reader (TalkBack)
-
-Settings → Accessibility → TalkBack. Worth one pass — it's a paid product and this is the part
-sighted testing never catches.
-
-- [ ] **E1 · Swipe through the floor-plan builder.** Every control should be announced and usable.
-      *(v0.2.3)*
-- [ ] **E2 · The front door should say "front door on the *north* wall"** — the word, not the letter
-      "N". *(v0.3.10)*
-- [ ] **E3 · Place and move a room using only the arrow and size buttons**, no dragging. This is the
-      path someone who can't see the screen relies on. *(v0.2.3)*
-- [ ] **E4 · Set North with the dial or slider via TalkBack.** It should actually change, not just
-      be readable. *(v0.3.3)*
-- [ ] **E5 · The score should be read out as "score 4.7 out of 10"** — the number *and* the scale, in
-      one phrase. Three places say it: the compass screen, the big number on your result, and the
-      picture of your home with its zones. None of them should still say "out of 100", and none
-      should read out a bare number with no scale. *(v0.3.23)*
-
-## F · Quick looks (no interaction needed)
-
-- [ ] **F1 · The corner dots.** Small solid dot with a pale ring. Do they read as "grab me"? The
-      earlier large hollow rings looked clunky. *(v0.2.9)*
-- [ ] **F2 · The compass dial's arrow** points outward from the middle, up when North is at the top.
-      *(v0.2.9)*
-- [ ] **F3 · Fresh install → your list of homes** should be a friendly empty state, not a blank
-      screen. *(v0.2.9)*
-- [ ] **F5 · Scroll the "Add a room" row all the way to the right.** Every kind should be there —
-      Entrance, Corridor, Utility, Bathroom, Guest, Courtyard, Garage, Basement after the familiar
-      eleven — and it should match the list you get when you change a room you've already placed.
-      Tell me if scrolling that far to reach Corridor is annoying enough to change. *(v0.3.24)*
-- [ ] **F4 · Anything that just looks wrong.** A screenshot is enough — I'd rather chase a vague
-      "this looks off" than have you talk yourself out of reporting it.
-
----
-
-## P · The prayer-room ruling  *(new in this build)*
-
-Prayer rooms used to be left out of the score altogether. They now count: the north-east is ideal,
-north and east are fine, and no position is a fault. Three things a phone has to prove.
-
-- [ ] **P1 · You are told your score was recalculated, before it changes.** ⭐ **The one that matters
-      most.** Save a home on the *previous* build, then install this one **without uninstalling** and
-      open your list of homes. A card should be at the top: a heading, a short paragraph explaining
-      the prayer-room decision, and one line per home with its old and new score. Tap "Got it" and it
-      goes away for good. **The number in your list must not have moved until you tapped it.** If a
-      score changed before you read the card — or if the card never appeared — tell me straight away.
-- [ ] **P2 · The card is readable in daylight at a large font size.** Turn the phone's text size up to
-      the biggest setting, then look at that card. Everything should wrap and nothing should be cut
-      off — especially the "Got it" button, which must not need scrolling to reach.
-- [ ] **P3 · The report explains the decision rather than hiding it.** Open the sample home's report
-      and scroll down to "Where the schools disagree". The prayer-room entry should show **both**
-      traditions — the old texts' centre and the modern north-east — *and* a third line saying which
-      one your score uses. If it shows only one reading, that is the thing we most wanted not to lose.
-- [ ] **P4 · A prayer room in the wrong corner is called "not ideal", never a defect.** The sample
-      home's prayer room is in the north-west. It should appear under "Not ideal — worth knowing"
-      with a reason, and should *not* be in the list of things to change.
-
----
-
-## Known gaps this list is deliberately probing
-
-These are already understood; the tests above exist to tell me whether they matter enough to fix
-before 4 August. Full write-ups (with options and costs) are in `docs/UAT-GRID-PLAN-BUILDING.md`.
-
-| | What it is | Test |
+| | Which phone | Why |
 |---|---|---|
-| **S2** | Reopening a home trims the plot to the rooms; the empty margin you drew isn't remembered. Score unaffected. | D4 |
-| **S3** | A brand-new, never-scored home lives only in memory and can be lost if Android reclaims the app. | D2 |
-| ~~**S8**~~ | ~~The door step says "tap the outer wall", but your house's outline is never drawn.~~ **FIXED in v0.3.11** — the house is outlined, and the wall a tap means is now measured from your house, not the drawing area. Please confirm with B5–B7. | B5–B7 |
+| **Small** | A small or cheap Android phone on **Android 8, 9 or 10** | Least memory, so Android closes the app most often; oldest Android the app supports |
+| **Mid** | A mid-range phone on **Android 12, 13 or 14** | What most customers will hold |
+| **16** | A phone on **Android 16**, if you can borrow one | The Play Store now requires the app to be built for Android 16, which changes how the screen edges and the Back gesture behave |
+
+Do every row on all three phones unless it says otherwise. Tick it when it passes on all three. If
+it fails on one, leave it unticked and say which phone.
+
+### Before you start
+
+- Turn phone **vibration on** (the app stays silent if it is off).
+- Have **one PDF of a floor plan** and **one printed plan** you can photograph. A plan that prints the
+  word ENTRANCE (or MAIN DOOR) and one that does not are both useful.
+- Reading a plan needs the internet. Drawing a home by hand does not.
+
+### How to report a problem
+
+Email **contact@vastufirst.com** with:
+
+1. The **row number** (for example "B4") and **which phone** (small, mid or 16).
+2. A **screenshot** of the screen.
+3. One sentence: *"I tapped X and expected Y, but Z."*
+
+A vague "this looks off" with a screenshot is welcome — please don't talk yourself out of sending it.
+
+---
+
+## A · Installing and opening
+
+- [ ] **A1 · ⭐ Install over the last build without uninstalling.** With v0.36.0 on the phone and at
+      least one home saved, install v0.37.0 straight on top. Android must not ask you to uninstall,
+      and every saved home must still be there with the same score. If it refuses, or your homes are
+      gone, stop and tell me. *(v0.37.0)*
+- [ ] **A2 · Open the app from cold.** Swipe it away from your recent apps, then open it. You should
+      see the VastuFirst mark on cream for a moment, then a real screen — your list of homes, or
+      "What brings you here?". Not a blank cream page, and not the mark drawn twice. *(v0.4)*
+- [ ] **A3 · A fresh install starts with a question, not an empty screen.** On a phone that has never
+      had the app, it should open on "What brings you here?" with three choices: "I am buying a
+      home", "I am building a home", "I already live here". Tapping one moves you on at once — there
+      is no separate Continue button. *(v0.35.0)*
+- [ ] **A4 · The icon on your home screen.** The whole square mark sits inside the tile — all four
+      corners — with a band of cream around it. If your phone lets you change icon shape, try two
+      shapes. *(one phone is enough)*
+
+## B · Scanning a plan — the main journey
+
+Start from your list of homes: **"Add a home"**.
+
+- [ ] **B1 · ⭐ The first screen.** "Add your home" asks "Is it a house or a flat?" and "How would you
+      like to add it?", with four cards: "Upload a plan", "Photograph your plan", "Draw it on a
+      grid", "Try a sample plan". *(v0.35.0)*
+- [ ] **B2 · ⭐ The privacy card, first scan only.** Tap "Upload a plan". The very first time, a screen
+      headed "Your plan leaves this phone" appears. The five facts are folded under one line,
+      **"What happens to your plan (5)"** — tap it and all five open (what we send, who reads it,
+      what we ask it, what we keep, who works out your score). The "I agree — read my plan" button
+      should be visible without scrolling, and "Draw it on a grid instead" should be there too. Read
+      it as a customer would: is anything on it something you would rather not promise? *(v0.36.0)*
+- [ ] **B3 · ⭐ The card opens the picker straight away.** After agreeing (and every time after that),
+      "Upload a plan" must open your phone's own file picker immediately — no extra "PDF or photo?"
+      screen in between. Pick your PDF. *(v0.35.0)*
+- [ ] **B4 · Backing out of the picker.** Open the picker and press Back without choosing anything.
+      You should land calmly back on "Add your home". *(v0.35.0)*
+- [ ] **B5 · ⭐ "Photograph your plan" opens the camera.** It must open the camera, not your gallery,
+      and must **not** ask you for camera permission. Photograph a printed plan, keep the shot, and it
+      should be read like a PDF. *(v0.35.0)*
+- [ ] **B6 · The wait.** While reading, the screen says "Reading your plan…" and "This usually takes a
+      few seconds." On a slow read it should change to "Still reading — a detailed plan can take a
+      couple of minutes." and then "Taking a second look at your plan." It must never look frozen.
+- [ ] **B7 · ⭐ "We read N rooms" — with North on the same screen.** For a clear plan the result is
+      headed "We read 11 rooms" (your number). Below it, the rooms are folded under **"Rooms we read
+      (11)"**, and if the reader was unsure of some, that line also says "3 to check". Further down on
+      the **same screen**: "Which way is North?" with the dial over your own photograph. There should
+      be no separate North screen after it. *(v0.35.0)*
+- [ ] **B8 · Correcting a room's kind.** Open "Rooms we read" and tap any room. A list of room types
+      opens under it; pick a different one and the row should update. Rooms marked "CHECK" are the
+      ones the reader was unsure of. Picking the type it already is should just close the list. *(v0.35.0)*
+- [ ] **B9 · ⭐ A plan that prints its entrance goes straight to the report.** With such a plan, the
+      button under North reads "Read my home" (or "Yes — read my home" when the "Is this right?" card
+      is showing). Pressing it should go to "Reading your home…" and then your report — **no
+      front-door screen.** *(v0.35.0)*
+- [ ] **B10 · ⭐ A plan with no printed entrance asks for the door first.** With such a plan the button
+      reads "Next — your front door" (or "Yes — next, your front door"). It should open "Where is your
+      front door?", and only after that the report. *(v0.35.0)*
+- [ ] **B11 · Count the rooms.** For a plan you know well: did the reader get the room **names** right?
+      Is any room missing? A missing room is worse than a wrongly named one — tell me which.
+- [ ] **B12 · A busy plan that can't be placed.** If a plan comes back headed **"We found N rooms"**
+      (not "We read"), the screen must say it read the names but not where they sit. "Place them on
+      the grid" should open the grid headed "These rooms aren't placed yet", with every room named
+      and big enough to grab first time. You only get here with busy or angled pictures.
+- [ ] **B13 · A 3D picture is refused politely.** Upload a 3D marketing picture of a home (the kind on
+      a builder's website). You should get "This looks like a tilted 3D view" with a way to try a
+      different picture or draw instead — never an error or a dead end.
+- [ ] **B14 · When the reader is busy.** If you ever see "We're reading a lot of plans right now", it
+      must say we haven't looked at your plan yet and offer "Try again" and "Draw it on a grid
+      instead". Calm, not an error. *(only if it happens)*
+- [ ] **B15 · Try a sample plan.** "Try a sample plan" should go straight to "Which way is North?" and
+      then the report in two taps. *(one phone is enough)*
+
+## C · Which way is North
+
+- [ ] **C1 · ⭐ The "Is this right?" card.** Turn the dial on any home. A card headed **"Is this
+      right?"** lists sentences like "your front door is on the west side" and "your kitchen is in the
+      south-east". Turn the dial and the sentences should change. **Stand in your own flat: with North
+      set the way your plan's arrow shows, are the sentences true?** If they are ninety degrees out,
+      tell me straight away. *(v0.4)*
+- [ ] **C2 · Three ways to set it.** The dial, the slider and the N, E, S, W buttons should all move
+      the same North, and "North is at" should show the number.
+- [ ] **C3 · The dial on a photo.** On a scanned plan the dial sits over your own photograph and takes
+      the plan's shape. Turning it should feel smooth on the small phone too.
+
+## D · The front door
+
+- [ ] **D1 · ⭐ Drag the E round the outline.** On "Where is your front door?", put your finger on the
+      **E** and drag. It should move with your finger the whole time — no tap first — slide along the
+      wall, and carry on round the corner onto the next wall. Where you let go is where the door is
+      set. *(v0.31.0)*
+- [ ] **D2 · Tap the E.** A small note headed "Your front door" opens, saying which wall it is on.
+      Tap it again (or elsewhere) to close it. *(v0.31.0)*
+- [ ] **D3 · Tap a wall instead.** Tapping another wall should move the door there. *(v0.31.0)*
+- [ ] **D4 · No door at all.** Without placing a door, the button reads "Skip the door — read my
+      home". Press it: the report should say the door was not marked rather than inventing one.
+- [ ] **D5 · Changing the door later.** From a scanned home's report, tap "Change front door". You
+      should be back on your photograph with the E. Move it, press "Done — back to my report", and
+      the score should follow — and you should land on the same report, not a second copy of it.
+
+## E · Your report
+
+Quickest way in: **Add a home → Try a sample plan → Read my home**. For E2 and E3 use a scanned plan.
+
+- [ ] **E1 · ⭐ Read it once, top to bottom, as a customer.** Not hunting bugs — *would you pay for
+      this?* Tell me the first place your attention drops, and the first sentence you had to read
+      twice.
+- [ ] **E2 · ⭐ Tap a room to see its direction on the plan.** Under "Your home, as we read it" the
+      photograph opens with nothing written on it. Tap a room in the list below, or on the photo
+      itself: a short direction — **NE**, **SW**, or **C** for the centre — appears in the middle of
+      that room, and the full name ("North-East", or "North-West · crosses the centre") is in that
+      room's card below. Tap another room and the label moves to it. *(v0.34.0)*
+- [ ] **E3 · Your front door on the photo.** The E should be drawn on the report's photograph too.
+      Tapping it explains it; it does **not** drag here — "Change front door" is how to move it.
+- [ ] **E4 · Change North from the report.** Tap "Change North", turn the dial, press "Back to my
+      report" (or "Yes — back to my report"). The score should change and you should land on the same
+      report.
+- [ ] **E5 · Are the reasons believable to someone who knows Vastu?** Each problem names its
+      direction, the deity and element the tradition gives it, and why that room does not belong
+      there. If any sentence reads as wrong or made up, send me that exact sentence.
+- [ ] **E6 · A prayer room is "Not ideal", never a defect.** The sample home's prayer room is in the
+      north-west. It should carry a "Not ideal" label in "Your rooms" and must not be named under
+      "Start here" as the thing to fix.
+- [ ] **E7 · Both sides of a dispute.** Open **"Where the schools disagree (N)"** at the end of the
+      report. Each entry should show both readings and a line "What your score uses".
+- [ ] **E8 · The four extra questions.** On the report there is a card offering "Tell us about these
+      4" (water tank, sump, a big tree, the road). Answer the water tank with a direction, answer one
+      with "There isn't one", then press "Done — back to my report". The score should move, and
+      "What this covers" should count what you told it.
+- [ ] **E9 · Buying vs building.** Pick "I am buying a home" (or "I already live here") and read the
+      full report: there must be **no** suggestion to move walls, redraw or renovate — remedies only.
+      Only "I am building a home" should show "Change the layout — before it's built".
+- [ ] **E10 · A flat, not a house.** Add a home as "A flat". Where something belongs to the whole
+      building (its main door, its tank), the report should say "This belongs to the whole building,
+      not to your flat" and offer a softening, not a fix.
+- [ ] **E11 · ⭐ The unlock screen says plainly that no payment is taken.** Tap "Unlock the full
+      report". Beside the price it must say "the planned price — not charged in this version", the
+      button must read "Unlock on this device — free", and the line under it must say "No payment is
+      taken in this version". Press it: the full report opens. **If anything on that screen looks
+      like it would charge you, stop and tell me.**
+- [ ] **E12 · The free part is still useful.** Before unlocking, the report should show your score,
+      the front door, the kitchen and the toilets in full, with the rest marked "Reasoning and
+      remedies — in the full report". Does the free part feel like a fair taste or a tease?
+
+## F · Drawing a home by hand
+
+**Add a home → Draw it on a grid.**
+
+- [ ] **F1 · Touch a room and keep sliding.** It should pick up the moment you touch it and move in
+      the same motion — no tap first.
+- [ ] **F2 · Pull each corner dot to resize.** The opposite corner stays put. Pulling past the far
+      corner stops at one square — the room never flips inside-out or vanishes.
+- [ ] **F3 · Drag a room onto another.** It should stop at the last clear spot, "Rooms can’t overlap"
+      should show, and letting go leaves it in the clear spot — never stacked.
+- [ ] **F4 · A tiny room moves, not resizes.** Touch the middle of a 1×1 room and drag. It must move.
+- [ ] **F5 · Add a room — all nineteen kinds.** Scroll the "Add a room" strip to the end: Entrance,
+      Corridor, Utility, Bathroom, Guest, Courtyard, Garage and Basement should all be there after the
+      familiar ones. The strip fades at the right edge while there is more.
+- [ ] **F6 · Change a room's kind.** Tap a placed room, then "Change room type" in the panel below.
+      The colour and name should change and **nothing may move** — not that room, not any other room,
+      not the front door.
+- [ ] **F7 · Plot size.** Under "Plot size", press "−" until it stops: one more press should give a
+      short "no" buzz. Same buzz if your rooms fill the plot and you press "−".
+- [ ] **F8 · ⭐ The front-door step.** With rooms placed, the big button reads "Next — set the front
+      door". It opens "Mark your front door", with your home outlined. Tap a wall: the line should
+      change to "Your front door is on the north wall. Drag the E to any wall to move it." (your
+      wall), and the button should read "Next — mark North". Without a door it reads "Skip the door —
+      mark North". *(v0.26.0, E since v0.31.0)*
+- [ ] **F9 · The wall you aimed at.** On a plot bigger than your house, tap just outside each of the
+      four walls. The door should land on the wall you meant, every time. Try a one-room-deep house
+      too: above it gives a north door, below it a south door.
+- [ ] **F10 · Drag the E on the grid.** Once placed, drag the E round the outline. It should follow
+      your finger onto any wall. *(v0.31.0)*
+- [ ] **F11 · Leave a corner empty.** Leave one corner of the plot with no room. A card asks "Is this
+      part of your home?" with that corner marked. "No — my home is cut off there" should cross it
+      out and the score should go **down**; "Yes — it's part of my home" changes nothing and stops
+      asking; "Start the shape again" puts it back.
+- [ ] **F12 · A gap in the middle.** An empty square surrounded by rooms should not be offered for
+      cutting — the card should say "There's an empty space inside your home" and suggest a Courtyard.
+- [ ] **F13 · A room near a line.** Select a room near a boundary. The line under its name should read
+      like "2 × 2 · North-West, close to North". Helpful, or noise?
+
+## G · How it feels (buzzes)
+
+- [ ] **G1 · Dragging a room:** a soft tick each time it jumps a square.
+- [ ] **G2 · A refused move, resize or plot press:** a firmer "no" buzz. Also when a room touches a
+      wall and you press the arrow or size key pointing into that wall.
+- [ ] **G3 · A room or door landing:** a confirming tap.
+- [ ] **G4 · Every button, chip and row:** a light tap.
+- [ ] **G5 · The North dial — a decision for you.** It ticks for **every degree** you turn. The
+      alternative is a firmer click every 15°. Which do you prefer? *(needs your preference)*
+- [ ] **G6 · Too much anywhere?** If the buzzing is annoying anywhere, say where.
+
+## H · Surviving interruptions
+
+- [ ] **H1 · ⭐⭐ A half-drawn home survives an hour.** Start a new home on the grid, place three or four
+      rooms, press Home, and leave the phone for an hour — or open a dozen other apps to push it out.
+      Come back to VastuFirst. Either you are exactly where you were, or you land on your rooms with a
+      card **"Carrying on with your unfinished home"** and a "Start this home again" button. **An
+      empty grid is the bug.** The small phone is the one most likely to show it.
+- [ ] **H2 · Force-stopping keeps it too.** Place a few rooms, then Settings → Apps → VastuFirst →
+      Force stop, and reopen. Your list of homes should show a **"Still to finish"** group with a row
+      like "3 rooms so far · today". "Carry on" should bring the rooms back.
+- [ ] **H3 · Starting fresh is really fresh.** With a home still to finish, tap "Add a home" → "Draw it
+      on a grid". You must get an **empty** grid, not the half-finished one.
+- [ ] **H4 · Throwing one away asks first.** The ✕ on a "Still to finish" row must ask "Throw away
+      this unfinished home?" and say how many rooms you will lose. "Keep it" leaves it alone.
+- [ ] **H5 · The camera on the small phone.** On the small phone, "Photograph your plan", take the
+      shot and keep it. Android often closes the app while the camera is open. You should still go on
+      to "Reading your plan…" — not back to the start with the photo lost.
+- [ ] **H6 · Rotate mid-edit.** Turn the phone sideways while placing a room, with the room-type list
+      open, and on the door step. Everything should still be there.
+- [ ] **H7 · Leaving mid-scan.** While "Reading your plan…" is showing, switch to another app for a
+      minute and come back. Tell me where you land and whether it annoyed you.
+
+## I · The Android 16 phone
+
+These rows need the **16** phone. If you can't borrow one, skip this section and say so.
+
+- [ ] **I1 · ⭐ Nothing under the status bar or the gesture bar.** Walk through the whole journey (list
+      of homes, Add your home, the privacy card, the scan result, the door screen, the report,
+      Settings). Every heading and every ‹ back arrow must sit **below** the clock and battery, and
+      every bottom button must sit **above** the gesture bar or navigation buttons — nothing cut off or
+      hidden underneath. Repeat with the phone sideways: nothing hidden under the camera hole. *(v0.37.0)*
+- [ ] **I2 · Readable clock and battery.** On the cream screens the clock and battery icons should be
+      dark, and readable. Try with the phone in dark mode too. *(v0.37.0)*
+- [ ] **I3 · ⭐ The Back gesture shows where it goes.** Swipe in slowly from the left edge on any
+      screen and hold: you should see a preview of where Back will take you. Let go and it goes back
+      one step; change your mind and slide back, and nothing happens. On your list of homes, Back
+      should leave the app to the phone's home screen. *(v0.37.0)*
+- [ ] **I4 · ⭐ Back cancels a North change.** On a report, tap "Change North", turn the dial a long
+      way, then use the **Back gesture** instead of the button. The report's North and score must be
+      exactly as they were before. *(v0.37.0)*
+- [ ] **I5 · The keyboard doesn't cover the box.** On your list of homes tap ✎ on a home ("Rename this
+      home"). The "Home name" box, "Cancel" and "Save" must all stay visible above the keyboard.
+      *(v0.37.0)*
+- [ ] **I6 · Themed icon.** Turn on themed icons in your home-screen settings. The mark should take the
+      wallpaper's colour and still be whole. *(Android 13 or newer)*
+
+## J · Privacy and your data
+
+- [ ] **J1 · ⭐ Backups are off: a reinstall brings nothing back.** Save two homes. Uninstall the app,
+      then install it again. **No homes may come back**, and your first scan must ask you to agree
+      again ("Your plan leaves this phone"). Do this properly once the app is on Google Play (a
+      private test track counts): install from the Play Store, save homes, uninstall, reinstall from
+      the Play Store. Until then, the APK version of this test is still worth doing. *(v0.37.0)*
+- [ ] **J2 · Backups are off: a new phone gets no homes.** *(Only if you are setting up a new phone
+      anyway.)* When you copy your old phone onto a new one, VastuFirst may come across, but it must
+      open with **no saved homes**. *(v0.37.0)*
+- [ ] **J3 · Turning plan reading off.** Settings → "Reading uploaded plans online" (it shows
+      "Allowed"). Tap it so it reads "Off", then Add a home → Upload a plan: it must ask you to agree
+      again before it will read anything.
+- [ ] **J4 · The privacy page.** Settings → Privacy. Read it as a customer would. It promises your
+      homes are saved only on this phone — is there anything on it you would rather not promise?
+- [ ] **J5 · Delete everything.** Settings → "Delete all my data". It asks "Delete all your data?";
+      "Keep my data" changes nothing, "Delete everything" removes every home. *(Do this last.)*
+- [ ] **J6 · Crash reporting.** Only checkable if it happens: if the app ever closes by itself, reopen
+      it and go to Settings. A "Something went wrong" section should offer "Send what went wrong",
+      which opens an email to us that you can read before sending. Please do send it.
+
+## K · Screen reader (TalkBack)
+
+Settings → Accessibility → TalkBack. One pass on one phone is enough.
+
+- [ ] **K1 · The score says its scale.** On the report, the big number should be read as "Score 4.7
+      out of 10" — number and scale in one phrase.
+- [ ] **K2 · The front door says the word.** On the grid it should be read as "Front door on the
+      north wall" — the word, not a letter.
+- [ ] **K3 · A room's direction on the photo.** On a scanned report, tap a room: the plan should be
+      read as "Your plan. Kitchen is in the South-East." (your room and direction).
+- [ ] **K4 · Place and move a room with buttons only.** On the grid, use "Move up", "Move left" and
+      the size buttons — no dragging. This is the path for someone who cannot see the screen.
+- [ ] **K5 · Set North by TalkBack.** The dial and the slider should actually change North, not just
+      be read out.
+- [ ] **K6 · Swipe through every screen of one scan.** Every control should be announced and usable,
+      including the folded "What happens to your plan (5)" and "Rooms we read" lines.
+
+## L · Big text and daylight
+
+- [ ] **L1 · ⭐ Largest text.** Turn the phone's font size and display size right up and walk one scan
+      and one hand-drawn home through to the report. Nothing cut off mid-word, no button you cannot
+      reach.
+- [ ] **L2 · Daylight.** Take the phone outside and read the report and the "Is this right?" card at
+      your usual brightness. Is the small grey writing readable?
+
+## M · Anything else
+
+- [ ] **M1 · Anything that just looks wrong.** A screenshot is enough.
+
+---
+
+## Known, not chased in this build
+
+- **Reopening a home you drew by hand trims the empty plot around your rooms.** The margin you drew is
+  not remembered; your rooms and score are unchanged. Tell me if it bothers you.
+- **On a scanned report, the direction label sits over the room's printed name** while that room is
+  picked. Where it should sit is still being decided.
 
 ## Settled
 
 Nothing yet — this section fills up as you report results, so we never re-test something twice or
 lose a verdict.
-
-## I · Room shapes matching the plan  *(new in this build)*
-
-Where your plan prints a room's size beside its name, the app now shapes the room to that size
-instead of to the AI's guess.
-
-- [ ] **I1 — ⭐ Re-scan your Gurgaon plan.** The lobby and the kitchen should now come out **taller
-      than wide**, matching how the plan draws them. Before this build they were flat wide bars.
-- [ ] **I2 — Relative sizes.** The biggest room on the plan should now be the biggest on the grid, and
-      a small toilet should look small. Previously a toilet could be drawn as wide as a kitchen.
-- [ ] **I3 — A plan with no sizes printed on it.** Should look exactly as it did before — this only
-      does anything where the plan actually prints the numbers.
-- [ ] **I4 — Rooms marked "CHECK".** Where a room's true shape won't fit where the AI placed it, the
-      app keeps the room and marks it rather than dropping it. Does that read as helpful or confusing?
-- [ ] **I5 — Millimetre plans.** Many plans print sizes like "2950X4200" rather than feet and inches.
-      If you have one, check those rooms are shaped sensibly too.
-
-## H · Changing what kind of room something is  *(new in this build)*
-
-The app reads room names off your plan well, but not perfectly — and until this build there was no
-way to tell it that it got one wrong. Now you can. Two places, and both are worth trying.
-
-- [ ] **H1 — ⭐ On the list right after a scan.** Scan a plan, then tap any room in the list. It should
-      open a set of room types underneath it; pick a different one and the row should update. Is
-      tapping the row obvious enough, or did you have to hunt for it? The word "Change" sits on the
-      right of each row.
-- [ ] **H2 — ⭐ On the plan itself.** Tap a room on the grid, then use "Change room type" in the panel
-      that appears. The room's colour and name on the plan should change, and nothing should move.
-- [ ] **H3 — Nothing else may move.** This is the one to be fussy about. After changing a room's kind,
-      the room must stay exactly where it was and the same size, every other room must be untouched,
-      and the little **D** for your front door must stay put. If anything shifts, tell me — that would
-      be a real bug and the automated checks say it cannot happen.
-- [ ] **H4 — The score should change.** Change a room to something quite different (a corridor to a
-      living room, a bedroom to a master bedroom) and carry on to the score. The number should move.
-      If it does not, something is not reaching the score and I need to know.
-- [ ] **H5 — Backing out.** Open the list of room types and pick the one it already is. It should just
-      close and change nothing — that is the way out if you opened it by accident.
-- [ ] **H6 — ⭐ The rooms that were previously impossible.** Try setting a room to **Entrance**,
-      **Corridor**, **Utility**, **Bathroom**, **Guest**, **Courtyard**, **Garage** or **Basement**.
-      These eight were never in the "add a room" list, so before this build a room read as one of them
-      could be deleted but never put back. They should all be there now.
-- [ ] **H7 — Is the list too long?** There are nineteen kinds, and they wrap over several lines. On
-      your phone, is that fine, or does it feel like too much? I can group or shorten it.
-- [ ] **H8 — With big text.** If you use a large font size on your phone, check the list of types
-      still fits and nothing is cut off.
-- [ ] **H9 — Rotating mid-change.** Open the list of room types, then rotate the phone. It should still
-      be open, on the same room.
-
-## G · Scan your plan
-
-> ⚠ **Everything below changed in v0.3.16.** Up to and including v0.3.15 the app did
-> **not** read your picture at all — it replayed four readings recorded on 29 July, and three of those
-> four were the same test plan, which is why every upload looked identical. **From v0.3.16 it really
-> reads the plan you choose.** Any row you already ticked against v0.3.14 or v0.3.15 was testing the
-> wording, not the reading, and G3/G4/G8 in particular are worth doing again.
-
-Tap **Add your home → Upload a plan**. The first time, you'll get a screen explaining that the plan
-leaves the phone, and you have to agree before anything is sent.
-
-⚠ **Two plans a minute is the limit** on the free reading allowance. A third one straight away will
-politely ask you to wait about a minute, and that is expected, not a fault. Spacing them out avoids
-it entirely.
-
-- [ ] **G1 — Picking a file.** "Choose a PDF or picture" opens the file browser; "Take a photo
-      instead" opens the photo picker. Neither should ask permission for your gallery.
-- [ ] **G2 — A real PDF opens.** Pick an actual PDF of a floor plan. It should get as far as
-      "Reading your plan…" rather than "We couldn't open that file". The PDF page is rendered on your
-      phone before anything is sent.
-- [ ] **G3 — "We read N rooms" (rooms placed).** On a straightforward single-home plan, tap through
-      to the grid: the rooms should be sitting there, roughly in the shape of a home.
-- [ ] **G4 — ⭐ "We found N rooms" (rooms NOT placed).** This is the one to judge hardest, because it
-      is what busy plans will do. The rooms arrive as a row of small single squares in the corner, and
-      you drag each into place. **Is that genuinely easier than starting from an empty grid, or would
-      you rather it just showed you the list and let you draw?** Your call — it is the main open
-      question in this feature.
-- [ ] **G5 — The refusal wording.** Now reachable for real: upload a 3D marketing picture of a house
-      (the kind on a builder's website). Does "That looks like a 3D picture — please upload the flat,
-      top-down plan" say enough for someone to know what to do?
-- [ ] **G6 — Is the promise honest?** The whole screen deliberately promises only that we read the
-      room *names*, never that we know where the rooms are. Does that read as useful, or as
-      underselling? We can say more only if we can back it up.
-- [ ] **G7 — Leaving mid-scan.** Start a scan, switch to another app, come back. It's expected to
-      return to the beginning rather than resume; tell me if that's annoying in practice.
-
-- [ ] **G8 — ⭐ Room-name translations.** Whichever plan you scan, check the names it read against what
-      the plan actually prints. We rename some on purpose: SIT-OUT becomes "Balcony", LOUNGE becomes
-      "Living", STUDY-ROOM becomes "Study", a servant's room becomes a bedroom. Dressing areas, ducts
-      and lifts are dropped on purpose and listed under "we also saw". Are any of those wrong for how
-      your customers talk?
-- [ ] **G15 — "Lobby", both ways round.** This one now depends on the rest of the plan. On a plan that
-      names no living room, a lobby is read as the **living room** (your Gurgaon plan). On a plan that
-      already has a living room, a lobby stays a **corridor**, because there it really is a passage.
-      Either way it is marked "CHECK" for you. Try one of each if you have them, and tell me if the
-      rule ever picks wrong.
-
-### Rows that only exist now the reading is real (v0.3.16)
-
-- [ ] **G9 — ⭐⭐ Different plans give different answers.** The whole point of this build. Scan two
-      genuinely different plans, a minute apart. The room list must match each plan — a 3-bedroom
-      should not come back looking like a 2-bedroom. **If two different plans ever give the identical
-      list again, stop and tell me: that is the old fault, not a new one.**
-- [ ] **G10 — Your own plan, honestly judged.** Scan a plan you know well. Two questions, and both
-      answers are useful: did it get the room *names* right, and if it placed them on the grid, were
-      they roughly in the right places? Names being right while positions are wrong is the expected
-      result on busy plans — I want to know how often it happens on *your* plans.
-- [ ] **G11 — The privacy screen.** It appears before the first scan only. Read it as a customer
-      would: does it say enough, plainly enough? Is anything on it something you would rather not
-      promise?
-- [ ] **G12 — Turning it off.** Settings now has "Reading uploaded plans online". Tap it to switch it
-      off, then go back to Add home → Upload a plan: it must ask you to agree again before it will
-      scan. (This is a legal requirement, so it matters that it actually works.)
-- [ ] **G13 — Scanning three in a row.** Do three scans quickly on purpose. The third should say
-      something calm about waiting a minute, with the option to draw instead — never an error, never a
-      dead end.
-- [ ] **G14 — A photo taken at an angle.** Photograph a printed plan deliberately tilted. It should
-      still read the room names; it will probably hand them to you unplaced. Confirm it doesn't
-      pretend to know where they go.
-
-## J · The plan filling the drawing area, and room names  *(new in this build)*
-
-Two things you reported, and one you asked me to make production-grade.
-
-- [ ] **J1 — ⭐ Re-scan the Green Court 2BHK.** Your home should now fill the drawing area instead of
-      sitting in one corner at about half size. The empty margin on the left should be gone.
-- [ ] **J2 — ⭐ Small rooms keep their names.** The narrow toilet should now show the word "Toilet"
-      running down the room, the way a printed plan labels a narrow space. Does that read naturally
-      to you, or does it look odd on a phone?
-- [ ] **J3 — Nothing lost.** Count the rooms on your plan against the rooms on the grid. Small rooms
-      used to disappear silently when they were drawn too small; that should now be impossible.
-- [ ] **J4 — The tag no longer covers the top row.** Tap a room: the little dark label with the room
-      name and direction should NOT appear over the plan any more. It only shows while your finger is
-      actually moving a room, and it jumps to the bottom if you are dragging something in the top row.
-      Is the information still there when you want it?
-- [ ] **J5 — Faint text.** The small grey lettering (NORTH/WEST/SOUTH/EAST, MOVE, SIZE) and the arrow
-      buttons should be a little easier to read. Check in daylight and at your usual brightness.
-- [ ] **J6 — Very large text.** If you use a big font size, check room names still fit or drop out
-      cleanly rather than being cut off mid-word.
-- [ ] **J7 — A plan with no printed sizes.** Should behave as before; this build only changes how big
-      the home is drawn, not how the rooms are read.
-
----
-
-# ⭐⭐ v0.5.0 — READ THE REPORT. That is the whole test.
-
-This build changed one thing: what the ₹699 report actually says. No screenshot check can tell us
-whether it reads well to a person, so this section is a reading job rather than a tapping job.
-
-**How to get there in one minute:** open the app → **Try a sample home** → the score screen → **See
-the full report**. The unlock is one tap and free in this build, so nothing is behind a wall.
-
-- [ ] **R1 — ⭐⭐ Read the whole report top to bottom, once, as a customer.** Not looking for bugs —
-      just: *would you pay ₹699 for this?* Tell me the first place your attention drops, and the first
-      sentence you would have to read twice. Those two answers are worth more than everything below.
-- [ ] **R2 — ⭐⭐ Are the reasons believable to somebody who knows Vastu?** Every problem now explains
-      which direction it is about, which deity and element the tradition gives that direction, and why
-      a room of that kind does not belong there. **If any one of them reads as wrong, or as made up,
-      tell me the exact sentence** — that is the one thing in this build that would damage trust, and
-      every line is one edit away from being changed.
-- [ ] **R3 — ⭐ The "not ideal" section — is it clear these are not faults?** This is the section that
-      did not exist at all before. It says plainly that nothing in it is a defect, but they do count
-      towards the score. Does that land, or does it read as a second list of problems?
-- [ ] **R4 — Does the front-door section make sense?** It names one of 32 traditional door positions
-      and what the tradition attaches to it. Is that interesting, or is it a paragraph you skipped?
-- [ ] **R5 — Is the report too long to read on a phone?** It is now much longer than it was, on
-      purpose. Scroll it on your own phone: does it feel like a document worth paying for, or like a
-      wall of text? If it needs breaking up, now is the time to say so.
-- [ ] **R6 — At the size you actually read at.** If you use large text on your phone, or if your
-      client will, check nothing is cut off and no line runs off the side. Machine checks cover this,
-      but they cannot tell whether it is comfortable to read in daylight.
-- [ ] **R7 — Does the free screen promise what the report delivers?** On the score screen, the unlock
-      card lists what you get, with real numbers off that home. Open the report and check each line is
-      really there. If it promises something the report does not have, that is a serious one.
-
----
-
-# ⭐ v0.4.1 — the checks that actually matter before you hand this over
-
-Everything below is something only a real phone can settle. The three marked ⭐⭐ are the ones I would
-not hand over without; the rest are worth ten minutes if you have them.
-
-## K · The three that matter most
-
-- [ ] **K1 — ⭐⭐ Does the compass point the right way in your actual flat?** Open a home, go to
-      "Which way is North?", tap **Use my phone's compass**. Hold the phone flat and turn until its
-      top edge points the same way as the top of your drawing. Press **Set North from this**. Now look
-      at the card above the button: it will say something like "your front door is on the west side,
-      and your kitchen is in the south-east". **Is that actually true of your flat?** If it is, the
-      compass is right. If it is ninety degrees out, tell me immediately — that is the one thing in
-      this build that would put confident wrong directions on every room.
-      *(Stand away from a fridge, a steel almirah or a laptop; they bend any phone compass.)*
-- [ ] **K2 — ⭐⭐ Does a half-drawn home survive?** Start a new home, place three or four rooms, then
-      press Home and leave the phone alone for an hour — or open a dozen other apps to push it out of
-      memory. Come back. You should land on your rooms, with a card at the top saying "We kept the
-      home you were drawing" and a button to start again. **If the grid is empty, that is the bug this
-      build exists to fix and I need to know.**
-- [ ] **K3 — ⭐⭐ Does this build install straight over the last one?** Install v0.4.1 on top of
-      v0.3.24 **without uninstalling**. Every home you had saved must still be there, with the same
-      scores. If Android refuses to install, or your homes are gone, stop and tell me.
-
-## L · The L-shaped home — the big accuracy change
-
-- [ ] **L1 — Leave a corner empty.** Draw a home but leave one corner of the grid with no room on it.
-      A card should appear under the plan: "Is this part of your home?", with that corner marked on
-      the plan. Is it obvious which part it is pointing at?
-- [ ] **L2 — Say no.** Press "No — my home is cut off there". The corner should be crossed out and the
-      home's real outline drawn as an L, and the card should say which direction it is cut off in.
-      Then look at the score: it should have gone **down**, and the report should now mention a
-      missing corner. *(That drop is the point — the old score was too generous.)*
-- [ ] **L3 — Say yes.** On another home, press "Yes — it's part of my home". Nothing should change at
-      all, and it should stop asking.
-- [ ] **L4 — Change your mind.** After cutting a corner, press "Start the shape again". The home should
-      go back to a full rectangle and ask again.
-- [ ] **L5 — A gap in the middle.** Leave an empty square surrounded by rooms on all four sides. It
-      should NOT offer to cut it out; it should say it's inside your home and suggest adding a
-      Courtyard. Does that read sensibly?
-- [ ] **L6 — Does it get in the way?** Draw a normal, gap-free home. You should see only a quiet grey
-      line about treating it as a rectangle — no card, no interruption. Tell me if it nags.
-
-## M · The rest
-
-- [ ] **M1 — The double-check on North.** Even without using the compass, the card above "Read my home"
-      should describe where your door and rooms ended up. Is it worded in a way you'd trust?
-- [ ] **M2 — A few more things.** From the score screen, press "Answer a few more and check more".
-      Answer the water-tank question with a direction and go back. The score should change and the
-      "What this covers" line should now count what you told it. Are the four questions clear?
-- [ ] **M3 — "There isn't one".** Answer one of them with "There isn't one". That should count as
-      answered, not skipped.
-- [ ] **M4 — A room on the line.** Select a room sitting near a boundary between two directions. Its
-      line under the name should read something like "2 × 2 · North-West, close to North". Does that
-      help, or is it noise?
-- [ ] **M5 — The unlock screen.** Open it. It must say plainly that **no payment is taken** and the
-      button must say "free". ⚠ **If anything on that screen looks like it would charge you, stop and
-      tell me** — that is the one thing this build must never do.
-- [ ] **M6 — Privacy.** Settings → Privacy. Read it as a customer would. Is anything on it something
-      you would rather not promise?
-- [ ] **M7 — Delete everything still works.** Settings → Delete all my data. Confirm your homes go.
-      *(Do this last, obviously.)*
-- [ ] **M8 — Big text.** Turn your phone's font size right up and walk the whole flow. Nothing should
-      be cut off mid-word or unreachable.
-- [ ] **M9 — In daylight.** Take the phone outside and read the score screen and the shape card at
-      your usual brightness.
-
-## N · Only if you have the patience
-
-- [ ] **N1 — Crash reporting.** There is no way to force a crash on purpose, so this is only checkable
-      if one happens. If the app ever closes by itself, open it again, go to Settings, and there
-      should be a "Something went wrong" section offering to email me what happened. Please do send it.
-
-### Known, not chased in this build
-
-- **At the very largest text size, a long home name on your list of homes is cut short with "…".**
-  Pre-existing, on the saved-homes list only, and it affects no score and no report. Fixing it means
-  changing the row that every list in the app uses, which is not a change to make in the same build
-  as a Vastu ruling. Tell me if it bothers you on your own phone and it goes to the top of the list.
-
-## Q · Scanning a real plan  *(new in this build)*
-
-Photographing or uploading a builder's plan used to come back as a scatter of small boxes with empty
-squares between all of them, and then ask whether your home was "cut off" somewhere it plainly is not.
-
-- [ ] **Q1 · ⭐ Scan the same plan you sent me and look at the room layout.** Rooms that share a wall
-      on your sheet should now sit against each other — the master bedroom's right edge touching the
-      second bedroom, the master toilet directly under the master bedroom, the kitchen under the
-      living room. If any two rooms that touch on paper still have a gap between them, send me a
-      screenshot; that is the whole point of this build.
-- [ ] **Q2 · The "is this part of your home?" question should now only point at a real corner.** Your
-      flat genuinely is not a rectangle — it has empty space at the top-right and below the two
-      toilets — so expect to be asked two or three times, and each time it should be pointing at a
-      corner you recognise as not yours. If it ever points at space *between* two rooms, that is a
-      bug and I want to know.
-- [ ] **Q3 · Room shapes against the sheet.** Where your plan prints a size (for example the kitchen
-      at 11'0" x 7'0"), the drawn room should run the same way round — wider than deep, or deeper
-      than wide. Tell me any room that comes out turned the wrong way.
-
-### Q · continued  *(new 2 August — the second flat, the one that came back as a row of squares)*
-
-- [ ] **Q4 · ⭐ Scan the 3-bedroom flat again — the one that gave you thirteen identical squares.**
-      It should now arrive as a recognisable home: the two bedrooms and a balcony along the top, the
-      living-and-dining running **wide** across the middle, the master bedroom at the bottom, the
-      kitchen and utility down the right. If you get a row of equal squares again, stop and send me a
-      screenshot — that is the exact thing this build is for.
-- [ ] **Q5 · Count your balconies.** That flat has three. All three should be there. One of them was
-      being deleted before you ever saw the plan, so this is a specific thing to count rather than
-      glance at.
-- [ ] **Q6 · Check the room sizes we read.** On the confirmation screen before the grid, each room
-      should show the size **printed on your sheet**. Spot-check three against the paper. If a size is
-      wrong or missing on a room that clearly prints one, tell me which room.
-- [ ] **Q7 · The living-and-dining must be wider than it is deep.** Your sheet prints it 7.25 m x
-      4.30 m. If it is drawn taller than it is wide, it is sitting in the wrong direction and the
-      score is wrong — tell me.
-- [ ] **Q8 · If a plan ever DOES come back unplaced, the screen must admit it.** Try a busy sheet —
-      a whole floor of a building, or a plan with a lift on it. The heading should say the rooms are
-      **not placed yet** and ask you to drag them, and it must **not** ask you anything about your
-      home's shape until you have moved them. A row of squares under the heading "Place your rooms"
-      is the bug.
-- [ ] **Q10 · On the "not placed yet" screen, can you READ every tile, and can you GRAB it?** Each
-      parked room should show its name — Living, Kitchen, Master, Balcony — and each should be big
-      enough to press and drag first time. They used to be about three-quarters the size a finger
-      needs. If any tile is a blank square, or you find yourself missing it and having to try again,
-      tell me which.
-- [ ] **Q9 · A plan that prints no room sizes should still behave.** Some plans just print names. That
-      should still work — the rooms arrive, possibly unplaced, and nothing invented. If you see sizes
-      on screen that are not on the paper, that is the worst possible bug and I want it immediately.
-
-### Q · continued  *(new in this build — the toilets come back)*
-
-- [ ] **Q11 · ⭐ Scan the 3-bedroom flat and count the toilets. There must be THREE.** Your attached
-      master toilet was being deleted before you ever saw the plan — it only appeared in a small
-      "we also saw" note. It now arrives as a room on the grid. Expect it in the wrong place (the
-      reading puts it near the living room, not against the west wall where your sheet has it) and
-      marked for checking — wrong place is fine, missing is the bug.
-- [ ] **Q12 · Nothing from that sheet should be reported as left out any more.** The screen before
-      the grid used to list rooms we "also saw" but did not place. For your flat that list should
-      now be empty — every named space either becomes a room or is a dressing area, which is part of
-      its bedroom. If any room is listed as left out, tell me which.
-- [ ] **Q13 · ⚠ The living-and-dining now comes out SQUARE, not wide.** Honest change from the last
-      build: bringing your master toilet back costs the living room one column, because the reading
-      put the toilet inside the living room's area and we never move a room you haven't seen. Square
-      is acceptable — drawn TALLER than wide is still the bug to report. After you drag the toilet
-      to the west wall, stretching the living room wide takes one pull.
-
-### Q · continued  *(new in this build — the home fills its box)*
-
-- [ ] **Q14 · ⭐ Scan the 3-bedroom flat again and look at the WEST edge (left side).** Last build
-      the whole home sat one square in from the left, with a dead empty strip down that side — your
-      first bedroom, both left-hand toilets and the master bedroom all belong against that edge.
-      Now the rooms should reach it. If there is still a full empty strip down any side of the
-      grid, send a screenshot — that exact strip is what this build removes.
-- [ ] **Q15 · ⭐ The living-and-dining should now be WIDER than it is deep.** Your sheet prints it
-      7.25 m x 4.30 m. The last two builds drew it square and we called that an accepted trade; it
-      was actually our drawing bug, now fixed. Square or taller-than-wide is a bug again — report it.
-- [ ] **Q16 · Your first bedroom should be deeper than it is wide** (the sheet prints 3.72 x 4.50).
-      It was drawn square before. Small rooms are still allowed to be a single square.
-- [ ] **Q17 · ⚠ The kitchen may arrive SMALL — one square — in the right place.** The reading crams
-      your kitchen's corner of the flat, and we never move or inflate a room you haven't seen. It
-      is marked for checking; one drag on its corner fixes it. Missing would be a bug; small is the
-      honest reading.
-- [ ] **Q18 · The 2-bedroom plan you scanned (the green builder page): expect it imperfect, and
-      tell me only if it got WORSE.** On that copy of the sheet, most of the mess comes from the
-      reading step being confused by the page's logo and margins, not from the drawing rules — the
-      same flat read from a plain copy draws almost exactly like the paper. A cleaner photo or crop
-      of just the plan should read noticeably better; if you get a chance, try that once.
-
-### Q · continued  *(new in this build — the balcony, the walls, and the grid size)*
-
-- [ ] **Q19 · ⭐ Scan the small 1-bedroom plan again (the page you rejected). The balcony must no
-      longer tower.** The sheet prints the balcony as a strip 1.8 metres deep, and the app now
-      reads that number: expect a shallow band across the top, visibly flatter than the bedroom.
-      If the balcony is still the biggest thing on the grid, send a screenshot — that is the exact
-      bug this build removes.
-- [ ] **Q20 · ⭐ Same scan: the bedroom, lobby and passage should sit against the RIGHT edge**, the
-      way your sheet has them, with the kitchen on the left and the spare space in the middle.
-      "Everything clumped to the left" is the bug to report. (On the branded page the reading
-      itself still scrambles the arrangement — for that page, expect imperfect, and a clean crop
-      of just the plan reads better, as before.)
-- [ ] **Q21 · ⭐ The grid should be smaller — little or no scrolling on the small flat.** Empty
-      rows and columns outside the home are now deleted, so a 336 sq ft flat no longer arrives on
-      a villa-sized grid. A full empty strip along any edge of the grid is a bug: screenshot it.
-- [ ] **Q22 · The 2-bedroom plan (green builder page, clean copy): the balcony should now be a
-      slim one-row strip** — its printed 1.5 metres — instead of the fat band you saw. Everything
-      else on that scan should look the same as before.
-- [ ] **Q23 · Your own 3-bedroom flat should look EXACTLY as it did in the last build.** Same
-      grid, same rooms, same shapes — this build changes none of it. If anything on that scan
-      moved, tell me; nothing should have.
-
-## R · The five things you asked for  *(new in this build)*
-
-Nothing about how a scanned plan is DRAWN changed in this build — Q14 to Q23 should all still behave
-exactly as they did. Everything below is about getting around the app.
-
-- [ ] **R1 · ⭐⭐ Start a plan, leave it half done, and check it does not follow you around.** Scan or
-      draw a home, place a few rooms, then press Back until you reach your list of homes. Now tap
-      "Add a home" and choose "Draw it on a grid". **You must get an empty grid.** Before this build
-      you got the half-finished home back, without being asked, every time. Try the same with
-      "Upload a plan" — also empty.
-- [ ] **R2 · ⭐⭐ And check it is not lost either.** On your list of homes, above the finished ones,
-      there should be a group headed "Still to finish", with a row saying how many rooms you had
-      placed and when. Tap it: your half-finished home comes back exactly as you left it, with a
-      note at the top confirming that is what happened and a button to clear it and start again.
-- [ ] **R3 · Throwing one away asks first.** On that "still to finish" row there is a small ✕ at the
-      right. Tapping it must ask before deleting, and must tell you how many rooms you are about to
-      lose. "Keep it" must leave it exactly where it was.
-- [ ] **R4 · If you had a half-finished home in the last build, it should be in that list.** Nothing
-      you have already drawn is thrown away by this update — it just moves from "restored at you" to
-      "offered to you".
-- [ ] **R5 · ⭐⭐ "Take a photo of it now" must open the CAMERA.** On the upload screen, that second
-      button opened your gallery before — the same place as the button above it — so there was no way
-      to photograph a printed plan from inside the app. It should now open your camera; take a
-      picture of a plan and it should be read like any other. It must NOT ask you for a camera
-      permission. If you back out of the camera without keeping the picture, you should land calmly
-      back on the upload screen.
-- [ ] **R6 · ⭐⭐ Open a home you saved earlier and look under the coloured plan picture.** There
-      should be two new buttons: "Change the rooms or the front door" and "Change which way North
-      is". Both were missing entirely — renaming was the only thing you could do to a saved home.
-      Change North on a saved home, press "Read my home", and check the score changes and that you
-      land back on that home rather than on a second copy of the same screen.
-- [ ] **R7 · ⭐ Buying comes first.** On the first screen, "I am buying a home" should be the top
-      choice and "I am building a home" the second.
-- [ ] **R8 · ⭐⭐ Pick "I am buying a home", go through to the full report, and read it.** There must
-      be NO suggestion anywhere to change the layout, move a wall, redraw the plan or renovate —
-      every problem should offer remedies only. Same test with "I already live here". Only "I am
-      building a home" should still say "Change the layout — free now". If you see a layout
-      suggestion on either of the other two, that is the bug.
-
-## S · The icon and the opening screen  *(new in this build)*
-
-Neither of these can be photographed by the automated checks: the icon is drawn by your phone's
-launcher, and the opening picture is drawn by Android before the app's first screen exists.
-
-- [ ] **S1 · ⭐ Look at the icon on your home screen.** The whole square should be inside the tile —
-      all four corners, all nine cells — with a clear band of cream around it. Before this build the
-      corners were cut off. If your phone lets you choose an icon shape (circle, rounded square, the
-      shape in between), try two of them: the square must be whole in every shape.
-- [ ] **S2 · The tinted icon (Android 13 and newer).** Turn on "themed icons" in your home-screen
-      settings. The mark should take the wallpaper's colour and still be whole.
-- [ ] **S3 · ⭐ Open the app from cold.** Swipe it away from your recent apps, then open it. You should
-      see the mark on cream for a moment, and the very next thing should be a real screen — your list
-      of homes, or the first question. Not a blank cream page, and not the mark drawn twice at two
-      different sizes.
-- [ ] **S4 · On an older phone (Android 8 to 11), if you have one.** The same: the mark on cream, then
-      the first screen. Before this build those phones opened on plain cream.
-- [ ] **S5 · The clock and buttons stay dark.** Put the phone in dark mode and open the app from cold.
-      The clock, battery and navigation buttons over the opening picture should be dark on cream,
-      not white.
-
-## T · The room boxes sit on the walls  *(new in this build)*
-
-The app now reads the walls off your picture and moves each room's box onto them. The automated
-checks prove it on a sample drawing and on your render, reconstructed from your screenshots; a real
-scan on a real phone is the proof that matters.
-
-- [ ] **T1 · ⭐⭐ Scan the same plan as before and tap the bedroom.** On the screenshot you sent, its box
-      ran past the bottom wall over the balcony. It should now end at that wall, and its left edge
-      should sit on the wall shared with the dining room. Its right edge, beside the wardrobe niche,
-      may still be where the reader put it — there is no clear wall there, and that is by design.
-- [ ] **T2 · ⭐ Tap every other room.** Each box should sit on its walls. A room that opens onto another
-      with no wall between them — the dining room onto the living room — will keep a loose edge on
-      that side, which is honest: there is no wall to find.
-- [ ] **T3 · Nothing grabs a tile line, a bed, a table or a rug.** If any box edge sits on a floor-tile
-      line, on the edge of a piece of furniture, or on a rug rather than a wall, photograph it and
-      send it — that is exactly the kind of picture this needs to learn from.
-- [ ] **T4 · A plain architect's drawing.** If you have a thin-lined CAD-style plan, scan it too: the
-      boxes should land on its thin walls just as well as on the render's thick ones.
-- [ ] **T5 · A photo taken at an angle.** Boxes may improve less on a tilted photo; they must never get
-      worse than they were.
