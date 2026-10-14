@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import com.vastufirst.app.platform.decodeImageBitmap
 import com.vastufirst.app.platform.screenHeightDp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -284,6 +286,10 @@ fun GuidedGridScreen(
         restoredFromDraft = vm.restoredFromDraft,
         onStartAgain = vm::startAgain,
         roomsUnplaced = vm.roomsUnplaced,
+        // Decoded only while the rooms are parked: the card that shows it is the only reader here.
+        planPhoto = remember(vm.scanPhoto, vm.roomsUnplaced) {
+            if (vm.roomsUnplaced) vm.scanPhoto?.let(::decodeImageBitmap) else null
+        },
         onNext = onNext,
         onBack = onBack,
     )
@@ -367,6 +373,14 @@ fun GuidedGridContent(
      * and every question the screen asks about it is a fair one.
      */
     roomsUnplaced: Boolean = false,
+    /**
+     * ⭐ The user's own plan photograph, when these rooms came off a scan. While the rooms are parked it
+     * is shown above the grid so each room can be put in place by tapping where it is on the plan —
+     * see TapToPlace.kt. Null (a home drawn by hand, or a scan whose photo is gone) shows nothing.
+     */
+    planPhoto: ImageBitmap? = null,
+    /** Taps already made on [planPhoto]. For the screenshot harness, which cannot tap. */
+    startTaps: Map<String, PlanPoint> = emptyMap(),
 ) {
     val colors = VastuTheme.colors
     val haptics = feedback
@@ -581,6 +595,8 @@ fun GuidedGridContent(
                 armedType != null -> "Press the plan where this room goes. Slide to adjust, lift to place."
                 rooms.isEmpty() -> "Pick a room below, then press the plan to place it."
                 // Copy cut (4 Aug 2026): 26 words -> 14; the read-but-not-placed refusal claim kept.
+                parked && planPhoto != null ->
+                    "We read these rooms but not where they go. Show us on your plan below, or drag each one on the grid."
                 parked -> "We read these rooms but not where they go. Drag each one to its real place."
                 // "Press", matching the placing line above — the audit measured three different
                 // verbs (touch/press/drag) for the same physical gesture on one screen.
@@ -614,6 +630,18 @@ fun GuidedGridContent(
                     style = VastuButtonStyle.SECONDARY, large = false,
                 )
             }
+        }
+        // ⭐⭐ Parked rooms, put in place by tapping the user's own plan (TapToPlace.kt). Gone the moment
+        // the rooms are no longer parked — by this card's button or by a room moved on the grid.
+        if (parked && planPhoto != null && rooms.isNotEmpty()) {
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+            TapToPlaceCard(
+                image = planPhoto,
+                rooms = rooms,
+                onPlace = { taps -> onRoomsChange(placeFromTaps(rooms, taps, cols, rows)) },
+                maxPlanHeight = VastuTheme.sizes.planPane,
+                startTaps = startTaps,
+            )
         }
         Spacer(Modifier.height(VastuTheme.spacing.s4))
 

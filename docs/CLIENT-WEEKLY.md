@@ -89,8 +89,8 @@ feedback continuously; the three-phone pass still has to happen.
 **Stage 4 is the largest piece still ahead.** In rough order:
 
 - **Reading a plan without ever falling back to a grid.** When the app can read your room names but
-  not work out where they sit, it still hands you a grid of squares. You will place a room by tapping
-  where it is on your own plan instead. About one plan in six needs this today.
+  not work out where they sit (about one plan in six), you can now show it each room by tapping your
+  own plan. Still ahead: room sizes taken from the plan as well, so less is left to set by hand.
 - **The Vastu assistant** — ask a question, get an answer drawn only from the rule set, with the
   source named, and an honest "the texts do not say" when they do not.
 - **A polish round** — the score reveal, the empty screens, the finish of the thing.
@@ -109,6 +109,29 @@ is now produced with every build.
 **No dates on any of this.** Several of them move only when a decision above lands.
 
 ## Week of 12 – 18 October 2026
+
+### Wednesday 14 October, late — place your rooms by tapping your own plan
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.40.0/vastufirst-v0.40.0.apk
+**This is the one to install.**
+
+**When the app reads your rooms but not where they go, you can now show it on your plan.** About one
+plan in six comes back this way: every room named, none of them placed. Until now those rooms arrived
+as a row of equal squares at the top of the grid, and you had to drag each one across a grid that looks
+nothing like your sheet. Now the same screen shows **your own plan photo** in a card called "Show us on
+your plan". It asks for one room at a time, in the words your plan prints — "Tap your plan where it
+says MASTER BEDROOM" — and puts a small dot where you tap. "Skip for now" moves a room you cannot find
+to the end, and "Undo last tap" takes a tap back.
+
+**When every room has its dot, one button — "Put them on the grid" — places them all,** each in the
+part of your home where you tapped it. From there it is the normal drawing screen: drag any room to
+fine-tune it, then carry on to the front door and North as usual. Nothing the app read is dropped,
+renamed or changed into another kind of room, and dragging rooms on the grid still works exactly as
+before for anyone who prefers it.
+
+**This is the first version.** Rooms land at a standard size, because a plan that comes back this way
+usually has no reliable room sizes; you set the sizes on the grid. Placing rooms this way, straight onto
+the plan, is the first part of the stage 4 item "reading a plan without ever falling back to a grid".
 
 ### Wednesday 14 October, evening — the plan-reading key no longer travels inside the app
 

@@ -2,6 +2,9 @@ package com.vastufirst.app.ui.grid
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
+import com.vastufirst.app.render.PlanSheet
 import com.vastufirst.app.render.captureAcrossMatrix
 import com.vastufirst.app.render.writeManifestAcrossMatrix
 import com.vastufirst.app.ui.newplan.DoorSide
@@ -378,6 +381,53 @@ class EditorScreenshotTest {
             cols = cols,
             rows = rows,
             roomsUnplaced = true,
+        )
+    }
+
+    /**
+     * ⭐⭐ "SHOW US ON YOUR PLAN" — parked rooms put in place by tapping the user's own photograph
+     * (tap-to-place, 14 Oct 2026; TapToPlace.kt). Two states, because they are two different cards:
+     *
+     *  - `editor-tap-to-place` — three of the eight rooms tapped: the dots on the plan, the room asked
+     *    for next by what the sheet prints, "Skip for now" and "Undo last tap".
+     *  - `editor-tap-to-place-done` — every room tapped: the "Put them on the grid" button.
+     *
+     * On the repository's one real plan picture (plan-01), with its eight rooms parked as an unplaced
+     * read would park them, and each tap on the middle of the room's own box on the sheet.
+     */
+    @Test
+    fun editor_tap_to_place() {
+        captureAcrossMatrix("editor-tap-to-place") { TapToPlaceState(tapped = 3) }
+        writeManifestAcrossMatrix("editor-tap-to-place") { TapToPlaceState(tapped = 3) }
+    }
+
+    @Test
+    fun editor_tap_to_place_done() {
+        captureAcrossMatrix("editor-tap-to-place-done") { TapToPlaceState(tapped = Int.MAX_VALUE) }
+        writeManifestAcrossMatrix("editor-tap-to-place-done") { TapToPlaceState(tapped = Int.MAX_VALUE) }
+    }
+
+    @Composable
+    private fun TapToPlaceState(tapped: Int) {
+        val read = PlanSheet.outcome().rooms
+        val rooms = toGridRooms(read.map { it.copy(rect = null) }, 10, 10)
+        val taps = LinkedHashMap<String, PlanPoint>()
+        rooms.zip(read).take(tapped).forEach { (g, s) ->
+            val b = s.source!!
+            taps[g.id] = PlanPoint((b.x + b.w / 2).toFloat(), (b.y + b.h / 2).toFloat())
+        }
+        val photo = remember { PlanSheet.bitmap().asImageBitmap() }
+        GuidedGridContent(
+            rooms = rooms,
+            door = null,
+            onRoomsChange = {},
+            onDoorChange = {},
+            onNext = {},
+            cols = 10,
+            rows = 10,
+            roomsUnplaced = true,
+            planPhoto = photo,
+            startTaps = taps,
         )
     }
 

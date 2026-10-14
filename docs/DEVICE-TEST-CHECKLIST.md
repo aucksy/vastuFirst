@@ -21,8 +21,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — the three-phone pass
 
-**Build to test:** v0.38.0 (14 October 2026) —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.38.0/vastufirst-v0.38.0.apk)
+**Build to test:** v0.40.0 (14 October 2026) —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.40.0/vastufirst-v0.40.0.apk)
 
 This is the last check before the Play Store. Everything else is checked automatically on every
 build — the maths, the score, and a picture of every screen at small sizes and large text. What is
@@ -63,7 +63,7 @@ A vague "this looks off" with a screenshot is welcome — please don't talk your
 ## A · Installing and opening
 
 - [ ] **A1 · ⭐ Install over the last build without uninstalling.** With v0.36.0 on the phone and at
-      least one home saved, install v0.38.0 straight on top. Android must not ask you to uninstall,
+      least one home saved, install v0.40.0 straight on top. Android must not ask you to uninstall,
       and every saved home must still be there with the same score. If it refuses, or your homes are
       gone, stop and tell me. *(v0.37.0)*
 - [ ] **A2 · Open the app from cold.** Swipe it away from your recent apps, then open it. You should
@@ -130,6 +130,14 @@ Start from your list of homes: **"Add a home"**.
       instead". Calm, not an error. *(only if it happens)*
 - [ ] **B15 · Try a sample plan.** "Try a sample plan" should go straight to "Which way is North?" and
       then the report in two taps. *(one phone is enough)*
+- [ ] **B16 · ⭐ "Show us on your plan".** On the "These rooms aren't placed yet" screen (row B12), a card
+      headed "Show us on your plan" shows your own plan photo and asks "Tap your plan where it says …"
+      for one room at a time. Tap the right spot for each room: a small dot should appear exactly under
+      your finger, and the count ("3 of 14 rooms shown") should go up. Try "Skip for now" (that room
+      comes back at the end) and "Undo last tap" (the last dot goes). Scrolling the page by dragging
+      over the photo must scroll, not add a dot. When every room has a dot, press "Put them on the
+      grid": each room should land in the same part of the grid as where you tapped it on the plan,
+      and the screen should turn into the normal "Place your rooms" editor. *(v0.40.0)*
 
 ## C · Which way is North
 
