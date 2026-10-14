@@ -147,7 +147,7 @@ class PartialCreditTest {
             .filter { it.provenance != Provenance.DISP }
             .sumOf { d ->
                 val share = d.roomId?.let(shareOf::get) ?: 1.0
-                Math.round(fullPenaltyFor(d.severity.name) * share).toInt()
+                roundHalfUp(fullPenaltyFor(d.severity.name) * share).toInt()
             }
         assertEquals(
             minOf(atTheRoomsOwnShare, 30), analysis.defectPenalty,
@@ -161,7 +161,7 @@ class PartialCreditTest {
             .filter { it.provenance != Provenance.DISP }
             .sumOf { d ->
                 val share = d.roomId?.let(shareOf::get) ?: 1.0
-                Math.round(fullPenaltyFor(d.severity.name) * (share / 0.5).coerceAtMost(1.0)).toInt()
+                roundHalfUp(fullPenaltyFor(d.severity.name) * (share / 0.5).coerceAtMost(1.0)).toInt()
             }
         assertTrue(
             analysis.defectPenalty < atTheOldHalfWayRamp,

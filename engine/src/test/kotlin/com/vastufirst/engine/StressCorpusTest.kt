@@ -34,7 +34,7 @@ class StressCorpusTest {
     private val engine = VastuEngine()
 
     private fun rot(p: Point, deg: Double, cx: Double, cy: Double): Point {
-        val t = Math.toRadians(deg)
+        val t = toRadians(deg)
         val dx = p.x - cx; val dy = p.y - cy
         return Point(cx + dx * cos(t) - dy * sin(t), cy + dx * sin(t) + dy * cos(t))
     }
