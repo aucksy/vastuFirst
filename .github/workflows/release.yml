@@ -231,6 +231,13 @@ jobs:
       - name: Build the shrunk release
         run: gradle :app:assembleRelease --stacktrace
 
+      # ⭐ THE FILE GOOGLE PLAY ACTUALLY TAKES. Play accepts only an Android App Bundle (.aab) for a new
+      # app; an APK cannot be uploaded at all. Built from the same shrunk release, signed with the
+      # owner's upload key when one is supplied (above) and with the test key otherwise — in which
+      # case Play would refuse it, and the release notes say so.
+      - name: Build the Play upload bundle
+        run: gradle :app:bundleRelease --stacktrace
+
       # ⭐ A release is exactly where this matters: a published APK signed by a new key costs every
       # tester their saved homes, and they find out by hitting "App not installed".
       - name: Signature check (the release must install over the previous one)
@@ -241,6 +248,12 @@ jobs:
         run: |
           mkdir -p release
           cp app/build/outputs/apk/debug/*.apk "release/vastufirst-${RELEASE_TAG}.apk"
+          cp app/build/outputs/bundle/release/*.aab "release/vastufirst-${RELEASE_TAG}-play-upload.aab"
+          if [ -n "${RELEASE_STORE_FILE:-}" ]; then
+            echo "BUNDLE_NOTE=The .aab is signed with the owner's upload key and is the file to upload to Google Play." >> "$GITHUB_ENV"
+          else
+            echo "BUNDLE_NOTE=The .aab is signed with the test key, so Google Play would refuse it. It becomes uploadable once the owner's upload key is added to GitHub (docs/PLAY-STORE-SETUP.md)." >> "$GITHUB_ENV"
+          fi
 
       # The decoded key must not outlive the job even if a step above failed.
       - name: Shred the decoded signing key
@@ -258,7 +271,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          files: release/*.apk
+          files: |
+            release/*.apk
+            release/*.aab
           generate_release_notes: true
           name: "VastuFirst ${{ env.RELEASE_TAG }}"
           body: |
@@ -271,3 +286,5 @@ jobs:
 
             Drawing, scoring and your saved homes all work offline. Reading an uploaded plan is the
             one feature that needs the internet, and it asks first.
+
+            Install the .apk on a phone. The .aab is for Google Play only. ${{ env.BUNDLE_NOTE }}

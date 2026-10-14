@@ -59,6 +59,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
 
         Section("What we collect", PRIVACY_COLLECT)
         Section("The one thing that leaves your phone", PRIVACY_UPLOAD)
+        Section("Rule updates", PRIVACY_RULES)
         Section("When the app crashes", PRIVACY_CRASH)
         Section("If you buy the full report", PRIVACY_PAYMENT)
         Section("Deleting everything", PRIVACY_DELETE)
@@ -85,7 +86,7 @@ private fun Section(title: String, body: String) {
 // The policy text, kept as constants so docs/PRIVACY-POLICY.md and this screen can never say
 // different things — the published page is generated from exactly these words.
 
-const val PRIVACY_UPDATED = "15 August 2026"
+const val PRIVACY_UPDATED = "14 October 2026"
 
 const val PRIVACY_COLLECT =
     "Nothing about you. We do not ask for your name, email, phone number or location, and the app " +
@@ -93,11 +94,20 @@ const val PRIVACY_COLLECT =
         "only in the app's own private storage on your phone, where no other app can read them."
 
 const val PRIVACY_UPLOAD =
-    "If you choose to have a floor plan read for you, that one picture is sent to an AI service to " +
-        "be turned into rooms, and the rooms come back. The app asks you before it does this, every " +
-        "first time, and you can turn it off again in Settings. The picture is not stored by us and " +
-        "is not linked to you — there is nothing to link it to. Drawing your home by hand needs no " +
-        "internet at all and is scored by exactly the same rules."
+    "If you choose to have a floor plan read for you, that one picture is sent to be turned " +
+        "into rooms, and the rooms come back. It goes to a relay called OpenRouter, which passes " +
+        "it to an AI model from OpenAI — and sometimes to a second model from Google, for a " +
+        "second opinion. Their computers are abroad. The app asks you before it does this, every " +
+        "first time, and you can turn it off again in Settings. The picture is not stored by us " +
+        "and is not linked to you — there is nothing to link it to. Drawing your home by hand " +
+        "needs no internet at all and is scored by exactly the same rules."
+
+/** What the daily rule-update check sends (nothing about the person). Added 14 Oct 2026. */
+const val PRIVACY_RULES: String =
+    "Once a day, when your phone is online, the app asks our own server whether a newer set " +
+        "of Vastu rules has been published, and takes it if one has. The request carries nothing " +
+        "about you or your homes. Like any visit to a website, it shows our server your " +
+        "connection's internet address; we do not use it to identify anyone."
 
 const val PRIVACY_CRASH =
     "If the app closes unexpectedly, it writes what went wrong into its own private storage and " +
@@ -112,8 +122,10 @@ const val PRIVACY_PAYMENT =
 
 const val PRIVACY_DELETE =
     "Settings → Delete all my data removes every saved home from this device immediately and " +
-        "permanently. Uninstalling the app removes everything too. Because nothing is stored on our " +
-        "side, there is nothing left for us to delete and nothing you need to ask us for."
+        "permanently. Uninstalling the app removes everything too: the app does not let your " +
+        "phone's own backup copy your homes or plan pictures to an online account or to a new " +
+        "phone. Because nothing is stored on our side, there is nothing left for us to delete and " +
+        "nothing you need to ask us for."
 
 const val PRIVACY_CHILDREN =
     "VastuFirst is not aimed at children and collects nothing from anyone, of any age."

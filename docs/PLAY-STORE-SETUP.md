@@ -27,7 +27,10 @@ customer would have to reinstall.
 When you create the app in Play Console, choose **"Use Google Play app signing"**. It is the default.
 Google keeps the master key in its own vault, and you cannot lose it.
 
-**Send me nothing yet.** I have already set the build up so it produces the file you upload.
+**Send me nothing yet.** Every release already builds the file Google Play takes — an **Android App
+Bundle (`.aab`)**, attached to each GitHub release beside the phone APK (since v0.38.0). Until your
+upload key is in GitHub (below) that bundle is signed with the shared test key, and Play would refuse
+it; once the four secrets exist, the very next release produces an uploadable one.
 
 ### ⭐ Where the key goes when you do have it — GitHub secrets, four of them
 
@@ -99,13 +102,22 @@ rendered screens), the feature graphic, and the content-rating answers.
 
 ---
 
-## 5. Privacy policy — done
+## 5. Privacy policy — done, and public
 
-Google requires a privacy policy at a public web address. The policy is written and lives in the app
-under **Settings → Privacy**, and the same words are in `docs/PRIVACY-POLICY.md`.
+Google requires a privacy policy at a public web address. It is live at
+**https://www.vastufirst.com/privacy**, the same words are in the app under **Settings → Privacy**, and
+the source is `docs/PRIVACY-POLICY.md`. Nothing needed from you except approving it (it names you, the
+seller, once your legal name is known).
 
-**What I need from you:** somewhere to put it publicly. The free option is a GitHub Pages page, which
-I can set up in ten minutes and costs nothing. Say the word.
+---
+
+## 5b. The 14-day closed test — YOU supply 12 testers
+
+Google's rule for **new personal developer accounts**: before the app can go public, it must run a
+**closed test with at least 12 testers who stay opted in for 14 days in a row**. Testers need only a
+Gmail address and an Android phone. **What I need from you:** 12 Gmail addresses (friends, family,
+early customers). I set up the test track and send them the join link. A company (organisation)
+account is exempt, but needs a D-U-N-S number first.
 
 ---
 

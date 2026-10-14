@@ -78,8 +78,8 @@ Pin these. Do not float to "latest" without a reason.
 | Local DB | Room (KMP) or SQLDelight → **SQLDelight**, it is KMP-native and iOS-ready | |
 | Serialization | kotlinx-serialization | rule JSON + persistence |
 | Backend | Supabase (Postgres, Storage, anonymous auth) | network only where §3.5 of Product PRD allows |
-| AI | Groq | assistant + vision plan reading (Phase 4) |
-| Payments | Razorpay Android SDK | Phase 5; **Android-only dependency — lives in `app`, never in shared** |
+| AI | OpenRouter (since 4 Aug 2026; Groq before) | vision plan reading; the assistant is not built |
+| Payments | Google Play Billing 8 (Razorpay dropped: Play forbids another payment service for digital goods sold in a Play app) | built, shipped switched off; **Android-only dependency — lives in `app`, never in shared** |
 | Images | Coil 3 (KMP) | |
 | Testing | kotlin.test + Turbine (Flow) + Compose UI test + Paparazzi/Roborazzi (screenshot) | |
 
@@ -250,7 +250,7 @@ Covered in §3. Done = §3.5 checklist.
 ### Phase 5 — iOS, payments, store *(iOS is the deferred pass — see §7)*
 **Goal (Android side of it):** payments and the remedy store on Android.
 
-- Razorpay integration **in `app` only** (Android dependency).
+- Payments through Google Play Billing **in `app` only** (Android dependency). Razorpay was dropped — Play forbids it for the report.
 - Remedy store matched to the user's actual defects; clean, ad-light.
 - iOS begins here as a re-target of the shared modules — its detail is §7, not this phase's Android work.
 

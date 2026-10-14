@@ -90,7 +90,7 @@ Concretely: `engine/build.gradle.kts` applies `kotlin("jvm")` only. No `com.andr
 | Min SDK | 26 (Android 8.0) | Covers >95% of Indian devices in use |
 | Target SDK | Latest stable at build time | Google mandates annual bumps to stay listed |
 | Backend | Supabase | Postgres, Storage, anonymous auth |
-| AI inference | Groq | Assistant + vision plan reading |
+| AI inference | OpenRouter (since 4 Aug 2026; Groq before) | Vision plan reading; the assistant is not built |
 | Payments | Razorpay | Android SDK |
 | Local DB | Room | Plans, analyses, cached reports |
 | Async | Coroutines + Flow | |
@@ -634,7 +634,7 @@ This is the product's core differentiator. It is not optional polish. The protot
 - When the knowledge base is silent, it says so explicitly rather than inventing
 - **Never** mixes in Feng Shui or other traditions
 - **Never** makes outcome predictions or health/wealth claims
-- Runs on Groq; requires network; degrades gracefully offline
+- Not built yet. When built: runs through the same AI relay as the plan reader (OpenRouter); requires network; degrades gracefully offline
 
 ### 7.2 Remedies — with honest labelling
 The classical response to a defect was **ritual pacification (Vastu Shanti) and structural correction** — not an object placed in a corner. There appears to be no classical concept of a non-demolition gadget remedy at all.
@@ -951,7 +951,7 @@ The prototype at `vastufirst-prototype.html` is a useful reference for **flow, c
 
 ## 13. Open expert questions — build as configuration
 
-These are with expert reviewers and **unresolved as of 19 July 2026**. Each is currently a guess sitting inside a product about to be sold. Build every one as a config flag so a ruling is a data edit, not a rebuild.
+⭐ **SETTLED (owner, from 1 Aug 2026): every disputed question below has a ruling — see `docs/EXPERT-RULINGS.md`.** They were with expert reviewers and unresolved as of 19 July 2026. Each is currently a guess sitting inside a product about to be sold. Build every one as a config flag so a ruling is a data edit, not a rebuild.
 
 | ID | Question | Current default |
 |---|---|---|
@@ -1065,7 +1065,7 @@ Cited in §12 and §0, defined here for self-containment.
 | Paid tier | Full ranked report, all defects, layout changes, remedies, PDF export, school profiles |
 | Pricing model | **One-time unlock per plan.** Price shown before payment. No subscription at launch. |
 | Price point | **TO BE SET BY THE PRODUCT OWNER before Phase 5.** Must be modelled against per-report AI cost (§17.1) |
-| Entitlement | Stored server-side against the anonymous Supabase user id, restorable on reinstall |
+| Entitlement | Held by Google Play (no server of ours): Play Billing restores the purchase on reinstall on the same Google account |
 | Restore | "Restore my purchases" required on both stores |
 | Refunds | Clear, published refund policy. Refund trouble is the top complaint against every competitor researched |
 

@@ -1,6 +1,6 @@
 # Scan your plan — AI-assisted floor-plan reading (§6.2b)
 
-**Status:** plan, awaiting "go". Written 2026-07-29.
+**Status:** BUILT and shipped (from v0.10, Aug 2026); the sections below record how and why. Written 2026-07-29 as a plan.
 **Why now:** owner pulled this forward — *"hold the Draw-your-plan feature and start working on
 scan-your-plan. Client needs that first."*
 
