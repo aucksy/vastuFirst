@@ -1,5 +1,6 @@
 package com.vastufirst.app.ui.unlock
 
+import com.vastufirst.app.ui.common.TitleWithBack
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -47,7 +48,7 @@ import org.koin.compose.koinInject
  * payment is taken. There is no state in which this screen implies a charge that will not happen.
  */
 @Composable
-fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
+fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject(), onBack: (() -> Unit)? = null) {
     val scope = rememberCoroutineScope()
     // ⭐ LIVE billing state (14 Oct 2026). This used to copy `billing.state` ONCE, when the screen
     // opened — before Google Play had answered — so a buyer saw "can't reach Google Play" and "Try
@@ -64,6 +65,7 @@ fun UnlockScreen(onUnlocked: () -> Unit, billing: Billing = koinInject()) {
         state = state,
         problem = problem,
         waitingNote = waitingNote,
+        onBack = onBack,
         onAction = {
             scope.launch {
                 problem = null
@@ -122,6 +124,11 @@ fun UnlockContent(
     waitingNote: String? = null,
     onAction: () -> Unit = {},
     onRestore: () -> Unit = {},
+    /**
+     * The ‹ arrow (14 Oct 2026): an iPhone has no Back key. Shown by default because every real way
+     * into this screen has somewhere to go back to; the navigation always passes the real step back.
+     */
+    onBack: (() -> Unit)? = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -129,7 +136,7 @@ fun UnlockContent(
         // (UI-POLISH §3.B, measured by the render harness).
         modifier = Modifier.screenRoot(colors.paper).verticalScroll(rememberScrollState()).padding(VastuTheme.spacing.s6),
     ) {
-        VText("Unlock the full report", style = VastuTheme.type.h2, color = colors.textPrimary)
+        TitleWithBack("Unlock the full report", onBack = onBack)
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         // ⭐ FlowRow, not Row (audit C2). In a Row the huge price figure took nearly the whole
         // width and the caption wrapped ONE CHARACTER PER LINE beside it — "hom / e, / fore / ver"

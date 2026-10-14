@@ -37,7 +37,9 @@ class ViewModelScreensScreenshotTest {
     @Test
     fun welcome() {
         val content: @Composable () -> Unit = {
-            WelcomeContent(intent = Intent.BUILDING, onIntentChange = {}, onContinue = {})
+            // Opened from the saved homes, so the ‹ arrow shows (14 Oct 2026). "welcome-first" below
+            // is the first launch, with nothing behind it and no arrow.
+            WelcomeContent(intent = Intent.BUILDING, onIntentChange = {}, onContinue = {}, onBack = {})
         }
         captureAcrossMatrix("welcome", content)
         writeManifestAcrossMatrix("welcome", content)

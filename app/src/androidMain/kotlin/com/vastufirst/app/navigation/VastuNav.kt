@@ -146,6 +146,9 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 WelcomeScreen(
                     vm = vm,
                     onContinue = { nav.go(Routes.ADD_HOME) },
+                    // The arrow only when something is behind Welcome (opened from the saved homes);
+                    // on a first launch Welcome is the first screen.
+                    onBack = if (nav.previousBackStackEntry != null) ({ nav.popBackStack() }) else null,
                     // The only route to the policy a first-time reader has — see WelcomeContent.
                     onPrivacy = { nav.go(Routes.PRIVACY) },
                 )
@@ -172,6 +175,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     vm.beginNewHome()
                 }
                 AddHomeScreen(
+                    onBack = { nav.popBackStack() },
                     // ⭐ House or flat, asked here and nowhere else — see the screen's own note for
                     // why it cannot live on the welcome screen beside "what brings you here".
                     propertyType = vm.propertyType,
@@ -375,6 +379,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                 ResumeDraft(vm = vm, id = draftId, handover = draftHandover)
                 GuidedGridScreen(
                     vm = vm,
+                    onBack = { nav.popBackStack() },
                     // ⚠ Which way out depends on where this was entered from. In the flow it is
                     // followed by North. Reached from the report's "change where the front door is",
                     // the report is already behind us — so go BACK to it rather than pushing North
@@ -460,7 +465,7 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
 
             composable(Routes.UNLOCK) { entry ->
                 val vm = sharedVm(nav, entry)
-                UnlockScreen(onUnlocked = {
+                UnlockScreen(onBack = { nav.popBackStack() }, onUnlocked = {
                     vm.unlock()
                     // Checkout is now reached FROM the report, so the report is already on the back
                     // stack — pop back to the one the reader was in, which recomposes unlocked.

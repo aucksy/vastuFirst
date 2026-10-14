@@ -54,6 +54,8 @@ fun WelcomeScreen(
     vm: NewPlanViewModel,
     onContinue: () -> Unit,
     onPrivacy: () -> Unit = {},
+    /** Null on a first launch (nothing behind Welcome); the saved homes when opened from there. */
+    onBack: (() -> Unit)? = null,
 ) {
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the screen below renders
     // headlessly from fixture state in the screenshot harness (UI-POLISH §6, stateless-content).
@@ -62,6 +64,7 @@ fun WelcomeScreen(
         onIntentChange = { vm.intent = it },
         onContinue = onContinue,
         onPrivacy = onPrivacy,
+        onBack = onBack,
     )
 }
 
@@ -80,6 +83,12 @@ fun WelcomeContent(
      * person who has not yet handed us a picture of their home.
      */
     onPrivacy: () -> Unit = {},
+    /**
+     * The ‹ arrow (14 Oct 2026): an iPhone has no Back key. Null on a first launch — Welcome is the
+     * first screen and there is nothing behind it — so the arrow shows only when Welcome was opened
+     * from the saved homes.
+     */
+    onBack: (() -> Unit)? = null,
 ) {
     val colors = VastuTheme.colors
     val chosen = intent
@@ -90,6 +99,10 @@ fun WelcomeContent(
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {
+        if (onBack != null) {
+            com.vastufirst.designsystem.components.IconTapButton("‹", contentDescription = "Back", onClick = onBack)
+            Spacer(Modifier.height(VastuTheme.spacing.s3))
+        }
         BrandMark()
         Spacer(Modifier.height(VastuTheme.spacing.s4))
         SectionLabel("No sign-up · No phone number")

@@ -371,6 +371,12 @@ jobs:
       - name: Build the shrunk release (R8 runs on every push)
         run: gradle :app:assembleRelease --stacktrace
 
+      # Android Lint, errors only (app/build.gradle.kts, lint block). ⚠ Report-only for its first
+      # runs (continue-on-error) so the existing findings can be read and fixed; then it gates.
+      - name: Android Lint (errors only)
+        continue-on-error: true
+        run: gradle :app:lintDebug --stacktrace
+
       # An APK signed by a different key than the last one cannot be installed as an update, so every
       # tester has to uninstall — which erases every home they saved. That is what happened on every
       # release up to v0.3.16, silently, because a fresh runner has no debug keystore and AGP makes a

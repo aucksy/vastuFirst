@@ -1,5 +1,6 @@
 package com.vastufirst.app.ui.addhome
 
+import com.vastufirst.app.ui.common.TitleWithBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +62,11 @@ fun AddHomeScreen(
      * one, which asked "PDF or photo?" a second time. Both cards now open their picker at once.
      */
     onPhotograph: () -> Unit = {},
+    /**
+     * The ‹ arrow (14 Oct 2026): an iPhone has no Back key. Shown by default because every real way
+     * into this screen has somewhere to go back to; the navigation always passes the real step back.
+     */
+    onBack: (() -> Unit)? = {},
 ) {
     val colors = VastuTheme.colors
     Column(
@@ -78,7 +84,7 @@ fun AddHomeScreen(
         // entrance. A progress counter that cannot be right is worse than none: it tells somebody
         // they are nearly finished and then hands them two more screens.
         Spacer(Modifier.height(VastuTheme.spacing.s3))
-        VText("Add your home", style = VastuTheme.type.h2, color = colors.textPrimary)
+        TitleWithBack("Add your home", onBack = onBack)
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
             // ⚠ REWRITTEN 23 Aug 2026, because inserting the house-or-flat question above the

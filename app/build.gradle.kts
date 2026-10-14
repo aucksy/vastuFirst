@@ -225,6 +225,18 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // ⭐ ANDROID LINT, in CI since 14 Oct 2026 (UI-POLISH §6b asked for it; nothing ran it). Errors
+    // only, printed into the build log so a failure is readable there: an error-level finding is a
+    // real defect class (an API newer than minSdk, a broken resource, a manifest mistake), and
+    // warnings would bury them. Fails the build on any error.
+    lint {
+        abortOnError = true
+        ignoreWarnings = true
+        checkReleaseBuilds = false
+        textReport = true
+        textOutput = file("stdout")
+    }
+
     // Required by Robolectric so the render harness can resolve app resources, and so
     // src/androidUnitTest/resources/robolectric.properties (sdk = 36) is honoured (UI-POLISH §6.1).
     testOptions {

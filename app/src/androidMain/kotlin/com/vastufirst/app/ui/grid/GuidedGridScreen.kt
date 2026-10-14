@@ -1,5 +1,6 @@
 package com.vastufirst.app.ui.grid
 
+import com.vastufirst.app.ui.common.TitleWithBack
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -261,6 +262,8 @@ fun GuidedGridScreen(
     onNext: () -> Unit,
     /** Open straight on the door step — how a drawn home's report changes its front door. */
     startInDoorMode: Boolean = false,
+    /** The ‹ arrow (14 Oct 2026): an iPhone has no Back key. The navigation passes the real step back. */
+    onBack: (() -> Unit)? = null,
 ) {
     // Thin wrapper: it is the ONLY thing that touches the ViewModel, so the whole editor below can
     // be rendered headlessly from fixture state by the screenshot harness (GuidedGridContent).
@@ -282,6 +285,7 @@ fun GuidedGridScreen(
         onStartAgain = vm::startAgain,
         roomsUnplaced = vm.roomsUnplaced,
         onNext = onNext,
+        onBack = onBack,
     )
 }
 
@@ -308,6 +312,12 @@ fun GuidedGridContent(
      *  is drawn only in that mode, and a golden cannot press a button to get there), and it is the
      *  entry point a future "move the front door" shortcut would use. */
     startInDoorMode: Boolean = false,
+    /**
+     * The ‹ arrow (14 Oct 2026): an iPhone has no Back key, and on the iPhone the edge swipe is off on
+     * this screen because the editor is all dragging (iPhone plan, risks 14-15). Shown by default
+     * because every real way into the editor has somewhere to go back to.
+     */
+    onBack: (() -> Unit)? = {},
     /** What "Next" means here. Opened from the report ("change where the front door is") it hands
      *  the reader back to the report; in the flow it goes on to North. It defaults to
      *  [startInDoorMode] because the report is the only thing that opens this screen on the door
@@ -533,7 +543,7 @@ fun GuidedGridContent(
             .verticalScroll(rememberScrollState())
             .padding(VastuTheme.spacing.s6),
     ) {
-        VText(
+        TitleWithBack(
             when {
                 doorMode -> "Mark your front door"
                 // ⭐ A scan that could not work out WHERE the rooms go parks them in a row of equal
@@ -544,7 +554,7 @@ fun GuidedGridContent(
                 parked -> "These rooms aren't placed yet"
                 else -> "Place your rooms"
             },
-            style = VastuTheme.type.h2, color = colors.textPrimary,
+            onBack = onBack,
         )
         Spacer(Modifier.height(VastuTheme.spacing.s2))
         VText(
