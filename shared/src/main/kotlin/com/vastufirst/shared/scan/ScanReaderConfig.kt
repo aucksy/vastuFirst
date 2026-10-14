@@ -93,7 +93,5 @@ object ScanReaderConfigLoader {
         return PlanReadRecipe(config, prompt.trim())
     }
 
-    private fun text(resource: String): String? =
-        ScanReaderConfigLoader::class.java.getResourceAsStream(resource)
-            ?.use { it.readBytes().decodeToString() }
+    private fun text(resource: String): String? = bundledText(resource)
 }

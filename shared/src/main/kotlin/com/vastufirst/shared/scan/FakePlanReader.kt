@@ -190,8 +190,7 @@ object RecordedScans {
 
     /** Load a bundled reply, or null if the id is unknown. */
     fun load(id: String): RecordedReply? {
-        val stream = RecordedScans::class.java.getResourceAsStream("/scan/$id.json") ?: return null
-        val text = stream.use { it.readBytes().decodeToString() }
+        val text = bundledText("/scan/$id.json") ?: return null
         return runCatching { JSON.decodeFromString<RecordedReply>(text) }.getOrNull()
     }
 

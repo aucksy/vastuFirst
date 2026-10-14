@@ -144,7 +144,7 @@ jobs:
 
       # --- Compile + test ---
       - name: Unit tests (pure logic modules)
-        run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
+        run: gradle :shared:jvmTest :rules:jvmTest :engine:jvmTest :data:jvmTest --stacktrace
 
       # "BUILD SUCCESSFUL" also prints when a test class quietly stopped being picked up, so print
       # what actually ran. Claims like "55 tests cover the scan mapper" should be checkable from the

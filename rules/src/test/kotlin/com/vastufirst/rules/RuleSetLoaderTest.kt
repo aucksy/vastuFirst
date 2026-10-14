@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 class RuleSetLoaderTest {
 
     private fun realResource(path: String): String =
-        RuleSetLoaderTest::class.java.getResourceAsStream(path)!!.bufferedReader().use { it.readText() }
+        bundledText(path)!!
 
     @Test
     fun `the shipped dataset loads and passes every validation`() {

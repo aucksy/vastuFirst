@@ -4,10 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.security.KeyFactory
-import java.security.Signature
-import java.security.spec.X509EncodedKeySpec
-import java.util.Base64
+import kotlin.io.encoding.Base64
 
 /**
  * Taking a newer rule set from the Control Room, safely.
@@ -180,19 +177,21 @@ object RulesetUpdate {
      * updated. RSA with SHA-256 has been in Android since the first release. Do not "upgrade" it.
      */
     fun verify(payload: String, signatureB64Url: String, publicKeySpkiB64: String): Boolean = try {
-        val keyBytes = Base64.getDecoder().decode(publicKeySpkiB64.trim())
-        val key = KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(keyBytes))
-        val verifier = Signature.getInstance("SHA256withRSA")
-        verifier.initVerify(key)
-        verifier.update(payload.toByteArray(Charsets.UTF_8))
-        verifier.verify(Base64.getUrlDecoder().decode(padded(signatureB64Url.trim())))
+        // Kotlin's own Base64 (common code since the iPhone plan's stage 1), padding optional as Java's
+        // decoder had it. The check itself is each phone's own: see SignatureCheck.kt.
+        val keyBytes = STANDARD.decode(publicKeySpkiB64.trim())
+        val signature = URL_SAFE.decode(padded(signatureB64Url.trim()))
+        verifyRsaSha256(payload.encodeToByteArray(), signature, keyBytes)
     } catch (_: Throwable) {
         // A malformed key, a malformed signature and a forged signature are all the same answer:
         // no. There is nothing here worth telling them apart for.
         false
     }
 
-    /** Java's URL decoder is strict about length; a signature that lost its padding is still valid. */
+    private val STANDARD = Base64.Default.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+    private val URL_SAFE = Base64.UrlSafe.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+
+    /** A signature that lost its padding is still valid; put the padding back before decoding. */
     private fun padded(s: String): String {
         val remainder = s.length % 4
         return if (remainder == 0) s else s + "=".repeat(4 - remainder)

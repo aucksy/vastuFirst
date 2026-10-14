@@ -381,8 +381,8 @@ object WallSnap {
                 trace?.invoke(
                     "  box $i ${listOf("left", "right", "top", "bottom")[k]} ${side.edge} -> ${picked[k]}  " +
                         side.c.joinToString(" ") { q ->
-                            "[${q.c} s%.2f t${q.thick} g%.2f d%.2f e%.2f${if (isWall(q, tMin, tMax)) "*" else ""}]"
-                                .format(q.score, q.grey, q.dark, q.ext)
+                            "[${q.c} s${f2(q.score)} t${q.thick} g${f2(q.grey)} d${f2(q.dark)} e${f2(q.ext)}" +
+                                "${if (isWall(q, tMin, tMax)) "*" else ""}]"
                         },
                 )
             }
@@ -395,4 +395,14 @@ object WallSnap {
             Edges(x0, y0, x1, y1)
         }
     }
+}
+
+/**
+ * Two decimals, for the debug trace only. `String.format` is JVM-only and this file now compiles for
+ * the iPhone too (stage 1); the trace prints exactly what "%.2f" printed for these 0..1 values.
+ */
+private fun f2(v: Double): String {
+    val n = kotlin.math.floor(kotlin.math.abs(v) * 100 + 0.5).toLong()
+    val s = "${n / 100}." + (n % 100).toString().padStart(2, '0')
+    return if (v < 0 && n != 0L) "-$s" else s
 }

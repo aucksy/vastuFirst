@@ -23,9 +23,7 @@ import kotlin.test.fail
 class RulesetUpdateTest {
 
     private fun resource(name: String): String =
-        RulesetUpdateTest::class.java.getResourceAsStream("/update/$name")
-            ?.bufferedReader()?.use { it.readText() }
-            ?: error("Test fixture missing: $name")
+        com.vastufirst.shared.testText("/update/$name") ?: error("Test fixture missing: $name")
 
     private val reply by lazy { resource("signed-reply.json") }
     private val publicKey by lazy { resource("public-key.txt").trim() }
@@ -171,6 +169,23 @@ class RulesetUpdateTest {
     }
 
     private fun outer(body: String) = parser.parseToJsonElement(body).jsonObject
+
+    // ⭐ The iPhone takes the key without its X.509 wrapper (iPhone plan, risk 8). These run on both
+    // phones; the genuine-reply tests above are the end-to-end proof that the unwrapped key verifies.
+    @Test
+    fun `the key built into the app unwraps to a bare RSA key`() {
+        val spki = kotlin.io.encoding.Base64.Default.decode(UPDATE_PUBLIC_KEY_SPKI_B64.trim())
+        val bare = spkiToPkcs1(spki) ?: fail("the published key did not unwrap")
+        assertEquals(0x30.toByte(), bare[0], "a bare RSA key is a SEQUENCE of modulus and exponent")
+        assertTrue(bare.size in 200 until spki.size, "the bare key is the inside of the wrapper, not all of it")
+    }
+
+    @Test
+    fun `rubbish does not unwrap into a key`() {
+        assertEquals(null, spkiToPkcs1(ByteArray(0)))
+        assertEquals(null, spkiToPkcs1(byteArrayOf(0x30, 0x05, 0x01, 0x02)))
+        assertEquals(null, spkiToPkcs1("not a key".encodeToByteArray()))
+    }
 
     private fun versionOf(body: String) = outer(body)["version"]!!.jsonPrimitive.content
 

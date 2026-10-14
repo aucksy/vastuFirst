@@ -197,8 +197,7 @@ class PlansTest {
     fun `the key built into the app is the same one the signature tests use`() {
         // ⚠ If these two ever disagree, every phone silently refuses every rule set we publish, for
         // ever, and the only symptom is that nobody seems to get the update.
-        val fromResource = PlansTest::class.java.getResourceAsStream("/update/public-key.txt")
-            ?.bufferedReader()?.use { it.readText() }?.trim()
+        val fromResource = com.vastufirst.shared.testText("/update/public-key.txt")?.trim()
             ?: error("the public key fixture is missing")
         assertEquals(fromResource, UPDATE_PUBLIC_KEY_SPKI_B64)
         assertTrue(UPDATE_URL.startsWith("https://"), "a rule set must never travel in the clear")

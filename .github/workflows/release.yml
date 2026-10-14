@@ -161,7 +161,7 @@ jobs:
       - name: Design-fidelity check (theme matches the design contract)
         run: node scripts/check-design-fidelity.mjs .
       - name: Unit tests (pure logic modules)
-        run: gradle :shared:test :rules:test :engine:test :data:test --stacktrace
+        run: gradle :shared:jvmTest :rules:jvmTest :engine:jvmTest :data:jvmTest --stacktrace
 
       # Render gate (UI-POLISH §6): a release must VERIFY every screen against its committed golden
       # and pass the L1 geometry check. Verify only (never record) — tagging must not silently

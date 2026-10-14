@@ -1,0 +1,79 @@
+# The iPhone eyes, part 1 (iPhone plan, stage 1): the engine, rules, plan-reader logic and saved-homes
+# code, compiled for the iPhone and run on the iPhone simulator on a cloud Mac.
+#
+# ⭐ What this proves: the same test files the JVM runs (src/test/kotlin = common tests) pass on an
+# iPhone — the sample home scores 31, the recorded plan readings map to the same rooms (Kotlin/Native
+# has its own regex engine), and a REAL signed Control Room reply verifies with Apple's Security
+# framework (a failure there is silent by design). Zero paid scans: recorded readings only.
+#
+# Mac minutes are free while the repository is public. It runs on every push to main that touches the
+# pure modules or this file, and by hand. A hard time limit stops a stuck run from burning minutes.
+name: iPhone engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'engine/**'
+      - 'rules/**'
+      - 'shared/**'
+      - 'data/**'
+      - 'buildSrc/**'
+      - 'gradle/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-engine:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 and 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.1'
+
+      - name: Cache the Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Which Xcode
+        run: xcodebuild -version
+
+      - name: Engine, rules, plan reader and saved homes on the iPhone simulator
+        run: >
+          gradle :shared:iosSimulatorArm64Test :rules:iosSimulatorArm64Test
+          :engine:iosSimulatorArm64Test :data:iosSimulatorArm64Test --stacktrace
+
+      - name: What ran on the iPhone
+        if: always()
+        shell: python3 {0}
+        run: |
+          import glob, xml.etree.ElementTree as ET
+          total = fails = skips = 0
+          for f in sorted(glob.glob('*/build/test-results/iosSimulatorArm64Test/*.xml')):
+              s = ET.parse(f).getroot()
+              t, fl, er, sk = (int(s.get(k, 0)) for k in ('tests', 'failures', 'errors', 'skipped'))
+              total += t; fails += fl + er; skips += sk
+              print(f"  {t:4d} tests  {fl + er:2d} failed  {sk:2d} skipped   {s.get('name')}")
+              for case in s.iter('testcase'):
+                  for bad in list(case.findall('failure')) + list(case.findall('error')):
+                      print(f"      FAILED: {case.get('name')}: {(bad.get('message') or '')[:300]}")
+          print(f"IPHONE TOTAL: {total} tests, {fails} failed, {skips} skipped")

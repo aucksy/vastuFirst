@@ -1,8 +1,7 @@
 package com.vastufirst.rules
 
 /**
- * Reading the bundled rule dataset off the classpath — the one thing in this module that only a
- * JVM can do.
+ * Reading the bundled rule dataset — the one thing in this module each platform does its own way.
  *
  * **Why it is a file of its own.** The engine is compiled twice: once for the phone, and once to
  * JavaScript so the admin panel re-scores a home with THIS code instead of a second scorer that
@@ -14,5 +13,11 @@ package com.vastufirst.rules
  * Do not inline this back into RuleSetLoader.kt.
  */
 internal fun readResource(path: String): String =
-    RuleSetLoader::class.java.getResourceAsStream(path)?.bufferedReader()?.use { it.readText() }
-        ?: error("Rule dataset resource missing: $path")
+    bundledText(path) ?: error("Rule dataset resource missing: $path")
+
+/**
+ * The bundled file at [path] ("/ruleset/rooms.json"), or null. Android and the JVM tests read it off
+ * the classpath (jvmMain); the iPhone reads the same file compiled into the code (iosMain, generated
+ * from the same folder by the build). Declared here, in the one file the JavaScript build leaves out.
+ */
+internal expect fun bundledText(path: String): String?

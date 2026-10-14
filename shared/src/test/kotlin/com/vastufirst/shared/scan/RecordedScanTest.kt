@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 
 /**
  * The mapper against the **actual replies the Groq API returned**, copied verbatim out of
@@ -159,9 +159,9 @@ class RecordedScanTest {
     }
 
     @Test
-    // runBlocking<Unit>, not runBlocking: JUnit4 rejects a test method with a return value, and the
-    // last expression here is an assertIs that hands one back.
-    fun `the fake reader replays the fixtures through the real mapper`() = runBlocking<Unit> {
+    // runTest, not runBlocking: this test runs on the iPhone simulator too (iPhone plan, stage 1), and
+    // runBlocking is not in common code. runTest's block returns Unit, so JUnit4 stays happy.
+    fun `the fake reader replays the fixtures through the real mapper`() = runTest {
         val reader = FakePlanReader()
         val outcomes = List(RecordedScans.ids.size) {
             assertIs<ScanResult.Read>(reader.read(ByteArray(0), null)).outcome

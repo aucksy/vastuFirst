@@ -1,24 +1,63 @@
-// shared — DTOs, result types, enums (Zone, Verdict, …). Pure Kotlin/JVM, ZERO Android.
-// Product PRD §3.1: kotlin("jvm") only, no Android plugin. The iOS move later is a
-// build-file change (jvm → multiplatform), not a rewrite — no android.* can leak in.
+// shared — DTOs, result types, enums (Zone, Verdict, …), the plan reader's mapper, the grid editor's
+// maths, Control Room updates. Pure Kotlin, ZERO Android — no android.* can leak in.
+//
+// ⭐ MULTIPLATFORM since the iPhone plan's stage 1 (14 Oct 2026) — see rules/build.gradle.kts for the
+// layout. src/main/kotlin is common code; JVM-only pieces (the plan reader's internet call) live in
+// src/jvmMain, their iPhone twins in src/iosMain.
 plugins {
-    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+}
+
+// The reader's recipe and the recorded plan readings, compiled in for the iPhone (buildSrc).
+val bundleShared = tasks.register<BundleTextTask>("bundleSharedForIos") {
+    sourceDir.set(layout.projectDirectory.dir("src/main/resources"))
+    packageName.set("com.vastufirst.shared.scan")
+    mapName.set("bundledSharedFiles")
+    outputDir.set(layout.buildDirectory.dir("generated/bundled/iosMain"))
+}
+// The test fixtures' text files (the signed Control Room reply, the public key), for iPhone tests.
+val bundleSharedTest = tasks.register<BundleTextTask>("bundleSharedTestForIos") {
+    sourceDir.set(layout.projectDirectory.dir("src/test/resources"))
+    packageName.set("com.vastufirst.shared")
+    mapName.set("bundledSharedTestFiles")
+    outputDir.set(layout.buildDirectory.dir("generated/bundled/iosTest"))
 }
 
 kotlin {
     jvmToolchain(17)
-}
+    jvm()
+    iosArm64()
+    iosSimulatorArm64()
 
-dependencies {
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.datetime)
-    // `PlanReader.read` is `suspend`, which is a language feature and needs no dependency. The
-    // runtime is here for exactly one reason: GroqPlanReader moves its own socket off the calling
-    // thread (`withContext(Dispatchers.IO)`) instead of trusting every future caller to remember to.
-    // Still zero Android — coroutines-core is plain Kotlin, so `check-boundaries.sh` stays happy and
-    // the iOS re-target stays a build-file change.
-    implementation(libs.kotlinx.coroutines.core)
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.kotlinx.coroutines.core)
+    sourceSets {
+        commonMain {
+            kotlin.srcDir("src/main/kotlin")
+            dependencies {
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.coroutines.core)
+            }
+        }
+        commonTest {
+            kotlin.srcDir("src/test/kotlin")
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+        jvmMain {
+            resources.srcDir("src/main/resources")
+        }
+        jvmTest {
+            resources.srcDir("src/test/resources")
+        }
+        iosMain {
+            kotlin.srcDir(bundleShared.map { it.outputDir })
+        }
+        iosTest {
+            kotlin.srcDir(bundleSharedTest.map { it.outputDir })
+        }
+    }
 }
