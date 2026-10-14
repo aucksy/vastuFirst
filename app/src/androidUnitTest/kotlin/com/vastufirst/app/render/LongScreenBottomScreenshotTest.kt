@@ -96,7 +96,8 @@ class LongScreenBottomScreenshotTest {
     /** The paid document's ending: disputes, the disclaimer, and the only way out of the flow. */
     @Test
     fun report_bottom() = captureBottomPair("report", anchor = hasText("Done — see all my plans")) {
-        ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.BUILDING)
+        // The full report, as the app shows it: with "Share this report as a PDF" (v0.38.0).
+        ReportContent(analysis = RenderFixtures.sampleAnalysis, intent = Intent.BUILDING, onShare = {})
     }
 
     /**
