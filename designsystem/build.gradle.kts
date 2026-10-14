@@ -10,7 +10,14 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        // Kotlin's own JVM target follows the JDK Gradle runs on (21 since the Android 16 move), while
+        // Java stays 17 (compileOptions below) - and Gradle refuses the mismatch. Pin Kotlin to 17 too:
+        // the bytecode the app ships does not change.
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
