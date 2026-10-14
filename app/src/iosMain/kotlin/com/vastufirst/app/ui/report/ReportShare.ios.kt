@@ -54,8 +54,8 @@ private fun drawDocument(doc: ReportDocument, ctx: UIGraphicsPDFRendererContext?
     val muted = UIColor(red = 110 / 255.0, green = 112 / 255.0, blue = 104 / 255.0, alpha = 1.0)
     val accent = UIColor(red = 95 / 255.0, green = 132 / 255.0, blue = 101 / 255.0, alpha = 1.0)
 
-    fun draw(text: String, size: Double, color: UIColor, bold: Boolean = false, gapAfter: Double = 4.0, indent: Double = 0.0) {
-        val font = if (bold) UIFont.boldSystemFontOfSize(size) else UIFont.systemFontOfSize(size)
+    fun draw(text: String, fontSize: Double, color: UIColor, bold: Boolean = false, gapAfter: Double = 4.0, indent: Double = 0.0) {
+        val font = if (bold) UIFont.boldSystemFontOfSize(fontSize) else UIFont.systemFontOfSize(fontSize)
         val attrs = mapOf<Any?, Any?>(NSFontAttributeName to font, NSForegroundColorAttributeName to color)
         @Suppress("CAST_NEVER_SUCCEEDS")
         val s = text as NSString

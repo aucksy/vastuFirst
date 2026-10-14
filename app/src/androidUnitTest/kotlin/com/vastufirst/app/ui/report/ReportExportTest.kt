@@ -75,4 +75,19 @@ class ReportExportTest {
         assertEquals("VastuFirst-Builder-s-draft-2BHK.pdf", reportFileName("Builder's draft — 2BHK"))
         assertEquals("VastuFirst-report.pdf", reportFileName("  ///  "))
     }
+
+    // The Android PDF itself: A4 pages, more than one for a full report, and real PDF bytes out.
+    @Test
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    fun the_android_pdf_is_written_on_a4_pages() {
+        val pdf = writeReportPdf(buildReportDocument(RenderFixtures.sampleAnalysis, Intent.BUILDING, "h", "d"))
+        try {
+            assertTrue(pdf.pages.size >= 2, "a full report runs to more than one page, was ${pdf.pages.size}")
+            assertTrue(pdf.pages.all { it.pageWidth == PAGE_WIDTH && it.pageHeight == PAGE_HEIGHT })
+            val bytes = java.io.ByteArrayOutputStream().also { pdf.writeTo(it) }.toByteArray()
+            assertTrue(bytes.size > 1000 && String(bytes, 0, 4) == "%PDF", "not a PDF: ${bytes.size} bytes")
+        } finally {
+            pdf.close()
+        }
+    }
 }
