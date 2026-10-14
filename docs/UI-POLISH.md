@@ -236,29 +236,31 @@ are not inconvenient, they are **blocked**:
 | Candidate | Verdict for *this* project |
 |---|---|
 | Google's `com.android.compose.screenshot` | **Blocked twice.** Its own docs say *"Kotlin Multiplatform: Not supported; Android projects only"* — and `:designsystem` is a Compose Multiplatform module. It is also version-locked to the AGP dev cycle, so on AGP 8.7.3 we'd be stuck on `0.0.1-alpha06` (Aug 2024). |
-| Paparazzi | **Blocked.** Stable 1.3.5 renders **API 34 only** and we are on compileSdk/targetSdk **35**. The 2.0 line that can is alpha and needs Java 21. |
+| Paparazzi | **Blocked.** Stable 1.3.5 renders **API 34 only** and we are on compileSdk/targetSdk **36** (35 when this was decided). The 2.0 line that can is alpha and needs Java 21. |
 | **Roborazzi** | **Fits.** First-class Compose Multiplatform support with a working KMP sample; used by Google's own Now in Android. |
 
 **Pinned versions — do not float these:**
 
 - **Roborazzi `1.60.0`.** Two independent ceilings, and 1.60.0 is the only version under **both**:
-  1. **Gradle** — 1.62.0+ are published by Gradle 9.x; we are on the **Gradle 8.9** wrapper AGP 8.7.3
-     requires.
+  1. **Gradle** — 1.62.0+ are published by Gradle 9.x; we are on **Gradle 8.14.5** (AGP 8.13.2,
+     since v0.37.0). Moving to Gradle 9 is stage 0b of the iPhone plan.
   2. **Kotlin metadata** — `1.61.0` was compiled with **Kotlin 2.3.0**, whose metadata (binary
      version 2.3.0) our **Kotlin 2.0.21** compiler cannot read: it fails
      `compileDebugUnitTestKotlin` with *"incompatible version of Kotlin … 2.3.0, expected 2.0.0"*.
      **`1.60.0` is the last release built with Kotlin 2.0.21** (verified against Roborazzi's own
      `gradle/libs.versions.toml` per tag). *(The original audit pinned 1.61.0 for the Gradle ceiling
      alone and missed this one — corrected here after CI proved it, 2026-07-24.)*
-- **Robolectric `4.14.1`** — the first release that can render **SDK 35**.
+- **Robolectric `4.16.1`** (since v0.37.0, 14 Oct 2026) — 4.16 is the first release that can render
+  **SDK 36**, and it needs **Java 21** to do it. Gradle now runs on 21; the pure modules keep a Java 17
+  toolchain, so CI installs both.
 - `testOptions.unitTests.isIncludeAndroidResources = true` is required, and
-  `src/test/resources/robolectric.properties` must say `sdk = 35`.
+  `src/androidUnitTest/resources/robolectric.properties` must say `sdk=36`.
 
 ⚠ **Consequence of that pin, stated honestly:** Roborazzi's `dumpUiTree` (the feature that emits the
 L1 measurement manifest for free) arrived in **1.69.0** and is therefore **not available to us**. So
 the build-side manifest is produced instead by a small hand-written test that walks the Compose
 semantics tree and writes the same JSON — `boundsInRoot`, `testTag`, role, text — roughly 40 lines.
-Revisit if we ever move off Gradle 8.9. Do not bump Gradle before the 4 August delivery to chase it.
+Revisit with the Gradle 9 move (iPhone plan stage 0b), which lifts this pin.
 
 Design-side references come from headless Chrome rendering the 14 phone frames already present in
 the Sage & Gold design file — this is proven working and needs no npm dependency.

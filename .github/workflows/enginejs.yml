@@ -49,12 +49,13 @@ jobs:
             17
             21
 
-      - name: Set up Gradle 8.14.5
-        # AGP 8.13 (Android 16 target) needs Gradle 8.13 or later. Kept on the 8.x line on purpose:
-        # Gradle 9 is a separate move (the Kotlin and Roborazzi pins ride on it).
+      - name: Set up Gradle 9.5.1
+        # Gradle 9.5.1 + AGP 8.13.2 is the pairing Roborazzi 1.76.0's own build uses (iPhone plan stage
+        # 0b). AGP stays 8.x until the module split (stage 2): AGP 9 forbids the Android app plugin in
+        # a multiplatform module.
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.14.5'
+          gradle-version: '9.5.1'
 
       - name: Set up Node 20
         uses: actions/setup-node@v4

@@ -1,47 +1,42 @@
 # Version catalog — single source of truth for dependency versions (Impl PRD §2).
 # Pin versions; do not float to "latest" without a reason.
 [versions]
-kotlin = "2.0.21"                 # K2 compiler (Impl PRD §2: Kotlin 2.0+)
+kotlin = "2.4.21"                 # iPhone plan stage 0b (14 Oct 2026). Apple takes only Xcode 26 builds, which Kotlin supports from 2.2.21
 agp = "8.13.2"                    # Android 16 (compileSdk 36) needs AGP 8.9+. Stays < 9: AGP 9 forbids com.android.application in a KMP module (iPhone plan, stage 2)
-composeMultiplatform = "1.7.1"   # Compose Multiplatform 1.6+
+composeMultiplatform = "1.11.1"  # newest line that builds on AGP 8.x; 1.12 needs AGP 9.1.1 (stage 2)
 androidxActivityCompose = "1.9.3"
 androidxCoreKtx = "1.13.1"
 # The opening screen on Android 8-11, which have no system splash of their own. On 12+ it maps the
 # same theme attributes onto the platform splash, so one theme describes the launch everywhere.
 androidxCoreSplashscreen = "1.0.1"
-kotlinxSerialization = "1.7.3"
+kotlinxSerialization = "1.11.0"
 kotlinxDatetime = "0.6.1"         # engine uses no java.time (Product PRD §3.1)
-kotlinxCoroutines = "1.9.0"
+kotlinxCoroutines = "1.11.0"
 koin = "4.0.0"                    # KMP-friendly DI (Impl PRD §2) — applied from Phase 1
-sqldelight = "2.0.2"             # KMP-native DB (Impl PRD §2) — applied from Phase 2
+sqldelight = "2.4.1"             # KMP-native DB; 2.4 has the iPhone driver the plan uses (stage 1)
 turbine = "1.2.0"
 androidxNavigationCompose = "2.8.4"   # Compose navigation (Android) — Phase 2 screen graph
 androidxLifecycle = "2.8.7"           # ViewModel + lifecycle-aware Compose collectors
 # Google Play Billing — the ONLY payment route Play permits for digital content sold and read
 # inside a Play Store app. Built in full, shipped behind a flag (app/.../billing/Billing.kt).
-# ⚠ Play refuses new apps and updates on a Billing Library below 8 since 31 Aug 2026. Pinned to
-# 8.0.0, not the newest 8.x: 8.1+ is built with Kotlin 2.2 (its pom pulls kotlin-stdlib 2.2.10), whose
-# metadata our Kotlin 2.0.21 compiler cannot read. Move it with the Kotlin upgrade. Nothing secret
-# goes in the APK.
-playBilling = "8.0.0"
+# ⚠ Play refuses new apps and updates on a Billing Library below 8 since 31 Aug 2026. 8.3.0 is the
+# newest 8.x (built with Kotlin 2.2 - readable since the Kotlin 2.4 move; 8.0.0 was the only one Kotlin
+# 2.0.21 could read). 9.x is a separate move with its own API changes. Nothing secret goes in the APK.
+playBilling = "8.3.0"
 
 # --- UI render harness (UI-POLISH.md §6). PINS ARE LOAD-BEARING — read docs/UI-POLISH.md §6.1
-# before touching them. TWO independent ceilings, and 1.60.0 is the only version under both:
-#   1. Gradle: Roborazzi 1.62+ is published by Gradle 9.x; we are on the Gradle 8.9 wrapper AGP
-#      8.13 needs (8.14.5 since the Android 16 move; still 8.x).
-#   2. Kotlin metadata: Roborazzi 1.61.0 was compiled with Kotlin 2.3.0 (metadata binary version
-#      2.3.0), which our Kotlin 2.0.21 compiler CANNOT read — it fails compileDebugUnitTestKotlin
-#      with "incompatible version of Kotlin ... 2.3.0, expected 2.0.0". 1.60.0 is the last release
-#      built with Kotlin 2.0.21. (Verified against Roborazzi's own gradle/libs.versions.toml at each
-#      tag: 1.60.0 = Kotlin 2.0.21; 1.61.0 = Kotlin 2.3.0.)
+# before touching them. Until v0.37.0 Roborazzi was held at 1.60.0 under two ceilings: Gradle (1.62+
+# is published by Gradle 9) and Kotlin metadata (1.61+ is compiled with Kotlin 2.3, unreadable by 2.0).
+# Stage 0b lifts both: Kotlin 2.4, Gradle 9.5.1 + AGP 8.13.2 - the exact pairing Roborazzi 1.76.0's own
+# build uses (its gradle/libs.versions.toml and wrapper at that tag).
 # Robolectric 4.16 is the first that renders SDK 36 (our targetSdk), and it needs Java 21 to do it
 # (CI installs 17 and 21; Gradle and the tests run on 21). Do NOT float these.
-roborazzi = "1.60.0"
+roborazzi = "1.76.0"
 robolectric = "4.16.1"
 # ui-test-manifest supplies the ComponentActivity that runComposeUiTest (the L1 semantics walk)
-# launches under Robolectric. Pinned to the Jetpack Compose version that Compose Multiplatform
-# 1.7.1 maps to (1.7.5, per the JB compatibility table) so it matches the compose-ui on the classpath.
-androidxComposeUiTestManifest = "1.7.5"
+# launches under Robolectric. Pinned to the Jetpack Compose version that Compose Multiplatform 1.11.1
+# maps to (1.11.2, read from its published module file) so it matches the compose-ui on the classpath.
+androidxComposeUiTestManifest = "1.11.2"
 
 # Android SDK levels: min 26 / target 36. Google Play refuses a target below 36 since 31 Aug 2026.
 compileSdk = "36"
