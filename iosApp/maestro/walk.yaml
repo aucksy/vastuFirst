@@ -72,3 +72,24 @@ appId: com.vastufirst.app
     visible: "(?i).*full report.*"
     timeout: 30000
 - takeScreenshot: 07-report
+
+# Unlock (free in this version: the screen says no payment is taken), then share the full report as a
+# PDF. The iPhone's own share sheet must open - proof the PDF was written.
+- tapOn: "Unlock the full report"
+- extendedWaitUntil:
+    visible: ".*not charged in this version.*"
+    timeout: 20000
+- takeScreenshot: 08-unlock
+- tapOn: "Unlock on this device — free"
+- extendedWaitUntil:
+    visible: "(?i).*full report.*"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "Share this report as a PDF"
+    direction: DOWN
+    timeout: 60000
+- tapOn: "Share this report as a PDF"
+- extendedWaitUntil:
+    visible: "(?i).*(save to files|copy|print|mail|messages).*"
+    timeout: 20000
+- takeScreenshot: 09-share-sheet

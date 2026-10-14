@@ -15,6 +15,9 @@ expect fun nowMillis(): Long
 /** "today", "yesterday", "3 days ago", "8 Jul" — when a home was last changed, in the phone's time zone. */
 expect fun updatedLabel(updatedAt: Long, now: Long): String
 
+/** A calendar date in the phone's time zone, English month: "14 Oct 2026". */
+expect fun dateLabel(millis: Long): String
+
 /** The current time, recomposing once when the local day changes (so "today" becomes "yesterday"). */
 @Composable
 expect fun rememberToday(): Long

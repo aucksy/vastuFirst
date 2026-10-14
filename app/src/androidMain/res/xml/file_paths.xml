@@ -13,4 +13,7 @@
 -->
 <paths>
     <cache-path name="plan-photos" path="plan-photos/" />
+    <!-- The report PDF the person chose to share (14 Oct 2026). Cache again: it is handed to the app
+         they share it with, and kept no longer than Android likes. -->
+    <cache-path name="shared-reports" path="shared-reports/" />
 </paths>

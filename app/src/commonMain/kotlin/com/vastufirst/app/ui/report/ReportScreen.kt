@@ -169,7 +169,22 @@ fun ReportScreen(
     // Thin wrapper: the ONLY thing that touches the ViewModel, so the report renders headlessly from
     // fixture state in the screenshot harness (UI-POLISH §6).
     val analysis by vm.analysis.collectAsStateWithLifecycle()
+    // ⭐ SHARE AS PDF (14 Oct 2026) — the paid report, as a file the reader can send to their
+    // architect. Only once unlocked; built from the same words this screen shows (ReportExport.kt).
+    val sharer = rememberReportSharer()
+    val mark = LocalDecimalMark.current
+    val onShare: (() -> Unit)? = analysis?.takeIf { vm.unlocked }?.let { a ->
+        {
+            val home = vm.name?.takeIf { it.isNotBlank() } ?: "My home"
+            val today = com.vastufirst.app.platform.dateLabel(com.vastufirst.app.platform.nowMillis())
+            sharer.share(
+                buildReportDocument(a, vm.intent, home, today, roomNamesById(vm.rooms), mark),
+                reportFileName(home),
+            )
+        }
+    }
     ReportContent(
+        onShare = onShare,
         analysis = analysis,
         intent = vm.intent,
         unlocked = vm.unlocked,
@@ -332,6 +347,8 @@ fun ReportContent(
      * hand, whose door the reader placed on the grid themselves: no note, no **i**.
      */
     doorNote: String? = null,
+    /** "Share this report as a PDF". Null hides it — the free report, and every screenshot test. */
+    onShare: (() -> Unit)? = null,
 ) {
     val colors = VastuTheme.colors
     val resolvedIntent = intent ?: Intent.BUILDING
@@ -830,6 +847,16 @@ fun ReportContent(
                 )
             }
 
+            if (unlocked && onShare != null) {
+                Spacer(Modifier.height(VastuTheme.spacing.s6))
+                VastuButton(
+                    "Share this report as a PDF",
+                    onClick = onShare,
+                    style = VastuButtonStyle.SECONDARY,
+                    modifier = Modifier.testTag("report.share"),
+                )
+            }
+
             Spacer(Modifier.height(VastuTheme.spacing.s6))
             VastuButton("Done — see all my plans", onClick = onDone)
 
@@ -991,7 +1018,7 @@ private fun VerdictHeader(
     }
 }
 
-private fun bandWord(score: Int): String = when {
+internal fun bandWord(score: Int): String = when {
     score >= 75 -> "Strong"
     score >= 50 -> "Workable"
     else -> "Needs work"
@@ -1001,7 +1028,7 @@ private fun bandWord(score: Int): String = when {
  * One honest sentence about the whole home. It leads with what is working, because the counts
  * immediately below break the same home down and a reader needs the shape before the detail.
  */
-private fun verdictSentence(
+internal fun verdictSentence(
     score: Int,
     defectCount: Int,
     remediesOnly: Boolean,
@@ -1055,7 +1082,7 @@ private fun verdictSentence(
  *
  * So the filter lives here, once, and the test now bans the sentence itself.
  */
-private fun advisableRemedies(
+internal fun advisableRemedies(
     d: Defect,
     remediesOnly: Boolean,
     isFlat: Boolean = false,
@@ -1084,7 +1111,7 @@ private fun advisableRemedies(
  * honest sentence in its place. The problem, its severity, its reasoning, its zone and its points
  * are all untouched — a toilet in the North-East is exactly as much of a problem in a flat.
  */
-private fun noLayoutFor(d: Defect, remediesOnly: Boolean, isFlat: Boolean): Boolean =
+internal fun noLayoutFor(d: Defect, remediesOnly: Boolean, isFlat: Boolean): Boolean =
     remediesOnly || (isFlat && d.belongsToBuilding)
 
 /**
@@ -1098,7 +1125,7 @@ private fun noLayoutFor(d: Defect, remediesOnly: Boolean, isFlat: Boolean): Bool
  * ⚠ And it does not end the reader at a dead end. The remedies below it still stand — what is gone
  * is only the instruction to move something that was never theirs.
  */
-private const val BUILDING_NOT_YOURS =
+internal const val BUILDING_NOT_YOURS =
     "This belongs to the whole building, not to your flat. No single flat can move it, so what " +
         "follows is a way to soften it rather than to correct it."
 
@@ -1362,10 +1389,7 @@ private fun RoomsSection(
                                 // load-bearing and both survive: it is read on the 32 named
                                 // positions, and it is not scored twice. Neither may ever be
                                 // dropped to make a word count — they are the honesty of the page.
-                                r.verdict == Verdict.NOT_SCORED && r.type == RoomType.ENTRANCE ->
-                                    "Read in full under “Your front door” above, on the " +
-                                        "tradition's 32 named positions — finer than the eight " +
-                                        "directions a room gets. Not scored twice."
+                                r.verdict == Verdict.NOT_SCORED && r.type == RoomType.ENTRANCE -> ENTRANCE_READ_AT_DOOR
                                 r.verdict == Verdict.NOT_SCORED -> NOT_RATED_REASON
                                 else -> whyRight(r)
                             },
@@ -1387,7 +1411,13 @@ private fun RoomsSection(
 }
 
 /** Said once, on every room the tradition does not place — the report's existing wording. */
-private const val NOT_RATED_REASON: String =
+/** Why the entrance row carries no verdict of its own: it is read on the door's 32 positions instead. */
+internal const val ENTRANCE_READ_AT_DOOR: String =
+    "Read in full under “Your front door” above, on the " +
+        "tradition's 32 named positions — finer than the eight " +
+        "directions a room gets. Not scored twice."
+
+internal const val NOT_RATED_REASON: String =
     "The tradition does not place this kind of room, so we have not judged it — " +
         "neither a problem nor an approval."
 
@@ -1599,7 +1629,7 @@ private fun RoomBody(r: RoomResult, zones: List<ZoneInfo>, reason: String) {
 }
 
 /** The one-line zone identity under a finding's title — Sanskrit name and what it governs. */
-private fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): String? =
+internal fun zoneLine(zone: com.vastufirst.shared.Zone, zones: List<ZoneInfo>): String? =
     zones.firstOrNull { it.zone == zone }?.let { info ->
         listOfNotNull(info.sanskrit, info.deity).joinToString(" · ").takeIf { it.isNotBlank() }
     }
@@ -1730,7 +1760,10 @@ private fun padaAccent(v: PadaVerdict) = with(VastuTheme.colors) {
 // ⚠ The trailing phrase must NOT be one of the strings ReportIntentTest bans for a buyer or a
 // resident ("still on paper", "on the drawing", "still free to make", …). This heading only ever
 // renders on the building branch, but a banned phrase here is one refactor away from a red gate.
-private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — before it's built", text, VastuTheme.colors.primary)
+private fun LayoutBlock(text: String) = AdviceBlock(LAYOUT_HEADING, text, VastuTheme.colors.primary)
+
+/** The layout block's heading, shared with the PDF. */
+internal const val LAYOUT_HEADING = "✦ Change the layout — before it's built"
 
 /**
  * ⭐ The flat reader's replacement for [LayoutBlock] — see [BUILDING_NOT_YOURS].
@@ -1741,7 +1774,10 @@ private fun LayoutBlock(text: String) = AdviceBlock("✦ Change the layout — b
  */
 @Composable
 private fun BuildingBlock() =
-    AdviceBlock("✦ The building's, not your flat's", BUILDING_NOT_YOURS, VastuTheme.colors.provenanceDisp)
+    AdviceBlock(BUILDING_HEADING, BUILDING_NOT_YOURS, VastuTheme.colors.provenanceDisp)
+
+/** The building block's heading, shared with the PDF. */
+internal const val BUILDING_HEADING = "✦ The building's, not your flat's"
 
 /**
  * The remedies for THIS problem — and, where the classical texts record none, the sentence that says
@@ -1756,7 +1792,7 @@ private fun RemedyBlock(remedies: List<String>, note: String?) {
             .background(colors.secondary.copy(alpha = 0.10f)).padding(VastuTheme.spacing.s3),
         verticalArrangement = Arrangement.spacedBy(VastuTheme.spacing.s1),
     ) {
-        SectionLabel("If it cannot move — remedies", color = colors.secondaryText)
+        SectionLabel(REMEDIES_HEADING, color = colors.secondaryText)
         if (!note.isNullOrBlank()) VText(note, style = VastuTheme.type.bodySm, color = colors.textTertiary)
         remedies.forEach { VText("· $it", style = VastuTheme.type.bodySm, color = colors.textSecondary) }
     }
@@ -1845,3 +1881,6 @@ fun DisputesSection(disputes: List<Dispute>) {
         }
     }
 }
+
+/** The remedies block's heading, shared with the PDF. */
+internal const val REMEDIES_HEADING = "If it cannot move — remedies"

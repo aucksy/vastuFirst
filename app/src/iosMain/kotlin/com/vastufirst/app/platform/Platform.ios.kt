@@ -44,6 +44,11 @@ actual fun updatedLabel(updatedAt: Long, now: Long): String {
     }
 }
 
+actual fun dateLabel(millis: Long): String {
+    val d = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault()).date
+    return "${d.dayOfMonth} ${MONTHS[d.monthNumber - 1]} ${d.year}"
+}
+
 /** English month names, fixed: the app is English only, permanently. */
 private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 

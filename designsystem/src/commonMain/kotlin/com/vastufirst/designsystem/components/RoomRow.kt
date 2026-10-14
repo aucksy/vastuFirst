@@ -90,7 +90,8 @@ fun VastuRoomStatus.color(): Color = when (this) {
     VastuRoomStatus.RATED_AS_DOOR -> VastuTheme.colors.info
 }
 
-private fun VastuRoomStatus.label(): String = when (this) {
+/** The status in words, as the row's pill says it (and the report PDF prints it). */
+fun VastuRoomStatus.statusWords(): String = when (this) {
     VastuRoomStatus.ALIGNED -> "Already right"
     VastuRoomStatus.NOT_IDEAL -> "Not ideal"
     VastuRoomStatus.NEEDS_FIXING -> "Needs fixing"
@@ -126,7 +127,7 @@ private fun VastuRoomStatus.glyph(): String = when (this) {
 /** The status word as a pill — colour PLUS word PLUS glyph, so colour is never the only carrier. */
 @Composable
 fun RoomStatusPill(status: VastuRoomStatus, modifier: Modifier = Modifier) =
-    TagPill(text = status.label(), color = status.color(), glyph = status.glyph(), modifier = modifier)
+    TagPill(text = status.statusWords(), color = status.color(), glyph = status.glyph(), modifier = modifier)
 
 /**
  * ⭐⭐ ONE ROW, ONE TAP, AND THE SAME BEHAVIOUR FROM BOTH ENDS (owner, 10 Aug 2026).

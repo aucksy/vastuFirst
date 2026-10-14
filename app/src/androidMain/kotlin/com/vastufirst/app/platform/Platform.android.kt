@@ -22,6 +22,10 @@ actual fun nowMillis(): Long = System.currentTimeMillis()
 
 actual fun updatedLabel(updatedAt: Long, now: Long): String = relativeUpdated(updatedAt, now)
 
+actual fun dateLabel(millis: Long): String =
+    java.time.Instant.ofEpochMilli(millis).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+        .format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.ENGLISH))
+
 @Composable
 actual fun rememberToday(): Long = rememberDayClock()
 
