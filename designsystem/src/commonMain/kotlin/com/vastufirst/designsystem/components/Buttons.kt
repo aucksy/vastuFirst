@@ -1,5 +1,6 @@
 package com.vastufirst.designsystem.components
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -176,6 +177,9 @@ fun IconTapButton(
             .semantics(mergeDescendants = true) { this.contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
-        VText(text = glyph, style = VastuTheme.type.h2, color = tint)
+        // ⭐ The glyph is drawing, not words (14 Oct 2026). Merged into the button it was read too, so the
+        // button's name became "Back ‹" — measured on the iPhone, where the cloud walk could not find a
+        // button called "Back". Hidden from screen readers, the button is called exactly its description.
+        VText(text = glyph, style = VastuTheme.type.h2, color = tint, modifier = Modifier.clearAndSetSemantics {})
     }
 }
