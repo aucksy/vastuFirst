@@ -88,9 +88,10 @@ feedback continuously; the three-phone pass still has to happen.
 - **A polish round** — the score reveal, the empty screens, the finish of the thing.
 
 **Stage 5 — money and iPhone.** The ₹699 payment is built and switched off, waiting on your decision
-about how it is collected. A shop for remedies is planned. **iPhone has not started**: the app was
-built from day one so that this is a re-targeting job rather than writing it twice, but it is real
-work and it is a whole stage.
+about how it is collected. A shop for remedies is planned. **iPhone has started**, with its first
+step: the Android app now uses the same newer tools the iPhone app needs. Next, the scoring runs on an
+iPhone, then the screens. Most of the app carries across, because it was built from day one so that
+this is a re-targeting job rather than writing it twice — but it is real work and it is a whole stage.
 
 **Stage 6 — launch.** The disclaimer, the privacy policy and the sources page are in the app.
 **Terms of use and a refund policy still have to be written** — those are needed before the store will
@@ -98,6 +99,33 @@ take it. The store listing, the data-safety declaration and the content rating a
 developer account.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
+
+## Week of 12 – 18 October 2026
+
+### Wednesday 14 October — ready for the Play Store's new rules, and nothing leaves your phone
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.37.0/vastufirst-v0.37.0.apk
+**This is the one to install.**
+
+**The app now meets the Play Store's newest rules.** Since the end of August, Google Play only takes
+apps built for Android 16, and only with its newest payment system. This build is both. Nothing you
+see changes: every screen was drawn again and compared with the last build, dot by dot, and none of
+them moved.
+
+**Your homes stay on your phone — now without exception.** The privacy screen has always said that
+everything you draw and every report is saved only on this phone. One thing did not match: Android's
+own automatic backup could copy the app's saved homes and plan photos to the phone owner's Google
+Drive, and onto a new phone. That copy is now switched off, so the privacy words are true word for
+word. "Delete all my data" still removes everything.
+
+**The checkout is readier for the day payments switch on.** Payments are still off in this build and
+the report still unlocks free. Three things in the checkout are fixed for when they go on: the pay
+screen now shows Google Play's price as soon as Google answers; a payment made in cash at a shop
+counter now says it is waiting, and unlocks the report by itself once Google confirms it; and a
+dropped connection to Google Play no longer makes the next payment fail.
+
+**The iPhone version has started.** The first step was this build: the newer tools it uses are the
+same ones the iPhone app needs.
 
 ## Week of 28 September – 4 October 2026
 
