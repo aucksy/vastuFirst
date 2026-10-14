@@ -23,7 +23,7 @@ STANDING RULES FOR THE WEEKLY EMAIL (set 3 August 2026, apply every week from no
 
 Your Vastu home-scoring app: draw or pick a home, mark which way it faces, and get a Vastu score and a report. It works fully offline, and the score is worked out on the phone itself.
 
-**Target delivery: Tuesday, 4 August 2026.**
+**The first delivery was on 4 August 2026.** The app is now being finished for the Play Store, and the iPhone version is being built.
 
 You can install and try the latest version on an Android phone at any time — just ask for the current link, and the newest build is always ready.
 
@@ -31,41 +31,48 @@ You can install and try the latest version on an Android phone at any time — j
 
 ## 🙋 What we need from you
 
-These are the things only you can decide. Everything else is done.
+These are the things only you can decide or provide. Everything else is being finished on our side.
 
 1. **A Google Play developer account.** It costs **$25 (about ₹2,100), once**, at
-   `play.google.com/console`, on the Google account you want to own this app forever. Nothing can be
-   published until it exists and your ID is verified, and verification can take a few days — so this
-   is the one worth starting today. Tell us the email address on it and we'll take it from there.
-2. **A decision about how the ₹699 is collected.** Google does not allow other payment services for
-   something sold and read inside a Play Store app, so the checkout is built on Google's own — which
-   means Google keeps about ₹105 of each ₹699. The alternative is selling the report on a web page
-   instead, where you keep all of it but the customer has to pay on a website first. We have built
-   the first; say the word if you'd rather have the second.
-3. **Where the privacy policy should live on the web.** Google needs it at a public address. We can
-   put it up for free in about ten minutes — just say yes.
-4. **Two quick "please glance at it on your phone" checks:** does the compass helper point the right
-   way in your actual flat, and does the app come back with your half-drawn home intact after you
-   leave it in the background for an hour?
+   `play.google.com/console`, on the Google account you want to own this app forever. Google checks
+   your identity, which can take a few days — so this is the one worth starting today. Tell us the
+   email address on it, and **the name customers should see as the seller** (your own name, or a
+   registered business).
+2. **Twelve testers.** Google requires a new personal account to run a closed test with at least
+   **12 people for 14 days in a row** before the app can go public. We need **12 Gmail addresses**
+   — family, friends, early customers — each with an Android phone. We set up the test and send them
+   the link.
+3. **Approve three drafts.** We have written them; they need your facts and your yes:
+   - **Terms of use** — they need the seller's legal name, a postal address in India, and the city
+     whose courts would hear a dispute.
+   - **Refund policy** — how long after buying someone may ask for their money back, and whether you
+     refund as goodwill when someone simply disagrees with the tradition.
+   - **The store listing** — the app's name on the store, its two descriptions, six pictures made
+     from the app's own screens, and the banner.
+4. **How the ₹699 is collected.** Google does not allow other payment services for something sold
+   and read inside a Play Store app, so the checkout is built on Google's own — which means Google
+   keeps about ₹105 of each ₹699. The alternative is selling the report on a web page instead, where
+   you keep all of it but the customer has to pay on a website first. We have built the first; say
+   the word if you'd rather have the second.
+5. **What one payment unlocks.** Today one payment unlocks the full report for **every home** on
+   that Google account, while the pay screen says "this home, forever". Pick one and the words and
+   the product will match it: **every home on the account** (simplest; Google restores it after a
+   reinstall) or **one home per payment**.
+6. **The plan-reading service in your name.** Reading a photographed plan uses a paid AI service
+   (about 50 paise a plan at September's prices — each plan is read twice). Before launch it should be billed to you: an account at
+   openrouter.ai with your card and a monthly spending limit. We move the app onto it.
+7. **Two names for the front door.** Two of the 32 door positions — **E7 and S7** — have no
+   traditional name in our sources, so the report says it will not invent one. If your Vastu expert
+   can name them, the report will use those names.
+8. **The real-phone check.** Run the checklist we send you on three phones (a small, older one; a
+   mid-range one; a new one if you can borrow it), and tell us anything that looks wrong, with a
+   screenshot and the row number.
+9. **For the iPhone, when you are ready:** an Apple developer account (**₹8,700 a year**, enrolled
+   through the Apple Developer app on an iPhone), and an iPhone to test on.
 
-**Settled since last week:** the address customers write to is `contact@vastufirst.com`, and it is
-already in the app and the privacy policy.
-
-**✅ Where the prayer room belongs is now decided — the north-east.** This was the last open Vastu
-question, and it was yours to make. Prayer rooms used to be left out of the score altogether, because
-the old texts place the shrine at the centre of the home while almost every consultant working today
-places it in the north-east. We now follow the modern reading: **north-east is ideal, north and east
-are fine, and no position counts as a fault — including the centre.** A prayer room in, say, the
-north-west now reads as "not ideal", never as a defect, which is the honest way to describe a choice
-between two living traditions rather than a mistake. The report still shows you both traditions side
-by side, and now also says which one your score uses. **Every disputed Vastu question is now settled.**
-
-**And anyone who already saved a home is told their score was recalculated**, with the old number,
-the new number and the reason in ordinary words, before anything changes on their screen. A score
-that moves on its own with no explanation is the difference between an honest product and an unnerving
-one, and it is not something we were willing to ship.
-
----
+**Already settled:** the address customers write to is `contact@vastufirst.com`; the privacy policy
+is live at **www.vastufirst.com/privacy**; and every disputed Vastu question has a ruling (the prayer
+room is ideal in the north-east, and no position counts as a fault).
 
 ---
 
@@ -88,19 +95,48 @@ feedback continuously; the three-phone pass still has to happen.
 - **A polish round** — the score reveal, the empty screens, the finish of the thing.
 
 **Stage 5 — money and iPhone.** The ₹699 payment is built and switched off, waiting on your decision
-about how it is collected. A shop for remedies is planned. **iPhone has started**, with its first
-step: the Android app now uses the same newer tools the iPhone app needs. Next, the scoring runs on an
-iPhone, then the screens. Most of the app carries across, because it was built from day one so that
-this is a re-targeting job rather than writing it twice — but it is real work and it is a whole stage.
+about how it is collected. A shop for remedies is planned. **The iPhone app opens and works** in
+Apple's iPhone simulator: the same screens, the same scoring (your sample home scores exactly what it
+scores on Android), drawing, North, the report, and choosing a plan from Photos, Files or the camera.
+What is left needs your Apple account: installing it on a real iPhone, then Apple's own checkout.
 
-**Stage 6 — launch.** The disclaimer, the privacy policy and the sources page are in the app.
-**Terms of use and a refund policy still have to be written** — those are needed before the store will
-take it. The store listing, the data-safety declaration and the content rating are all waiting on the
-developer account.
+**Stage 6 — launch.** The disclaimer, the privacy policy and the sources page are in the app. The
+terms of use, the refund policy and the store listing are drafted and waiting for your approval (item 3
+above). The data-safety and content-rating answers are ready. The file Google Play needs for an upload
+is now produced with every build.
 
 **No dates on any of this.** Several of them move only when a decision above lands.
 
 ## Week of 12 – 18 October 2026
+
+### Wednesday 14 October, later — share your report as a PDF, and the iPhone app opens
+
+**Try it:** https://github.com/aucksy/vastuFirst/releases/download/v0.38.0/vastufirst-v0.38.0.apk
+**This is the one to install.**
+
+**Your full report can now go to your architect.** At the end of the full report there is a new
+button, **"Share this report as a PDF"**. It makes a clean A4 document — the score, where to start,
+the front door, every room with its reason, the shape of the home, where the schools disagree, and
+what could not be checked — in exactly the report's own words, and opens your phone's share menu, so
+you can send it on WhatsApp, by email or save it. Nothing goes through us. The free report does not
+have the button; it comes with the full report.
+
+**A way back on every screen.** Four screens had no back arrow and relied on Android's own Back
+button: Add a home, the grid where you place your rooms, the unlock screen, and the welcome screen
+when you open it from your saved homes. They now have the same small arrow as every other screen.
+This matters most for the iPhone, which has no Back button at all.
+
+**The privacy policy says more, in plainer words.** It now names the service that reads a plan
+picture (a relay called OpenRouter, passing it to a model from OpenAI, sometimes Google), says that
+the app checks once a day for newer Vastu rules without sending anything about you, and says the
+phone's own backup no longer copies your homes. The same words are in the app and on the website.
+
+**For people who use a screen reader:** the small arrow and pencil buttons are now read out by their
+name only ("Back", "Rename"), not with the drawn symbol added.
+
+**The iPhone version now opens and works** in Apple's iPhone simulator: the same screens, the same
+scoring, drawing, North, the report and this new PDF, and the menu for choosing a plan from Photos
+or Files. The next step needs an Apple account (see "What we need from you").
 
 ### Wednesday 14 October — ready for the Play Store's new rules, and nothing leaves your phone
 

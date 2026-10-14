@@ -21,8 +21,8 @@ Keep every line in plain English: what to DO, what you should SEE. No file names
 
 # VastuFirst — the three-phone pass
 
-**Build to test:** v0.37.0 (14 October 2026) —
-[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.37.0/vastufirst-v0.37.0.apk)
+**Build to test:** v0.38.0 (14 October 2026) —
+[download the APK](https://github.com/aucksy/vastuFirst/releases/download/v0.38.0/vastufirst-v0.38.0.apk)
 
 This is the last check before the Play Store. Everything else is checked automatically on every
 build — the maths, the score, and a picture of every screen at small sizes and large text. What is
@@ -63,7 +63,7 @@ A vague "this looks off" with a screenshot is welcome — please don't talk your
 ## A · Installing and opening
 
 - [ ] **A1 · ⭐ Install over the last build without uninstalling.** With v0.36.0 on the phone and at
-      least one home saved, install v0.37.0 straight on top. Android must not ask you to uninstall,
+      least one home saved, install v0.38.0 straight on top. Android must not ask you to uninstall,
       and every saved home must still be there with the same score. If it refuses, or your homes are
       gone, stop and tell me. *(v0.37.0)*
 - [ ] **A2 · Open the app from cold.** Swipe it away from your recent apps, then open it. You should
@@ -201,6 +201,15 @@ Quickest way in: **Add a home → Try a sample plan → Read my home**. For E2 a
 - [ ] **E12 · The free part is still useful.** Before unlocking, the report should show your score,
       the front door, the kitchen and the toilets in full, with the rest marked "Reasoning and
       remedies — in the full report". Does the free part feel like a fair taste or a tease?
+- [ ] **E13 · ⭐ Share this report as a PDF** *(v0.38.0)*. With the full report open, scroll to the end
+      and press "Share this report as a PDF". Your phone's share menu should open. Send it to yourself
+      on WhatsApp or by email and open it: it should be A4 pages with the home's name, the score, where
+      to start, the front door, every room, and the rest of the report in the same words as the screen,
+      with nothing cut off at the bottom of a page. The free report must not show this button.
+- [ ] **E14 · A way back without the Back button** *(v0.38.0)*. On "Add your home", on the grid where
+      you place rooms, on the unlock screen, and on the welcome screen when you open it from your saved
+      homes, there is a small ‹ arrow at the top. Tap it on each: it should take you back exactly one
+      screen. On a first launch the welcome screen has no arrow (nothing is behind it).
 
 ## F · Drawing a home by hand
 
