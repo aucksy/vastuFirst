@@ -65,6 +65,8 @@
   "report-revealed": 0,
   "report-right": 14,
   "report-scanned": 0,
+  "sample-report": 0,
+  "sample-result": 0,
   "scan-angled-view": 0,
   "scan-assisted": 0,
   "scan-busy": 0,
