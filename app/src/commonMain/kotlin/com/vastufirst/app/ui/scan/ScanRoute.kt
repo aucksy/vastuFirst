@@ -9,8 +9,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 
-/** Which door "Add a home" opened this screen through — the picker or the camera. */
-enum class ScanStart { PICK, CAMERA }
+/**
+ * Which door "Add a home" opened this screen through — the picker, the camera, or the bundled sample
+ * sheet (15 Oct 2026), which needs no picker and no read.
+ */
+enum class ScanStart { PICK, CAMERA, SAMPLE }
 
 /**
  * The phone's own ways in for a plan picture. Each phone answers it (androidMain / iosMain); the scan
@@ -100,12 +103,19 @@ fun ScanRoute(
     }
 
     LaunchedEffect(Unit) {
+        // ⚠ The sample is checked BEFORE the idle test: a build with no reader starts in NotConfigured,
+        // and the sample — which reads nothing — must still open there.
+        if (startWith == ScanStart.SAMPLE) {
+            if (!autoOpened) { autoOpened = true; vm.showSample() }
+            return@LaunchedEffect
+        }
         if (startWith == null || autoOpened || vm.state != ScanUiState.Idle) return@LaunchedEffect
         autoOpened = true
         awaitingFirstPick = true
         when (startWith) {
             ScanStart.PICK -> pickDocument()
             ScanStart.CAMERA -> takePhoto()
+            ScanStart.SAMPLE -> Unit
         }
     }
 

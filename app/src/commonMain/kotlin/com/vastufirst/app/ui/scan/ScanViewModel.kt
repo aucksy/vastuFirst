@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vastufirst.shared.RoomType
 import com.vastufirst.shared.scan.PlanReader
+import com.vastufirst.shared.scan.SampleScan
 import com.vastufirst.shared.scan.ScanOutcome
 import com.vastufirst.shared.scan.ScanResult
 import com.vastufirst.shared.scan.withRoomType
@@ -149,6 +150,20 @@ class ScanViewModel(
         val refused = done.outcome as? ScanOutcome.Refused ?: return
         val alternative = refused.ifRead ?: return
         state = done.copy(outcome = alternative)
+    }
+
+    /**
+     * ⭐ "Try a sample plan" (owner, 15 Oct 2026): the bundled sample sheet and its recorded reading,
+     * shown on the ordinary result screen. No read is made, so it works with no reader configured and
+     * costs nothing. See [SampleScan].
+     */
+    fun showSample() {
+        val bytes = SampleScan.pictureBytes()
+        val outcome = SampleScan.outcome()
+        if (bytes == null || outcome == null) { state = ScanUiState.Unavailable; return }
+        lastSource = null
+        lastImage = DecodedImage(bytes, SampleScan.WIDTH.toDouble() / SampleScan.HEIGHT)
+        state = ScanUiState.Done(outcome)
     }
 
     /** Back to the ask, so the user can choose a different file. */

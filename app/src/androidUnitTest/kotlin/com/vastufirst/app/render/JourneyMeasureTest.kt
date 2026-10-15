@@ -79,10 +79,12 @@ internal class ReadHome(
     propertyType: PropertyType,
     /** The door when the plan named none and the reader tapped a wall — see the no-entrance journey. */
     tappedDoor: DoorSide? = null,
+    /** A door set for the reader — the sample sheet's, where the sheet draws it (SampleScan). */
+    presetDoor: GridDoor? = null,
 ) {
     val grid: List<GridRoom> = toGridRooms(outcome.rooms, outcome.cols, outcome.rows)
     val readDoor: GridDoor? = frontDoorFromEntrance(grid)
-    val door: GridDoor? = readDoor ?: tappedDoor?.let { doorOnWall(it, outcome.rooms) }
+    val door: GridDoor? = readDoor ?: presetDoor ?: tappedDoor?.let { doorOnWall(it, outcome.rooms) }
     val doorFromCaption: String? = frontDoorRead(grid)?.fromCaption
     val analysis: Analysis = VastuEngine().analyze(
         buildEnginePlan(
@@ -134,6 +136,19 @@ internal object JourneyFixtures {
             propertyType = PropertyType.INDEPENDENT_HOUSE,
             tappedDoor = DoorSide.S,
         ).also { check(it.readDoor == null) { "plan-01 now names an entrance; this journey would be the wrong one" } }
+    }
+
+    /** "Try a sample plan" (15 Oct 2026): the sample sheet, its door set where the sheet draws it. */
+    val sample: ReadHome by lazy {
+        val outcome = com.vastufirst.shared.scan.SampleScan.outcome()!!
+        ReadHome(
+            outcome = outcome,
+            photo = PlanSheet.bitmap().asImageBitmap(),
+            propertyType = PropertyType.INDEPENDENT_HOUSE,
+            presetDoor = com.vastufirst.app.ui.scan.doorForPhotoTap(
+                com.vastufirst.shared.scan.SampleScan.DOOR_PAGE_X, com.vastufirst.shared.scan.SampleScan.DOOR_PAGE_Y, outcome.rooms,
+            ),
+        )
     }
 
     /** A plan the reader read but could not place — the grid fallback. */
@@ -188,6 +203,23 @@ internal object JourneyFixtures {
             rows = home.outcome.rows,
             planImage = home.photo,
             doorKnown = home.readDoor != null,
+        ),
+    )
+
+    /** The sample's result: its door is already set, so the dial is scored with it and the button reads on. */
+    private fun sampleResult(home: ReadHome) = scan(
+        ScanUiState.Done(home.outcome),
+        "We read ${home.outcome.rooms.size} rooms, and which way is North (sample)",
+        2,
+        "turn the dial · Read my home",
+        north = com.vastufirst.app.ui.scan.NorthOnResult(
+            rooms = home.grid,
+            north = 0,
+            analysis = home.analysis,
+            cols = home.outcome.cols,
+            rows = home.outcome.rows,
+            planImage = home.photo,
+            doorKnown = home.door != null,
         ),
     )
 
@@ -310,7 +342,7 @@ internal object JourneyFixtures {
                 ),
             ),
             Journey("Draw by hand", listOf(welcome, addHome(1, "Draw it on a grid"), gridEmpty, gridDoor, northDrawn, drawnReport)),
-            Journey("Try the sample", listOf(welcome, addHome(1, "Try a sample plan"), northDrawn, drawnReport)),
+            Journey("Try the sample", listOf(welcome, addHome(1, "Try a sample plan"), sampleResult(sample), report(sample))),
             Journey(
                 "Unlock the full report",
                 listOf(

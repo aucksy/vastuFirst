@@ -128,8 +128,10 @@ Start from your list of homes: **"Add a home"**.
 - [ ] **B14 · When the reader is busy.** If you ever see "We're reading a lot of plans right now", it
       must say we haven't looked at your plan yet and offer "Try again" and "Draw it on a grid
       instead". Calm, not an error. *(only if it happens)*
-- [ ] **B15 · Try a sample plan.** "Try a sample plan" should go straight to "Which way is North?" and
-      then the report in two taps. *(one phone is enough)*
+- [ ] **B15 · Try a sample plan.** "Try a sample plan" should open "We read 8 rooms" with North asked on
+      the sample plan's own photo (no privacy card, no waiting, works without internet), then "Read my
+      home" opens the report — whose picture is the sample plan photo, not drawn room boxes.
+      *(one phone is enough; v0.41.0)*
 - [ ] **B16 · ⭐ "Show us on your plan".** On the "These rooms aren't placed yet" screen (row B12), a card
       headed "Show us on your plan" shows your own plan photo and asks "Tap your plan where it says …"
       for one room at a time. Tap the right spot for each room: a small dot should appear exactly under

@@ -51,14 +51,15 @@ appId: com.vastufirst.app
     visible: "Add your home"
     timeout: 20000
 
-# The sample home all the way to its report.
+# The sample home all the way to its report. Since 15 Oct 2026 the sample is the bundled sample SHEET:
+# it opens on the scan result ("We read 8 rooms") with North asked on the sheet's own photograph.
 - scrollUntilVisible:
     element: "Try a sample plan"
 - tapOn: "Try a sample plan"
 - extendedWaitUntil:
-    visible: "Which way is North.*"
+    visible: "We read .* rooms"
     timeout: 20000
-- takeScreenshot: 06-north
+- takeScreenshot: 06-sample-result
 # Swipe from the bottom edge: a swipe through the middle lands on the North dial, which turns instead
 # of scrolling (the dial is meant to be dragged).
 - repeat:

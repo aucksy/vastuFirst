@@ -30,7 +30,6 @@ import com.vastufirst.app.ui.legal.LegalScreen
 import com.vastufirst.app.ui.legal.PrivacyScreen
 import com.vastufirst.app.ui.marknorth.MarkNorthScreen
 import com.vastufirst.app.ui.newplan.NewPlanViewModel
-import com.vastufirst.app.ui.newplan.SamplePlans
 import com.vastufirst.app.ui.report.READING_MILLIS
 import com.vastufirst.app.ui.report.ReportScreen
 import com.vastufirst.app.ui.scan.PlanReadingConsent
@@ -187,13 +186,11 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                     // names its own picker, which the scan screen opens the moment it appears.
                     onScan = { nav.go(scanDoor(consent.isGranted(), ScanStart.PICK)) },
                     onPhotograph = { nav.go(scanDoor(consent.isGranted(), ScanStart.CAMERA)) },
-                    onSample = {
-                        val sample = SamplePlans.all.first()
-                        vm.updateRooms(sample.rooms)
-                        vm.updateDoor(sample.door)
-                        vm.updateNorth(sample.north)
-                        nav.go(Routes.MARK_NORTH)
-                    },
+                    // ⭐⭐ The sample is a SCANNED plan now (owner, 15 Oct 2026): the bundled sample sheet
+                    // on the ordinary scan result, so a first try shows the main journey on a real plan
+                    // photograph instead of drawn room boxes. Nothing is read and nothing leaves the
+                    // phone, so it skips the consent screen. See SampleScan.
+                    onSample = { nav.go(Routes.scanStarting(ScanStart.SAMPLE.name)) },
                 )
             }
 
@@ -253,6 +250,15 @@ fun VastuNavHost(onFirstScreenDecided: () -> Unit = {}) {
                         ?: return@LaunchedEffect
                     if (outcome is com.vastufirst.shared.scan.ScanOutcome.Refused) return@LaunchedEffect
                     planVm.acceptScan(outcome, scanVm.lastImage?.bytes)
+                    // The sample sheet draws its front door but the reader does not read it as a room,
+                    // so the sample sets it where the sheet draws it — see SampleScan.DOOR_PAGE_X.
+                    if (start == ScanStart.SAMPLE && planVm.door == null) {
+                        com.vastufirst.app.ui.scan.doorForPhotoTap(
+                            com.vastufirst.shared.scan.SampleScan.DOOR_PAGE_X,
+                            com.vastufirst.shared.scan.SampleScan.DOOR_PAGE_Y,
+                            (outcome as? com.vastufirst.shared.scan.ScanOutcome.Placed)?.rooms.orEmpty(),
+                        )?.let(planVm::updateDoor)
+                    }
                     pictureSlot.data = (outcome as? com.vastufirst.shared.scan.ScanOutcome.Placed)?.let {
                         com.vastufirst.app.ui.scan.ScanPicture(imageBytes = scanVm.lastImage?.bytes, rooms = it.rooms)
                     }
