@@ -32,7 +32,7 @@ You can install and try the latest version on an Android phone at any time — j
 ## 🙋 What we need from you
 
 These are the things only you can decide or provide. Everything else is being finished on our side.
-_Updated 15 October 2026._ The two accounts (items 1 and 9) take days for Google and Apple to check,
+_Updated 15 October 2026._ The two accounts (items 1 and 10) take days for Google and Apple to check,
 so they are the ones worth starting first.
 
 1. **A Google Play developer account.** It costs **$25 (about ₹2,100), once**, at
@@ -40,47 +40,51 @@ so they are the ones worth starting first.
    your identity, which can take a few days — so this is the one worth starting today. Tell us the
    email address on it, and **the name customers should see as the seller** (your own name, or a
    registered business).
-2. **Your testing and feedback.** Install the latest version (the "Try it" link in the newest entry
+2. **Twelve testers.** Google requires a new personal account to run a closed test with at least
+   **12 people for 14 days in a row** before the app can go public. We need **12 Gmail addresses**
+   — family, friends, early customers — each with an Android phone. We set up the test and send them
+   the link.
+3. **Your testing and feedback.** Install the latest version (the "Try it" link in the newest entry
    below) and use it as a customer would: add your own home, read a plan, set North and the front
    door, and read the report. Then tell us what is confusing, what looks wrong, and what is missing —
    a screenshot and one sentence each is plenty, to `contact@vastufirst.com`. Your eye as the owner
    decides what gets polished before launch.
-3. **Approve three drafts.** We have written them; they need your facts and your yes:
+4. **Approve three drafts.** We have written them; they need your facts and your yes:
    - **Terms of use** — they need the seller's legal name, a postal address in India, and the city
      whose courts would hear a dispute.
    - **Refund policy** — how long after buying someone may ask for their money back, and whether you
      refund as goodwill when someone simply disagrees with the tradition.
    - **The store listing** — the app's name on the store, its two descriptions, six pictures made
      from the app's own screens, and the banner.
-4. **How the ₹699 is collected.** Google does not allow other payment services for something sold
+5. **How the ₹699 is collected.** Google does not allow other payment services for something sold
    and read inside a Play Store app, so the checkout is built on Google's own — which means Google
    keeps about ₹105 of each ₹699. The alternative is selling the report on a web page instead, where
    you keep all of it but the customer has to pay on a website first. We have built the first; say
    the word if you'd rather have the second. **The iPhone has the same rule:** a report sold inside
    the iPhone app must use Apple's own checkout, and Apple also keeps a share (15 % for a small
    business that joins Apple's small-business programme, so about the same ₹105).
-5. **What one payment unlocks.** Today one payment unlocks the full report for **every home** on
+6. **What one payment unlocks.** Today one payment unlocks the full report for **every home** on
    that Google account, while the pay screen says "this home, forever". Pick one and the words and
    the product will match it: **every home on the account** (simplest; Google restores it after a
    reinstall) or **one home per payment**.
-6. **The plan-reading service in your name.** Reading a photographed plan uses a paid AI service
+7. **The plan-reading service in your name.** Reading a photographed plan uses a paid AI service
    (about 30 paise a plan, measured this week — each plan is read twice; the price moves a little
    month to month). Before launch it should be billed to you: an account at openrouter.ai with your
    card and a monthly spending limit. We move the reading onto it on our server, so phones need no
    app update for it.
-7. **Two names for the front door.** Two of the 32 door positions — **E7 and S7** — have no
+8. **Two names for the front door.** Two of the 32 door positions — **E7 and S7** — have no
    traditional name in our sources, so the report says it will not invent one. If your Vastu expert
    can name them, the report will use those names.
-8. **The real-phone check.** Run the checklist we send you on three Android phones (a small, older
+9. **The real-phone check.** Run the checklist we send you on three Android phones (a small, older
    one; a mid-range one; a new one if you can borrow it), and tell us anything that looks wrong, with
    a screenshot and the row number. It now includes the new "Show us on your plan" card.
-9. **For the iPhone: an Apple developer account.** It costs **$99 (about ₹8,700) a year**. You join
+10. **For the iPhone: an Apple developer account.** It costs **$99 (about ₹8,700) a year**. You join
    through Apple's "Apple Developer" app, signed in with your own Apple account — on your own iPhone,
    or any iPhone or iPad you can borrow for the few minutes it takes. Use your legal name on the Apple
    account, or Apple delays the approval. **You do not need a Mac:** the iPhone app is built, and
    will be sent to Apple, from a Mac we rent in the cloud at no cost. Tell us the email address on
    the account once Apple approves it.
-10. **One iPhone for a final check.** Before the iPhone launch, someone installs the test version
+11. **One iPhone for a final check.** Before the iPhone launch, someone installs the test version
    through Apple's TestFlight app and walks the same checklist. Any iPhone works — yours, or a family
    member's. Nothing needs to be bought.
 
@@ -115,7 +119,7 @@ scores on Android), drawing, North, the report, and choosing a plan from Photos,
 What is left needs your Apple account: installing it on a real iPhone, then Apple's own checkout.
 
 **Stage 6 — launch.** The disclaimer, the privacy policy and the sources page are in the app. The
-terms of use, the refund policy and the store listing are drafted and waiting for your approval (item 3
+terms of use, the refund policy and the store listing are drafted and waiting for your approval (item 4
 above). The data-safety and content-rating answers are ready. The file Google Play needs for an upload
 is now produced with every build.
 
