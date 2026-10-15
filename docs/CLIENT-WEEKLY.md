@@ -32,6 +32,8 @@ You can install and try the latest version on an Android phone at any time — j
 ## 🙋 What we need from you
 
 These are the things only you can decide or provide. Everything else is being finished on our side.
+_Updated 15 October 2026._ The two accounts (items 1 and 9) take days for Google and Apple to check,
+so they are the ones worth starting first.
 
 1. **A Google Play developer account.** It costs **$25 (about ₹2,100), once**, at
    `play.google.com/console`, on the Google account you want to own this app forever. Google checks
@@ -53,23 +55,33 @@ These are the things only you can decide or provide. Everything else is being fi
    and read inside a Play Store app, so the checkout is built on Google's own — which means Google
    keeps about ₹105 of each ₹699. The alternative is selling the report on a web page instead, where
    you keep all of it but the customer has to pay on a website first. We have built the first; say
-   the word if you'd rather have the second.
+   the word if you'd rather have the second. **The iPhone has the same rule:** a report sold inside
+   the iPhone app must use Apple's own checkout, and Apple also keeps a share (15 % for a small
+   business that joins Apple's small-business programme, so about the same ₹105).
 5. **What one payment unlocks.** Today one payment unlocks the full report for **every home** on
    that Google account, while the pay screen says "this home, forever". Pick one and the words and
    the product will match it: **every home on the account** (simplest; Google restores it after a
    reinstall) or **one home per payment**.
 6. **The plan-reading service in your name.** Reading a photographed plan uses a paid AI service
-   (about 50 paise a plan at September's prices — each plan is read twice). Before launch it should be billed to you: an account at
-   openrouter.ai with your card and a monthly spending limit. We move the reading onto it on our
-   server, so phones need no app update for it.
+   (about 30 paise a plan, measured this week — each plan is read twice; the price moves a little
+   month to month). Before launch it should be billed to you: an account at openrouter.ai with your
+   card and a monthly spending limit. We move the reading onto it on our server, so phones need no
+   app update for it.
 7. **Two names for the front door.** Two of the 32 door positions — **E7 and S7** — have no
    traditional name in our sources, so the report says it will not invent one. If your Vastu expert
    can name them, the report will use those names.
-8. **The real-phone check.** Run the checklist we send you on three phones (a small, older one; a
-   mid-range one; a new one if you can borrow it), and tell us anything that looks wrong, with a
-   screenshot and the row number.
-9. **For the iPhone, when you are ready:** an Apple developer account (**₹8,700 a year**, enrolled
-   through the Apple Developer app on an iPhone), and an iPhone to test on.
+8. **The real-phone check.** Run the checklist we send you on three Android phones (a small, older
+   one; a mid-range one; a new one if you can borrow it), and tell us anything that looks wrong, with
+   a screenshot and the row number. It now includes the new "Show us on your plan" card.
+9. **For the iPhone: an Apple developer account.** It costs **$99 (about ₹8,700) a year**. You join
+   through Apple's "Apple Developer" app, signed in with your own Apple account — on your own iPhone,
+   or any iPhone or iPad you can borrow for the few minutes it takes. Use your legal name on the Apple
+   account, or Apple delays the approval. **You do not need a Mac:** the iPhone app is built, and
+   will be sent to Apple, from a Mac we rent in the cloud at no cost. Tell us the email address on
+   the account once Apple approves it.
+10. **One iPhone for a final check.** Before the iPhone launch, someone installs the test version
+   through Apple's TestFlight app and walks the same checklist. Any iPhone works — yours, or a family
+   member's. Nothing needs to be bought.
 
 **Already settled:** the address customers write to is `contact@vastufirst.com`; the privacy policy
 is live at **www.vastufirst.com/privacy**; and every disputed Vastu question has a ruling (the prayer
