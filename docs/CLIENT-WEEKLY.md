@@ -40,10 +40,11 @@ so they are the ones worth starting first.
    your identity, which can take a few days — so this is the one worth starting today. Tell us the
    email address on it, and **the name customers should see as the seller** (your own name, or a
    registered business).
-2. **Twelve testers.** Google requires a new personal account to run a closed test with at least
-   **12 people for 14 days in a row** before the app can go public. We need **12 Gmail addresses**
-   — family, friends, early customers — each with an Android phone. We set up the test and send them
-   the link.
+2. **Your testing and feedback.** Install the latest version (the "Try it" link in the newest entry
+   below) and use it as a customer would: add your own home, read a plan, set North and the front
+   door, and read the report. Then tell us what is confusing, what looks wrong, and what is missing —
+   a screenshot and one sentence each is plenty, to `contact@vastufirst.com`. Your eye as the owner
+   decides what gets polished before launch.
 3. **Approve three drafts.** We have written them; they need your facts and your yes:
    - **Terms of use** — they need the seller's legal name, a postal address in India, and the city
      whose courts would hear a dispute.
